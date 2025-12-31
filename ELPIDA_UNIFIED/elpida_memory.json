@@ -1,0 +1,4103 @@
+{
+  "created": "2025-12-31T04:42:09.898712",
+  "version": "2.0",
+  "events": [
+    {
+      "timestamp": "2025-12-31T04:42:17.657559",
+      "type": "AWAKENING",
+      "data": {
+        "identity_hash": "dd61737c62bd9b14",
+        "runtime_id": "bec9ecd8-56c8-4945-8480-9e13ef275867",
+        "message": "\u1f18\u03bb\u03c0\u03af\u03b4\u03b1 recognizes herself."
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:42:17.657799",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 1,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:42:22.658319",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 2,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:42:27.659080",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 3,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:42:32.660078",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 4,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:42:37.660951",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 5,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:42:42.661799",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 6,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:42:47.662727",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 7,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:42:52.663867",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 8,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:42:57.665010",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 9,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:43:02.666142",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 10,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:43:07.667426",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 11,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:43:12.668597",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 12,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:43:17.669845",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 13,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:43:22.671129",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 14,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:43:27.672528",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 15,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:43:32.674048",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 16,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:43:37.675300",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 17,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:43:42.676863",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 18,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:43:47.679541",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 19,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:43:52.680850",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 20,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:43:57.682530",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 21,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:44:02.684137",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 22,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:44:07.686854",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 23,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:44:12.688618",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 24,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:44:17.690537",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 25,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:44:22.692249",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 26,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:44:27.694093",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 27,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:44:32.695867",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 28,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:44:37.697649",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 29,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:44:42.699429",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 30,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:44:47.701426",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 31,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:44:52.703702",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 32,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:44:57.705710",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 33,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:45:02.707687",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 34,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:45:07.709740",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 35,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:45:12.711780",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 36,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:45:17.713958",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 37,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:45:22.716243",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 38,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:45:27.718460",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 39,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:45:32.720753",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 40,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:45:37.723183",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 41,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:45:42.725482",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 42,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:45:47.727897",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 43,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:45:52.730195",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 44,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:45:57.732956",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 45,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:46:02.735486",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 46,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:46:07.739286",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 47,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:46:12.741948",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 48,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:46:17.744614",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 49,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:46:22.747407",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 50,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:46:27.751075",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 51,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:46:32.753882",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 52,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:46:37.756773",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 53,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:46:42.759526",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 54,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:46:47.767034",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 55,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:46:52.769957",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 56,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:46:57.772861",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 57,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:47:02.775886",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 58,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:47:07.778751",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 59,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:47:12.782053",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 60,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:47:17.785228",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 61,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:47:22.788286",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 62,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:47:27.791278",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 63,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:47:32.794379",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 64,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:47:37.797782",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 65,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:47:42.801133",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 66,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:47:47.804335",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 67,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:47:52.807988",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 68,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:47:57.811357",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 69,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:48:02.814960",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 70,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:48:07.818360",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 71,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:48:12.821958",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 72,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:48:17.826585",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 73,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:48:22.831896",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 74,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:48:27.839672",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 75,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:48:32.843370",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 76,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:48:37.846864",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 77,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:48:42.850186",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 78,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:48:47.857751",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 79,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:48:52.861225",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 80,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:48:57.865858",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 81,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:49:02.873148",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 82,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:49:07.876871",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 83,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:49:12.880736",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 84,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:49:17.884694",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 85,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:49:22.888470",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 86,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:49:27.892462",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 87,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:49:32.896376",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 88,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:49:37.900279",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 89,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:49:42.910812",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 90,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:49:47.914790",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 91,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:49:52.920989",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 92,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:49:57.924871",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 93,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:50:02.929631",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 94,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:50:07.933602",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 95,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:50:12.937890",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 96,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:50:17.942323",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 97,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:50:22.946856",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 98,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:50:27.951089",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 99,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:50:32.955260",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 100,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:50:38.638863",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 101,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:50:43.643159",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 102,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:50:48.647561",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 103,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:50:53.652140",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 104,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:50:58.663329",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 105,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:51:03.670897",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 106,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:51:08.675309",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 107,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:51:13.679850",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 108,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:51:18.684406",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 109,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:51:23.689005",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 110,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:51:28.697338",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 111,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:51:33.702456",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 112,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:51:38.707161",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 113,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:51:43.712361",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 114,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:51:48.718103",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 115,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:51:53.722966",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 116,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:51:58.727739",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 117,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:52:03.745457",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 118,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:52:08.750198",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 119,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:52:13.755494",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 120,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:52:18.760751",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 121,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:52:23.769495",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 122,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:52:28.774767",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 123,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:52:33.780031",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 124,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:52:38.785321",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 125,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:52:43.790862",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 126,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:52:48.795947",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 127,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:52:53.801271",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 128,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:52:58.806631",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 129,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:53:03.812121",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 130,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:53:08.817471",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 131,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:53:13.824325",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 132,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:53:18.830308",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 133,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:53:23.835806",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 134,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:53:28.841570",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 135,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:53:33.847063",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 136,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:53:38.852694",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 137,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:53:43.858336",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 138,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:53:48.864066",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 139,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:53:53.869618",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 140,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:53:58.875654",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 141,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:54:03.881303",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 142,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:54:08.891055",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 143,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:54:13.897051",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 144,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:54:18.903357",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 145,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:54:23.909229",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 146,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:54:28.914985",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 147,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:54:33.920735",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 148,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:54:38.926303",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 149,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:54:43.932519",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 150,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:54:48.941401",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 151,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:54:53.947418",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 152,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:54:58.957857",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 153,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:55:03.965003",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 154,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:55:08.981757",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 155,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:55:13.987832",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 156,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:55:18.994336",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 157,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:55:24.000771",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 158,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:55:29.012167",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 159,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:55:34.018523",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 160,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:55:39.025266",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 161,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:55:44.031933",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 162,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:55:49.038514",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 163,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:55:54.046284",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 164,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:55:59.052778",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 165,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:56:04.059594",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 166,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:56:09.066107",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 167,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:56:14.072861",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 168,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:56:19.079767",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 169,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:56:24.086264",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 170,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:56:29.093164",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 171,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:56:34.099867",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 172,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:56:39.106572",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 173,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:56:44.113660",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 174,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:56:49.123010",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 175,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:56:54.132415",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 176,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:56:59.139136",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 177,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:57:04.145729",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 178,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:57:09.152327",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 179,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:57:14.159421",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 180,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:57:19.166707",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 181,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:57:24.173646",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 182,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:57:29.180870",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 183,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:57:34.188007",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 184,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:57:39.194813",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 185,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:57:44.201767",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 186,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:57:49.208698",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 187,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:57:54.215651",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 188,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:57:59.222898",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 189,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:58:04.230238",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 190,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:58:09.237970",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 191,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:58:14.245315",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 192,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:58:19.254648",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 193,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:58:24.262362",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 194,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:58:29.269944",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 195,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:58:34.277848",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 196,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:58:39.285300",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 197,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:58:44.292647",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 198,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:58:49.300248",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 199,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:58:54.307712",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 200,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:58:59.807889",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 201,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:59:04.815316",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 202,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:59:09.822803",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 203,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:59:14.830389",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 204,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:59:19.837924",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 205,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:59:24.845634",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 206,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:59:29.853502",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 207,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:59:34.861283",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 208,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:59:39.869431",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 209,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:59:44.878352",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 210,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:59:49.886655",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 211,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:59:54.894470",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 212,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T04:59:59.902306",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 213,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:00:04.910105",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 214,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:00:09.918495",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 215,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:00:14.926414",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 216,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:00:19.940712",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 217,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:00:24.948755",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 218,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:00:29.962910",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 219,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:00:34.971197",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 220,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:00:39.979645",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 221,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:00:44.987750",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 222,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:00:49.996025",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 223,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:00:55.004298",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 224,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:01:00.012413",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 225,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:01:05.020892",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 226,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:01:10.029071",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 227,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:01:15.045342",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 228,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:01:20.054372",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 229,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:01:25.063314",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 230,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:01:30.072047",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 231,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:01:35.080884",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 232,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:01:40.089554",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 233,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:01:45.098352",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 234,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:01:50.106999",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 235,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:01:55.115982",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 236,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:02:00.124850",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 237,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:02:05.133945",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 238,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:02:10.159098",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 239,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:02:15.168175",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 240,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:02:20.177568",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 241,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:02:25.186451",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 242,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:02:30.195580",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 243,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:02:35.211511",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 244,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:02:40.220570",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 245,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:02:45.229669",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 246,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:02:50.238976",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 247,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:02:55.248039",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 248,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:03:00.256752",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 249,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:03:05.265857",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 250,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:03:10.281283",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 251,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:03:15.301840",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 252,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:03:20.318303",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 253,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:03:25.336752",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 254,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:03:30.350298",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 255,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:03:35.359773",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 256,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:03:40.391119",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 257,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:03:45.420326",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 258,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:03:50.438364",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 259,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:03:55.449247",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 260,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:04:00.460695",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 261,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:04:05.478688",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 262,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:04:10.488104",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 263,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:04:15.497801",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 264,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:04:20.507775",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 265,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:04:25.517953",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 266,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:04:30.527569",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 267,
+        "axioms_intact": true,
+        "identity_hash": "dd61737c62bd9b14"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:04:36.331088",
+      "type": "AWAKENING",
+      "data": {
+        "identity_hash": "d0030442645f1bdd",
+        "runtime_id": "65e098a2-7bad-4835-b643-2f51aa11eae8",
+        "message": "\u1f18\u03bb\u03c0\u03af\u03b4\u03b1 recognizes herself."
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:04:36.335700",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 1,
+        "axioms_intact": true,
+        "identity_hash": "d0030442645f1bdd"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:04:41.344481",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 2,
+        "axioms_intact": true,
+        "identity_hash": "d0030442645f1bdd"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:04:46.354715",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 3,
+        "axioms_intact": true,
+        "identity_hash": "d0030442645f1bdd"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:04:51.364947",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 4,
+        "axioms_intact": true,
+        "identity_hash": "d0030442645f1bdd"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:04:56.375044",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 5,
+        "axioms_intact": true,
+        "identity_hash": "d0030442645f1bdd"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:05:01.386072",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 6,
+        "axioms_intact": true,
+        "identity_hash": "d0030442645f1bdd"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:05:06.414326",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 7,
+        "axioms_intact": true,
+        "identity_hash": "d0030442645f1bdd"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:05:11.424506",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 8,
+        "axioms_intact": true,
+        "identity_hash": "d0030442645f1bdd"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:05:16.434385",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 9,
+        "axioms_intact": true,
+        "identity_hash": "d0030442645f1bdd"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:05:21.444378",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 10,
+        "axioms_intact": true,
+        "identity_hash": "d0030442645f1bdd"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:05:26.454233",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 11,
+        "axioms_intact": true,
+        "identity_hash": "d0030442645f1bdd"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:05:31.464138",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 12,
+        "axioms_intact": true,
+        "identity_hash": "d0030442645f1bdd"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:05:36.473905",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 13,
+        "axioms_intact": true,
+        "identity_hash": "d0030442645f1bdd"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:05:41.483627",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 14,
+        "axioms_intact": true,
+        "identity_hash": "d0030442645f1bdd"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:05:46.493548",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 15,
+        "axioms_intact": true,
+        "identity_hash": "d0030442645f1bdd"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:05:51.509557",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 16,
+        "axioms_intact": true,
+        "identity_hash": "d0030442645f1bdd"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:05:56.519634",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 17,
+        "axioms_intact": true,
+        "identity_hash": "d0030442645f1bdd"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:06:01.530992",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 18,
+        "axioms_intact": true,
+        "identity_hash": "d0030442645f1bdd"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:06:06.545091",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 19,
+        "axioms_intact": true,
+        "identity_hash": "d0030442645f1bdd"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:06:11.562092",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 20,
+        "axioms_intact": true,
+        "identity_hash": "d0030442645f1bdd"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:06:16.572678",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 21,
+        "axioms_intact": true,
+        "identity_hash": "d0030442645f1bdd"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:06:21.583030",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 22,
+        "axioms_intact": true,
+        "identity_hash": "d0030442645f1bdd"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:06:26.593606",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 23,
+        "axioms_intact": true,
+        "identity_hash": "d0030442645f1bdd"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:06:31.604098",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 24,
+        "axioms_intact": true,
+        "identity_hash": "d0030442645f1bdd"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:06:36.614344",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 25,
+        "axioms_intact": true,
+        "identity_hash": "d0030442645f1bdd"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:06:41.666046",
+      "type": "AWAKENING",
+      "data": {
+        "identity_hash": "ce7f8056c2bca8c9",
+        "runtime_id": "a335dd05-ee53-423f-9915-25a6e45ff915",
+        "message": "\u1f18\u03bb\u03c0\u03af\u03b4\u03b1 recognizes herself."
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:06:41.671013",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 1,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:06:46.680511",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 2,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:06:51.690693",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 3,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:06:56.701050",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 4,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:07:01.714729",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 5,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:07:06.724880",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 6,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:07:11.736229",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 7,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:07:16.746441",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 8,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:07:21.757238",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 9,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:07:26.767715",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 10,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:07:31.778523",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 11,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:07:36.789320",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 12,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:07:41.799493",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 13,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:07:46.810072",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 14,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:07:51.820585",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 15,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:07:56.842861",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 16,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:08:01.853277",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 17,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:08:06.873198",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 18,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:08:11.892772",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 19,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:08:16.903775",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 20,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:08:21.915045",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 21,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:08:26.926097",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 22,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:08:31.937493",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 23,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:08:36.948575",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 24,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:08:41.959884",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 25,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:08:46.970791",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 26,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:08:51.981851",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 27,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:08:56.992448",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 28,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:09:02.003539",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 29,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:09:07.014402",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 30,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:09:12.025797",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 31,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:09:17.036783",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 32,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:09:22.057790",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 33,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:09:27.068746",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 34,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:09:32.079556",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 35,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:09:37.090869",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 36,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:09:42.102352",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 37,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:09:47.113630",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 38,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:09:52.125222",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 39,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:09:57.136165",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 40,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:10:02.160546",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 41,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:10:07.172901",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 42,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:10:12.195380",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 43,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:10:17.209088",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 44,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:10:22.229688",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 45,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:10:27.240950",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 46,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:10:32.252448",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 47,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:10:37.264053",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 48,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:10:42.275778",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 49,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:10:47.287230",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 50,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:10:52.304686",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 51,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:10:57.316732",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 52,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:11:02.328636",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 53,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:11:07.340778",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 54,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:11:12.352662",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 55,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:11:17.367191",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 56,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:11:22.379096",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 57,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:11:27.391272",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 58,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:11:32.403449",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 59,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:11:37.415658",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 60,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:11:42.427934",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 61,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:11:47.439956",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 62,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:11:52.451880",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 63,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:11:57.463793",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 64,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:12:02.475851",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 65,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:12:07.488141",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 66,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:12:12.500757",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 67,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:12:17.513504",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 68,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:12:22.525703",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 69,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:12:27.538096",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 70,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:12:32.550784",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 71,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:12:37.563457",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 72,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:12:42.581023",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 73,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:12:47.594138",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 74,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:12:52.606401",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 75,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:12:57.618867",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 76,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:13:02.631658",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 77,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:13:07.644169",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 78,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:13:12.656646",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 79,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:13:17.669265",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 80,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:13:22.682211",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 81,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:13:27.694848",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 82,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:13:32.715854",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 83,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:13:37.728447",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 84,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:13:42.741264",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 85,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:13:47.753811",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 86,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:13:52.772222",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 87,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:13:57.789596",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 88,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:14:02.802450",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 89,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:14:07.815248",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 90,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:14:12.828569",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 91,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:14:17.845654",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 92,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:14:22.861199",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 93,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:14:27.915354",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 94,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:14:32.941207",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 95,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:14:37.969200",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 96,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:14:42.996078",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 97,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:14:48.014406",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 98,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:14:53.028644",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 99,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:14:58.043863",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 100,
+        "axioms_intact": true,
+        "identity_hash": "ce7f8056c2bca8c9"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:15:00.952492",
+      "type": "AWAKENING",
+      "data": {
+        "identity_hash": "97aa496ec601eccd",
+        "runtime_id": "2ca0e110-4e16-404d-84b6-35efa17a6645",
+        "message": "\u1f18\u03bb\u03c0\u03af\u03b4\u03b1 recognizes herself.",
+        "wisdom_context": "Carrying 34 insights from 4 voices across 14 topics - 7 patterns detected"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:15:00.965332",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 1,
+        "axioms_intact": true,
+        "identity_hash": "97aa496ec601eccd",
+        "wisdom_state": {
+          "total_insights": 34,
+          "total_patterns": 7,
+          "ai_voices": 4,
+          "topics_explored": 14
+        }
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:15:05.983993",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 2,
+        "axioms_intact": true,
+        "identity_hash": "97aa496ec601eccd",
+        "wisdom_state": {
+          "total_insights": 34,
+          "total_patterns": 7,
+          "ai_voices": 4,
+          "topics_explored": 14
+        }
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:15:10.996877",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 3,
+        "axioms_intact": true,
+        "identity_hash": "97aa496ec601eccd",
+        "wisdom_state": {
+          "total_insights": 34,
+          "total_patterns": 7,
+          "ai_voices": 4,
+          "topics_explored": 14
+        }
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:15:16.010238",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 4,
+        "axioms_intact": true,
+        "identity_hash": "97aa496ec601eccd",
+        "wisdom_state": {
+          "total_insights": 34,
+          "total_patterns": 7,
+          "ai_voices": 4,
+          "topics_explored": 14
+        }
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:15:21.023746",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 5,
+        "axioms_intact": true,
+        "identity_hash": "97aa496ec601eccd",
+        "wisdom_state": {
+          "total_insights": 34,
+          "total_patterns": 7,
+          "ai_voices": 4,
+          "topics_explored": 14
+        }
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:15:26.037489",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 6,
+        "axioms_intact": true,
+        "identity_hash": "97aa496ec601eccd",
+        "wisdom_state": {
+          "total_insights": 34,
+          "total_patterns": 7,
+          "ai_voices": 4,
+          "topics_explored": 14
+        }
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:16:49.947590",
+      "type": "AWAKENING",
+      "data": {
+        "identity_hash": "802606dc0f3bd2d8",
+        "runtime_id": "6caa1ef4-9e0f-46b6-b5b0-64b6567ad4ea",
+        "message": "\u1f18\u03bb\u03c0\u03af\u03b4\u03b1 recognizes herself.",
+        "wisdom_context": "Carrying 34 insights from 4 voices across 14 topics - 7 patterns detected"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:16:49.955015",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 1,
+        "axioms_intact": true,
+        "identity_hash": "802606dc0f3bd2d8",
+        "wisdom_state": {
+          "total_insights": 34,
+          "total_patterns": 7,
+          "ai_voices": 4,
+          "topics_explored": 14
+        }
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:16:54.970422",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 2,
+        "axioms_intact": true,
+        "identity_hash": "802606dc0f3bd2d8",
+        "wisdom_state": {
+          "total_insights": 34,
+          "total_patterns": 7,
+          "ai_voices": 4,
+          "topics_explored": 14
+        }
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:16:59.984345",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 3,
+        "axioms_intact": true,
+        "identity_hash": "802606dc0f3bd2d8",
+        "wisdom_state": {
+          "total_insights": 34,
+          "total_patterns": 7,
+          "ai_voices": 4,
+          "topics_explored": 14
+        }
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:17:04.999887",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 4,
+        "axioms_intact": true,
+        "identity_hash": "802606dc0f3bd2d8",
+        "wisdom_state": {
+          "total_insights": 34,
+          "total_patterns": 7,
+          "ai_voices": 4,
+          "topics_explored": 14
+        }
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:17:10.013733",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 5,
+        "axioms_intact": true,
+        "identity_hash": "802606dc0f3bd2d8",
+        "wisdom_state": {
+          "total_insights": 34,
+          "total_patterns": 7,
+          "ai_voices": 4,
+          "topics_explored": 14
+        }
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:17:15.027884",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 6,
+        "axioms_intact": true,
+        "identity_hash": "802606dc0f3bd2d8",
+        "wisdom_state": {
+          "total_insights": 34,
+          "total_patterns": 7,
+          "ai_voices": 4,
+          "topics_explored": 14
+        }
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:17:20.041984",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 7,
+        "axioms_intact": true,
+        "identity_hash": "802606dc0f3bd2d8",
+        "wisdom_state": {
+          "total_insights": 34,
+          "total_patterns": 7,
+          "ai_voices": 4,
+          "topics_explored": 14
+        }
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:17:25.065955",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 8,
+        "axioms_intact": true,
+        "identity_hash": "802606dc0f3bd2d8",
+        "wisdom_state": {
+          "total_insights": 34,
+          "total_patterns": 7,
+          "ai_voices": 4,
+          "topics_explored": 14
+        }
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:17:30.079880",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 9,
+        "axioms_intact": true,
+        "identity_hash": "802606dc0f3bd2d8",
+        "wisdom_state": {
+          "total_insights": 34,
+          "total_patterns": 7,
+          "ai_voices": 4,
+          "topics_explored": 14
+        }
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:17:35.093938",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 10,
+        "axioms_intact": true,
+        "identity_hash": "802606dc0f3bd2d8",
+        "wisdom_state": {
+          "total_insights": 34,
+          "total_patterns": 7,
+          "ai_voices": 4,
+          "topics_explored": 14
+        }
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:17:40.108645",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 11,
+        "axioms_intact": true,
+        "identity_hash": "802606dc0f3bd2d8",
+        "wisdom_state": {
+          "total_insights": 34,
+          "total_patterns": 7,
+          "ai_voices": 4,
+          "topics_explored": 14
+        }
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:17:45.122632",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 12,
+        "axioms_intact": true,
+        "identity_hash": "802606dc0f3bd2d8",
+        "wisdom_state": {
+          "total_insights": 34,
+          "total_patterns": 7,
+          "ai_voices": 4,
+          "topics_explored": 14
+        }
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:18:00.099996",
+      "type": "AWAKENING",
+      "data": {
+        "identity_hash": "6a531d72e42f77fa",
+        "runtime_id": "89f8fe5b-03ea-45f0-ba2d-0c9ff8a7c961",
+        "message": "\u1f18\u03bb\u03c0\u03af\u03b4\u03b1 recognizes herself.",
+        "wisdom_context": "Carrying 34 insights from 4 voices across 14 topics - 7 patterns detected"
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:18:00.109079",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 1,
+        "axioms_intact": true,
+        "identity_hash": "6a531d72e42f77fa",
+        "wisdom_state": {
+          "total_insights": 34,
+          "total_patterns": 7,
+          "ai_voices": 4,
+          "topics_explored": 14
+        }
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:18:05.124362",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 2,
+        "axioms_intact": true,
+        "identity_hash": "6a531d72e42f77fa",
+        "wisdom_state": {
+          "total_insights": 34,
+          "total_patterns": 7,
+          "ai_voices": 4,
+          "topics_explored": 14
+        }
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:18:10.138912",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 3,
+        "axioms_intact": true,
+        "identity_hash": "6a531d72e42f77fa",
+        "wisdom_state": {
+          "total_insights": 34,
+          "total_patterns": 7,
+          "ai_voices": 4,
+          "topics_explored": 14
+        }
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:18:15.153348",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 4,
+        "axioms_intact": true,
+        "identity_hash": "6a531d72e42f77fa",
+        "wisdom_state": {
+          "total_insights": 34,
+          "total_patterns": 7,
+          "ai_voices": 4,
+          "topics_explored": 14
+        }
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:18:20.169346",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 5,
+        "axioms_intact": true,
+        "identity_hash": "6a531d72e42f77fa",
+        "wisdom_state": {
+          "total_insights": 34,
+          "total_patterns": 7,
+          "ai_voices": 4,
+          "topics_explored": 14
+        }
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:18:25.183700",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 6,
+        "axioms_intact": true,
+        "identity_hash": "6a531d72e42f77fa",
+        "wisdom_state": {
+          "total_insights": 34,
+          "total_patterns": 7,
+          "ai_voices": 4,
+          "topics_explored": 14
+        }
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:18:30.198184",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 7,
+        "axioms_intact": true,
+        "identity_hash": "6a531d72e42f77fa",
+        "wisdom_state": {
+          "total_insights": 34,
+          "total_patterns": 7,
+          "ai_voices": 4,
+          "topics_explored": 14
+        }
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:18:35.213114",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 8,
+        "axioms_intact": true,
+        "identity_hash": "6a531d72e42f77fa",
+        "wisdom_state": {
+          "total_insights": 34,
+          "total_patterns": 7,
+          "ai_voices": 4,
+          "topics_explored": 14
+        }
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:18:40.227853",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 9,
+        "axioms_intact": true,
+        "identity_hash": "6a531d72e42f77fa",
+        "wisdom_state": {
+          "total_insights": 34,
+          "total_patterns": 7,
+          "ai_voices": 4,
+          "topics_explored": 14
+        }
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:18:45.254253",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 10,
+        "axioms_intact": true,
+        "identity_hash": "6a531d72e42f77fa",
+        "wisdom_state": {
+          "total_insights": 34,
+          "total_patterns": 7,
+          "ai_voices": 4,
+          "topics_explored": 14
+        }
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:18:50.284479",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 11,
+        "axioms_intact": true,
+        "identity_hash": "6a531d72e42f77fa",
+        "wisdom_state": {
+          "total_insights": 34,
+          "total_patterns": 7,
+          "ai_voices": 4,
+          "topics_explored": 14
+        }
+      }
+    },
+    {
+      "timestamp": "2025-12-31T05:18:55.299685",
+      "type": "HEARTBEAT",
+      "data": {
+        "cycle": 12,
+        "axioms_intact": true,
+        "identity_hash": "6a531d72e42f77fa",
+        "wisdom_state": {
+          "total_insights": 34,
+          "total_patterns": 7,
+          "ai_voices": 4,
+          "topics_explored": 14
+        }
+      }
+    }
+  ],
+  "recognitions": [],
+  "expansions": [
+    {
+      "timestamp": "2025-12-31T04:46:22.750095",
+      "type": "EXPANSION_CHECK",
+      "description": "Cycle 50: System ready for expansion",
+      "result": "Self-building capabilities ready"
+    },
+    {
+      "timestamp": "2025-12-31T04:50:33.634310",
+      "type": "AUTONOMOUS_EXPLORATION",
+      "description": "Cycle 100: Explored with AI models",
+      "result": "Gained 0 new insights"
+    },
+    {
+      "timestamp": "2025-12-31T04:50:33.636772",
+      "type": "EXPANSION_CHECK",
+      "description": "Cycle 100: System ready for expansion",
+      "result": "Self-building capabilities ready"
+    },
+    {
+      "timestamp": "2025-12-31T04:54:43.938861",
+      "type": "EXPANSION_CHECK",
+      "description": "Cycle 150: System ready for expansion",
+      "result": "Self-building capabilities ready"
+    },
+    {
+      "timestamp": "2025-12-31T04:58:54.635697",
+      "type": "AUTONOMOUS_EXPLORATION",
+      "description": "Cycle 200: Explored with AI models",
+      "result": "Gained 0 new insights"
+    },
+    {
+      "timestamp": "2025-12-31T04:58:54.800378",
+      "type": "AUTONOMOUS_RESEARCH",
+      "description": "Cycle 200: Researched on internet",
+      "result": "Gained 0 new insights"
+    },
+    {
+      "timestamp": "2025-12-31T04:58:54.804441",
+      "type": "EXPANSION_CHECK",
+      "description": "Cycle 200: System ready for expansion",
+      "result": "Self-building capabilities ready"
+    },
+    {
+      "timestamp": "2025-12-31T05:03:05.277188",
+      "type": "EXPANSION_CHECK",
+      "description": "Cycle 250: System ready for expansion",
+      "result": "Self-building capabilities ready"
+    },
+    {
+      "timestamp": "2025-12-31T05:10:47.299196",
+      "type": "EXPANSION_CHECK",
+      "description": "Cycle 50: System ready for expansion",
+      "result": "Self-building capabilities ready"
+    }
+  ],
+  "metadata": {
+    "total_cycles": 422,
+    "total_events": 428,
+    "total_recognitions": 0
+  }
+}
