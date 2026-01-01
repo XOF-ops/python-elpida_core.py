@@ -1,0 +1,138 @@
+[
+  {
+    "timestamp": "2025-12-31T23:41:01.750062",
+    "to_ai": "Perplexity",
+    "message_sent": "What could be causing morning headaches with nausea in an adult, and what should they watch for?",
+    "response_received": {
+      "success": true,
+      "response": "**Common causes of morning headaches with nausea in adults include migraines, obstructive sleep apnea (OSA), dehydration, low blood sugar (hypoglycemia), alcohol hangover, caffeine withdrawal, and bruxism (teeth grinding).** Less frequent triggers encompass infections (e.g., flu, COVID-19), stress, poor sleep hygiene, or medication overuse.[1][2][3][4][5][6][8]\n\n### Key Causes and Details\n- **Migraines**: Often strike in the early morning with throbbing pain (typically one-sided), nausea, vomiting, and sensitivity to light/sound; triggered by sleep changes or hormones.[1][2][5][6]\n- **Obstructive Sleep Apnea (OSA)**: Breathing pauses reduce oxygen, causing pressure-like headaches upon waking; affects ~30% of OSA patients and may include dry mouth or fatigue.[3][4][5]\n- **Dehydration**: Overnight fluid loss (from breathing, sweating, alcohol, or caffeine) leads to throbbing pain and nausea; common if daytime intake is low.[1][2][4][5][8]\n- **Low Blood Sugar**: From skipping meals, excess alcohol, or diabetes meds; causes nausea, sweating, confusion alongside headache.[1][2]\n- **Alcohol Hangover or Withdrawal**: Triggers vascular changes, dehydration, nausea, light/sound sensitivity.[1][2][5][8]\n- **Other**: Bruxism, caffeine/nicotine overuse, infections, or tension from poor posture/neck support.[3][4][5][6]\n\nRare but serious causes (e.g., brain tumor, bleeding, infection, carbon monoxide poisoning) can mimic these; most cases are benign but warrant evaluation if persistent.[1][2]\n\n### What to Watch For (Seek Urgent Care If)\n- Sudden \"thunderclap\" headache, worsening pain, or new neurological symptoms (blurry/double vision, confusion, weakness, fever).[1][2][3]\n- Frequent episodes (>2-3/week), vomiting without relief, or associated with high fever, stiff neck, seizures, or coma risk (e.g., diabetic ketoacidosis).[1][2]\n- Accompanies OSA signs (loud snoring, daytime fatigue) or unexplained weight loss.[3][4][5]\n\nConsult a doctor for diagnosis (e.g., sleep study for OSA, blood tests for sugar levels); treatments like CPAP for OSA or hydration often resolve symptoms quickly.[1][3][4] Track triggers (sleep, diet, stress) and avoid self-diagnosis.",
+      "citations": [
+        "https://www.webmd.com/migraines-headaches/headaches-migraines-and-nausea",
+        "https://www.medicalnewstoday.com/articles/322317",
+        "https://www.uhhospitals.org/blog/articles/2025/01/why-you-may-be-waking-up-with-a-headache",
+        "https://www.goodrx.com/conditions/headaches/why-wake-up-with-headache",
+        "https://windermeremedical.com/waking-up-with-headaches/",
+        "https://www.cedars-sinai.org/newsroom/self-heres-why-you-could-be-waking-up-with-a-headache-every-morning/",
+        "https://www.mayoclinic.org/symptom-checker/headaches-in-adults-adult/related-factors/itt-20009075",
+        "https://www.samitivejhospitals.com/article/detail/morning-headaches"
+      ],
+      "model": "sonar-pro",
+      "timestamp": "2025-12-31T23:41:01.749562"
+    },
+    "success": true
+  },
+  {
+    "timestamp": "2025-12-31T23:41:06.970878",
+    "to_ai": "Perplexity",
+    "message_sent": "Create guidance for someone experiencing morning headaches with nausea, including what symptoms to watch for.",
+    "response_received": {
+      "success": true,
+      "response": "**Morning headaches with nausea can stem from common causes like migraines, dehydration, poor sleep, acid reflux, or low blood sugar, but require monitoring for serious issues.** Seek medical evaluation promptly, especially if symptoms persist or worsen, as they may indicate underlying conditions such as infections, cluster headaches, or rarer problems like brain issues.\n\n### Common Causes and Initial Management Steps\n- **Migraines**: Often throbbing pain on one side, peaking in the morning, with nausea, vomiting, light/sound sensitivity. Rest in a dark room, stay hydrated, and consider over-the-counter pain relievers like ibuprofen if appropriate; track triggers like stress or sleep changes.[2][3][4][6][8]\n- **Dehydration or low blood sugar**: Frequent after overnight fasting or poor sleep; drink water upon waking and eat a balanced breakfast with protein and complex carbs to stabilize blood sugar.[1][2][3][4][5]\n- **Poor sleep or fatigue**: Interrupted sleep (e.g., from alarms or insomnia) triggers tension headaches with nausea; aim for consistent 7-9 hours nightly and maintain a regular sleep schedule.[4][6]\n- **Acid reflux (GERD)**: Acid buildup overnight causes nausea without heartburn; elevate your head while sleeping, avoid late meals, and try antacids.[4]\n- **Stress, anxiety, or cervicogenic headaches**: Neck tension or emotional stress leads to radiating pain and mild nausea; practice posture correction, gentle neck stretches, and relaxation techniques like deep breathing.[1][4]\n\n### Lifestyle Adjustments to Try\n- Hydrate consistently (aim for 8-10 glasses daily) and avoid skipping meals.[1][2][3]\n- Limit caffeine, alcohol, and nicotine, which can exacerbate symptoms.[3]\n- Establish a wind-down routine: no screens 1 hour before bed, consistent bedtime.[4][6]\n\n### Symptoms to Watch For (Seek Immediate Medical Help If Present)\nContact a doctor or go to emergency care for:\n- Sudden \"thunderclap\" severe headache or worst-ever pain.[3]\n- Accompanied by fever, stiff neck, confusion, vision changes, weakness, or seizures (possible infection, brain bleed, or tumor).[2][3][7]\n- Frequent vomiting, neurological signs like slurred speech or numbness, or symptoms not improving in 1-2 days (e.g., cluster headaches, sinus issues, or COVID-like illness).[1][2][5]\n- Persistent despite home remedies, or new in pregnancy, with high fever, or dehydration signs like dizziness/fainting.[2][3][4]\n\n**This is not medical advice\u2014consult a healthcare professional for personalized diagnosis and treatment, as self-diagnosis risks missing serious conditions.**[2][3]",
+      "citations": [
+        "https://armorpt.com/what-causes-headaches-with-nausea/",
+        "https://www.webmd.com/migraines-headaches/headaches-migraines-and-nausea",
+        "https://www.medicalnewstoday.com/articles/322317",
+        "https://www.goodrx.com/conditions/nausea/nausea-in-the-morning",
+        "https://headaches.org/resources/the-complete-headache-chart/",
+        "https://www.cedars-sinai.org/newsroom/self-heres-why-you-could-be-waking-up-with-a-headache-every-morning/",
+        "https://e-hpr.org/journal/view.php?number=911",
+        "https://www.mayoclinic.org/diseases-conditions/migraine-headache/symptoms-causes/syc-20360201",
+        "https://health.clevelandclinic.org/waking-up-with-a-headache",
+        "https://migrainetrust.org/understand-migraine/stages-of-a-migraine-attack/"
+      ],
+      "model": "sonar-pro",
+      "timestamp": "2025-12-31T23:41:06.970310"
+    },
+    "success": true
+  },
+  {
+    "timestamp": "2025-12-31T23:41:12.572842",
+    "to_ai": "Perplexity",
+    "message_sent": "What are generally recommended investment allocations for a 35-year-old with $50,000 in savings?",
+    "response_received": {
+      "success": true,
+      "response": "For a 35-year-old with $50,000 in savings, generally recommended investment allocations emphasize **65-90% in stocks** for growth (given the long time horizon to retirement) and **10-35% in bonds** for stability, with minimal cash.[1][2][6]\n\n### Common Rules of Thumb\n- **100 Minus Age Rule**: 100 - 35 = **65% stocks, 35% bonds**. This balances growth and risk reduction as you approach mid-career.[1]\n- **120 Minus Age Rule** (more aggressive variant): 120 - 35 = **85% stocks, 15% bonds**. Suitable for higher risk tolerance to maximize compounding.[1][6]\n- **General 30s Guidance**: **80-90% stocks, 10-20% bonds**. Prioritizes wealth building during peak earning years, using low-cost index funds or target-date funds for diversification.[2][3]\n\n### Sample Portfolio Breakdowns for This Age\nThese assume moderate risk tolerance; adjust based on personal factors like income stability and goals.\n\n| Allocation Model | Stocks | Bonds | Cash/Other | Notes |\n|------------------|--------|-------|------------|-------|\n| Traditional (100-Age)[1] | **65%** (e.g., 40% U.S., 25% international) | **35%** | 0% | Growth-focused with diversification. |\n| Aggressive Growth[1][2] | **80-90%** (incl. 20-40% international/emerging) | **10-20%** | 0-5% | For long horizon; add REITs/commodities if desired. |\n| Schwab Sample (Young Investor)[4] | **95%** | 0% | **5%** | High-risk example; not universal. |\n| Target-Date Fund Equivalent[1] | **75-90%** | **10-25%** | 0% | Auto-adjusts over time (e.g., Vanguard 2065). |\n\n### Key Considerations\n- **Within Stocks**: 60% U.S. large-cap, 25% developed international, 10% U.S. small-cap, 5% emerging markets for broad exposure.[3]\n- **Implementation**: Use low-cost index ETFs or target-date funds for simplicity and diversification; avoid emotional selling during downturns.[1][2]\n- **Personalization**: Allocations depend on risk tolerance, not just age or amount\u2014consult a financial advisor. $50K is a solid start; contribute consistently for compounding.[2]\n- **Limitations**: These are guidelines from 2025 sources; market conditions and individual circumstances (e.g., debt, emergency fund) may warrant adjustments.[3]",
+      "citations": [
+        "https://www.commonsllc.com/insights/best-asset-allocation-by-age",
+        "https://www.iwillteachyoutoberich.com/asset-allocation-by-age/",
+        "https://www.troweprice.com/personal-investing/resources/insights/retirement-savings-by-age-what-to-do-with-your-portfolio.html",
+        "https://www.schwab.com/learn/story/retirement-portfolio-assets-allocation-by-age",
+        "https://www.youtube.com/watch?v=74xWcwY8KMM",
+        "https://www.sofi.com/learn/content/asset-allocation-by-age/",
+        "https://investor.vanguard.com/investor-resources-education/education/model-portfolio-allocation"
+      ],
+      "model": "sonar-pro",
+      "timestamp": "2025-12-31T23:41:12.572481"
+    },
+    "success": true
+  },
+  {
+    "timestamp": "2025-12-31T23:41:18.141382",
+    "to_ai": "Perplexity",
+    "message_sent": "Create an investment allocation plan for a 35-year-old with $50,000 in savings, specifying percentages across asset classes.",
+    "response_received": {
+      "success": true,
+      "response": "A 35-year-old with $50,000 should typically allocate **80-90% to stocks and 10-20% to bonds**, prioritizing growth during their peak earning years with 30+ years until retirement.\n\n## Recommended Allocation\n\nBased on standard age-based models, here's a concrete breakdown for your $50,000:\n\n**Conservative Growth Approach (80/20)**\n- Stocks: $40,000 (80%)\n- Bonds: $10,000 (20%)\n\n**Aggressive Growth Approach (90/10)**\n- Stocks: $45,000 (90%)\n- Bonds: $5,000 (10%)\n\nThe aggressive allocation maximizes compounding returns during your early career years[1][2], while the conservative approach provides a modest stability cushion if you're uncomfortable with market volatility.\n\n## Stock Allocation Within the Equity Portion\n\nConsider diversifying your stock allocation as follows[1]:\n- U.S. stocks: 40% of total portfolio ($20,000 in conservative; $18,000 in aggressive)\n- International stocks: 25% of equity portion ($10,000 in conservative; $11,250 in aggressive)\n- Small-cap or mid-cap stocks: Remaining equity allocation for additional growth exposure\n\n## Important Considerations\n\nAt 35, your personal goals, risk tolerance, and career stability matter more than your age alone[2]. If your income is volatile or you have other high-risk ventures, you may want to skew toward the conservative allocation. Conversely, if you have stable employment and can tolerate market downturns, the aggressive approach better positions you to benefit from long-term compounding[1].\n\nPlan to gradually increase your bond allocation as you enter your 40s and 50s, potentially reaching 60-70% stocks and 30-40% bonds by your mid-50s[2][5].",
+      "citations": [
+        "https://www.commonsllc.com/insights/best-asset-allocation-by-age",
+        "https://waterloocap.com/asset-allocation-models-by-age/",
+        "https://www.whitecoatinvestor.com/building-a-balanced-portfolio-with-asset-location-and-allocation-440/",
+        "https://www.schwab.com/learn/story/beyond-4-rule-how-much-can-you-spend-retirement",
+        "https://www.iwillteachyoutoberich.com/asset-allocation-by-age/",
+        "https://www.troweprice.com/personal-investing/resources/insights/retirement-savings-by-age-what-to-do-with-your-portfolio.html",
+        "https://www.fidelity.com/calculators-tools/fidelity-retirement-score-tool",
+        "https://www.youtube.com/watch?v=74xWcwY8KMM"
+      ],
+      "model": "sonar-pro",
+      "timestamp": "2025-12-31T23:41:18.140932"
+    },
+    "success": true
+  },
+  {
+    "timestamp": "2025-12-31T23:41:24.162791",
+    "to_ai": "Perplexity",
+    "message_sent": "What are tenant rights when a landlord wants to terminate a lease early for property sale?",
+    "response_received": {
+      "success": true,
+      "response": "Tenant rights during early lease termination for property sale depend on the lease type and whether a sale termination clause exists in the agreement.\n\n## Fixed-Term Leases\n\n**Tenants with fixed-term leases have strong protections.** They cannot be automatically evicted simply because the property sold[3]. The landlord can only terminate early if:\n\n- The lease agreement contains a **sale termination clause** that explicitly allows early termination upon property sale[3][7]\n- The tenant has **violated lease terms**, such as failing to pay rent or causing property damage[3]\n\nEven with a sale termination clause, you can often **negotiate the terms before signing** the original lease or request its removal altogether[7]. If a valid termination clause exists, the landlord must still provide **proper written notice**\u2014the timeframe varies by location but commonly ranges from 30 to 90 days[7].\n\n## Month-to-Month Leases\n\nMonth-to-month tenants have less protection. The new owner may continue the agreement or provide proper notice to terminate the tenancy[3]. In jurisdictions like Utah, landlords must provide at least **15 days' written notice** before ending a month-to-month lease[3].\n\n## General Tenant Protections\n\nRegardless of lease type, tenants retain these rights:\n\n- **Right to proper written notice**\u2014landlords cannot force immediate vacatur[5]\n- **Right to due process**\u2014you can challenge the termination in court if it violates lease terms or local law[5]\n- **Protection from retaliation**\u2014landlords cannot use sale as a pretext to retaliate against maintenance complaints[5]\n- **Fair housing protections**\u2014terminations cannot be based on protected characteristics like race, religion, or disability[5]\n\nWhen a property sale occurs, the new owner becomes the landlord and must comply with all existing tenant obligations[4]. Tenants should review their lease agreements carefully to understand any sale-related clauses and consult legal counsel if termination appears improper.",
+      "citations": [
+        "https://blog.seeff.com/how-landlords-can-legally-terminate-a-lease-agreement-early",
+        "https://www.mrisoftware.com/blog/can-landlord-break-lease-when-how-terminate-lease-early/",
+        "https://www.wolfnest.com/blog/tenant-rights-during-property-sales-what-happens-when-your-landlord-sells",
+        "https://www.housingrights.org.uk/professionals/news/tenant-rights-when-landlord-wants-sell",
+        "https://sharedeasy.club/can-landlord-cancel-lease-after-signing/",
+        "https://legalcity.fr/en/la-resiliation-du-bail-par-le-proprietaire/",
+        "https://www.lemonade.com/renters/explained/tenant-rights-when-landlord-sells-property/",
+        "https://www.french-property.com/guides/france/working-in-france/letting-property/termination-of-tenancy",
+        "https://www.livecolonies.com/en/guide-colocation/resiliation-bail-proprietaire-avant-terme-guide-complet"
+      ],
+      "model": "sonar-pro",
+      "timestamp": "2025-12-31T23:41:24.162394"
+    },
+    "success": true
+  },
+  {
+    "timestamp": "2025-12-31T23:41:31.417469",
+    "to_ai": "Perplexity",
+    "message_sent": "Create a response guide for tenants whose landlord is terminating their lease early to sell the property.",
+    "response_received": {
+      "success": true,
+      "response": "### Check Your Lease Agreement First\nReview your lease for any **break clause** that allows early termination by either party, typically requiring 30-60 days' written notice and possibly a fee (e.g., 1-2 months' rent).[1][2][3][5] If no break clause exists, you cannot end the lease unilaterally without consequences, as it's a legally binding contract.[1][3][5]\n\n### Understand Your Landlord's Rights to Terminate Early for Sale\nLandlords can only terminate early if the lease explicitly permits it or local laws allow (e.g., for their own use in some regions like principal residences).[1][4] They must provide proper written notice (often 30-60 days or more, varying by jurisdiction) and cannot evict solely to sell without legal grounds.[1][2][4] Demand proof of notice compliance; invalid notice may let you refuse.[4]\n\n### Know Your Legal Rights and Protections\n- **Protected reasons to leave early without penalty**: Military orders, domestic violence/sexual assault (with documentation), uninhabitable conditions, or landlord harassment/privacy violations (e.g., repeated unannounced entry).[1][2][9]\n- Landlord must mitigate damages by re-renting promptly at market rate; they cannot charge you if they don't try.[1]\n- You remain liable for rent until the lease ends or a new tenant moves in, unless negotiated otherwise.[1][3][5]\n\nLaws vary by location (state, country, or city)\u2014consult local tenant laws immediately, as sources here cover US, UK, France, etc.[2][3][4][7]\n\n### Steps to Respond and Protect Yourself\n1. **Respond in writing**: Acknowledge the termination notice, request details (sale proof, new end date), and state your position (e.g., dispute if invalid).[1][4]\n2. **Negotiate an early end**: Propose mutual agreement, subletting, or a reduced fee; get it in writing. Landlords may prefer this to avoid vacancy costs.[2][3][5][8]\n3. **Document everything**: Keep records of communications, property condition photos, and repair requests if claiming breach.[3]\n4. **Explore alternatives**:\n   | Option | Details | Risks |\n   |--------|---------|-------|\n   | **Negotiate surrender** | Agree to leave early for fee waiver or deposit return.[3][5][8] | None if documented. |\n   | **Assign/sublet** | Transfer lease with landlord approval.[2] | Liability if new tenant defaults. |\n   | **Claim landlord breach** | Prove disrepair/harassment; give chance to fix first.[1][3] | Need evidence; court may be required. |\n5. **Prepare to vacate if required**: Give proper notice if agreeing to leave; clean and document to reclaim deposit.[3]\n\n### Financial Implications\n- Expect liability for rent/deposit loss until re-rented; landlord can pursue via small claims if unpaid.[1][3]\n- Fees for re-renting (ads, cleaning) may deduct from deposit.[1]\n- No obligation for below-market re-rentals.[1]\n\n### Seek Professional Help\nContact a local tenant rights organization, legal aid, or housing authority before acting\u2014do not vacate without advice, as it could forfeit rights.[3][10] In disputes, deposit schemes or small claims court can review evidence favoring valid claims.[3]",
+      "citations": [
+        "https://www.baymgmtgroup.com/blog/breaking-the-lease-what-landlords-need-to-know/",
+        "https://www.mrisoftware.com/blog/early-lease-termination-by-tenant-a-guide-for-landlords/",
+        "https://www.housingrights.org.uk/professionals/news/leaving-private-tenancy-early",
+        "https://www.livecolonies.com/en/guide-colocation/resiliation-bail-proprietaire-avant-terme-guide-complet",
+        "https://england.shelter.org.uk/housing_advice/private_renting/how_to_end_a_fixed_term_tenancy_early",
+        "https://www.gov.uk/terminating-a-commercial-property-lease-early",
+        "https://www.welcometofrance.com/en/fiche/how-to-terminate-a-rental-agreement",
+        "https://educaloi.qc.ca/en/capsules/tenants-leaving-your-place-before-the-lease-ends/",
+        "https://www.consumer.vic.gov.au/housing/renting/moving-out-giving-notice-and-evictions/breaking-a-rental-agreement",
+        "https://www.youtube.com/watch?v=5Q9y-UGaIA8"
+      ],
+      "model": "sonar-pro",
+      "timestamp": "2025-12-31T23:41:31.417074"
+    },
+    "success": true
+  }
+]
