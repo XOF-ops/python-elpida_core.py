@@ -262,6 +262,57 @@ class ElpidaWisdom:
         
         return 1
     
+    def add_insight(self, ai_name: str, topic: str, content: str, 
+                    conversation_id: str, context: Optional[str] = None,
+                    timestamp: Optional[str] = None) -> str:
+        """
+        Add a single insight directly to the corpus.
+        
+        This is the direct method for adding insights without a full conversation file.
+        Used for autonomous exploration and real-time interactions.
+        
+        Args:
+            ai_name: Name of the AI that provided the insight
+            topic: The topic/subject of the insight
+            content: The actual insight content
+            conversation_id: ID of the conversation/session
+            context: Optional context about when/how this was generated
+            timestamp: Optional timestamp (uses current time if not provided)
+            
+        Returns:
+            The insight_id for the newly added insight
+        """
+        # Generate insight ID
+        timestamp = timestamp or datetime.utcnow().isoformat()
+        insight_count = len([k for k in self.insights.keys() if k.startswith(conversation_id)])
+        insight_id = f"{conversation_id}_{ai_name}_{insight_count + 1}"
+        
+        # Create insight
+        insight = Insight(
+            ai_name=ai_name,
+            topic=topic,
+            content=content,
+            timestamp=timestamp,
+            conversation_id=conversation_id,
+            context=context
+        )
+        
+        # Store insight
+        self.insights[insight_id] = insight
+        self.insights_by_ai[ai_name].append(insight_id)
+        self.insights_by_topic[topic].append(insight_id)
+        
+        # Update patterns and profiles
+        self._detect_patterns()
+        self._update_ai_profiles()
+        
+        # Save corpus
+        self._save_corpus()
+        
+        self.logger.info(f"✅ Added insight from {ai_name} on topic: {topic[:50]}...")
+        
+        return insight_id
+    
     def _detect_patterns(self):
         """
         Detect emergent patterns across conversations

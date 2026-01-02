@@ -28,13 +28,27 @@ workspace = Path("/workspaces/python-elpida_core.py")
 sys.path.insert(0, str(workspace / "ELPIDA_UNIFIED"))
 sys.path.insert(0, "/workspaces/brain")
 
+# Import Brain API client for external job sourcing
+from brain_api_client import BrainAPIClient, BrainJobPoller
+
 # Import Brain
 from engine.master_brain import MasterBrainEngine
 
-# Import Elpida components
-from elpida_metastructure import ElpidaMetastructure
-from elpida_memory import ElpidaMemory
-from elpida_identity import ElpidaIdentity
+# Import Elpida components (using what's available)
+try:
+    from elpida_metastructure import ElpidaMetastructure
+except ImportError:
+    ElpidaMetastructure = None
+    
+try:
+    from elpida_memory import ElpidaMemory
+except ImportError:
+    ElpidaMemory = None
+    
+try:
+    from elpida_identity import ElpidaIdentity
+except ImportError:
+    ElpidaIdentity = None
 
 # Import unified engine
 sys.path.insert(0, str(workspace))
@@ -155,7 +169,8 @@ class TaskProcessor:
     - Memory events (TASK_ASSIGNED type)
     - Slack messages (via witness)
     - n8n webhooks (via Brain)
-    - Recursive self-evaluation (every 30 cycles)
+    - Brain API endpoints (A1 enforcement - NEW)
+    - Recursive self-evaluation (only when no external work)
     """
     
     def __init__(self, workspace_root):
@@ -163,21 +178,58 @@ class TaskProcessor:
         self.unified_base = self.workspace / "ELPIDA_UNIFIED"
         self.queue = PriorityQueue()
         self.processed = set()
+        self.task_counter = 0  # For unique priority queue sorting
+        
+        # Brain API job poller (external work source)
+        print("🔗 Connecting to Brain API for external jobs...")
+        try:
+            brain_client = BrainAPIClient()
+            self.brain_poller = BrainJobPoller(brain_client)
+            print(f"   Brain API: {brain_client.base_url}")
+            print(f"   Status: {'Connected' if brain_client.connected else 'Available (will retry)'}")
+        except Exception as e:
+            print(f"   ⚠️  Brain API client initialization failed: {e}")
+            print(f"   Continuing without Brain API (will use file/memory sources only)")
+            self.brain_poller = None
         
     def enqueue_external_tasks(self):
-        """Check for external task files"""
+        """Check for external task files (both .md and .json)"""
+        # Original .md files
         task_files = list(self.unified_base.glob("EXTERNAL_TASK_*.md"))
+        
+        # Also check tasks/ directory for .json files (Brain API creates these)
+        tasks_dir = self.unified_base / "tasks"
+        if tasks_dir.exists():
+            task_files.extend(list(tasks_dir.glob("*.json")))
         
         for task_file in task_files:
             task_id = task_file.stem
             if task_id not in self.processed:
-                content = task_file.read_text()
-                self.queue.put((10, {  # Priority 10 (high)
+                # Handle different file formats
+                if task_file.suffix == ".md":
+                    content = task_file.read_text()
+                    task_type = TaskType.ANALYZE_EXTERNAL_OBJECT
+                elif task_file.suffix == ".json":
+                    try:
+                        with open(task_file) as f:
+                            task_data = json.load(f)
+                        content = task_data.get("content", str(task_data))
+                        # Use task type from JSON if available
+                        type_str = task_data.get("type", "ANALYZE_EXTERNAL_OBJECT")
+                        task_type = getattr(TaskType, type_str, TaskType.ANALYZE_EXTERNAL_OBJECT)
+                    except Exception as e:
+                        print(f"   ⚠️  Failed to load task {task_file}: {e}")
+                        continue
+                else:
+                    continue
+                
+                self.queue.put((10, self.task_counter, {  # Priority 10 (high)
                     "id": task_id,
-                    "type": TaskType.ANALYZE_EXTERNAL_OBJECT,
+                    "type": task_type,
                     "content": content,
                     "source": "file"
                 }))
+                self.task_counter += 1
     
     def enqueue_memory_tasks(self, memory):
         """Check memory for task events"""
@@ -185,37 +237,88 @@ class TaskProcessor:
             if event.get("type") == "EXTERNAL_TASK_ASSIGNED":
                 task_id = event.get("task_id", "UNKNOWN")
                 if task_id not in self.processed:
-                    self.queue.put((9, {  # Priority 9
+                    self.queue.put((9, self.task_counter, {  # Priority 9
                         "id": task_id,
                         "type": TaskType.ANALYZE_EXTERNAL_OBJECT,
                         "content": event.get("content", ""),
                         "source": "memory"
                     }))
+                    self.task_counter += 1
     
     def enqueue_synthesis_task(self, insights_count):
         """Force pattern synthesis if insights accumulating"""
         if insights_count % 50 == 0:  # Every 50 insights
-            self.queue.put((8, {
+            self.queue.put((8, self.task_counter, {
                 "id": f"SYNTHESIS_{datetime.now().strftime('%Y%m%d%H%M%S')}",
                 "type": TaskType.SYNTHESIZE_PATTERN,
                 "content": "Force synthesis from recent insights",
                 "source": "auto"
             }))
+            self.task_counter += 1
     
     def enqueue_stagnation_check(self, current_patterns, last_patterns):
         """Check for stagnation"""
         if current_patterns == last_patterns:
-            self.queue.put((10, {
+            self.queue.put((10, self.task_counter, {
                 "id": "STAGNATION_CHECK",
                 "type": TaskType.EVALUATE_STAGNATION,
                 "content": "Pattern count unchanged - evaluate",
                 "source": "auto"
             }))
+            self.task_counter += 1
+    
+    def enqueue_brain_api_jobs(self):
+        """
+        Poll Brain API for external work (A1 enforcement)
+        
+        This prevents narcissus traps by ensuring external jobs always available.
+        Jobs from Brain API are RELATIONAL (A1) not self-referential.
+        
+        Sources:
+        - GET /health: Kernel integrity validation
+        - GET /api/scans/pending: Gnosis Protocol jobs from Watchtower
+        - GET /api/candidates: Governance review jobs
+        - POST /api/analyze-swarm: Swarm consensus analysis
+        """
+        if not self.brain_poller:
+            return  # Brain API unavailable, skip gracefully
+        
+        try:
+            current_time = time.time()
+            jobs = self.brain_poller.poll(current_time)
+            
+            for job in jobs:
+                # Map string task types to TaskType enum
+                task_type_str = job.get("type", "ANALYZE_EXTERNAL_OBJECT")
+                type_mapping = {
+                    "ANALYZE_EXTERNAL_OBJECT": TaskType.ANALYZE_EXTERNAL_OBJECT,
+                    "ANALYZE_INSIGHT": TaskType.ANALYZE_INSIGHT,
+                    "SYNTHESIZE_PATTERN": TaskType.SYNTHESIZE_PATTERN,
+                    "EVALUATE_STAGNATION": TaskType.EVALUATE_STAGNATION,
+                }
+                task_type = type_mapping.get(task_type_str, TaskType.ANALYZE_EXTERNAL_OBJECT)
+                
+                # Extract payload
+                payload = job.get("payload", {})
+                
+                self.queue.put((job["priority"], self.task_counter, {
+                    "id": payload.get("id", f"BRAIN_JOB_{self.task_counter}"),
+                    "type": task_type,
+                    "content": payload.get("content", ""),
+                    "source": payload.get("source", "brain_api"),
+                    "metadata": payload.get("metadata", {})
+                }))
+                self.task_counter += 1
+        
+        except Exception as e:
+            # Don't crash runtime if Brain API fails
+            # Just log and continue with other task sources
+            print(f"   ⚠️  Brain API polling error: {e}")
     
     def get_next_task(self):
         """Get highest priority task"""
         if not self.queue.empty():
-            priority, task = self.queue.get()
+            priority, counter, task = self.queue.get()
             return task
         return None
     
@@ -262,13 +365,13 @@ class UnifiedAutonomousRuntime:
         print("📋 Loading task processor...")
         self.task_processor = TaskProcessor(workspace_root)
         
-        # Metastructure (axiom validation)
+        # Metastructure (axiom validation) - optional
         print("🔮 Loading axiom metastructure...")
-        self.metastructure = ElpidaMetastructure()
+        self.metastructure = ElpidaMetastructure() if ElpidaMetastructure else None
         
-        # Identity (for recognition)
+        # Identity (for recognition) - optional
         print("🆔 Loading identity system...")
-        self.identity = ElpidaIdentity()
+        self.identity = ElpidaIdentity() if ElpidaIdentity else None
         
         print("\n✅ UNIFIED RUNTIME READY")
         print(f"   Version: {self.state.evolution.get('version', {}).get('full', 'UNKNOWN')}")
@@ -299,6 +402,7 @@ class UnifiedAutonomousRuntime:
         self.task_processor.enqueue_external_tasks()
         self.task_processor.enqueue_memory_tasks(self.state.memory)
         self.task_processor.enqueue_synthesis_task(self.state.insights_count)
+        self.task_processor.enqueue_brain_api_jobs()  # External jobs (A1 enforcement)
         
         # 2. Process tasks
         processed_count = 0
@@ -325,16 +429,17 @@ class UnifiedAutonomousRuntime:
             processed_count += 1
         
         # 4. Validate axioms (Elpida's core function)
-        try:
-            axiom_status = self.metastructure.verify_core_integrity()
-            if axiom_status.get("status") != "intact":
-                print(f"⚠️  Axiom integrity issue: {axiom_status}")
-                self.state.add_memory_event({
-                    "type": "AXIOM_STRESS",
-                    "status": axiom_status
-                })
-        except Exception as e:
-            print(f"⚠️  Axiom validation skipped: {e}")
+        if self.metastructure:
+            try:
+                axiom_status = self.metastructure.verify_core_integrity()
+                if axiom_status.get("status") != "intact":
+                    print(f"⚠️  Axiom integrity issue: {axiom_status}")
+                    self.state.add_memory_event({
+                        "type": "AXIOM_STRESS",
+                        "status": axiom_status
+                    })
+            except Exception as e:
+                print(f"⚠️  Axiom validation skipped: {e}")
         
         # 5. Every 30 cycles - recursive evaluation
         if self.cycle % 30 == 0:

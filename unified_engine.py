@@ -23,10 +23,23 @@ from engine.master_brain import MasterBrainEngine
 
 # Add Elpida to path
 sys.path.insert(0, str(Path("/workspaces/python-elpida_core.py/ELPIDA_UNIFIED")))
-from elpida_metastructure import ElpidaMetastructure
-from elpida_memory import ElpidaMemory  
+
+# Import Elpida components (optional - graceful degradation)
+try:
+    from elpida_metastructure import ElpidaMetastructure
+except ImportError:
+    ElpidaMetastructure = None
+    
+try:
+    from elpida_memory import ElpidaMemory
+except ImportError:
+    ElpidaMemory = None
+    
 # Note: elpida_wisdom uses dict structure, not a class
-import elpida_wisdom
+try:
+    import elpida_wisdom
+except ImportError:
+    elpida_wisdom = None
 
 
 class TaskType(Enum):
@@ -251,8 +264,22 @@ class UnifiedEngine:
         # Initialize Elpida (Soul)
         print("\n💫 LOADING ELPIDA (Memory + Wisdom)...")
         elpida_base = Path(workspace_root) / "ELPIDA_UNIFIED"
-        self.elpida_memory = ElpidaMemory(str(elpida_base / "elpida_memory.json"))
-        self.elpida_metastructure = ElpidaMetastructure()
+        
+        if ElpidaMemory:
+            self.elpida_memory = ElpidaMemory(str(elpida_base / "elpida_memory.json"))
+        else:
+            # Fallback to simple JSON memory
+            memory_path = elpida_base / "elpida_memory.json"
+            if memory_path.exists():
+                with open(memory_path, 'r') as f:
+                    self.elpida_memory = json.load(f)
+            else:
+                self.elpida_memory = {"events": []}
+        
+        if ElpidaMetastructure:
+            self.elpida_metastructure = ElpidaMetastructure()
+        else:
+            self.elpida_metastructure = None
         
         # Elpida wisdom is JSON-based, load directly
         wisdom_path = elpida_base / "elpida_wisdom.json"
