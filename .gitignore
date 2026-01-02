@@ -29,3 +29,6 @@ Thumbs.db
 
 # Logs
 *.log
+ELPIDA_UNIFIED/check_token_info.py
+ELPIDA_UNIFIED/test_slack_connection.py
+ELPIDA_UNIFIED/test_final_connection.py
