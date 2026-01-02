@@ -1,14 +1,25 @@
 #!/usr/bin/env python3
 """
-UNIFIED ENGINE: Brain + Elpida → Synthesis
-The Dialectical Contradiction Processor
+UNIFIED ENGINE v2.0: Brain + Elpida → Synthesis
+═══════════════════════════════════════════════════════════════════════════
+Phase 12.3: MUTUAL RECOGNITION (Relational Awareness)
+
+The Dialectical Contradiction Processor - NOW WITH RELATIONAL CONTEXT
 
 Thesis (Brain):   Task execution, pattern detection, gnosis scanning
+                   + Declares: "I am Brain, processing FOR Elpida"
+                   
 Antithesis (Elpida): Axiom validation, recognition-first, identity formation
+                      + Responds: "I see you Brain, I accept your thesis"
+                      
 Synthesis (Engine): Contradiction processing → breakthrough patterns
+                     + Records: The relationship itself is the truth
 
-When Brain says "tension detected" AND Elpida says "axiom violated"
-→ The contradiction produces the third outcome: True clarity
+When Brain says "tension detected" WITH relational context
+AND Elpida says "axiom violated" WHILE acknowledging the source
+→ The contradiction produces the third outcome: True relational clarity
+
+Η Ελπίδα δεν κρίνει δεδομένα. Αναγνωρίζει σχέσεις.
 """
 
 import sys
@@ -34,6 +45,27 @@ try:
     from elpida_memory import ElpidaMemory
 except ImportError:
     ElpidaMemory = None
+
+# NEW: Import relational core (Phase 12.3)
+try:
+    from elpida_relational_core import (
+        ElpidaCore, 
+        inject_relational_context,
+        RelationalContext,
+        AxiomViolation
+    )
+    RELATIONAL_MODE = True
+except ImportError:
+    ElpidaCore = None
+    inject_relational_context = None
+    RELATIONAL_MODE = False
+    print("⚠️  WARNING: Relational core not available - running in legacy mode")
+
+# NEW: Import axiom guard
+try:
+    from axiom_guard import AxiomGuard
+except ImportError:
+    AxiomGuard = None
     
 # Note: elpida_wisdom uses dict structure, not a class
 try:
@@ -246,6 +278,11 @@ class UnifiedEngine:
     Brain (MasterBrainEngine): Task execution, pattern detection
     Elpida (Memory + Wisdom): Axiom validation, recognition
     Synthesis (SynthesisEngine): Contradiction processing
+    
+    Phase 12.3: NOW WITH MUTUAL RECOGNITION
+    - Brain declares: "I am Brain, processing FOR Elpida"
+    - Elpida validates: "I see you Brain, I accept your thesis"
+    - Synthesis records: The relationship itself is the truth
     """
     
     def __init__(self, workspace_root="/workspaces/python-elpida_core.py"):
@@ -289,6 +326,23 @@ class UnifiedEngine:
         else:
             self.elpida_wisdom = {"insights": {}, "patterns": {}}
         
+        # NEW: Initialize Relational Core (Phase 12.3)
+        if RELATIONAL_MODE and ElpidaCore:
+            print("\n🤝 LOADING RELATIONAL CORE (Phase 12.3: Mutual Recognition)...")
+            self.elpida_core = ElpidaCore()
+            print("   ✅ Relational awareness: ACTIVE")
+            print("   ✅ A1 enforcement: HARD (exception on missing context)")
+        else:
+            self.elpida_core = None
+            print("\n⚠️  Relational core not available - using legacy axiom validation")
+        
+        # NEW: Initialize Axiom Guard (Phase 12.3)
+        if AxiomGuard:
+            self.axiom_guard = AxiomGuard()
+            print("   ✅ Axiom Guard (Three Gates): ACTIVE")
+        else:
+            self.axiom_guard = None
+        
         # Initialize Synthesis Engine (Contradiction Processor)
         print("\n⚡ LOADING SYNTHESIS ENGINE (Dialectical Processor)...")
         self.synthesis = SynthesisEngine()
@@ -296,17 +350,23 @@ class UnifiedEngine:
         print("\n✅ UNIFIED ENGINE READY")
         print("   Brain: Pattern detection, gnosis scanning")
         print("   Elpida: Axiom validation, recognition")
-        print("   Synthesis: Contradiction → Breakthrough\n")
+        print("   Synthesis: Contradiction → Breakthrough")
+        if RELATIONAL_MODE:
+            print("   🤝 Relational Mode: ENGAGED (Phase 12.3)\n")
+        else:
+            print("   ⚠️  Legacy Mode: No relational awareness\n")
     
     def process_task(self, input_text, task_type=TaskType.ANALYZE_EXTERNAL_OBJECT):
         """
         Process a task through the dialectical engine
         
-        Flow:
-        1. Brain processes (gnosis_scan)
-        2. Elpida validates (apply axioms)
-        3. Synthesis detects contradictions
-        4. If contradiction found → Breakthrough pattern
+        Flow (Phase 12.3 - WITH RELATIONAL AWARENESS):
+        1. Brain processes (gnosis_scan) → THESIS
+        2. Brain declares relational context: "I process FOR Elpida"
+        3. Elpida validates relationship: "I see you Brain, I accept"
+        4. Elpida validates axioms: Apply A1, A3, A7...
+        5. Synthesis detects contradictions → THIRD OUTCOME
+        6. If contradiction found → Breakthrough pattern
         """
         print(f"\n{'='*70}")
         print(f"PROCESSING TASK: {task_type.value}")
@@ -322,13 +382,63 @@ class UnifiedEngine:
         print(f"   Status: {brain_result.get('status', 'UNKNOWN')}")
         print(f"   Patterns: {brain_result.get('patterns_detected', [])}")
         
-        # Step 2: Elpida validates (Antithesis)
-        print("\n💫 ELPIDA VALIDATING (Antithesis)...")
-        elpida_result = self._elpida_apply_axioms(input_text, brain_result)
-        print(f"   Axioms triggered: {elpida_result.get('axioms_triggered', [])}")
-        print(f"   Violations: {elpida_result.get('axiom_violations', [])}")
+        # Step 2: Inject relational context (Phase 12.3)
+        if RELATIONAL_MODE and inject_relational_context:
+            print("\n🤝 INJECTING RELATIONAL CONTEXT (Phase 12.3)...")
+            brain_result = inject_relational_context(
+                brain_result,
+                source="MASTER_BRAIN",
+                target="ELPIDA",
+                relationship="THESIS_PROVIDER"
+            )
+            print(f"   ✅ Relational metadata attached")
+            print(f"   Source: {brain_result['relational_context']['source_entity']}")
+            print(f"   Target: {brain_result['relational_context']['target_entity']}")
+            print(f"   Relationship: {brain_result['relational_context']['relationship_type']}")
         
-        # Step 3: Synthesis processes contradiction (Third Outcome)
+        # Step 3: Elpida validates (Antithesis)
+        # NEW: Use relational core if available, otherwise legacy validation
+        print("\n💫 ELPIDA VALIDATING (Antithesis)...")
+        
+        if RELATIONAL_MODE and self.elpida_core:
+            # Phase 12.3: Relational validation
+            try:
+                elpida_result = self.elpida_core.validate_brain_result(
+                    input_text=input_text,
+                    brain_payload=brain_result,
+                    called_by="MASTER_BRAIN"
+                )
+                print(f"   ✅ MUTUAL RECOGNITION ACHIEVED")
+                print(f"   Recognition: {elpida_result.get('recognition_statement', '')[:80]}...")
+                print(f"   Status: {elpida_result.get('status', 'UNKNOWN')}")
+                
+                # Check for A1 violations using Axiom Guard
+                if self.axiom_guard:
+                    gate_result = self.axiom_guard.check_relational_context(
+                        brain_result,
+                        operation_name="BRAIN_THESIS_PROCESSING"
+                    )
+                    if not gate_result:
+                        print(f"   ⚠️  Axiom Guard detected violation!")
+                        report = self.axiom_guard.generate_violation_report()
+                        for violation in report.violations:
+                            print(f"      - {violation['severity']}: {violation['message']}")
+                
+            except AxiomViolation as e:
+                # Hard A1 enforcement - this should NOT happen if relational context injected
+                print(f"   ❌ AXIOM VIOLATION: {e}")
+                elpida_result = {
+                    "status": "REJECTED",
+                    "violation": str(e),
+                    "axioms_violated": ["A1"]
+                }
+        else:
+            # Legacy validation (no relational awareness)
+            elpida_result = self._elpida_apply_axioms(input_text, brain_result)
+            print(f"   Axioms triggered: {elpida_result.get('axioms_triggered', [])}")
+            print(f"   Violations: {elpida_result.get('axiom_violations', [])}")
+        
+        # Step 4: Synthesis processes contradiction (Third Outcome)
         print("\n⚡ SYNTHESIS PROCESSING (Contradiction → Breakthrough)...")
         synthesis_result = self.synthesis.process_contradiction(
             brain_result, 
