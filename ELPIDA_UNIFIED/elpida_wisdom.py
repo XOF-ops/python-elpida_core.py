@@ -32,6 +32,7 @@ class Insight:
     timestamp: str
     conversation_id: str
     context: Optional[str] = None  # Surrounding context
+    source: Optional[str] = None  # Source system (unified, brain, elpida, etc.)
     
     
 @dataclass
@@ -44,6 +45,16 @@ class Pattern:
     first_observed: str
     last_observed: str
     strength: float  # 0.0 to 1.0
+    # Optional fields for unified runtime patterns
+    id: Optional[str] = None
+    name: Optional[str] = None
+    type: Optional[str] = None
+    source: Optional[str] = None
+    timestamp: Optional[str] = None
+    components: Optional[Dict] = None
+    axioms_involved: Optional[List[str]] = None
+    breakthrough: Optional[bool] = None
+    added_at: Optional[str] = None
     
 
 @dataclass
@@ -568,16 +579,49 @@ class ElpidaWisdom:
         with open(corpus_file) as f:
             corpus_data = json.load(f)
         
-        # Load insights
+        # Load insights (handle both original and unified runtime formats)
         for insight_id, data in corpus_data.get('insights', {}).items():
-            self.insights[insight_id] = Insight(**data)
-            self.insights_by_ai[data['ai_name']].append(insight_id)
-            self.insights_by_topic[data['topic']].append(insight_id)
+            # Check if this is a unified runtime format (has 'source' but not 'ai_name')
+            if 'source' in data and 'ai_name' not in data:
+                # Convert unified format to standard Insight format
+                insight = Insight(
+                    ai_name=data.get('source', 'unified'),
+                    topic="runtime_insight",
+                    content=data.get('content', ''),
+                    timestamp=data.get('timestamp', ''),
+                    conversation_id='runtime',
+                    source=data.get('source')
+                )
+            else:
+                # Original format with all fields
+                insight = Insight(**data)
+            
+            self.insights[insight_id] = insight
+            self.insights_by_ai[insight.ai_name].append(insight_id)
+            self.insights_by_topic[insight.topic].append(insight_id)
         
-        # Load patterns
+        # Load patterns (handle both original and synthesis formats)
         for pattern_id, data in corpus_data.get('patterns', {}).items():
-            self.patterns[pattern_id] = Pattern(**data)
-            self.patterns_by_topic[data['topic']].append(pattern_id)
+            # Check if this is a synthesis pattern (has 'components' or 'breakthrough')
+            if 'components' in data or 'breakthrough' in data:
+                # Synthesis pattern - fill in missing required fields
+                pattern = Pattern(
+                    pattern_type=data.get('type', 'synthesis'),
+                    topic=data.get('name', 'synthesis_pattern'),
+                    description=str(data.get('components', {}).get('synthesis', '')),
+                    supporting_insights=[],
+                    first_observed=data.get('timestamp', data.get('added_at', '')),
+                    last_observed=data.get('timestamp', data.get('added_at', '')),
+                    strength=1.0 if data.get('breakthrough') else 0.5,
+                    # Include all synthesis fields
+                    **{k: v for k, v in data.items() if k in ['id', 'name', 'type', 'source', 'timestamp', 'components', 'axioms_involved', 'breakthrough', 'added_at']}
+                )
+            else:
+                # Original pattern format
+                pattern = Pattern(**data)
+            
+            self.patterns[pattern_id] = pattern
+            self.patterns_by_topic[pattern.topic].append(pattern_id)
         
         # Load AI profiles
         for ai_name, data in corpus_data.get('ai_profiles', {}).items():

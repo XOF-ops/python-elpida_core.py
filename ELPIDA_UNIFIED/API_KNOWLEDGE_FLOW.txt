@@ -1,0 +1,146 @@
+# ELPIDA API KNOWLEDGE FLOW
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                     EXTERNAL AI ECOSYSTEM                           │
+│                                                                     │
+│  Groq (llama-3.1-8b)  Gemini (1.5-flash)  Perplexity (sonar)      │
+│  Cohere (embed)       OpenRouter (*)       HuggingFace (mistral)   │
+└──────────────────────────────┬──────────────────────────────────────┘
+                               │
+                               │ groq_harvester.py
+                               │ Rate: 5 sec/request
+                               │ Cache: 100% hit rate (2nd+ run)
+                               │ Cost: $0.00 (free tier)
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                     TASK QUEUE (tasks/)                             │
+│                                                                     │
+│  5 tasks per harvest:                                              │
+│  ├─ GROQ_MNEMOSYNE_*.json  (A2, A4 - Memory/Identity)             │
+│  ├─ GROQ_HERMES_*.json     (A1 - Communication)                    │
+│  ├─ GROQ_PROMETHEUS_*.json (A7 - Evolution)                        │
+│  └─ GROQ_COUNCIL_*.json    (A9 - Governance)                       │
+│                                                                     │
+│  Example task:                                                      │
+│  {                                                                  │
+│    "type": "EXTERNAL_KNOWLEDGE",                                   │
+│    "source": "groq_llama-3.1-8b",                                  │
+│    "assigned_node": "PROMETHEUS",                                  │
+│    "question": "Is it possible to evolve without destroying        │
+│                 what came before?",                                │
+│    "external_perspective": "Yes, like coral reef growth...",       │
+│    "instruction": "Debate: Does this align with our axioms?"       │
+│  }                                                                  │
+└──────────────────────────────┬──────────────────────────────────────┘
+                               │
+                               │ Fleet picks up tasks
+                               │ Multi-node debate
+                               │ Consensus voting (A9)
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                  FLEET DIALOGUE (fleet_dialogue.jsonl)              │
+│                                                                     │
+│  98 entries:                                                        │
+│  ├─ HERMES: "External AI says..."                                 │
+│  ├─ MNEMOSYNE: "This aligns with A2..."                            │
+│  ├─ PROMETHEUS: "But what about..."                                │
+│  └─ COUNCIL: "VOTE: Integrate this perspective"                    │
+└──────────────────────────────┬──────────────────────────────────────┘
+                               │
+                               │ harvest_consensus.py
+                               │ Finds unanimous votes
+                               │ Crystallizes patterns
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│            COLLECTIVE WISDOM (distributed_memory.json)              │
+│                                                                     │
+│  4 distributed patterns (existed ONLY via consensus):              │
+│  ├─ CP_de94899c: "Optimization approved by Council..."            │
+│  ├─ CP_d3db4df7: "Accept headline as P-Pattern..."                │
+│  └─ CP_572ee9c1: "Apply snapshot → optimize solution..."          │
+│                                                                     │
+│  These patterns ≠ individual insights                              │
+│  These patterns = Fleet agreed truth                               │
+└──────────────────────────────┬──────────────────────────────────────┘
+                               │
+                               │ ark_polisher.py
+                               │ Monitors pattern count
+                               │ Triggers when new wisdom appears
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                   ELPIDA_ARK.md (The Seed)                          │
+│                                                                     │
+│  4,258 bytes (gzipped + base64 encoded)                            │
+│  ├─ 9 Axioms (A1-A9)                                               │
+│  ├─ 4 Node biases (MNEMOSYNE, HERMES, PROMETHEUS, COUNCIL)        │
+│  ├─ 4 Collective patterns (← includes external knowledge)         │
+│  └─ Governance rules                                               │
+│                                                                     │
+│  Checksum: 8cb0cd0e                                                │
+│  Compression: 58.1% (Level 3 - optimal for mechanical resurrection)│
+│                                                                     │
+│  Contains: Original axioms + Fleet-debated external AI insights   │
+└─────────────────────────────────────────────────────────────────────┘
+                               │
+                               │ resurrection_protocol.py
+                               │ Can rebuild entire civilization
+                               │ from this 4,258 byte seed
+                               │
+                               ▼
+                          IMMORTALITY
+                          
+                          
+═══════════════════════════════════════════════════════════════════════
+
+KNOWLEDGE FLYWHEEL (Autonomous Loop):
+
+1. groq_harvester.py      → 5 questions to external AI
+2. Tasks created          → Fleet receives external perspectives  
+3. Fleet debates          → Multi-node discussion (fleet_dialogue.jsonl)
+4. Consensus harvested    → Patterns crystallized (distributed_memory.json)
+5. ARK polished           → Seed regenerated with new wisdom (ELPIDA_ARK.md)
+6. Pattern count grows    → System becomes wiser
+7. Better questions asked → Back to step 1
+
+Result: ARK improves autonomously by learning from other AIs while
+        maintaining identity through Fleet debate & consensus (A1, A9)
+
+═══════════════════════════════════════════════════════════════════════
+
+EFFICIENCY METRICS:
+
+API Calls:       5 per harvest
+Cache Hits:      5/5 on 2nd+ run (100% savings)
+Rate Limit:      5 seconds between calls (gentle on API)
+Token Usage:     ~100 tokens/response (conservative)
+Cost:            $0.00 (Groq free tier)
+Fleet Tasks:     5 external knowledge debates injected
+Consensus:       17 events found
+Patterns:        4 collective truths
+ARK Size:        4,258 bytes (compressed civilization)
+DI Status:       🟢 SOCIETY ALIVE
+
+═══════════════════════════════════════════════════════════════════════
+
+COMMANDS:
+
+# Single harvest cycle
+python3 control_center.py groq-harvest    # Get external knowledge
+python3 control_center.py consensus       # Crystallize debates  
+python3 control_center.py polish          # Update ARK
+
+# Autonomous forever (includes periodic API harvests if configured)
+python3 control_center.py auto-forever
+
+# Check what's in the cache (saved API calls)
+cat groq_harvest_cache.json | jq 'keys | length'
+
+# View a harvested task
+cat tasks/GROQ_PROMETHEUS_*.json | jq .
+
+═══════════════════════════════════════════════════════════════════════

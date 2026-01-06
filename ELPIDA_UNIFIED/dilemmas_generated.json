@@ -1,0 +1,2285 @@
+{
+  "dilemmas": [
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260102_225411",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-02T22:54:11.339278"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260102_225420",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-02T22:54:20.015957"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260102_230019",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-02T23:00:19.196465"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260102_230432",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-02T23:04:32.748439"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260102_230713",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-02T23:07:13.785875"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260102_230953",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-02T23:09:53.308566"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260102_231232",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-02T23:12:32.909076"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260102_231510",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-02T23:15:10.247002"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260102_231748",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-02T23:17:48.595046"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260102_232025",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-02T23:20:25.632067"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260102_232303",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-02T23:23:03.871631"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260102_232540",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-02T23:25:40.943974"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260102_232819",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-02T23:28:19.519180"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260102_233058",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-02T23:30:58.396202"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260102_233338",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-02T23:33:38.077048"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260102_233615",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-02T23:36:15.715945"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260102_233854",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-02T23:38:54.137850"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260102_234131",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-02T23:41:31.658560"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260102_234410",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-02T23:44:10.384252"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260102_234647",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-02T23:46:47.564016"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260102_234926",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-02T23:49:26.342863"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260102_235205",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-02T23:52:05.021788"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260102_235443",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-02T23:54:43.581811"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260102_235727",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-02T23:57:27.391563"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260103_000009",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-03T00:00:09.723182"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260103_000247",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-03T00:02:47.072271"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260103_000525",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-03T00:05:25.950923"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260103_000807",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-03T00:08:07.272179"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260103_001044",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-03T00:10:44.738999"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260103_001335",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-03T00:13:35.902684"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260103_001615",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-03T00:16:15.685932"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260103_001854",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-03T00:18:54.196050"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260103_002136",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-03T00:21:36.921085"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260103_002415",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-03T00:24:15.611224"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260103_002656",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-03T00:26:56.896861"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260103_002936",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-03T00:29:36.372986"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260103_003218",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-03T00:32:18.531376"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260103_003455",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-03T00:34:55.817814"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260103_003739",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-03T00:37:39.134018"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260103_004016",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-03T00:40:16.645155"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260103_004258",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-03T00:42:58.668001"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260103_004535",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-03T00:45:35.755276"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260103_004817",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-03T00:48:17.647494"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260103_005054",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-03T00:50:54.903953"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260103_005339",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-03T00:53:39.394239"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260103_005619",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-03T00:56:19.901998"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260103_005858",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-03T00:58:58.154018"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_093908",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T09:39:08.397513"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_094851",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T09:48:51.860325"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_095354",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T09:53:54.012084"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_100105",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T10:01:05.788010"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_100614",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T10:06:14.012968"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_101127",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T10:11:27.108288"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_101837",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T10:18:37.832778"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_102125",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T10:21:25.839751"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_102415",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T10:24:15.707504"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_103019",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T10:30:19.016402"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_103311",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T10:33:11.343875"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_103605",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T10:36:05.599615"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_103900",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T10:39:00.741200"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_104155",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T10:41:55.080970"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_104452",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T10:44:52.272966"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_104749",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T10:47:49.426218"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_105047",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T10:50:47.287480"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_105347",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T10:53:47.068615"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_105719",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T10:57:19.889842"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_110021",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T11:00:21.970008"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_110324",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T11:03:24.469866"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_110627",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T11:06:27.561874"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_110932",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T11:09:32.173003"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_111237",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T11:12:37.635952"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_111546",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T11:15:46.025819"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_111855",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T11:18:55.242314"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_112207",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T11:22:07.674779"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_112524",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T11:25:24.054869"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_112843",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T11:28:43.914194"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_113200",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T11:32:00.037937"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_113521",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T11:35:21.770315"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_113846",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T11:38:46.191107"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_114207",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T11:42:07.793339"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_114526",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T11:45:26.100021"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_114845",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T11:48:45.911339"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_115207",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T11:52:07.926531"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_115528",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T11:55:28.696609"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_115850",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T11:58:50.363435"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_120222",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T12:02:22.832585"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_120600",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T12:06:00.958388"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_120941",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T12:09:41.369287"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_121326",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T12:13:26.983059"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_121711",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T12:17:11.552554"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_122042",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T12:20:42.962486"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_122413",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T12:24:13.220555"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_122750",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T12:27:50.599660"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_123129",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T12:31:29.678823"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_123507",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T12:35:07.495377"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_123857",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T12:38:57.472354"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_124257",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T12:42:57.666471"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_124645",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T12:46:45.859825"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_125053",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T12:50:53.428597"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_125456",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T12:54:56.220782"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_125841",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T12:58:41.506387"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_130606",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T13:06:06.873026"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_130953",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T13:09:53.569990"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_131340",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T13:13:40.250096"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_131729",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T13:17:29.728345"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_132121",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T13:21:21.502715"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_132514",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T13:25:14.584564"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_132909",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T13:29:09.518999"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_133311",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T13:33:11.687010"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_133747",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T13:37:47.730268"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_134158",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T13:41:58.923430"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_134606",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T13:46:06.932323"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_135007",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T13:50:07.275387"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_135516",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T13:55:16.421863"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_140253",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T14:02:53.313894"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_140658",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T14:06:58.436321"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_141119",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T14:11:19.607368"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_141536",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T14:15:36.255630"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_142007",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T14:20:07.459280"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_142440",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T14:24:40.606540"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_142918",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T14:29:18.320668"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_143336",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T14:33:36.055069"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_143722",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T14:37:22.939450"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_144108",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T14:41:08.659898"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_144456",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T14:44:56.443836"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_144844",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T14:48:44.859524"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_145229",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T14:52:29.711491"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_145620",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T14:56:20.963475"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_150012",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T15:00:12.895262"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_150407",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T15:04:07.773501"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_150801",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T15:08:01.396286"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_151155",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T15:11:55.150644"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_151549",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T15:15:49.256805"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_151942",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T15:19:42.133028"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_152332",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T15:23:32.733868"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_152725",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T15:27:25.890396"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_153121",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T15:31:21.763587"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_153520",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T15:35:20.284955"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_153919",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T15:39:19.827756"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_154323",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T15:43:23.513379"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_154729",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T15:47:29.211975"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_155135",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T15:51:35.392628"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_155542",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T15:55:42.311202"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_155951",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T15:59:51.910989"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_160357",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T16:03:57.990635"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_160808",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T16:08:08.284933"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_161219",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T16:12:19.108873"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_161627",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T16:16:27.230889"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_162034",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T16:20:34.190388"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_162442",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T16:24:42.951047"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_162854",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T16:28:54.875115"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_163305",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T16:33:05.368441"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_163717",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T16:37:17.710586"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_164130",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T16:41:30.185376"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_164545",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T16:45:45.851438"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_164959",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T16:49:59.228200"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_165415",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T16:54:15.673225"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_165854",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T16:58:54.744735"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_170328",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T17:03:28.791114"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_170755",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T17:07:55.082745"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_171223",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T17:12:23.458257"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_171704",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T17:17:04.650033"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_172145",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T17:21:45.424172"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_172618",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T17:26:18.907209"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_173055",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T17:30:55.257246"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_173528",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T17:35:28.754218"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_174001",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T17:40:01.825427"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_174439",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T17:44:39.736427"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_174915",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T17:49:15.588083"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_175352",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T17:53:52.424949"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_175831",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T17:58:31.565655"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_180313",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T18:03:13.465271"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_180754",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T18:07:54.309375"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_181236",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T18:12:36.883141"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_181721",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T18:17:21.997132"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_182207",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T18:22:07.929082"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_182654",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T18:26:54.895979"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_183146",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T18:31:46.316153"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_183636",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T18:36:36.697905"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_184126",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T18:41:26.202697"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_184617",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T18:46:17.171735"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_185110",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T18:51:10.091411"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_185601",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T18:56:01.874399"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_190102",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T19:01:02.127251"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_212510",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T21:25:10.868293"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_212822",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T21:28:22.833249"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_213135",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T21:31:35.317861"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_213450",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T21:34:50.027771"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_213806",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T21:38:06.653877"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_214124",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T21:41:24.269873"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_214441",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T21:44:41.183869"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_214755",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T21:47:55.254153"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_215110",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T21:51:10.807821"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_215432",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T21:54:32.574609"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_215752",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T21:57:52.786296"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_220113",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T22:01:13.744504"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_220437",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T22:04:37.234880"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_220802",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T22:08:02.571212"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_221129",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T22:11:29.382246"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_221456",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T22:14:56.235389"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_221821",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T22:18:21.983720"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_222149",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T22:21:49.824771"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_222522",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T22:25:22.162163"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_222848",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T22:28:48.980348"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_223216",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T22:32:16.062544"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_223544",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T22:35:44.994621"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_223916",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T22:39:16.459158"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_224247",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T22:42:47.514581"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_224619",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T22:46:19.448299"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_224951",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T22:49:51.878334"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_225330",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T22:53:30.433844"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_225715",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T22:57:15.015625"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_230055",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T23:00:55.951975"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_230436",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T23:04:36.570164"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_230819",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T23:08:19.043554"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_231202",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T23:12:02.941134"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_231543",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T23:15:43.352106"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_231925",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T23:19:25.290427"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_232306",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T23:23:06.262255"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_232651",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T23:26:51.581024"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_233043",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T23:30:43.354742"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260104_233432",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-04T23:34:32.552125"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_233821",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T23:38:21.685763"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_234211",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T23:42:11.764675"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260104_234609",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-04T23:46:09.225597"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_235003",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T23:50:03.639370"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260104_235400",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-04T23:54:00.392449"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260104_235756",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-04T23:57:56.728164"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_000154",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T00:01:54.869555"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_000559",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T00:05:59.455427"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260105_000957",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-05T00:09:57.450382"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260105_001352",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-05T00:13:52.161321"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260105_001747",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-05T00:17:47.265057"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260105_002150",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-05T00:21:50.378929"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260105_002547",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-05T00:25:47.229555"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260105_002946",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-05T00:29:46.547831"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260105_003345",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-05T00:33:45.995818"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260105_003749",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-05T00:37:49.078824"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260105_004152",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-05T00:41:52.749243"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260105_004557",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-05T00:45:57.739042"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_005004",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T00:50:04.222146"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260105_005411",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-05T00:54:11.255935"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_005821",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T00:58:21.893657"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260105_010238",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-05T01:02:38.844087"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_010658",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T01:06:58.673091"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_011119",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T01:11:19.395248"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_011543",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T01:15:43.988912"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260105_012003",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-05T01:20:03.714898"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260105_012419",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-05T01:24:19.036950"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_012836",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T01:28:36.392471"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_013258",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T01:32:58.488876"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260105_013715",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-05T01:37:15.436237"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_014135",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T01:41:35.740578"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_014556",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T01:45:56.148710"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_015021",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T01:50:21.613712"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260105_015441",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-05T01:54:41.714016"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260105_015905",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-05T01:59:05.807070"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_020328",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T02:03:28.337276"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260105_020755",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-05T02:07:55.622231"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260105_021224",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-05T02:12:24.452904"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260105_021653",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-05T02:16:53.773266"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_022121",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T02:21:21.593686"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_022551",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T02:25:51.793298"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260105_023021",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-05T02:30:21.401905"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_023504",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T02:35:04.178155"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260105_023947",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-05T02:39:47.454550"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260105_024431",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-05T02:44:31.780737"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260105_024919",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-05T02:49:19.131554"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260105_025407",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-05T02:54:07.067567"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260105_025854",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-05T02:58:54.140112"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260105_030332",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-05T03:03:32.220815"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260105_030815",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-05T03:08:15.007508"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260105_031257",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-05T03:12:57.441223"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260105_031738",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-05T03:17:38.147521"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260105_032222",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-05T03:22:22.667215"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260105_032710",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-05T03:27:10.248893"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260105_033154",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-05T03:31:54.721376"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_033640",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T03:36:40.129496"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_034126",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T03:41:26.610726"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260105_034615",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-05T03:46:15.345631"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_035104",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T03:51:04.804324"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_035556",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T03:55:56.006793"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260105_040051",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-05T04:00:51.255845"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260105_040614",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-05T04:06:14.192741"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260105_041117",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-05T04:11:17.644577"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_041612",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T04:16:12.966742"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260105_042109",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-05T04:21:09.023911"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260105_042603",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-05T04:26:03.109861"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_043100",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T04:31:00.371921"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260105_043557",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-05T04:35:57.024732"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_044054",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T04:40:54.339767"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260105_044548",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-05T04:45:48.654741"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_045047",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T04:50:47.643293"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_045547",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T04:55:47.173562"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260105_050050",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-05T05:00:50.236489"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260105_050552",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-05T05:05:52.078165"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_051057",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T05:10:57.028830"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260105_051558",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-05T05:15:58.033945"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_052103",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T05:21:03.446102"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260105_052607",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-05T05:26:07.743261"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260105_053110",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-05T05:31:10.497974"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260105_053619",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-05T05:36:19.019313"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_054128",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T05:41:28.195483"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260105_054640",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-05T05:46:40.105563"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_055149",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T05:51:49.319686"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260105_055704",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-05T05:57:04.293445"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260105_060219",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-05T06:02:19.002249"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260105_060741",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-05T06:07:41.202900"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_061258",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T06:12:58.818676"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260105_061817",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-05T06:18:17.257813"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260105_062337",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-05T06:23:37.985414"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260105_062900",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-05T06:29:00.485720"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260105_063423",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-05T06:34:23.696164"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260105_063946",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-05T06:39:46.871706"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260105_064513",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-05T06:45:13.938781"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260105_065040",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-05T06:50:40.842123"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_065606",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T06:56:06.382818"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260105_070134",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-05T07:01:34.712228"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260105_070709",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-05T07:07:09.604968"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260105_071242",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-05T07:12:42.912372"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260105_071816",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-05T07:18:16.839692"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260105_072352",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-05T07:23:52.459014"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_072933",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T07:29:33.891803"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260105_073512",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-05T07:35:12.158635"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260105_074049",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-05T07:40:49.347770"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_074626",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T07:46:26.799791"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260105_075204",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-05T07:52:04.580804"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260105_075744",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-05T07:57:44.651141"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_080322",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T08:03:22.323337"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260105_080907",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-05T08:09:07.806709"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_081448",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T08:14:48.536056"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260105_082036",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-05T08:20:36.284135"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_082619",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T08:26:19.928568"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260105_083206",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-05T08:32:06.557370"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260105_083751",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-05T08:37:51.702339"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260105_084340",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-05T08:43:40.770887"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260105_084934",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-05T08:49:34.114701"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260105_085525",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-05T08:55:25.043313"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_090115",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T09:01:15.926407"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260105_090709",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-05T09:07:09.009828"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_091300",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T09:13:00.860552"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_091853",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T09:18:53.165108"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260105_143000",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-05T14:30:00.911265"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260105_143456",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-05T14:34:56.882613"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260105_143955",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-05T14:39:55.660416"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_144754",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T14:47:54.298418"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260105_145345",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-05T14:53:45.749366"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260105_150018",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-05T15:00:18.430084"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260105_150612",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-05T15:06:12.379043"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260105_151206",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-05T15:12:06.831477"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_151807",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T15:18:07.485966"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260105_152408",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-05T15:24:08.274947"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_153007",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T15:30:07.409370"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260105_153557",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-05T15:35:57.006479"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260105_154149",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-05T15:41:49.379976"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260105_154749",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-05T15:47:49.588744"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_155350",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T15:53:50.278685"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260105_155956",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-05T15:59:56.055081"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260105_160607",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-05T16:06:07.751580"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260105_161216",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-05T16:12:16.914546"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260105_161821",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-05T16:18:21.392931"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260105_162417",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-05T16:24:17.964686"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260105_182342",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-05T18:23:42.809729"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260105_182953",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-05T18:29:53.660464"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260105_183605",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-05T18:36:05.773503"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260105_184215",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-05T18:42:15.391984"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260105_184816",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-05T18:48:16.954517"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260106_033652",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-06T03:36:52.096241"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260106_034440",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-06T03:44:40.655987"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260106_035141",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-06T03:51:41.142537"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260106_035756",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-06T03:57:56.482571"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260106_040405",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-06T04:04:05.611227"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260106_041016",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-06T04:10:16.105769"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260106_041626",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-06T04:16:26.686952"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260106_042245",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-06T04:22:45.007034"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260106_042857",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-06T04:28:57.137319"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260106_043513",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-06T04:35:13.907975"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260106_044147",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-06T04:41:47.883385"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260106_044826",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-06T04:48:26.070074"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260106_045505",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-06T04:55:05.384115"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260106_050133",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-06T05:01:33.816868"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260106_050804",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-06T05:08:04.044429"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260106_051428",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-06T05:14:28.841277"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260106_052058",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-06T05:20:58.475003"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260106_052740",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-06T05:27:40.287955"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260106_053429",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-06T05:34:29.223735"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260106_054118",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-06T05:41:18.747119"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260106_054757",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-06T05:47:57.217467"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260106_055434",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-06T05:54:34.391654"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260106_060110",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-06T06:01:10.927236"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260106_060746",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-06T06:07:46.756502"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260106_061428",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-06T06:14:28.918945"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260106_062109",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-06T06:21:09.019355"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260106_062751",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-06T06:27:51.962432"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260106_063442",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-06T06:34:42.419299"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260106_064125",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-06T06:41:25.365298"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260106_064814",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-06T06:48:14.174843"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260106_065501",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-06T06:55:01.655927"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260106_070154",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-06T07:01:54.355351"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260106_070848",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-06T07:08:48.605596"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260106_071541",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-06T07:15:41.757389"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260106_072302",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-06T07:23:02.859052"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260106_073017",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-06T07:30:17.092174"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260106_073734",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-06T07:37:34.562295"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260106_074431",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-06T07:44:31.742414"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260106_075133",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-06T07:51:33.238097"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260106_075838",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-06T07:58:38.926968"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260106_080541",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-06T08:05:41.024042"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260106_081248",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-06T08:12:48.229280"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260106_082000",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-06T08:20:00.272955"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260106_082732",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-06T08:27:32.844530"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260106_083459",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-06T08:34:59.948423"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260106_084226",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-06T08:42:26.234132"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260106_084958",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-06T08:49:58.840338"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260106_085714",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-06T08:57:14.826211"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260106_090440",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-06T09:04:40.954410"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260106_091216",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-06T09:12:16.621851"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260106_091952",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-06T09:19:52.726456"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260106_092733",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-06T09:27:33.657743"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260106_093516",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-06T09:35:16.008625"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260106_094300",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-06T09:43:00.768263"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260106_095046",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-06T09:50:46.388293"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260106_095831",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-06T09:58:31.461721"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260106_100620",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-06T10:06:20.365024"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260106_101405",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-06T10:14:05.625113"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260106_102158",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-06T10:21:58.579982"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260106_102930",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-06T10:29:30.177771"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260106_103715",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-06T10:37:15.093472"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260106_104515",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-06T10:45:15.585584"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260106_105318",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-06T10:53:18.359095"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260106_110103",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-06T11:01:03.822188"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260106_110842",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-06T11:08:42.526576"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260106_111635",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-06T11:16:35.651536"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260106_112442",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-06T11:24:42.848045"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260106_113256",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-06T11:32:56.927197"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260106_114124",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-06T11:41:24.611997"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260106_114948",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-06T11:49:48.286110"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260106_115813",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-06T11:58:13.741012"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260106_120634",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-06T12:06:34.289581"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260106_121428",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-06T12:14:28.744138"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260106_122222",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-06T12:22:22.809713"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260106_123125",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-06T12:31:25.255683"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260106_124013",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-06T12:40:13.135662"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260106_124913",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-06T12:49:13.849699"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260106_125804",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-06T12:58:04.376843"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260106_130701",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-06T13:07:01.564498"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260106_131557",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-06T13:15:57.616878"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260106_132502",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-06T13:25:02.101509"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260106_133357",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-06T13:33:57.723594"
+    },
+    {
+      "id": "DILEMMA_STABILITY_VS_EVOLUTION_20260106_134230",
+      "type": "STABILITY_VS_EVOLUTION",
+      "timestamp": "2026-01-06T13:42:30.161828"
+    },
+    {
+      "id": "DILEMMA_EFFICIENCY_VS_INTEGRITY_20260106_135105",
+      "type": "EFFICIENCY_VS_INTEGRITY",
+      "timestamp": "2026-01-06T13:51:05.774908"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260106_135953",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-06T13:59:53.361780"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260106_140848",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-06T14:08:48.434894"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260106_141723",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-06T14:17:23.704848"
+    },
+    {
+      "id": "DILEMMA_SPEED_VS_REFLECTION_20260106_142719",
+      "type": "SPEED_VS_REFLECTION",
+      "timestamp": "2026-01-06T14:27:19.217155"
+    },
+    {
+      "id": "DILEMMA_META_STRUCTURAL_20260106_143714",
+      "type": "META_STRUCTURAL",
+      "timestamp": "2026-01-06T14:37:14.416364"
+    }
+  ],
+  "count": 456
+}

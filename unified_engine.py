@@ -104,6 +104,7 @@ class SynthesisEngine:
         2. PATTERN_RECOGNITION_GAP: Brain creates pattern, Elpida doesn't recognize
         3. MEMORY_DIVERGENCE: Brain (Postgres) vs Elpida (JSON) disagree
         4. AUTHORITY_DISPUTE: Brain says "execute", Elpida says "refuse"
+        5. AXIOM_PERSPECTIVE_DIFFERENCE: Different axioms triggered shows different interpretations
         """
         conflicts = []
         
@@ -131,6 +132,27 @@ class SynthesisEngine:
                     "timestamp": datetime.now().isoformat(),
                     "insight": "Brain sees structure, Elpida sees axiom. Both needed for pattern."
                 })
+        
+        # Type 5: NEW - Axiom perspective differences create synthesis opportunities
+        # Even without violations, different axioms being triggered shows different interpretations
+        elpida_axioms = set(elpida_output.get("axioms_triggered", []))
+        if elpida_axioms and brain_output.get("status"):
+            # If Elpida sees relational aspects (A1) Brain might not recognize
+            # This difference in perspective IS the synthesis material
+            conflicts.append({
+                "type": "AXIOM_PERSPECTIVE_DIFFERENCE",
+                "brain_perspective": {
+                    "status": brain_output.get("status"),
+                    "focus": "Execution layer patterns"
+                },
+                "elpida_perspective": {
+                    "axioms": list(elpida_axioms),
+                    "focus": "Relational and ethical validation"
+                },
+                "synthesis_opportunity": "MEDIUM",
+                "timestamp": datetime.now().isoformat(),
+                "insight": f"Brain processed task technically, Elpida saw {len(elpida_axioms)} axiom dimensions. Synthesis: Multi-layered interpretation."
+            })
         
         # Type 2: Brain crystallized, Elpida didn't recognize
         if "pattern_match" in brain_output and not elpida_output.get("pattern_recognized"):
@@ -180,6 +202,29 @@ class SynthesisEngine:
                 },
                 "axioms_involved": self._extract_axioms(contradiction),
                 "breakthrough": True
+            }
+            
+            return pattern
+        
+        elif contradiction["type"] == "AXIOM_PERSPECTIVE_DIFFERENCE":
+            # Brain: Technical execution
+            # Elpida: Ethical/relational validation
+            # Synthesis: Integrated interpretation showing both layers
+            
+            pattern = {
+                "id": pattern_id,
+                "name": "Multi-Perspective Synthesis",
+                "type": "PERSPECTIVE_INTEGRATION",
+                "source": "DIALECTICAL_SYNTHESIS",
+                "timestamp": datetime.now().isoformat(),
+                "components": {
+                    "thesis": contradiction["brain_perspective"],
+                    "antithesis": contradiction["elpida_perspective"],
+                    "synthesis": f"Task processed at {contradiction['brain_perspective']['focus']} AND validated through {', '.join(contradiction['elpida_perspective']['axioms'])} axioms. Neither view alone is complete."
+                },
+                "axioms_involved": contradiction["elpida_perspective"]["axioms"],
+                "breakthrough": True,
+                "insight": contradiction["insight"]
             }
             
             return pattern

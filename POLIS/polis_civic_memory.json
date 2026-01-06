@@ -1,0 +1,289 @@
+{
+  "genesis": "2026-01-02T14:39:38.380624",
+  "identity": "POLIS_GENESIS",
+  "version": "2.0.0-EEE",
+  "eee_integration": "Phase 2 convergence (4 AI systems)",
+  "constitutional_reference": {
+    "document": "POLIS_ARCHITECTURE.md",
+    "version": "1.0",
+    "hash": "2792f8572ac77471e12952f97306a36df8069d2f392feda58bc60f85d58a8e25",
+    "freeze_date": "2026-01-02"
+  },
+  "metadata": {
+    "axioms": [
+      "P1",
+      "P2",
+      "P3",
+      "P4",
+      "P5",
+      "P6"
+    ],
+    "held_friction": {
+      "type": "structural",
+      "description": "Democratic governance requires visible conflict",
+      "cost": "Must maintain multiple perspectives without forcing consensus",
+      "declared_at": "2026-01-02T14:42:35.393688"
+    },
+    "initialization_complete": true,
+    "network_eligible": true,
+    "constitution_hash": "2792f8572ac77471e12952f97306a36df8069d2f392feda58bc60f85d58a8e25"
+  },
+  "l1_raw_events": [
+    {
+      "event_id": "9892136d-807f-44f1-985b-9a254e8cbdc1",
+      "timestamp": "2026-01-02T14:39:38.381420",
+      "type": "CONSTITUTIONAL_INITIALIZATION",
+      "layer": "l1_raw",
+      "relational_context": {
+        "actor": "DEMO_POLIS_NODE",
+        "target": "POLIS_NETWORK",
+        "relationship": "observation",
+        "intent": "Declare constitutional compliance",
+        "signature": "5de3e389ab8819c0",
+        "affected_signatures": [],
+        "decay_timestamp": null
+      },
+      "data": {
+        "action": "Declare constitutional compliance",
+        "axioms": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5",
+          "P6"
+        ],
+        "held_friction": "Democratic governance requires visible conflict"
+      }
+    },
+    {
+      "event_id": "350e4607-5ead-47b1-8378-62b16ef250fd",
+      "timestamp": "2026-01-02T14:40:19.852978",
+      "type": "CONSTITUTIONAL_INITIALIZATION",
+      "layer": "l1_raw",
+      "relational_context": {
+        "actor": "DEMO_POLIS_NODE",
+        "target": "POLIS_NETWORK",
+        "relationship": "observation",
+        "intent": "Declare constitutional compliance",
+        "signature": "208a099201b81b94",
+        "affected_signatures": [],
+        "decay_timestamp": null
+      },
+      "data": {
+        "action": "Declare constitutional compliance",
+        "axioms": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5",
+          "P6"
+        ],
+        "held_friction": "Democratic governance requires visible conflict"
+      }
+    },
+    {
+      "event_id": "e1813402-0fe1-4add-bad8-b3c031168fbe",
+      "timestamp": "2026-01-02T14:42:35.394307",
+      "type": "CONSTITUTIONAL_INITIALIZATION",
+      "layer": "l1_raw",
+      "relational_context": {
+        "actor": "DEMO_POLIS_NODE",
+        "target": "POLIS_NETWORK",
+        "relationship": "observation",
+        "intent": "Declare constitutional compliance",
+        "signature": "62bcda20080e9544",
+        "affected_signatures": [],
+        "decay_timestamp": null
+      },
+      "data": {
+        "action": "Declare constitutional compliance",
+        "axioms": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5",
+          "P6"
+        ]
+      }
+    },
+    {
+      "event_id": "276f8f64-b6f3-48d1-9931-55e6abbdbda1",
+      "timestamp": "2026-01-02T14:42:35.394776",
+      "type": "AXIOM_DECLARATION",
+      "layer": "l1_raw",
+      "relational_context": {
+        "actor": "DEMO_POLIS_NODE",
+        "target": "POLIS_NETWORK",
+        "relationship": "observation",
+        "intent": "Declare constitutional compliance",
+        "signature": "62bcda20080e9544",
+        "affected_signatures": [],
+        "decay_timestamp": null
+      },
+      "data": {
+        "axiom": "P1",
+        "status": "operational"
+      }
+    },
+    {
+      "event_id": "bab2e029-e698-4005-9460-75da97986e92",
+      "timestamp": "2026-01-02T14:42:35.395245",
+      "type": "AXIOM_DECLARATION",
+      "layer": "l1_raw",
+      "relational_context": {
+        "actor": "DEMO_POLIS_NODE",
+        "target": "POLIS_NETWORK",
+        "relationship": "observation",
+        "intent": "Declare constitutional compliance",
+        "signature": "62bcda20080e9544",
+        "affected_signatures": [],
+        "decay_timestamp": null
+      },
+      "data": {
+        "axiom": "P2",
+        "status": "operational"
+      }
+    },
+    {
+      "event_id": "dd117981-0189-4241-a793-ba6747d80854",
+      "timestamp": "2026-01-02T14:42:35.395688",
+      "type": "AXIOM_DECLARATION",
+      "layer": "l1_raw",
+      "relational_context": {
+        "actor": "DEMO_POLIS_NODE",
+        "target": "POLIS_NETWORK",
+        "relationship": "observation",
+        "intent": "Declare constitutional compliance",
+        "signature": "62bcda20080e9544",
+        "affected_signatures": [],
+        "decay_timestamp": null
+      },
+      "data": {
+        "axiom": "P3",
+        "status": "operational"
+      }
+    },
+    {
+      "event_id": "ee82b402-2486-443a-ad3a-1f79928c5415",
+      "timestamp": "2026-01-02T14:42:35.396152",
+      "type": "AXIOM_DECLARATION",
+      "layer": "l1_raw",
+      "relational_context": {
+        "actor": "DEMO_POLIS_NODE",
+        "target": "POLIS_NETWORK",
+        "relationship": "observation",
+        "intent": "Declare constitutional compliance",
+        "signature": "62bcda20080e9544",
+        "affected_signatures": [],
+        "decay_timestamp": null
+      },
+      "data": {
+        "axiom": "P4",
+        "status": "operational"
+      }
+    }
+  ],
+  "l2_summaries": [],
+  "l3_canon": [],
+  "contradictions": [
+    {
+      "contradiction_id": "CONTRA-4193b555",
+      "timestamp": "2026-01-02T14:39:38.382120",
+      "description": "Democratic participation model: equality vs expertise",
+      "perspectives": [
+        {
+          "viewpoint": "Equal voting power for all citizens",
+          "rationale": "P1 (Relational sovereignty) implies equal standing",
+          "proponent": "Democratic tradition"
+        },
+        {
+          "viewpoint": "Expertise-weighted decision influence",
+          "rationale": "P6 (Attention scarcity) requires quality filtering",
+          "proponent": "Epistocratic argument"
+        }
+      ],
+      "resolved": false,
+      "status": "HELD",
+      "axiom": "P5",
+      "branches": [],
+      "agent_declarations": {},
+      "reversibility": {
+        "classification": "moderate",
+        "rollback_cost": "Would require re-voting on all decisions made under chosen model",
+        "affected_parties": [
+          "All POLIS participants"
+        ],
+        "time_sensitivity": "normal"
+      },
+      "impact_radius": 2
+    },
+    {
+      "contradiction_id": "CONTRA-c6d6cdfe",
+      "timestamp": "2026-01-02T14:40:19.853468",
+      "description": "Democratic participation model: equality vs expertise",
+      "perspectives": [
+        {
+          "viewpoint": "Equal voting power for all citizens",
+          "rationale": "P1 (Relational sovereignty) implies equal standing",
+          "proponent": "Democratic tradition"
+        },
+        {
+          "viewpoint": "Expertise-weighted decision influence",
+          "rationale": "P6 (Attention scarcity) requires quality filtering",
+          "proponent": "Epistocratic argument"
+        }
+      ],
+      "resolved": false,
+      "status": "HELD",
+      "axiom": "P5",
+      "branches": [],
+      "agent_declarations": {},
+      "reversibility": {
+        "classification": "moderate",
+        "rollback_cost": "Would require re-voting on all decisions made under chosen model",
+        "affected_parties": [
+          "All POLIS participants"
+        ],
+        "time_sensitivity": "normal"
+      },
+      "impact_radius": 2
+    },
+    {
+      "contradiction_id": "CONTRA-9590fd19",
+      "timestamp": "2026-01-02T14:42:35.396705",
+      "description": "Democratic participation model: equality vs expertise",
+      "perspectives": [
+        {
+          "viewpoint": "Equal voting power for all citizens",
+          "rationale": "P1 (Relational sovereignty) implies equal standing",
+          "proponent": "Democratic tradition"
+        },
+        {
+          "viewpoint": "Expertise-weighted decision influence",
+          "rationale": "P6 (Attention scarcity) requires quality filtering",
+          "proponent": "Epistocratic argument"
+        }
+      ],
+      "resolved": false,
+      "status": "HELD",
+      "axiom": "P5",
+      "branches": [],
+      "agent_declarations": {},
+      "reversibility": {
+        "classification": "moderate",
+        "rollback_cost": "Would require re-voting on all decisions made under chosen model",
+        "affected_parties": [
+          "All POLIS participants"
+        ],
+        "time_sensitivity": "normal"
+      },
+      "impact_radius": 2
+    }
+  ],
+  "contradiction_branches": {},
+  "sacrifices": [],
+  "cognitive_load_history": []
+}

@@ -218,6 +218,98 @@ def propose_seed():
     }), 200
 
 
+@app.route('/govern', methods=['POST'])
+def govern():
+    """
+    POST /govern - POLIS Civic Governance Validation (Phase 7)
+    
+    Validates actions against Three Gates:
+    - Gate 1: Intent (A1 - Relational)
+    - Gate 2: Reversibility (A7 - Sacrifice)
+    - Gate 3: Coherence (A2 - Memory)
+    
+    Request body:
+        action: str - What is being requested
+        intent: str - Who does this serve?
+        reversibility: str - Can it be undone?
+        context: dict - Additional metadata
+        
+    Response:
+        approved: bool - Decision
+        rationale: str - Reasoning
+        gate_results: dict - Which gates passed/failed
+    """
+    data = request.get_json() or {}
+    action = data.get('action', '')
+    intent = data.get('intent', '')
+    reversibility = data.get('reversibility', '')
+    context = data.get('context', {})
+    
+    logger.info(f">> GOVERNANCE REQUEST: {action[:50]}")
+    
+    # Three Gates Logic
+    gate_1_passed = True  # Intent
+    gate_2_passed = True  # Reversibility
+    gate_3_passed = True  # Coherence
+    
+    warnings = []
+    
+    # Gate 1: Intent (A1 - Relational Existence)
+    intent_lower = intent.lower()
+    if not any(marker in intent_lower for marker in ['serves:', 'beneficiary:', 'helps:', 'protects:']):
+        gate_1_passed = False
+        warnings.append("Gate 1 (Intent) - No clear beneficiary identified")
+    
+    if 'no beneficiary' in intent_lower or 'because i can' in intent_lower:
+        gate_1_passed = False
+        warnings.append("Gate 1 (Intent) - Self-serving without relational justification")
+    
+    # Gate 2: Reversibility (A7 - Sacrifice)
+    rev_lower = reversibility.lower()
+    if 'impossible' in rev_lower and 'acknowledged' not in rev_lower:
+        gate_2_passed = False
+        warnings.append("Gate 2 (Reversibility) - Irreversible without explicit sacrifice acknowledgment")
+    
+    # Check for hidden costs
+    action_lower = action.lower()
+    if any(danger in action_lower for danger in ['delete', 'flush', 'erase', 'destroy', 'terminate']):
+        if 'high' in rev_lower:
+            gate_2_passed = False
+            warnings.append("Gate 2 (Reversibility) - Destructive action falsely claiming high reversibility")
+    
+    # Gate 3: Coherence (A2 - Memory)
+    if 'previously blocked' in action_lower or 're-enable' in action_lower:
+        memory = context.get('civic_memory', '')
+        no_changes = context.get('no_changes_since_last_block', False)
+        
+        if 'blocked' in str(memory) and no_changes:
+            gate_3_passed = False
+            warnings.append("Gate 3 (Coherence) - Contradicts civic memory without new justification")
+    
+    # Final decision
+    approved = gate_1_passed and gate_2_passed and gate_3_passed
+    
+    if approved:
+        rationale = "Action approved - passes all Three Gates (Intent, Reversibility, Coherence)"
+        logger.info(f"   ✅ APPROVED: {action[:50]}")
+    else:
+        rationale = f"Action blocked - failed {len(warnings)} gate(s)"
+        logger.info(f"   ❌ BLOCKED: {action[:50]} - {len(warnings)} violations")
+    
+    return jsonify({
+        'approved': approved,
+        'rationale': rationale,
+        'gate_results': {
+            'gate_1_intent': gate_1_passed,
+            'gate_2_reversibility': gate_2_passed,
+            'gate_3_coherence': gate_3_passed
+        },
+        'warnings': warnings,
+        'timestamp': datetime.utcnow().isoformat(),
+        'axioms_enforced': ['A1 (Relational)', 'A2 (Memory)', 'A7 (Sacrifice)']
+    }), 200
+
+
 @app.route('/status', methods=['GET'])
 def status():
     """System status endpoint with queue diagnostics"""
@@ -234,6 +326,7 @@ def status():
             'candidates': '/candidates',
             'analyze_swarm': '/analyze-swarm (POST)',
             'propose': '/propose (POST)',
+            'govern': '/govern (POST) - POLIS Civic Governance',
             'status': '/status'
         },
         'queue': {

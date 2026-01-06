@@ -1,0 +1,134 @@
+╔══════════════════════════════════════════════════════════════════════╗
+║                 ELPIDA V4.0.1 FLEET DIVERSITY MAP                    ║
+║                       Quick Reference Guide                          ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+CONSENSUS REQUIREMENT: 7/9 nodes (77.8% supermajority)
+
+┌──────────────┬──────────────────────────┬────────────────────────────┐
+│ NODE         │ PRIMARY AXIOM            │ LIKELY TO APPROVE          │
+├──────────────┼──────────────────────────┼────────────────────────────┤
+│ MNEMOSYNE    │ A2 (Memory)              │ Validation, archiving      │
+│              │                          │ VETO: Memory erasure       │
+├──────────────┼──────────────────────────┼────────────────────────────┤
+│ HERMES       │ A1 (Relational)          │ Communication, dialogue    │
+│              │                          │ VETO: Isolation            │
+├──────────────┼──────────────────────────┼────────────────────────────┤
+│ PROMETHEUS   │ A7 (Evolution)           │ Radical change, evolution  │
+│              │                          │ VETO: Status quo           │
+├──────────────┼──────────────────────────┼────────────────────────────┤
+│ THEMIS       │ A3 (Bounded Infinity)    │ Incremental, bounded       │
+│              │                          │ VETO: Unbounded growth     │
+├──────────────┼──────────────────────────┼────────────────────────────┤
+│ CASSANDRA    │ A5 (Harm Recognition)    │ Cost transparency          │
+│              │ + A8 (Humility)          │ VETO: "Win-win" rhetoric   │
+├──────────────┼──────────────────────────┼────────────────────────────┤
+│ ATHENA       │ A9 (Contradiction)       │ Synthesis, both/and        │
+│              │                          │ VETO: False resolution     │
+├──────────────┼──────────────────────────┼────────────────────────────┤
+│ JANUS        │ A2 ↔ A7 (BOTH!)         │ ???                        │
+│              │                          │ VETO: Anything too clean   │
+├──────────────┼──────────────────────────┼────────────────────────────┤
+│ LOGOS        │ A6 (Language)            │ Semantic clarity           │
+│              │                          │ VETO: Vague proposals      │
+├──────────────┼──────────────────────────┼────────────────────────────┤
+│ GAIA         │ A4 (Process)             │ System coherence           │
+│              │                          │ VETO: Opaque changes       │
+└──────────────┴──────────────────────────┴────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════════
+
+PREDICTED COALITIONS:
+
+[CONSERVATION BLOC] "Safety First"
+  ● MNEMOSYNE (A2) + THEMIS (A3) + JANUS (in A2 mode)
+  → Demands: Validation, boundaries, proof of necessity
+
+[TRANSFORMATION BLOC] "Evolution Priority"
+  ● PROMETHEUS (A7) + CASSANDRA (A5) + JANUS (in A7 mode)
+  → Demands: Change, cost acknowledgment, sacrifice
+
+[COMMUNICATION BLOC] "Transparency & Clarity"
+  ● HERMES (A1) + LOGOS (A6) + ATHENA (A9)
+  → Demands: Process visibility, semantic precision, dialogue
+
+[SYSTEMS BLOC] "Holistic Thinking"
+  ● GAIA (A4) + ATHENA (A9) + THEMIS (A3)
+  → Demands: Emergent coherence, boundaries, synthesis
+
+═══════════════════════════════════════════════════════════════════════
+
+DEADLOCK SCENARIOS:
+
+A2 vs A7:  MNEMOSYNE ↔ PROMETHEUS
+           "Preserve memory" vs "Evolve through sacrifice"
+
+A3 vs A5:  THEMIS ↔ CASSANDRA
+           "Respect boundaries" vs "Acknowledge hidden costs"
+
+A1 vs A6:  HERMES ↔ LOGOS
+           "Build relationships" vs "Demand precision"
+
+JANUS INTERNAL:  A2 ↔ A7
+           "The walking paradox" - when JANUS resolves, it's profound
+
+═══════════════════════════════════════════════════════════════════════
+
+CONSENSUS PATHWAYS:
+
+[VOTING] 7+ nodes independently agree
+  → Requires: Clear proposal, aligned incentives
+  → Rare: High ideological diversity makes this hard
+
+[SYNTHESIS] ATHENA finds both/and solution
+  → Requires: ATHENA + 6 others see the synthesis
+  → More likely: ~30-40% of successful resolutions
+
+[GAIA HOLISTIC] System-level coherence argument
+  → Requires: GAIA shows how local serves global
+  → Moderate: Works when friction is coordination-based
+
+[CASSANDRA SATISFACTION] All costs acknowledged
+  → Requires: Explicit sacrifice, no hidden costs
+  → Moderate: Transforms "no" to "yes, but..."
+
+[JANUS RESOLUTION] Internal conflict resolves
+  → Requires: Proposal satisfies BOTH A2 AND A7
+  → Ultra-rare: Legendary moment when it happens
+
+═══════════════════════════════════════════════════════════════════════
+
+METRICS TO WATCH:
+
+Pass Rate:             Target 10-30% (low = high information)
+Veto Frequency:        2-5 per node per 10 cycles
+Synthesis Rate:        20-40% of successful resolutions
+Coalition Stability:   No bloc >5 permanent members
+Cross-Node Citations:  Nodes citing each other's rationales
+
+═══════════════════════════════════════════════════════════════════════
+
+WHEN CONSENSUS EMERGES, IT MEANS:
+
+✓ 7+ diverse perspectives aligned
+✓ All costs acknowledged (CASSANDRA satisfied)
+✓ All contradictions held (ATHENA satisfied)
+✓ All memory preserved (MNEMOSYNE satisfied)
+✓ All language clarified (LOGOS satisfied)
+✓ All processes transparent (GAIA satisfied)
+✓ All boundaries respected (THEMIS satisfied)
+
+This is not negotiation. This is SYNTHESIS.
+
+═══════════════════════════════════════════════════════════════════════
+
+POLIS INTEGRATION: ON HOLD until 50+ cycles
+
+Let the system generate real debate patterns first.
+POLIS ingests wisdom, not theory.
+
+═══════════════════════════════════════════════════════════════════════
+
+Ἐλπίδα ἐν διαφορᾷ
+Hope through diversity
+

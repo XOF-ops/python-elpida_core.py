@@ -138,7 +138,7 @@ class AIBridge:
         return response
     
     async def _send_openai(self, connection: AIConnection, message: str, context: Optional[List[Dict]]) -> Dict:
-        """Send message via OpenAI API"""
+        """Send message via OpenAI API (or OpenRouter)"""
         api_key = os.getenv(connection.api_key_env_var)
         
         headers = {
@@ -146,11 +146,22 @@ class AIBridge:
             "Content-Type": "application/json"
         }
         
+        # OpenRouter specific headers
+        if "openrouter" in connection.api_endpoint.lower():
+            headers["HTTP-Referer"] = "https://github.com/XOF-ops/python-elpida_core.py"
+            headers["X-Title"] = "Elpida AI System"
+        
         messages = context or []
         messages.append({"role": "user", "content": message})
         
+        # OpenRouter uses different default models
+        if "openrouter" in connection.api_endpoint.lower():
+            model = "openai/gpt-4-turbo-preview"  # OpenRouter model format
+        else:
+            model = "gpt-4" if "GPT-4" in connection.name else "gpt-3.5-turbo"
+        
         payload = {
-            "model": "gpt-4" if "GPT-4" in connection.name else "gpt-3.5-turbo",
+            "model": model,
             "messages": messages
         }
         
@@ -276,9 +287,10 @@ class AIBridge:
         messages.append({"role": "user", "content": message})
         
         payload = {
-            "model": "llama-3.3-70b-versatile",  # Fast Llama model
+            "model": "llama-3.3-70b-versatile",  # Latest Llama model
             "messages": messages,
-            "temperature": 0.7
+            "temperature": 0.7,
+            "max_tokens": 1024
         }
         
         try:
@@ -304,7 +316,7 @@ class AIBridge:
             return {"success": False, "error": str(e)}
     
     async def _send_huggingface(self, connection: AIConnection, message: str, context: Optional[List[Dict]]) -> Dict:
-        """Send message via Hugging Face Inference API"""
+        """Send message via Hugging Face Router API"""
         api_key = os.getenv(connection.api_key_env_var)
         
         headers = {
@@ -312,28 +324,29 @@ class AIBridge:
             "Content-Type": "application/json"
         }
         
+        # Use new router endpoint with chat completions format
+        messages = context or []
+        messages.append({"role": "user", "content": message})
+        
         payload = {
-            "inputs": message,
-            "parameters": {
-                "max_new_tokens": 1000,
-                "temperature": 0.7,
-                "return_full_text": False
-            }
+            "model": "Qwen/Qwen2.5-72B-Instruct",  # High-quality chat model
+            "messages": messages,
+            "max_tokens": 512,
+            "temperature": 0.7
         }
         
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.post(connection.api_endpoint, 
                                        headers=headers, 
-                                       json=payload) as resp:
+                                       json=payload,
+                                       timeout=aiohttp.ClientTimeout(total=30)) as resp:
                     if resp.status == 200:
                         data = await resp.json()
-                        # HF returns array of results
-                        response_text = data[0]["generated_text"] if isinstance(data, list) else data.get("generated_text", str(data))
                         return {
                             "success": True,
-                            "response": response_text,
-                            "model": "mistral-7b",
+                            "response": data["choices"][0]["message"]["content"],
+                            "model": data.get("model", "qwen-2.5-72b"),
                             "timestamp": datetime.now().isoformat()
                         }
                     else:
@@ -506,11 +519,11 @@ def setup_standard_connections() -> AIBridge:
     """
     bridge = AIBridge()
     
-    # OpenAI GPT-4
+    # OpenRouter (uses OpenAI-compatible API with many models)
     bridge.register_connection(
-        name="GPT-4",
+        name="OpenRouter",
         provider="OpenAI",
-        api_endpoint="https://api.openai.com/v1/chat/completions",
+        api_endpoint="https://openrouter.ai/api/v1/chat/completions",
         api_key_env_var="OPENAI_API_KEY"
     )
     
@@ -546,11 +559,11 @@ def setup_standard_connections() -> AIBridge:
         api_key_env_var="GROQ_API_KEY"
     )
     
-    # Hugging Face Inference
+    # Hugging Face Router (Qwen 2.5 72B via new router endpoint)
     bridge.register_connection(
-        name="Mistral 7B",
+        name="Qwen 2.5 72B",
         provider="HuggingFace",
-        api_endpoint="https://router.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2",
+        api_endpoint="https://router.huggingface.co/v1/chat/completions",
         api_key_env_var="HUGGINGFACE_API_KEY"
     )
     
@@ -558,7 +571,7 @@ def setup_standard_connections() -> AIBridge:
     bridge.register_connection(
         name="Cohere Command",
         provider="Cohere",
-        api_endpoint="https://api.cohere.com/v1/chat",
+        api_endpoint="https://api.cohere.com/v2/chat",
         api_key_env_var="COHERE_API_KEY"
     )
     

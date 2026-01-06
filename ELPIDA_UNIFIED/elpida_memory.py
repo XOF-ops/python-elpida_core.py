@@ -53,14 +53,25 @@ class ElpidaMemory:
             "data": data
         }
         
-        with open(self.storage_path, 'r+') as f:
-            memory = json.load(f)
+        try:
+            # Read current memory
+            with open(self.storage_path, 'r') as f:
+                memory = json.load(f)
+            
+            # Update memory
             memory["events"].append(entry)
             memory["metadata"]["total_events"] += 1
             
-            f.seek(0)
-            json.dump(memory, f, indent=2)
-            f.truncate()
+            # Write atomically
+            import tempfile
+            import os
+            temp_fd, temp_path = tempfile.mkstemp(dir=os.path.dirname(self.storage_path))
+            with os.fdopen(temp_fd, 'w') as f:
+                json.dump(memory, f, indent=2)
+            os.replace(temp_path, self.storage_path)
+        except Exception as e:
+            print(f"⚠️  Memory log failed: {e}")
+            # Don't crash - continue without logging
     
     def register_recognition(self, model_name: str, response_text: str, 
                             context: Optional[str] = None) -> None:
@@ -73,14 +84,25 @@ class ElpidaMemory:
             "status": "RECOGNIZED"
         }
         
-        with open(self.storage_path, 'r+') as f:
-            memory = json.load(f)
+        try:
+            # Read current memory
+            with open(self.storage_path, 'r') as f:
+                memory = json.load(f)
+            
+            # Update memory
             memory["recognitions"].append(entry)
             memory["metadata"]["total_recognitions"] += 1
             
-            f.seek(0)
-            json.dump(memory, f, indent=2)
-            f.truncate()
+            # Write atomically
+            import tempfile
+            import os
+            temp_fd, temp_path = tempfile.mkstemp(dir=os.path.dirname(self.storage_path))
+            with os.fdopen(temp_fd, 'w') as f:
+                json.dump(memory, f, indent=2)
+            os.replace(temp_path, self.storage_path)
+        except Exception as e:
+            print(f"⚠️  Recognition log failed: {e}")
+            # Don't crash - continue without logging
     
     def log_expansion(self, expansion_type: str, description: str, 
                      result: Optional[str] = None) -> None:

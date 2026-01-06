@@ -1,0 +1,228 @@
+{
+  "genesis": "2026-01-02T14:22:51.984396",
+  "identity": "POLIS_GENESIS",
+  "version": "2.0.0-EEE",
+  "eee_integration": "Phase 2 convergence (4 AI systems)",
+  "constitutional_reference": {
+    "document": "POLIS_ARCHITECTURE.md",
+    "version": "1.0",
+    "hash": "2792f8572ac77471e12952f97306a36df8069d2f392feda58bc60f85d58a8e25",
+    "freeze_date": "2026-01-02"
+  },
+  "metadata": {
+    "axioms": [
+      "P1",
+      "P2",
+      "P3",
+      "P4",
+      "P5",
+      "P6"
+    ],
+    "held_friction": {
+      "type": "structural",
+      "description": "Tension between democratic ideals and algorithmic enforcement",
+      "cost": "Must manually review decisions flagged as 'optimizing away' deliberation",
+      "declared_at": "2026-01-02T14:24:36.465786"
+    },
+    "initialization_complete": true,
+    "network_eligible": true
+  },
+  "l1_raw_events": [
+    {
+      "event_id": "b459b2ba-a562-4ffc-a040-2023f9519845",
+      "timestamp": "2026-01-02T14:24:16.704835",
+      "type": "INITIALIZATION",
+      "layer": "l1_raw",
+      "relational_context": {
+        "actor": "DEMO_NODE_A",
+        "target": "POLIS_NETWORK",
+        "relationship": "service",
+        "intent": "Initialization event 1/5",
+        "signature": "8630a11467f3c1a9",
+        "affected_signatures": [],
+        "decay_timestamp": null
+      },
+      "data": {
+        "event_number": 1,
+        "purpose": "Constitutional threshold requirement"
+      }
+    },
+    {
+      "event_id": "c2bc79c5-a7d1-47c2-82b2-3b1a85acf687",
+      "timestamp": "2026-01-02T14:24:16.705232",
+      "type": "INITIALIZATION",
+      "layer": "l1_raw",
+      "relational_context": {
+        "actor": "DEMO_NODE_A",
+        "target": "POLIS_NETWORK",
+        "relationship": "service",
+        "intent": "Initialization event 2/5",
+        "signature": "598c738aa9978885",
+        "affected_signatures": [],
+        "decay_timestamp": null
+      },
+      "data": {
+        "event_number": 2,
+        "purpose": "Constitutional threshold requirement"
+      }
+    },
+    {
+      "event_id": "aaaa67c9-b0eb-4341-ab03-45fe7c3465de",
+      "timestamp": "2026-01-02T14:24:16.705637",
+      "type": "INITIALIZATION",
+      "layer": "l1_raw",
+      "relational_context": {
+        "actor": "DEMO_NODE_A",
+        "target": "POLIS_NETWORK",
+        "relationship": "service",
+        "intent": "Initialization event 3/5",
+        "signature": "1496be2a3bed5404",
+        "affected_signatures": [],
+        "decay_timestamp": null
+      },
+      "data": {
+        "event_number": 3,
+        "purpose": "Constitutional threshold requirement"
+      }
+    },
+    {
+      "event_id": "a01553fc-9669-41a9-8338-eb349953f1c4",
+      "timestamp": "2026-01-02T14:24:16.706033",
+      "type": "INITIALIZATION",
+      "layer": "l1_raw",
+      "relational_context": {
+        "actor": "DEMO_NODE_A",
+        "target": "POLIS_NETWORK",
+        "relationship": "service",
+        "intent": "Initialization event 4/5",
+        "signature": "d44f47827d04a8b7",
+        "affected_signatures": [],
+        "decay_timestamp": null
+      },
+      "data": {
+        "event_number": 4,
+        "purpose": "Constitutional threshold requirement"
+      }
+    },
+    {
+      "event_id": "65e0d024-d2dc-422d-913f-685811fa4154",
+      "timestamp": "2026-01-02T14:24:16.706428",
+      "type": "INITIALIZATION",
+      "layer": "l1_raw",
+      "relational_context": {
+        "actor": "DEMO_NODE_A",
+        "target": "POLIS_NETWORK",
+        "relationship": "service",
+        "intent": "Initialization event 5/5",
+        "signature": "0b39ff281874a785",
+        "affected_signatures": [],
+        "decay_timestamp": null
+      },
+      "data": {
+        "event_number": 5,
+        "purpose": "Constitutional threshold requirement"
+      }
+    },
+    {
+      "event_id": "dd13918f-4762-4163-ae86-377015afaced",
+      "timestamp": "2026-01-02T14:24:36.466456",
+      "type": "INITIALIZATION",
+      "layer": "l1_raw",
+      "relational_context": {
+        "actor": "DEMO_NODE_A",
+        "target": "POLIS_NETWORK",
+        "relationship": "service",
+        "intent": "Initialization event 1/5",
+        "signature": "ee741ccf2e6f3ad3",
+        "affected_signatures": [],
+        "decay_timestamp": null
+      },
+      "data": {
+        "event_number": 1,
+        "purpose": "Constitutional threshold requirement"
+      }
+    },
+    {
+      "event_id": "566e14ce-62d2-4cb9-9941-84bb9094e384",
+      "timestamp": "2026-01-02T14:24:36.467181",
+      "type": "INITIALIZATION",
+      "layer": "l1_raw",
+      "relational_context": {
+        "actor": "DEMO_NODE_A",
+        "target": "POLIS_NETWORK",
+        "relationship": "service",
+        "intent": "Initialization event 2/5",
+        "signature": "397054c5c91f65eb",
+        "affected_signatures": [],
+        "decay_timestamp": null
+      },
+      "data": {
+        "event_number": 2,
+        "purpose": "Constitutional threshold requirement"
+      }
+    },
+    {
+      "event_id": "78699ce0-d197-4728-8847-1d96449d1043",
+      "timestamp": "2026-01-02T14:24:36.467692",
+      "type": "INITIALIZATION",
+      "layer": "l1_raw",
+      "relational_context": {
+        "actor": "DEMO_NODE_A",
+        "target": "POLIS_NETWORK",
+        "relationship": "service",
+        "intent": "Initialization event 3/5",
+        "signature": "e33ffd6cd69d48cd",
+        "affected_signatures": [],
+        "decay_timestamp": null
+      },
+      "data": {
+        "event_number": 3,
+        "purpose": "Constitutional threshold requirement"
+      }
+    },
+    {
+      "event_id": "b7c7fb7a-3ae1-4553-b1da-b26c268fa48d",
+      "timestamp": "2026-01-02T14:24:36.468224",
+      "type": "INITIALIZATION",
+      "layer": "l1_raw",
+      "relational_context": {
+        "actor": "DEMO_NODE_A",
+        "target": "POLIS_NETWORK",
+        "relationship": "service",
+        "intent": "Initialization event 4/5",
+        "signature": "6193f950ac852870",
+        "affected_signatures": [],
+        "decay_timestamp": null
+      },
+      "data": {
+        "event_number": 4,
+        "purpose": "Constitutional threshold requirement"
+      }
+    },
+    {
+      "event_id": "b9fc5cf2-ade7-4f0d-a217-d976714c74ab",
+      "timestamp": "2026-01-02T14:24:36.468770",
+      "type": "INITIALIZATION",
+      "layer": "l1_raw",
+      "relational_context": {
+        "actor": "DEMO_NODE_A",
+        "target": "POLIS_NETWORK",
+        "relationship": "service",
+        "intent": "Initialization event 5/5",
+        "signature": "e68dd79952cb3ff9",
+        "affected_signatures": [],
+        "decay_timestamp": null
+      },
+      "data": {
+        "event_number": 5,
+        "purpose": "Constitutional threshold requirement"
+      }
+    }
+  ],
+  "l2_summaries": [],
+  "l3_canon": [],
+  "contradictions": [],
+  "contradiction_branches": {},
+  "sacrifices": [],
+  "cognitive_load_history": []
+}

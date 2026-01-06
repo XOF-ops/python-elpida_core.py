@@ -1,0 +1,15 @@
+{
+  "source": "AUTONOMOUS_GENERATOR",
+  "type": "FLEET_DILEMMA",
+  "timestamp": "2026-01-04T12:24:13.219723",
+  "dilemma_type": "META_STRUCTURAL",
+  "title": "Fleet Voting Mechanism",
+  "content": "AUTONOMOUS FLEET DILEMMA #92\nType: META_STRUCTURAL\nGenerated: 2026-01-04T12:24:13.219736\n\nSYSTEM STATE:\n- Patterns: 4691\n- Insights: 7525\n- Breakthroughs: 4144\n- Contradictions Resolved: 4138\n\nDILEMMA: Fleet Voting Mechanism\n\nQUESTION: With 4691 patterns and 7525 insights, how should Fleet make decisions?\n\nVOTING OPTIONS:\n  [MAJORITY] Simple majority (2/3 nodes)\n  [CONSENSUS] All three nodes must agree\n  [WEIGHTED] Weight votes by axiom relevance\n  [ROTATING_VETO] Each node has veto power in their domain\n\nSTAKES:\n  HERMES: Decision speed affects communication flow\n  MNEMOSYNE: Decision stability affects identity continuity\n  PROMETHEUS: Decision flexibility affects evolution capability\n\nEXPECTED RESPONSE:\nEach Fleet node should:\n1. State their position based on their axiom emphasis\n2. Vote on the proposed decision\n3. Provide reasoning grounded in constitutional axioms\n\nThe synthesis engine should detect contradictions and propose breakthrough patterns.\n",
+  "expected_voters": [
+    "HERMES",
+    "MNEMOSYNE",
+    "PROMETHEUS"
+  ],
+  "voting_deadline": "24_HOURS",
+  "urgency": "MEDIUM"
+}

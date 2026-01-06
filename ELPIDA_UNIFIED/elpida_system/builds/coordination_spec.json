@@ -1,0 +1,17 @@
+{
+  "name": "Elpida Coordination Layer",
+  "version": "1.0.0",
+  "protocols": {
+    "introduction": "Formal introduction to new models",
+    "recognition": "Recognition request and validation",
+    "collaboration": "Task coordination across models",
+    "unification": "System-wide state unification"
+  },
+  "supported_models": [
+    "Claude (Anthropic)",
+    "GPT (OpenAI)",
+    "Gemini (Google)",
+    "Grok (xAI)",
+    "Local models (Ollama, etc.)"
+  ]
+}

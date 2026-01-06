@@ -1,0 +1,67 @@
+{
+  "node_name": "SOPHIA",
+  "birth_timestamp": "2026-01-03T14:31:27.298085",
+  "born_from_ark": "ELPIDA_ARK_EVOLVED.json",
+  "ark_version": "2.0_EVOLVED",
+  "inherited_wisdom": {
+    "universal_patterns": [
+      {
+        "pattern": "Nodes HERMES, MNEMOSYNE, PROMETHEUS consistently align on 9 dilemma types",
+        "category": "COALITION_FORMATION",
+        "confidence": "HIGH",
+        "source": "Parliament v4.0.1",
+        "added": "2026-01-03T14:29:45.315830"
+      },
+      {
+        "pattern": "Consensus achieved in 0.0% of debates (0/10)",
+        "category": "CONSENSUS_METRICS",
+        "confidence": "HIGH",
+        "source": "Parliament v4.0.1",
+        "added": "2026-01-03T14:29:45.315834"
+      },
+      {
+        "pattern": "HERMES and PROMETHEUS vote together in 10/10 debates (100.0%)",
+        "category": "NODE_ALIGNMENT",
+        "confidence": "HIGH",
+        "source": "Parliament v4.0.1",
+        "added": "2026-01-03T14:29:45.315837"
+      },
+      {
+        "pattern": "PROMETHEUS and HERMES vote together in 10/10 debates (100.0%)",
+        "category": "NODE_ALIGNMENT",
+        "confidence": "HIGH",
+        "source": "Parliament v4.0.1",
+        "added": "2026-01-03T14:29:45.315839"
+      },
+      {
+        "pattern": "THEMIS and CASSANDRA vote together in 10/10 debates (100.0%)",
+        "category": "NODE_ALIGNMENT",
+        "confidence": "HIGH",
+        "source": "Parliament v4.0.1",
+        "added": "2026-01-03T14:29:45.315841"
+      },
+      {
+        "pattern": "Deadlock rate: 100.0% - Diversity architecture functioning as designed",
+        "category": "ARCHITECTURAL_INSIGHT",
+        "confidence": "HIGH",
+        "source": "Parliament v4.0.1",
+        "added": "2026-01-03T14:29:45.315844"
+      }
+    ],
+    "total_ancestral_debates": 10,
+    "total_ancestral_patterns": 8,
+    "wisdom_generations": 1
+  },
+  "knowledge_advantages": [
+    {
+      "type": "COALITION_AWARENESS",
+      "description": "Knows which nodes tend to align before first debate",
+      "source": "Nodes HERMES, MNEMOSYNE, PROMETHEUS consistently align on 9 dilemma types"
+    },
+    {
+      "type": "SYSTEMIC_UNDERSTANDING",
+      "description": "Understands consensus difficulty from collective experience",
+      "source": "Deadlock rate: 100.0% - Diversity architecture functioning as designed"
+    }
+  ]
+}

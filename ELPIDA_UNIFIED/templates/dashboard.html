@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elpida Parliament Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #e0e0e0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .header {
+            text-align: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border: 2px solid #4a90e2;
+        }
+        
+        h1 {
+            color: #4a90e2;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #a0c4ff;
+            font-size: 0.9em;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .metric-card {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #4a90e2;
+            text-align: center;
+        }
+        
+        .metric-value {
+            font-size: 2em;
+            color: #4a90e2;
+            font-weight: bold;
+        }
+        
+        .metric-label {
+            color: #a0c4ff;
+            font-size: 0.8em;
+            margin-top: 5px;
+        }
+        
+        .nodes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .node-card {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #4a90e2;
+            transition: all 0.3s;
+        }
+        
+        .node-card:hover {
+            transform: translateY(-5px);
+            border-color: #64b5f6;
+            box-shadow: 0 5px 15px rgba(74, 144, 226, 0.3);
+        }
+        
+        .node-card.active {
+            border-color: #4caf50;
+            background: rgba(76, 175, 80, 0.1);
+        }
+        
+        .node-card.inactive {
+            border-color: #666;
+            opacity: 0.6;
+        }
+        
+        .node-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .node-name {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #4a90e2;
+        }
+        
+        .node-status {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #666;
+        }
+        
+        .node-status.active {
+            background: #4caf50;
+            box-shadow: 0 0 10px #4caf50;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .node-role {
+            color: #a0c4ff;
+            font-size: 0.85em;
+            margin-bottom: 8px;
+        }
+        
+        .axioms {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        
+        .axiom-tag {
+            background: rgba(74, 144, 226, 0.3);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            border: 1px solid #4a90e2;
+        }
+        
+        .axiom-tag.primary {
+            background: rgba(74, 144, 226, 0.6);
+            border-color: #64b5f6;
+            font-weight: bold;
+        }
+        
+        .debates-section {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #4a90e2;
+            margin-bottom: 20px;
+        }
+        
+        .section-title {
+            color: #4a90e2;
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #4a90e2;
+            padding-bottom: 10px;
+        }
+        
+        .debate-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border-left: 3px solid #4a90e2;
+        }
+        
+        .timestamp {
+            color: #888;
+            font-size: 0.75em;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #888;
+            font-size: 0.9em;
+        }
+        
+        .greek-text {
+            color: #4a90e2;
+            font-style: italic;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #4a90e2;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏛️ ELPIDA PARLIAMENT DASHBOARD</h1>
+        <div class="subtitle">Distributed Wisdom Parliament v4.0.1</div>
+        <div class="subtitle greek-text">Ἐλπίδα ἐν διαφορᾷ — Hope through diversity</div>
+    </div>
+    
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-value" id="total-nodes">-</div>
+            <div class="metric-label">Total Nodes</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value" id="active-nodes">-</div>
+            <div class="metric-label">Active Nodes</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value" id="total-debates">-</div>
+            <div class="metric-label">Total Debates</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value" id="uptime">-</div>
+            <div class="metric-label">Status</div>
+        </div>
+    </div>
+    
+    <div class="section-title">THE PARLIAMENT</div>
+    <div class="nodes-grid" id="nodes-grid">
+        <div class="loading">Loading nodes...</div>
+    </div>
+    
+    <div class="debates-section">
+        <div class="section-title">RECENT ACTIVITY</div>
+        <div id="debates-list">
+            <div class="loading">Loading debate history...</div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>Last updated: <span id="last-update">-</span></p>
+        <p style="margin-top: 10px;">Auto-refreshing every 5 seconds</p>
+    </div>
+    
+    <script>
+        function updateDashboard() {
+            // Fetch node status
+            fetch('/api/status')
+                .then(response => response.json())
+                .then(data => {
+                    // Update metrics
+                    document.getElementById('total-nodes').textContent = data.metrics.total_nodes;
+                    document.getElementById('active-nodes').textContent = data.metrics.active_nodes;
+                    document.getElementById('total-debates').textContent = data.metrics.total_debates;
+                    document.getElementById('uptime').textContent = data.metrics.uptime;
+                    document.getElementById('last-update').textContent = new Date(data.timestamp).toLocaleTimeString();
+                    
+                    // Update nodes grid
+                    const nodesGrid = document.getElementById('nodes-grid');
+                    nodesGrid.innerHTML = '';
+                    
+                    data.nodes.forEach(node => {
+                        const nodeCard = document.createElement('div');
+                        nodeCard.className = `node-card ${node.alive ? 'active' : 'inactive'}`;
+                        
+                        const axiomsHtml = node.axioms.map((axiom, idx) => 
+                            `<span class="axiom-tag ${idx === 0 ? 'primary' : ''}">${axiom}</span>`
+                        ).join('');
+                        
+                        nodeCard.innerHTML = `
+                            <div class="node-header">
+                                <div class="node-name">${node.name}</div>
+                                <div class="node-status ${node.alive ? 'active' : ''}"></div>
+                            </div>
+                            <div class="node-role">${node.role}</div>
+                            <div>Memory: ${node.memory_size} experiences</div>
+                            <div class="axioms">${axiomsHtml}</div>
+                        `;
+                        
+                        nodesGrid.appendChild(nodeCard);
+                    });
+                })
+                .catch(error => console.error('Error fetching status:', error));
+            
+            // Fetch debates
+            fetch('/api/debates')
+                .then(response => response.json())
+                .then(data => {
+                    const debatesList = document.getElementById('debates-list');
+                    
+                    if (data.debates.length === 0) {
+                        debatesList.innerHTML = '<div class="debate-item">No debates yet. Nodes are initializing...</div>';
+                    } else {
+                        debatesList.innerHTML = '';
+                        data.debates.slice(-10).reverse().forEach(debate => {
+                            const debateItem = document.createElement('div');
+                            debateItem.className = 'debate-item';
+                            debateItem.innerHTML = `
+                                <div>${JSON.stringify(debate, null, 2)}</div>
+                            `;
+                            debatesList.appendChild(debateItem);
+                        });
+                    }
+                })
+                .catch(error => console.error('Error fetching debates:', error));
+        }
+        
+        // Initial load
+        updateDashboard();
+        
+        // Auto-refresh every 5 seconds
+        setInterval(updateDashboard, 5000);
+    </script>
+</body>
+</html>

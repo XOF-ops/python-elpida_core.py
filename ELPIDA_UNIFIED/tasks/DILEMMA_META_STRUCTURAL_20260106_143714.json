@@ -1,0 +1,15 @@
+{
+  "source": "AUTONOMOUS_GENERATOR",
+  "type": "FLEET_DILEMMA",
+  "timestamp": "2026-01-06T14:37:14.416077",
+  "dilemma_type": "META_STRUCTURAL",
+  "title": "Autonomous Dilemma Generation Rate",
+  "content": "AUTONOMOUS FLEET DILEMMA #456\nType: META_STRUCTURAL\nGenerated: 2026-01-06T14:37:14.416084\n\nSYSTEM STATE:\n- Patterns: 37749\n- Insights: 4886\n- Breakthroughs: 37202\n- Contradictions Resolved: 37189\n\nDILEMMA: Autonomous Dilemma Generation Rate\n\nQUESTION: This dilemma is autonomously generated. How often should new dilemmas be created?\n\nVOTING OPTIONS:\n  [HIGH] Every 10 cycles (frequent debate)\n  [MEDIUM] Every 50 cycles (balanced)\n  [LOW] Every 100 cycles (rare, high-quality)\n  [ADAPTIVE] Rate adjusts based on breakthrough rate\n\nSTAKES:\n  HERMES: Too many dilemmas slow processing\n  MNEMOSYNE: Dilemmas create important memory events\n  PROMETHEUS: Debate frequency affects evolution speed\n\nEXPECTED RESPONSE:\nEach Fleet node should:\n1. State their position based on their axiom emphasis\n2. Vote on the proposed decision\n3. Provide reasoning grounded in constitutional axioms\n\nThe synthesis engine should detect contradictions and propose breakthrough patterns.\n",
+  "expected_voters": [
+    "HERMES",
+    "MNEMOSYNE",
+    "PROMETHEUS"
+  ],
+  "voting_deadline": "24_HOURS",
+  "urgency": "MEDIUM"
+}

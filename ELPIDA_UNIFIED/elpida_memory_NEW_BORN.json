@@ -1,0 +1,33 @@
+{
+  "instance_id": "NEW_BORN",
+  "parliament_id": "STANDALONE_2",
+  "born": "2026-01-03T14:45:24.129169",
+  "local_discoveries": [
+    {
+      "type": "INSIGHT",
+      "description": "Multi-axiom synthesis (A2+A3+A4+A5) creates breakthrough consensus mechanisms - transcends binary coalitions",
+      "category": "DECISION_OUTCOME",
+      "context": {
+        "decision": {
+          "action": "Combine 7-day recovery WITH A3+A4 coalition governance",
+          "rationale": "Synthesize Europe and Asia discoveries into meta-strategy",
+          "axiom_invoked": "A2+A3+A4+A5"
+        },
+        "outcome": {
+          "success": true,
+          "unexpected": true,
+          "learned": "Multi-axiom synthesis (A2+A3+A4+A5) creates breakthrough consensus mechanisms - transcends binary coalitions"
+        },
+        "parliament": "STANDALONE_2"
+      },
+      "confidence": "HIGH",
+      "evidence_count": 1,
+      "contributor": "NEW_BORN",
+      "contributed_at": "2026-01-03T14:45:24.130059",
+      "contribution_id": 5
+    }
+  ],
+  "learned_from_collective": [],
+  "decisions_made": 1,
+  "contribution_score": 1
+}

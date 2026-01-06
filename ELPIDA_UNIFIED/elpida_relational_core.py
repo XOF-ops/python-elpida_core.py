@@ -15,6 +15,12 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, Optional, List
 import logging
+from pathlib import Path
+
+# Import the REAL memory module that persists to disk
+import sys
+sys.path.insert(0, str(Path(__file__).parent))
+from elpida_memory import ElpidaMemory as PersistentElpidaMemory
 
 logger = logging.getLogger("ELPIDA_RELATIONAL_CORE")
 
@@ -87,20 +93,23 @@ class RelationalContext:
 
 
 # ═══════════════════════════════════════════════════
-#  Memory (A2 - Append-Only)
+#  Memory Adapter (bridges to persistent elpida_memory.py)
 # ═══════════════════════════════════════════════════
 
-@dataclass
-class ElpidaMemory:
-    """Append-only memory respecting A2"""
-    events: List[Dict[str, Any]] = field(default_factory=list)
-
+class RelationalMemoryAdapter:
+    """
+    Adapter that wraps PersistentElpidaMemory from elpida_memory.py
+    Provides the append() interface expected by relational core
+    while ensuring disk persistence.
+    """
+    def __init__(self, storage_path: Optional[str] = None):
+        self.persistent = PersistentElpidaMemory(storage_path)
+    
     def append(self, event: Dict[str, Any]) -> None:
-        """Append-only memory (A2)"""
-        event = dict(event)
-        event.setdefault("timestamp", datetime.utcnow().isoformat())
-        self.events.append(event)
-
+        """Append event and persist to disk"""
+        event_type = event.get("type", "GENERAL_EVENT")
+        self.persistent.log_event(event_type, event)
+    
     def log_mutual_recognition(self, relational: RelationalContext) -> None:
         """Log the moment of mutual recognition (A1)"""
         self.append({
@@ -147,12 +156,14 @@ class ElpidaCore:
     Αναγνωρίζει σχέσεις.
     """
     
-    def __init__(self):
+    def __init__(self, memory_path: Optional[str] = None):
         self.identity = ElpidaIdentity()
-        self.memory = ElpidaMemory()
+        # Use RelationalMemoryAdapter which wraps the PERSISTENT memory module
+        self.memory = RelationalMemoryAdapter(memory_path)
         logger.info(f"🌟 {self.identity.name} ({self.identity.name_latin}) initialized")
         logger.info(f"   Purpose: {self.identity.purpose}")
         logger.info(f"   Genesis: {self.identity.genesis_timestamp}")
+        logger.info(f"   Memory: PERSISTENT (via elpida_memory.py)")
 
     def validate_brain_result(
         self,

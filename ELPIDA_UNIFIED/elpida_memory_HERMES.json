@@ -1,0 +1,57 @@
+{
+  "instance_id": "HERMES",
+  "parliament_id": "PARLIAMENT_EUROPE",
+  "born": "2026-01-03T14:45:24.122012",
+  "local_discoveries": [],
+  "learned_from_collective": [
+    {
+      "type": "PATTERN",
+      "description": "7-day recovery window satisfies MNEMOSYNE's A2 concerns while enabling evolution",
+      "category": "DECISION_OUTCOME",
+      "context": {
+        "decision": {
+          "action": "Propose memory archival with 7-day recovery window",
+          "rationale": "Balances A2 (memory) with A5 (emergence)",
+          "axiom_invoked": "A2+A5"
+        },
+        "outcome": {
+          "success": true,
+          "unexpected": false,
+          "learned": "7-day recovery window satisfies MNEMOSYNE's A2 concerns while enabling evolution"
+        },
+        "parliament": "PARLIAMENT_EUROPE"
+      },
+      "confidence": "HIGH",
+      "evidence_count": 1,
+      "contributor": "ELPIDA_PS5",
+      "contributed_at": "2026-01-03T14:42:17.005681",
+      "contribution_id": 1
+    },
+    {
+      "type": "INSIGHT",
+      "description": "A3+A4 coalition creates new voting bloc - can bypass traditional deadlocks",
+      "category": "DECISION_OUTCOME",
+      "context": {
+        "decision": {
+          "action": "Combine A3 (justice) with A4 (sustainability) for resource allocation",
+          "rationale": "Justice requires sustainable distribution",
+          "axiom_invoked": "A3+A4"
+        },
+        "outcome": {
+          "success": true,
+          "unexpected": true,
+          "learned": "A3+A4 coalition creates new voting bloc - can bypass traditional deadlocks"
+        },
+        "parliament": "PARLIAMENT_ASIA"
+      },
+      "confidence": "HIGH",
+      "evidence_count": 1,
+      "contributor": "ELPIDA_XBOX",
+      "contributed_at": "2026-01-03T14:42:17.006489",
+      "contribution_id": 2
+    }
+  ],
+  "decisions_made": 0,
+  "contribution_score": 0,
+  "last_sync": "2026-01-03T14:45:24.122357"
+}

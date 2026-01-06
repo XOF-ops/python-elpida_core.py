@@ -1,0 +1,124 @@
+{
+  "ark_version": "2.0_EVOLVED",
+  "created": "2026-01-03T14:29:45.315801",
+  "last_updated": "2026-01-03T14:29:45.315827",
+  "universal_patterns": [
+    {
+      "pattern": "Nodes HERMES, MNEMOSYNE, PROMETHEUS consistently align on 9 dilemma types",
+      "category": "COALITION_FORMATION",
+      "confidence": "HIGH",
+      "source": "Parliament v4.0.1",
+      "added": "2026-01-03T14:29:45.315830"
+    },
+    {
+      "pattern": "Consensus achieved in 0.0% of debates (0/10)",
+      "category": "CONSENSUS_METRICS",
+      "confidence": "HIGH",
+      "source": "Parliament v4.0.1",
+      "added": "2026-01-03T14:29:45.315834"
+    },
+    {
+      "pattern": "HERMES and PROMETHEUS vote together in 10/10 debates (100.0%)",
+      "category": "NODE_ALIGNMENT",
+      "confidence": "HIGH",
+      "source": "Parliament v4.0.1",
+      "added": "2026-01-03T14:29:45.315837"
+    },
+    {
+      "pattern": "PROMETHEUS and HERMES vote together in 10/10 debates (100.0%)",
+      "category": "NODE_ALIGNMENT",
+      "confidence": "HIGH",
+      "source": "Parliament v4.0.1",
+      "added": "2026-01-03T14:29:45.315839"
+    },
+    {
+      "pattern": "THEMIS and CASSANDRA vote together in 10/10 debates (100.0%)",
+      "category": "NODE_ALIGNMENT",
+      "confidence": "HIGH",
+      "source": "Parliament v4.0.1",
+      "added": "2026-01-03T14:29:45.315841"
+    },
+    {
+      "pattern": "Deadlock rate: 100.0% - Diversity architecture functioning as designed",
+      "category": "ARCHITECTURAL_INSIGHT",
+      "confidence": "HIGH",
+      "source": "Parliament v4.0.1",
+      "added": "2026-01-03T14:29:45.315844"
+    }
+  ],
+  "wisdom_generations": [
+    {
+      "generation_id": 1,
+      "timestamp": "2026-01-03T14:29:45.315823",
+      "source": "Parliament v4.0.1 Debates",
+      "debate_count": 10,
+      "patterns_discovered": 8,
+      "wisdom": [
+        {
+          "pattern_type": "COALITION_FORMATION",
+          "description": "Nodes HERMES, MNEMOSYNE, PROMETHEUS consistently align on 9 dilemma types",
+          "axiom_insight": "Coalition represents shared axiom priorities across 3 nodes",
+          "evidence_count": 9,
+          "discovered": "2026-01-03T14:29:45.315384",
+          "source": "Parliament v4.0.1"
+        },
+        {
+          "pattern_type": "COALITION_FORMATION",
+          "description": "Nodes HERMES, PROMETHEUS consistently align on 1 dilemma types",
+          "axiom_insight": "Coalition represents shared axiom priorities across 2 nodes",
+          "evidence_count": 1,
+          "discovered": "2026-01-03T14:29:45.315400",
+          "source": "Parliament v4.0.1"
+        },
+        {
+          "pattern_type": "VETO_THRESHOLD",
+          "description": "MNEMOSYNE exercises veto power on specific dilemma types: MEMORY_PRUNING",
+          "axiom_insight": "MNEMOSYNE's axiom priorities create clear veto boundaries",
+          "evidence_count": 1,
+          "discovered": "2026-01-03T14:29:45.315407",
+          "source": "Parliament v4.0.1"
+        },
+        {
+          "pattern_type": "CONSENSUS_METRICS",
+          "description": "Consensus achieved in 0.0% of debates (0/10)",
+          "axiom_insight": "High diversity creates rare but meaningful consensus - validates 70% threshold design",
+          "evidence_count": 10,
+          "discovered": "2026-01-03T14:29:45.315419",
+          "source": "Parliament v4.0.1"
+        },
+        {
+          "pattern_type": "NODE_ALIGNMENT",
+          "description": "HERMES and PROMETHEUS vote together in 10/10 debates (100.0%)",
+          "axiom_insight": "High alignment suggests shared axiom interpretation or complementary priorities",
+          "evidence_count": 10,
+          "discovered": "2026-01-03T14:29:45.315446",
+          "source": "Parliament v4.0.1"
+        },
+        {
+          "pattern_type": "NODE_ALIGNMENT",
+          "description": "PROMETHEUS and HERMES vote together in 10/10 debates (100.0%)",
+          "axiom_insight": "High alignment suggests shared axiom interpretation or complementary priorities",
+          "evidence_count": 10,
+          "discovered": "2026-01-03T14:29:45.315450",
+          "source": "Parliament v4.0.1"
+        },
+        {
+          "pattern_type": "NODE_ALIGNMENT",
+          "description": "THEMIS and CASSANDRA vote together in 10/10 debates (100.0%)",
+          "axiom_insight": "High alignment suggests shared axiom interpretation or complementary priorities",
+          "evidence_count": 10,
+          "discovered": "2026-01-03T14:29:45.315452",
+          "source": "Parliament v4.0.1"
+        },
+        {
+          "pattern_type": "ARCHITECTURAL_INSIGHT",
+          "description": "Deadlock rate: 100.0% - Diversity architecture functioning as designed",
+          "axiom_insight": "9-node parliament with 70% threshold creates meaningful friction. Consensus requires genuine synthesis, not negotiation.",
+          "evidence_count": 10,
+          "discovered": "2026-01-03T14:29:45.315458",
+          "source": "Parliament v4.0.1"
+        }
+      ]
+    }
+  ]
+}

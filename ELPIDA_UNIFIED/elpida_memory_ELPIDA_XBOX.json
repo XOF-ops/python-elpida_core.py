@@ -1,0 +1,33 @@
+{
+  "instance_id": "ELPIDA_XBOX",
+  "parliament_id": "PARLIAMENT_ASIA",
+  "born": "2026-01-03T14:42:17.005390",
+  "local_discoveries": [
+    {
+      "type": "INSIGHT",
+      "description": "A3+A4 coalition creates new voting bloc - can bypass traditional deadlocks",
+      "category": "DECISION_OUTCOME",
+      "context": {
+        "decision": {
+          "action": "Combine A3 (justice) with A4 (sustainability) for resource allocation",
+          "rationale": "Justice requires sustainable distribution",
+          "axiom_invoked": "A3+A4"
+        },
+        "outcome": {
+          "success": true,
+          "unexpected": true,
+          "learned": "A3+A4 coalition creates new voting bloc - can bypass traditional deadlocks"
+        },
+        "parliament": "PARLIAMENT_ASIA"
+      },
+      "confidence": "HIGH",
+      "evidence_count": 1,
+      "contributor": "ELPIDA_XBOX",
+      "contributed_at": "2026-01-03T14:42:17.006489",
+      "contribution_id": 2
+    }
+  ],
+  "learned_from_collective": [],
+  "decisions_made": 1,
+  "contribution_score": 1
+}

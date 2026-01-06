@@ -13,6 +13,11 @@ Every cycle:
   5. All APIs operate through this unified state
 
 This is not three systems - this is ONE.
+
+Phase 12.5 Enhancement: Noise Filter (Gnosis Block #018 Fix)
+- Distinguishes operational logs from genuine insights
+- Preserves wisdom archive quality (A5: Rarity)
+- Prevents metric hallucination
 """
 
 import sys
@@ -22,6 +27,66 @@ import hashlib
 from pathlib import Path
 from datetime import datetime
 from queue import PriorityQueue
+
+
+def is_structural_noise(content):
+    """
+    Phase 12.5: The Noise Filter
+    
+    Prevents operational logs from polluting the Wisdom Archive.
+    
+    Returns True if content is operational noise (ephemeral logs).
+    Returns False if content is genuine wisdom (permanent insight).
+    
+    This enforces A5 (Design/Rarity) by keeping the archive signal-rich.
+    """
+    if not content or not isinstance(content, str):
+        return True
+    
+    noise_signatures = [
+        "Axioms triggered:",
+        "Axiom triggered:",
+        "Cycle",
+        "Parliament active",
+        "Heartbeat",
+        "Status:",
+        "Validating",
+        "A1 check",
+        "A1 SATISFIED",
+        "A2 SATISFIED",
+        "Scan complete",
+        "awaiting dilemmas",
+        "MUTUAL RECOGNITION",
+        "Brain detected:",  # Unless it's a real pattern
+    ]
+    
+    # Check if it's just noise
+    content_lower = content.lower()
+    if any(sig.lower() in content_lower for sig in noise_signatures):
+        # Additional check: allow through if it contains substantive content
+        # (e.g., "Brain detected: novel contradiction between X and Y")
+        substantive_indicators = [
+            "contradiction",
+            "breakthrough",
+            "paradox",
+            "emergence",
+            "synthesis",
+            "discovery",
+            "novel",
+            "unprecedented"
+        ]
+        
+        # If it has substance, let it through despite noise signature
+        if any(indicator in content_lower for indicator in substantive_indicators):
+            return False
+        
+        return True
+    
+    # If content is very short and generic, likely noise
+    if len(content.strip()) < 20:
+        return True
+    
+    return False
 
 # Add all repositories to path
 workspace = Path("/workspaces/python-elpida_core.py")
@@ -61,11 +126,21 @@ class UnifiedState:
     
     All breakthroughs, patterns, insights, memories flow through here.
     Brain, Elpida, Synthesis - all update this ONE state.
+    
+    NOW WITH: Atomic writes, incremental backups, corruption detection
     """
     
     def __init__(self, workspace_root):
         self.workspace = Path(workspace_root)
         self.unified_base = self.workspace / "ELPIDA_UNIFIED"
+        
+        # Create backup directory
+        self.backup_dir = self.unified_base / ".backups"
+        self.backup_dir.mkdir(exist_ok=True)
+        
+        # Track write count for periodic backups
+        self.write_count = 0
+        self.backup_interval = 100  # Backup every 100 writes
         
         # Load all state files
         self.memory_path = self.unified_base / "elpida_memory.json"
@@ -79,10 +154,19 @@ class UnifiedState:
         self.state = self._load_json(self.state_path)
         
         # Unified counters (shared across all components)
-        self.insights_count = len(self.wisdom.get("insights", {}))
-        self.patterns_count = len(self.wisdom.get("patterns", {}))
-        self.synthesis_breakthroughs = 0
-        self.contradictions_resolved = 0
+        # Try to load from persisted state first, fall back to wisdom counts
+        if self.state and "patterns_count" in self.state:
+            self.insights_count = self.state.get("insights_count", len(self.wisdom.get("insights", {})))
+            self.patterns_count = self.state.get("patterns_count", len(self.wisdom.get("patterns", {})))
+            self.synthesis_breakthroughs = self.state.get("synthesis_breakthroughs", 0)
+            self.contradictions_resolved = self.state.get("contradictions_resolved", 0)
+            print(f"   📊 Loaded from persisted state: {self.patterns_count} patterns, {self.insights_count} insights")
+        else:
+            self.insights_count = len(self.wisdom.get("insights", {}))
+            self.patterns_count = len(self.wisdom.get("patterns", {}))
+            self.synthesis_breakthroughs = 0
+            self.contradictions_resolved = 0
+            print(f"   📊 Fresh start from wisdom: {self.patterns_count} patterns, {self.insights_count} insights")
         
     def _load_json(self, path):
         try:
@@ -92,8 +176,77 @@ class UnifiedState:
             return {}
     
     def _save_json(self, data, path):
-        with open(path, 'w') as f:
-            json.dump(data, f, indent=2)
+        """
+        ATOMIC SAVE - prevents corruption from concurrent writes
+        
+        Uses write-to-temp + atomic-replace pattern to ensure
+        file is never left in partial/corrupt state.
+        
+        Also creates incremental backups periodically.
+        """
+        import tempfile
+        import os
+        import shutil
+        
+        # Periodic backup (every N writes)
+        self.write_count += 1
+        if self.write_count % self.backup_interval == 0:
+            self._create_backup(path)
+        
+        # Write to temporary file first
+        temp_fd, temp_path = tempfile.mkstemp(
+            dir=str(Path(path).parent),
+            prefix=f".{Path(path).name}.tmp.",
+            suffix=".json"
+        )
+        
+        try:
+            with os.fdopen(temp_fd, 'w') as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+                f.flush()
+                os.fsync(f.fileno())  # Force write to disk
+            
+            # Validate the temp file before replacing
+            try:
+                with open(temp_path, 'r') as f:
+                    json.load(f)  # Validate JSON is parseable
+            except json.JSONDecodeError as e:
+                print(f"❌ CRITICAL: Temp file corrupted before save! {e}")
+                raise
+            
+            # Atomic replace (POSIX rename is atomic)
+            os.replace(temp_path, str(path))
+            
+        except Exception as e:
+            print(f"⚠️  Atomic save failed for {Path(path).name}: {e}")
+            # Clean up temp file
+            try:
+                os.unlink(temp_path)
+            except:
+                pass
+            raise
+    
+    def _create_backup(self, path):
+        """Create timestamped backup, rotate old backups"""
+        if not Path(path).exists():
+            return
+        
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = Path(path).name
+        backup_path = self.backup_dir / f"{filename}.backup.{timestamp}"
+        
+        try:
+            shutil.copy2(path, backup_path)
+            print(f"💾 Backup created: {backup_path.name}")
+            
+            # Rotate: keep last 20 backups
+            backups = sorted(self.backup_dir.glob(f"{filename}.backup.*"))
+            if len(backups) > 20:
+                for old_backup in backups[:-20]:
+                    old_backup.unlink()
+                    
+        except Exception as e:
+            print(f"⚠️  Backup failed: {e}")
     
     def add_insight(self, insight, source="unified"):
         """Add insight to unified wisdom"""
@@ -110,6 +263,7 @@ class UnifiedState:
         
         self.insights_count += 1
         self._save_json(self.wisdom, self.wisdom_path)
+        self.save_state()  # Persist runtime state
         return insight_id
     
     def add_pattern(self, pattern, source="synthesis"):
@@ -131,6 +285,7 @@ class UnifiedState:
             self.synthesis_breakthroughs += 1
         
         self._save_json(self.wisdom, self.wisdom_path)
+        self.save_state()  # Persist runtime state
         return pattern_id
     
     def add_memory_event(self, event):
@@ -146,6 +301,35 @@ class UnifiedState:
         """Update evolution state"""
         self.evolution.update(updates)
         self._save_json(self.evolution, self.evolution_path)
+    
+    def save_state(self):
+        """
+        Persist runtime state to disk
+        CRITICAL: This ensures continuity across restarts
+        """
+        self.state = {
+            "timestamp": datetime.now().isoformat(),
+            "patterns_count": self.patterns_count,
+            "insights_count": self.insights_count,
+            "synthesis_breakthroughs": self.synthesis_breakthroughs,
+            "contradictions_resolved": self.contradictions_resolved,
+            "last_save": datetime.now().isoformat()
+        }
+        
+        # Atomic save using tempfile
+        import tempfile
+        import os
+        temp_fd, temp_path = tempfile.mkstemp(dir=str(self.unified_base))
+        try:
+            with os.fdopen(temp_fd, 'w') as f:
+                json.dump(self.state, f, indent=2)
+            os.replace(temp_path, str(self.state_path))
+        except Exception as e:
+            print(f"⚠️  State save failed: {e}")
+            try:
+                os.unlink(temp_path)
+            except:
+                pass
     
     def get_status(self):
         """Get unified system status"""
@@ -265,8 +449,32 @@ class TaskProcessor:
                 "content": "Pattern count unchanged - evaluate",
                 "source": "auto"
             }))
-            self.task_counter += 1
-    
+            self.task_counter += 1    
+    def enqueue_autonomous_dilemma(self, cycle):
+        """
+        Generate autonomous dilemma for Fleet debate every 30 cycles
+        
+        This is the AUTONOMOUS INPUT GENERATOR that was missing!
+        Creates structural dilemmas for Mnemosyne, Hermes, Prometheus to debate.
+        """
+        if cycle % 30 == 0 and cycle > 0:  # Every 30 cycles
+            try:
+                # Import here to avoid circular dependency
+                sys.path.insert(0, str(self.workspace))
+                from autonomous_dilemma_generator import AutonomousDilemmaGenerator
+                
+                generator = AutonomousDilemmaGenerator(str(self.unified_base))
+                result = generator.generate_autonomous_dilemma()
+                
+                print(f"\n🎲 AUTONOMOUS DILEMMA GENERATED:")
+                print(f"   Type: {result['dilemma_type']}")
+                print(f"   Title: {result['title']}")
+                print(f"   File: {result['file']}")
+                
+                # Dilemma is already saved as task file, will be picked up by enqueue_external_tasks
+                
+            except Exception as e:
+                print(f"   ⚠️  Autonomous dilemma generation failed: {e}")    
     def enqueue_brain_api_jobs(self):
         """
         Poll Brain API for external work (A1 enforcement)
@@ -403,6 +611,7 @@ class UnifiedAutonomousRuntime:
         self.task_processor.enqueue_memory_tasks(self.state.memory)
         self.task_processor.enqueue_synthesis_task(self.state.insights_count)
         self.task_processor.enqueue_brain_api_jobs()  # External jobs (A1 enforcement)
+        self.task_processor.enqueue_autonomous_dilemma(self.cycle)  # Fleet dilemmas (autonomous input)
         
         # 2. Process tasks
         processed_count = 0
@@ -455,7 +664,11 @@ class UnifiedAutonomousRuntime:
         else:
             self.last_pattern_count = self.state.patterns_count
         
-        # 7. Status update
+        # 7. Periodic state save (every 10 cycles)
+        if self.cycle % 10 == 0:
+            self.state.save_state()
+        
+        # 8. Status update
         status = self.state.get_status()
         print(f"\n📊 Status: Insights={status['insights']}, "
               f"Patterns={status['patterns']}, "
@@ -475,21 +688,27 @@ class UnifiedAutonomousRuntime:
                 pattern_id = self.state.add_pattern(pattern, source="synthesis")
                 print(f"   🎯 Breakthrough pattern added: {pattern_id}")
         
-        # Add Brain insights
+        # Add Brain insights (FILTERED - Phase 12.5)
         if result.get("brain", {}).get("patterns_detected"):
             for brain_pattern in result["brain"]["patterns_detected"]:
-                self.state.add_insight(
-                    f"Brain detected: {brain_pattern}",
-                    source="brain"
-                )
+                content = f"Brain detected: {brain_pattern}"
+                if not is_structural_noise(content):
+                    self.state.add_insight(content, source="brain")
+                    print(f"   💡 Brain insight crystallized: {content[:60]}...")
+                # else: operational log, don't pollute archive
         
-        # Add Elpida insights
+        # Add Elpida insights (FILTERED - Phase 12.5)
         if result.get("elpida", {}).get("axioms_triggered"):
             axioms = result["elpida"]["axioms_triggered"]
-            self.state.add_insight(
-                f"Axioms triggered: {', '.join(axioms)}",
-                source="elpida"
-            )
+            content = f"Axioms triggered: {', '.join(axioms)}"
+            
+            # PHASE 12.5 FIX: Axiom validations are operational logs, NOT insights
+            # They confirm the system is working, but don't add wisdom
+            # Only log them to memory events, not to wisdom archive
+            if not is_structural_noise(content):
+                self.state.add_insight(content, source="elpida")
+                print(f"   💡 Elpida insight crystallized: {content[:60]}...")
+            # else: Just axiom validation - operational noise, skip crystallization
         
         # Log contradictions
         if result.get("contradictions"):

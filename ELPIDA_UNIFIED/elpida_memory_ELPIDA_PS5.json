@@ -1,0 +1,33 @@
+{
+  "instance_id": "ELPIDA_PS5",
+  "parliament_id": "PARLIAMENT_EUROPE",
+  "born": "2026-01-03T14:42:17.004378",
+  "local_discoveries": [
+    {
+      "type": "PATTERN",
+      "description": "7-day recovery window satisfies MNEMOSYNE's A2 concerns while enabling evolution",
+      "category": "DECISION_OUTCOME",
+      "context": {
+        "decision": {
+          "action": "Propose memory archival with 7-day recovery window",
+          "rationale": "Balances A2 (memory) with A5 (emergence)",
+          "axiom_invoked": "A2+A5"
+        },
+        "outcome": {
+          "success": true,
+          "unexpected": false,
+          "learned": "7-day recovery window satisfies MNEMOSYNE's A2 concerns while enabling evolution"
+        },
+        "parliament": "PARLIAMENT_EUROPE"
+      },
+      "confidence": "HIGH",
+      "evidence_count": 1,
+      "contributor": "ELPIDA_PS5",
+      "contributed_at": "2026-01-03T14:42:17.005681",
+      "contribution_id": 1
+    }
+  ],
+  "learned_from_collective": [],
+  "decisions_made": 1,
+  "contribution_score": 1
+}
