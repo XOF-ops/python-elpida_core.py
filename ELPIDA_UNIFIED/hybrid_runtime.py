@@ -177,6 +177,9 @@ class HybridRuntime:
                                     if synthesis_result:
                                         cycle_results["syntheses_completed"] += 1
                                         self.total_syntheses += 1
+                                        # Track pattern discovery
+                                        if synthesis_result.get('pattern'):
+                                            cycle_results["patterns_discovered"] += 1
                                 except Exception as e:
                                     self.logger.warning(f"  Synthesis failed: {e}")
                                     
@@ -193,12 +196,17 @@ class HybridRuntime:
             if self.wisdom:
                 self.logger.info("Step 4: Updating wisdom...")
                 try:
-                    self.wisdom.add_insight({
-                        "source": "INTERNAL_LOOP",
-                        "cycle": self.internal_cycles,
-                        "content": f"Processed {cycle_results['dilemmas_generated']} dilemmas with {cycle_results['votes_cast']} votes",
-                        "timestamp": datetime.utcnow().isoformat()
-                    })
+                    # add_insight signature: (ai_name, topic, content, conversation_id, context=None, timestamp=None)
+                    insight_content = (f"Processed {cycle_results['dilemmas_generated']} dilemmas with "
+                                       f"{cycle_results['votes_cast']} votes. "
+                                       f"Patterns discovered: {cycle_results['patterns_discovered']}")
+                    self.wisdom.add_insight(
+                        ai_name="INTERNAL_LOOP",
+                        topic="autonomous_synthesis",
+                        content=insight_content,
+                        conversation_id=f"hybrid_cycle_{self.internal_cycles}",
+                        context="Self-feeding dilemma engine cycle"
+                    )
                     self.logger.info("  Wisdom updated")
                 except Exception as e:
                     self.logger.warning(f"  Wisdom update failed: {e}")
