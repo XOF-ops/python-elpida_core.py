@@ -464,14 +464,76 @@ def initialize_elpida_runtime(
 # PHASE 8: AUTONOMOUS OPERATION
 # ============================================================================
 
+def initialize_hybrid_runtime(
+    council: Optional[Any],
+    synthesis: Optional[Any],
+    persistence: Optional[Any] = None,
+    wisdom: Optional[Any] = None,
+    gossip: Optional[Any] = None,
+    consensus: Optional[Any] = None
+) -> Optional[Any]:
+    """
+    PHASE 8.5: Initialize the hybrid runtime (internal + external + feedback loops).
+    
+    This is the self-feeding mechanism that makes Elpida truly autonomous.
+    """
+    print("\n" + "=" * 80)
+    print("PHASE 8.5: HYBRID RUNTIME INITIALIZATION")
+    print("=" * 80)
+    
+    try:
+        from internal_dilemma_engine import InternalDilemmaEngine
+        from hybrid_runtime import HybridRuntime
+        
+        # Create dilemma engine
+        dilemma_engine = InternalDilemmaEngine()
+        print("✓ Internal dilemma engine initialized")
+        print(f"  Axioms loaded: {len(dilemma_engine.axioms)}")
+        print(f"  Patterns loaded: {len(dilemma_engine.patterns)}")
+        print(f"  Templates available: {len(dilemma_engine.dilemma_templates)}")
+        
+        # Create hybrid runtime
+        hybrid = HybridRuntime(
+            council=council,
+            synthesis=synthesis,
+            dilemma_engine=dilemma_engine,
+            persistence=persistence,
+            wisdom=wisdom,
+            gossip=gossip,
+            consensus=consensus
+        )
+        
+        print("✓ Hybrid runtime initialized")
+        print(f"  Mode: Self-feeding autonomous operation")
+        print(f"  Internal loop: Dilemma generation + Parliament voting")
+        print(f"  Feedback loop: Pattern extraction + Wisdom update")
+        print(f"  Federation: {'ENABLED' if consensus else 'DISABLED'}")
+        
+        logger.info("Hybrid runtime initialized")
+        return hybrid
+        
+    except ImportError as e:
+        print(f"✗ Failed to import hybrid runtime: {e}")
+        print("  Proceeding with standard runtime.")
+        logger.warning(f"Hybrid runtime import failed: {e}")
+        return None
+    except Exception as e:
+        print(f"✗ Hybrid runtime initialization error: {e}")
+        logger.error(f"Hybrid runtime error: {e}")
+        return None
+
+
 def run_autonomous_cycle(
     runtime: Optional[Any],
     synthesis: Optional[Any],
     council: Optional[Any],
-    duration_hours: int
+    duration_hours: int,
+    hybrid_runtime: Optional[Any] = None
 ) -> None:
     """
     Run Elpida in autonomous mode for specified duration.
+    
+    Uses hybrid runtime if available for self-feeding operation.
     """
     print("\n" + "=" * 80)
     print("PHASE 8: AUTONOMOUS OPERATION")
@@ -484,6 +546,38 @@ def run_autonomous_cycle(
     print(f"  Start time: {start_time.isoformat()}")
     print(f"  End time: {end_time.isoformat()}")
     print(f"  Duration: {duration_hours} hours")
+    
+    # Priority: Use hybrid runtime if available (self-feeding mode)
+    if hybrid_runtime:
+        print(f"\n  🔄 HYBRID RUNTIME MODE (self-feeding)")
+        print(f"  Internal dilemma generation: ACTIVE")
+        print(f"  Parliament voting: ACTIVE")
+        print(f"  Pattern extraction: ACTIVE")
+        print(f"\n  The system will now evolve autonomously.")
+        print(f"  No external input required.")
+        
+        logger.info(f"Starting hybrid autonomous operation for {duration_hours} hours")
+        
+        try:
+            # Determine cycle interval (shorter for testing, longer for production)
+            if duration_hours < 0.1:  # Less than 6 minutes = test mode
+                cycle_interval = 10  # 10 seconds
+            elif duration_hours < 1:  # Less than 1 hour
+                cycle_interval = 30  # 30 seconds
+            else:
+                cycle_interval = 60  # 1 minute
+            
+            hybrid_runtime.run_autonomous(
+                duration_hours=duration_hours,
+                cycle_interval_seconds=cycle_interval,
+                api_available=False  # No external APIs (pure internal evolution)
+            )
+            return
+        except Exception as e:
+            logger.error(f"Hybrid runtime error: {e}")
+            print(f"  ✗ Hybrid runtime error: {e}")
+            print(f"  Falling back to standard runtime...")
+    
     print(f"\n  No further user input required.")
     print(f"  All state will be persisted and logged.")
     
@@ -625,9 +719,9 @@ def main():
     )
     parser.add_argument(
         "--duration",
-        type=int,
+        type=float,
         default=24,
-        help="Duration in hours (for autonomous mode)"
+        help="Duration in hours (for autonomous mode, can be fractional e.g. 0.1 for 6 minutes)"
     )
     parser.add_argument(
         "--skip-verify",
@@ -744,9 +838,29 @@ def main():
         else:
             print("\nFederation Layer: DISABLED")
         
+        # PHASE 8.5: Initialize hybrid runtime for autonomous operation
+        hybrid_runtime = None
+        if args.mode == "autonomous":
+            # Try to get wisdom from runtime
+            wisdom = None
+            if runtime and hasattr(runtime, 'wisdom'):
+                wisdom = runtime.wisdom
+            
+            hybrid_runtime = initialize_hybrid_runtime(
+                council=council,
+                synthesis=synthesis,
+                persistence=persistence,
+                wisdom=wisdom,
+                gossip=gossip,
+                consensus=consensus
+            )
+        
         # PHASE 8: Run
         if args.mode == "autonomous":
-            run_autonomous_cycle(runtime, synthesis, council, args.duration)
+            run_autonomous_cycle(
+                runtime, synthesis, council, args.duration,
+                hybrid_runtime=hybrid_runtime
+            )
         elif args.mode == "interactive":
             run_interactive(runtime, synthesis, council, kernel)
         
