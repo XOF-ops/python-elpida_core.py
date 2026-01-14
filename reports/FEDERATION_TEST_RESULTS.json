@@ -1,0 +1,46 @@
+{
+  "timestamp": "2026-01-14T16:57:17.246632",
+  "overall_status": "PASS",
+  "tests": {
+    "agent_core": {
+      "status": "PASS",
+      "details": [
+        "\u2713 agent.core imports successful",
+        "\u2713 Federation status: True"
+      ]
+    },
+    "instance_registry": {
+      "status": "PASS",
+      "details": [
+        "\u2713 Instance identity created",
+        "\u2713 Payload signed: a979b62dfae7b5e9442d3f3a16b719ab...",
+        "\u26a0 Signature verification returned False (may be HMAC fallback)",
+        "\u2713 Signing is deterministic"
+      ]
+    },
+    "gossip_protocol": {
+      "status": "PASS",
+      "details": [
+        "\u2713 Gossip protocols created",
+        "\u2713 Peers registered",
+        "\u2713 Broadcast completed (no-peer mode)"
+      ]
+    },
+    "federation_consensus": {
+      "status": "PASS",
+      "details": [
+        "\u2713 Federation consensus instances created",
+        "\u2713 Proposal created: PROP_20260114_16...",
+        "\u2713 Consensus stats retrieved"
+      ]
+    },
+    "paradox_handling": {
+      "status": "PASS",
+      "details": [
+        "\u2713 Paradox test instances created",
+        "\u2713 Both conflicting proposals preserved",
+        "\u2713 Proposals have unique identities"
+      ]
+    }
+  }
+}

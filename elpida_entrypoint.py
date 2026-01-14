@@ -106,6 +106,121 @@ def verify_canonical_identity() -> bool:
     return True
 
 # ============================================================================
+# PHASE 0.5: FEDERATION INITIALIZATION
+# ============================================================================
+
+def initialize_federation(
+    instance_name: str = "ELPIDA_PRIMARY",
+    peers: list = None,
+    enable_gossip: bool = True
+) -> tuple:
+    """
+    Initialize federation layer for distributed consensus.
+    
+    This transforms Elpida from a single instance into a federated network where:
+    - Each instance has cryptographic identity (Ed25519)
+    - Proposals propagate via gossip (not centralized broadcast)
+    - Consensus emerges from multiple local parliaments
+    - Contradictions are preserved as data (A9), not smoothed over
+    
+    Args:
+        instance_name: Unique name for this Elpida instance
+        peers: List of peer instances to connect to (optional)
+        enable_gossip: Whether to start gossip protocol (default True)
+    
+    Returns:
+        Tuple of (InstanceRegistry, GossipProtocol, FederationConsensus)
+        Any component may be None if import fails
+    """
+    print("\n" + "=" * 80)
+    print("PHASE 0.5: FEDERATION INITIALIZATION")
+    print("=" * 80)
+    
+    registry = None
+    gossip = None
+    consensus = None
+    
+    try:
+        # Try importing from agent.core (preferred)
+        try:
+            from agent.core import InstanceRegistry, GossipProtocol, FederationConsensus
+        except ImportError:
+            # Fallback to direct imports
+            from instance_registry import InstanceRegistry
+            from gossip_protocol import GossipProtocol
+            from federation_consensus import FederationConsensus
+        
+        # Create instance identity
+        registry = InstanceRegistry(instance_name)
+        print(f"✓ Instance registry initialized")
+        print(f"  Instance ID: {registry.instance_id}")
+        print(f"  Instance Name: {registry.instance_name}")
+        print(f"  Genesis: {registry.genesis_timestamp}")
+        print(f"  Public Key: {registry.public_key[:32]}...")
+        print(f"  Constitutional Hash: {registry.constitutional_hash[:16]}...")
+        
+        logger.info(f"Federation registry initialized: {registry.instance_id}")
+        
+        # Create gossip layer
+        if enable_gossip:
+            gossip = GossipProtocol(registry)
+            print(f"✓ Gossip protocol initialized")
+            print(f"  Fanout: {gossip.fanout}")
+            print(f"  Message TTL: 5 hops")
+            logger.info("Gossip protocol initialized")
+        else:
+            print(f"⚠ Gossip protocol disabled")
+        
+        # Create local parliament for federation consensus
+        try:
+            from council_chamber import CouncilSession
+            local_parliament = CouncilSession()
+            print(f"✓ Local parliament initialized (CouncilSession)")
+        except ImportError:
+            # Fallback mock parliament for testing
+            class MockParliament:
+                def convene(self, proposal, verbose=False):
+                    return {"status": "APPROVED", "vote_split": "9/9", "weighted_approval": 1.0}
+            local_parliament = MockParliament()
+            print(f"⚠ Using mock parliament (CouncilSession not available)")
+        
+        # Create federation consensus with local parliament
+        consensus = FederationConsensus(registry, gossip, local_parliament)
+        print(f"✓ Federation consensus initialized")
+        print(f"  Federation threshold: 66%")
+        print(f"  Local threshold: 70%")
+        print(f"  Axioms enforced: A1, A6, A9, A10")
+        logger.info("Federation consensus initialized")
+        
+        # Register peers if provided
+        if peers:
+            print(f"\n  Registering {len(peers)} peers...")
+            for peer in peers:
+                try:
+                    registry.register_peer(
+                        peer.get('id', ''),
+                        peer.get('key', ''),
+                        peer.get('name', ''),
+                        peer.get('constitutional_hash', '')
+                    )
+                    print(f"    ✓ Peer registered: {peer.get('name', peer.get('id', 'unknown'))}")
+                except Exception as e:
+                    print(f"    ✗ Failed to register peer: {e}")
+        
+        print(f"\n✓ Federation layer ready ({len(registry.peers)} peers connected)")
+        
+    except ImportError as e:
+        print(f"✗ Federation layer import failed: {e}")
+        print("  Proceeding with single-instance mode.")
+        logger.warning(f"Federation import failed: {e}")
+    except Exception as e:
+        print(f"✗ Federation initialization error: {e}")
+        print("  Proceeding with single-instance mode.")
+        logger.error(f"Federation error: {e}")
+    
+    return registry, gossip, consensus
+
+# ============================================================================
 # PHASE 1: INITIALIZE KERNEL
 # ============================================================================
 
@@ -519,13 +634,28 @@ def main():
         action="store_true",
         help="Skip canonical identity verification (not recommended)"
     )
+    parser.add_argument(
+        "--instance-name",
+        default="ELPIDA_PRIMARY",
+        help="Unique name for this Elpida instance (for federation)"
+    )
+    parser.add_argument(
+        "--enable-federation",
+        action="store_true",
+        help="Enable federation layer for distributed coordination"
+    )
+    parser.add_argument(
+        "--peers",
+        default="",
+        help="Comma-separated list of peer instance IDs to connect to"
+    )
     
     args = parser.parse_args()
     
     print("\n")
     print("#" * 80)
     print("# ELPIDA ENTRYPOINT")
-    print("# Phase 26: System Hardening & Canonical Entrypoint")
+    print("# Phase 26: System Hardening & Distributed Federation")
     print(f"# Run timestamp: {datetime.now().isoformat()}")
     print("#" * 80)
     
@@ -542,6 +672,25 @@ def main():
             print("\n⚠ Skipping canonical verification (--skip-verify)")
             logger.warning("Canonical verification skipped by user")
         
+        # PHASE 0.5: Federation initialization (if enabled)
+        registry, gossip, consensus = None, None, None
+        if args.enable_federation:
+            # Parse peers from comma-separated string
+            peers = []
+            if args.peers:
+                for peer_id in args.peers.split(','):
+                    peer_id = peer_id.strip()
+                    if peer_id:
+                        peers.append({'id': peer_id, 'name': peer_id})
+            
+            registry, gossip, consensus = initialize_federation(
+                instance_name=args.instance_name,
+                peers=peers,
+                enable_gossip=True
+            )
+        else:
+            print("\n⚠ Federation disabled (use --enable-federation to enable)")
+        
         # PHASE 1–7: Initialize all subsystems
         kernel = initialize_kernel()
         persistence = initialize_persistence_engine()
@@ -557,6 +706,8 @@ def main():
         print("\n" + "=" * 80)
         print("INITIALIZATION SUMMARY")
         print("=" * 80)
+        
+        # Core components
         components = [
             ("Kernel", kernel is not None),
             ("Persistence Engine", persistence is not None),
@@ -566,12 +717,32 @@ def main():
             ("Synthesis Engine", synthesis is not None),
             ("Runtime Orchestrator", runtime is not None),
         ]
+        
+        print("Core Subsystems:")
         for name, status in components:
             status_str = "✓ ACTIVE" if status else "✗ INACTIVE"
             print(f"  {name}: {status_str}")
         
         active_count = sum(1 for _, s in components if s)
-        print(f"\nActive components: {active_count}/{len(components)}")
+        print(f"\nActive core components: {active_count}/{len(components)}")
+        
+        # Federation layer
+        if args.enable_federation:
+            print("\nFederation Layer:")
+            fed_components = [
+                ("Instance Registry", registry is not None),
+                ("Gossip Protocol", gossip is not None),
+                ("Federation Consensus", consensus is not None),
+            ]
+            for name, status in fed_components:
+                status_str = "✓ ACTIVE" if status else "✗ INACTIVE"
+                print(f"  {name}: {status_str}")
+            
+            if registry:
+                print(f"\n  Instance: {registry.instance_name} ({registry.instance_id[:16]}...)")
+                print(f"  Peers connected: {len(registry.peers)}")
+        else:
+            print("\nFederation Layer: DISABLED")
         
         # PHASE 8: Run
         if args.mode == "autonomous":
