@@ -1,0 +1,32 @@
+{
+  "name": "Python Elpida Core",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11",
+  
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.linting.enabled": true,
+        "python.linting.pylintEnabled": true,
+        "python.formatting.autopep8Path": "/usr/local/py-utils/bin/autopep8",
+        "python.formatting.blackPath": "/usr/local/py-utils/bin/black",
+        "python.linting.pylintPath": "/usr/local/py-utils/bin/pylint"
+      },
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance"
+      ]
+    }
+  },
+
+  "postCreateCommand": "pip install --user -e .[dev]",
+
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+
+  "forwardPorts": [],
+
+  "remoteUser": "vscode"
+}
