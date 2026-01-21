@@ -7,10 +7,7 @@
       "settings": {
         "python.defaultInterpreterPath": "/usr/local/bin/python",
         "python.linting.enabled": true,
-        "python.linting.pylintEnabled": true,
-        "python.formatting.autopep8Path": "/usr/local/py-utils/bin/autopep8",
-        "python.formatting.blackPath": "/usr/local/py-utils/bin/black",
-        "python.linting.pylintPath": "/usr/local/py-utils/bin/pylint"
+        "python.linting.pylintEnabled": true
       },
       "extensions": [
         "ms-python.python",
