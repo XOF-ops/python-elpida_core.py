@@ -32,3 +32,5 @@ Thumbs.db
 ELPIDA_UNIFIED/check_token_info.py
 ELPIDA_UNIFIED/test_slack_connection.py
 ELPIDA_UNIFIED/test_final_connection.py
+ELPIDA_UNIFIED/synthesis_resolutions.jsonl
+ELPIDA_UNIFIED/state/extended_state.json
