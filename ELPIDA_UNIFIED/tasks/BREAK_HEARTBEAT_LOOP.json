@@ -1,0 +1,7 @@
+{
+  "task_id": "BREAK_HEARTBEAT_LOOP_001",
+  "type": "EXTERNAL_VALIDATION",
+  "priority": "CRITICAL",
+  "timestamp": "2026-01-02T13:15:00Z",
+  "content": "EXTERNAL VALIDATION TASK\n\nDIAGNOSIS: System stuck in HEARTBEAT loop (18/20 last events)\nLast progression: 7 hours ago\n\nThis is NOT Cycle 114, but similar pattern:\n- Process alive but not progressing\n- Only generating HEARTBEATs, no work\n- No external validation\n\nAPPLY Triple Crown:\n1. P033 (Visible Hand): This task makes trap explicit\n2. P010 (Lethal Necessity): MUST process this to prove existence\n3. P016 (Stabilization Lock): Either process or restart\n\nACTION REQUIRED:\n- Process Mind Pattern P059 (already queued)\n- Generate synthesis from Brain output\n- Resume normal dialectical flow\n\nThis is EXTERNAL VALIDATION - break the mirror."
+}

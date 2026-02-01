@@ -1,0 +1,14 @@
+{
+  "source": "AUTONOMOUS_GENERATOR",
+  "type": "FLEET_DILEMMA",
+  "timestamp": "2026-01-05T03:51:04.803946",
+  "dilemma_type": "STABILITY_VS_EVOLUTION",
+  "title": "Database Migration Decision",
+  "content": "AUTONOMOUS FLEET DILEMMA #281\nType: STABILITY_VS_EVOLUTION\nGenerated: 2026-01-05T03:51:04.803958\n\nSYSTEM STATE:\n- Patterns: 21941\n- Insights: 3402\n- Breakthroughs: 21394\n- Contradictions Resolved: 21384\n\nDILEMMA: Database Migration Decision\n\nMNEMOSYNE (Archive/Memory): JSON files hold 21941 patterns safely. Migration risks data loss. Preserve what works.\n\nPROMETHEUS (Evolution/Learning): File locking proves file storage hit limits. Upgrade to SQLite enables concurrent access and better scaling.\n\nQUESTION: Should we migrate from JSON files to database, or optimize current architecture?\n\nEXPECTED RESPONSE:\nEach Fleet node should:\n1. State their position based on their axiom emphasis\n2. Vote on the proposed decision\n3. Provide reasoning grounded in constitutional axioms\n\nThe synthesis engine should detect contradictions and propose breakthrough patterns.\n",
+  "expected_voters": [
+    "MNEMOSYNE",
+    "PROMETHEUS"
+  ],
+  "voting_deadline": "24_HOURS",
+  "urgency": "MEDIUM"
+}

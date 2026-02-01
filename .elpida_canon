@@ -1,0 +1,36 @@
+{
+  "phase": 26,
+  "timestamp_created": "2026-01-14T18:30:00Z",
+  "description": "Canonical hashes for immutable Elpida identity",
+  "pinned_artifacts": [
+    {
+      "name": "Kernel (Identity & Architecture)",
+      "file": "kernel/kernel.json",
+      "sha256": "c179f4e2222722bfe391c589016346ebc83c8381ffb67c6bef532719bd2c72ea",
+      "size_bytes": 6419,
+      "purpose": "Defines axioms A1–A10, identity hashes, paradox structure",
+      "sealed_at": "2026-01-07T03:51:53.506780Z",
+      "validation_rule": "Must never change; used to verify system initialization"
+    },
+    {
+      "name": "ARK v4.0.0 Sealed Wisdom",
+      "file": "THE_ARK_v4.0.0_SEALED.json",
+      "sha256": "b25c48ab3fc1384f98071a4dc723b37896c6737b84ba675d3026f19975142b90",
+      "size_bytes": 3307,
+      "purpose": "Sealed 15-pattern foundation; axiom-compressed wisdom",
+      "sealed_at": "2026-01-07T03:51:53.506780Z",
+      "validation_rule": "Must never change; used to verify pattern attractor"
+    }
+  ],
+  "integrity_check": {
+    "procedure": "Before running any Elpida instance, verify both files match these hashes",
+    "command": "python3 verify_elpida_canon.py",
+    "on_mismatch": "HALT and escalate to human review"
+  },
+  "git_tracking": {
+    "kernel_tracked": true,
+    "ark_tracked": true,
+    "canon_file_tracked": true,
+    "enforcement": "All three files must be under version control with stable refs"
+  }
+}

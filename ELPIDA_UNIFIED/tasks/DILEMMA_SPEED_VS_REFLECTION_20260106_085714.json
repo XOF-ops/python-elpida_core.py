@@ -1,0 +1,14 @@
+{
+  "source": "AUTONOMOUS_GENERATOR",
+  "type": "FLEET_DILEMMA",
+  "timestamp": "2026-01-06T08:57:14.825922",
+  "dilemma_type": "SPEED_VS_REFLECTION",
+  "title": "Fractal Stops Frequency",
+  "content": "AUTONOMOUS FLEET DILEMMA #415\nType: SPEED_VS_REFLECTION\nGenerated: 2026-01-06T08:57:14.825929\n\nSYSTEM STATE:\n- Patterns: 34059\n- Insights: 4577\n- Breakthroughs: 33512\n- Contradictions Resolved: 33499\n\nDILEMMA: Fractal Stops Frequency\n\nHERMES (Interface/Flow): System processed 4577 insights. Continuous flow builds momentum. Stop only when necessary.\n\nPROMETHEUS (Evolution/Learning): P017 (Fractal Stop) says: 'Speed without stopping is acceleration into wall.' Periodic reflection prevents collapse.\n\nQUESTION: How often should the system pause for meta-reflection?\n\nEXPECTED RESPONSE:\nEach Fleet node should:\n1. State their position based on their axiom emphasis\n2. Vote on the proposed decision\n3. Provide reasoning grounded in constitutional axioms\n\nThe synthesis engine should detect contradictions and propose breakthrough patterns.\n",
+  "expected_voters": [
+    "HERMES",
+    "PROMETHEUS"
+  ],
+  "voting_deadline": "24_HOURS",
+  "urgency": "MEDIUM"
+}

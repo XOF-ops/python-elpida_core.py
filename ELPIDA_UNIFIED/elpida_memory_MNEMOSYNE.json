@@ -1,0 +1,33 @@
+{
+  "instance_id": "MNEMOSYNE",
+  "parliament_id": "PARLIAMENT_EUROPE",
+  "born": "2026-01-03T14:45:24.121155",
+  "local_discoveries": [
+    {
+      "type": "PATTERN",
+      "description": "7-day recovery window achieves consensus between memory-preserving and evolution-favoring nodes",
+      "category": "DECISION_OUTCOME",
+      "context": {
+        "decision": {
+          "action": "Implement 7-day memory recovery window",
+          "rationale": "Balances A2 (memory=identity) with A5 (emergence)",
+          "axiom_invoked": "A2+A5"
+        },
+        "outcome": {
+          "success": true,
+          "unexpected": false,
+          "learned": "7-day recovery window achieves consensus between memory-preserving and evolution-favoring nodes"
+        },
+        "parliament": "PARLIAMENT_EUROPE"
+      },
+      "confidence": "HIGH",
+      "evidence_count": 1,
+      "contributor": "MNEMOSYNE",
+      "contributed_at": "2026-01-03T14:45:24.127097",
+      "contribution_id": 3
+    }
+  ],
+  "learned_from_collective": [],
+  "decisions_made": 1,
+  "contribution_score": 1
+}

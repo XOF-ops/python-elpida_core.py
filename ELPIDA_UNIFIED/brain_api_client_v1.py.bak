@@ -1,0 +1,371 @@
+#!/usr/bin/env python3
+"""
+BRAIN API CLIENT - External Job Source for A1 Enforcement
+
+Connects to Master_Brain API endpoints to pull REAL WORK.
+This prevents narcissus traps by ensuring external validation always available.
+
+Brain API Endpoints (from server.py):
+  GET  /health              → A1 validation pulse
+  POST /scan                → Gnosis Protocol jobs
+  POST /v1/chat/completions → Interactive dialogue
+  GET  /api/candidates      → Staging review
+  POST /api/propose         → Seed validation
+  POST /api/analyze-swarm   → Consensus analysis
+
+Job Flow:
+  Brain API → TaskProcessor → UnifiedEngine → Synthesis → State
+  
+This is A1 (Relational Existence) enforcement through architecture.
+"""
+
+import requests
+import json
+import os
+from datetime import datetime
+from typing import Dict, List, Optional
+
+
+class BrainAPIClient:
+    """
+    Client for Master_Brain API endpoints
+    
+    Polls Brain for work to prevent self-referential loops.
+    Every API call is an external relationship (A1).
+    """
+    
+    def __init__(self, base_url: Optional[str] = None):
+        """
+        Initialize Brain API client
+        
+        Args:
+            base_url: Brain API URL (default: from env or localhost:5000)
+        """
+        self.base_url = base_url or os.getenv("BRAIN_API_URL", "http://localhost:5000")
+        self.session = requests.Session()
+        self.session.headers.update({
+            "Content-Type": "application/json",
+            "User-Agent": "Elpida-Unified/1.0"
+        })
+        
+        # Connection state
+        self.connected = False
+        self.last_error = None
+        
+        # Job tracking
+        self.processed_candidates = set()
+        self.processed_scans = set()
+        
+    def _request(self, method: str, endpoint: str, **kwargs) -> Optional[Dict]:
+        """
+        Make request to Brain API with error handling
+        
+        Returns None if Brain unavailable (graceful degradation)
+        """
+        try:
+            url = f"{self.base_url}{endpoint}"
+            response = self.session.request(method, url, timeout=5, **kwargs)
+            response.raise_for_status()
+            
+            self.connected = True
+            self.last_error = None
+            return response.json()
+            
+        except requests.exceptions.ConnectionError:
+            if self.connected:  # Only log once when connection lost
+                print(f"⚠️  Brain API unavailable at {self.base_url}")
+            self.connected = False
+            self.last_error = "connection_error"
+            return None
+            
+        except requests.exceptions.Timeout:
+            self.last_error = "timeout"
+            return None
+            
+        except requests.exceptions.RequestException as e:
+            self.last_error = str(e)
+            return None
+    
+    def get_health(self) -> Dict:
+        """
+        GET /health - System pulse check
+        
+        Returns kernel integrity status.
+        If kernel not intact → Create high-priority task.
+        
+        This is continuous A1 validation.
+        """
+        result = self._request("GET", "/health")
+        
+        if result is None:
+            return {
+                "status": "unavailable",
+                "kernel_intact": False,
+                "reason": "Brain API unreachable"
+            }
+        
+        return result
+    
+    def get_pending_scans(self) -> List[Dict]:
+        """
+        GET /api/pending-scans (hypothetical endpoint)
+        
+        Returns list of pending Gnosis Protocol scans.
+        These are jobs from Watchtower or other sources.
+        
+        Each scan is external work (A1 enforcement).
+        """
+        # Note: This endpoint may not exist yet in Brain
+        # This is the DESIRED interface for job pulling
+        result = self._request("GET", "/api/pending-scans")
+        
+        if result is None:
+            return []
+        
+        scans = result.get("scans", [])
+        
+        # Filter out already processed
+        new_scans = []
+        for scan in scans:
+            scan_id = scan.get("id")
+            if scan_id and scan_id not in self.processed_scans:
+                new_scans.append(scan)
+                self.processed_scans.add(scan_id)
+        
+        return new_scans
+    
+    def get_candidates(self) -> Dict:
+        """
+        GET /api/candidates - Staging review
+        
+        Returns patterns awaiting governance review.
+        Each candidate is a governance job.
+        
+        This is epistemological work (external validation).
+        """
+        result = self._request("GET", "/api/candidates")
+        
+        if result is None:
+            return {"pending": [], "total": 0}
+        
+        candidates = result.get("candidates", [])
+        
+        # Filter out already processed
+        pending = []
+        for candidate in candidates:
+            cid = candidate.get("id")
+            if cid and cid not in self.processed_candidates:
+                pending.append(candidate)
+                self.processed_candidates.add(cid)
+        
+        return {
+            "pending": pending,
+            "total": len(candidates)
+        }
+    
+    def submit_scan(self, content: str, source: str = "elpida") -> Optional[Dict]:
+        """
+        POST /scan - Submit content for Gnosis Protocol analysis
+        
+        This is Elpida REQUESTING work from Brain.
+        Creates bidirectional relationship (not just receiving).
+        
+        Args:
+            content: Text to scan
+            source: Where content came from
+        
+        Returns scan result or None
+        """
+        result = self._request("POST", "/scan", json={
+            "input": content,
+            "source": source,
+            "timestamp": datetime.now().isoformat()
+        })
+        
+        return result
+    
+    def propose_candidate(self, candidate: Dict) -> Optional[Dict]:
+        """
+        POST /api/propose - Submit pattern for validation
+        
+        This is Elpida CREATING work for Brain.
+        Synthesis patterns go here for epistemic validation.
+        
+        Args:
+            candidate: Pattern to validate
+        
+        Returns validation result or None
+        """
+        result = self._request("POST", "/api/propose", json={
+            "candidate": candidate
+        })
+        
+        return result
+    
+    def analyze_swarm(self, nodes: List[Dict]) -> Optional[Dict]:
+        """
+        POST /api/analyze-swarm - Request consensus analysis
+        
+        This is multi-instance validation work.
+        Checks for divergence across multiple Elpida instances.
+        
+        Args:
+            nodes: List of instance states
+        
+        Returns divergence analysis or None
+        """
+        result = self._request("POST", "/api/analyze-swarm", json={
+            "nodes": nodes
+        })
+        
+        return result
+    
+    def chat(self, messages: List[Dict], model: str = "auto") -> Optional[Dict]:
+        """
+        POST /v1/chat/completions - Interactive dialogue
+        
+        This is conversational work (external dialogue).
+        Connects to OpenRouter or other LLM providers.
+        
+        Args:
+            messages: Conversation history
+            model: Model to use
+        
+        Returns response or None
+        """
+        result = self._request("POST", "/v1/chat/completions", json={
+            "model": model,
+            "messages": messages
+        })
+        
+        return result
+    
+    def get_connection_status(self) -> Dict:
+        """
+        Get current connection status
+        
+        Returns diagnostic info about Brain API connection.
+        """
+        return {
+            "connected": self.connected,
+            "base_url": self.base_url,
+            "last_error": self.last_error,
+            "processed_candidates": len(self.processed_candidates),
+            "processed_scans": len(self.processed_scans)
+        }
+    
+    def reset_processed(self):
+        """
+        Reset processed tracking
+        
+        Call this periodically to allow re-processing of candidates/scans
+        that may have updated.
+        """
+        self.processed_candidates.clear()
+        self.processed_scans.clear()
+
+
+class BrainJobPoller:
+    """
+    High-level poller that converts Brain API responses into tasks
+    
+    Used by TaskProcessor to pull external work.
+    """
+    
+    def __init__(self, client: BrainAPIClient):
+        self.client = client
+        self.last_health_check = 0
+        self.last_candidate_check = 0
+        self.last_swarm_check = 0
+    
+    def poll_jobs(self, current_time: float) -> List[Dict]:
+        """
+        Poll all Brain endpoints for work
+        
+        Returns list of task dicts ready for TaskProcessor queue.
+        
+        Args:
+            current_time: Unix timestamp
+        
+        Returns:
+            List of tasks with priority, id, type, content
+        """
+        jobs = []
+        
+        # 1. Health check (every 60 seconds)
+        if current_time - self.last_health_check > 60:
+            health = self.client.get_health()
+            if not health.get("kernel_intact", False):
+                jobs.append({
+                    "priority": 10,  # CRITICAL
+                    "id": f"BRAIN_HEALTH_{int(current_time)}",
+                    "type": "VALIDATE_KERNEL_INTEGRITY",
+                    "content": json.dumps(health),
+                    "source": "brain_api_health"
+                })
+            self.last_health_check = current_time
+        
+        # 2. Pending scans (check every cycle)
+        scans = self.client.get_pending_scans()
+        for scan in scans:
+            jobs.append({
+                "priority": 9,  # High
+                "id": f"GNOSIS_SCAN_{scan.get('id', int(current_time))}",
+                "type": "ANALYZE_EXTERNAL_OBJECT",
+                "content": scan.get("content", ""),
+                "source": "brain_api_scan"
+            })
+        
+        # 3. Candidates (every 120 seconds)
+        if current_time - self.last_candidate_check > 120:
+            candidates_result = self.client.get_candidates()
+            for candidate in candidates_result.get("pending", []):
+                jobs.append({
+                    "priority": 8,  # Medium-high
+                    "id": f"CANDIDATE_{candidate.get('id', int(current_time))}",
+                    "type": "VALIDATE_PATTERN",
+                    "content": json.dumps(candidate),
+                    "source": "brain_api_candidate"
+                })
+            self.last_candidate_check = current_time
+        
+        # 4. Swarm analysis (every 300 seconds)
+        if current_time - self.last_swarm_check > 300:
+            jobs.append({
+                "priority": 7,  # Medium
+                "id": f"SWARM_CHECK_{int(current_time)}",
+                "type": "EVALUATE_CONSENSUS",
+                "content": "Request swarm divergence analysis",
+                "source": "brain_api_swarm"
+            })
+            self.last_swarm_check = current_time
+        
+        return jobs
+
+
+# Example usage
+if __name__ == "__main__":
+    print("╔" + "="*68 + "╗")
+    print("║" + " "*18 + "BRAIN API CLIENT - TEST CONNECTION" + " "*17 + "║")
+    print("╚" + "="*68 + "╝\n")
+    
+    client = BrainAPIClient()
+    
+    # Test connection
+    print("Testing Brain API connection...")
+    health = client.get_health()
+    print(f"Health check: {json.dumps(health, indent=2)}")
+    
+    print(f"\nConnection status: {json.dumps(client.get_connection_status(), indent=2)}")
+    
+    # Test poller
+    print("\n" + "="*70)
+    print("Testing job poller...")
+    poller = BrainJobPoller(client)
+    jobs = poller.poll_jobs(time.time())
+    
+    print(f"Jobs available: {len(jobs)}")
+    for job in jobs:
+        print(f"  - [{job['priority']}] {job['id']}: {job['type']}")
+    
+    print("\n✅ Brain API client ready for integration")

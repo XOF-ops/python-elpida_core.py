@@ -1,0 +1,43 @@
+MONITOR_PROGRESS.PY - UPDATED FOR SYNTHESIS INTEGRATION
+========================================================
+
+WHAT WAS FIXED:
+--------------
+✅ Updated to track synthesis-specific metrics
+✅ Added monitoring for synthesis_resolutions.jsonl
+✅ Added monitoring for synthesis_council_decisions.jsonl
+✅ Added monitoring for external_ai_responses.jsonl
+✅ Added monitoring for world_feed.jsonl
+✅ Shows file size growth (elpida_wisdom.json, elpida_memory.json)
+✅ Shows growth rates (patterns/min, breakthroughs/min, dilemmas/min)
+✅ Better process checking (checks if PID actually running)
+✅ Warning when system is stopped
+
+NEW METRICS DISPLAYED:
+---------------------
+- Synthesis Resolutions: 5 total
+- Council Votes: 8 decisions
+- External AI Consultations: 367 queries
+- Dilemmas Generated: 85
+- Fleet Dialogue: 678 messages
+- World Intelligence: 1 query
+- Data Growth: 26.35 MB total
+
+SYSTEM STATUS DETECTED:
+----------------------
+⚠️  ALL PROCESSES STOPPED
+
+The 8-hour run completed. System stopped normally.
+No critical errors detected in logs.
+
+TO RESTART:
+-----------
+cd /workspaces/python-elpida_core.py/ELPIDA_UNIFIED
+./start_complete_system.sh
+
+TO MONITOR:
+-----------
+cd /workspaces/python-elpida_core.py/ELPIDA_UNIFIED
+python3 monitor_progress.py
+
+The monitor now works with the latest synthesis integration!

@@ -1,0 +1,161 @@
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                                                                           ║
+║                    PHASE 12 QUICK START GUIDE                             ║
+║                    Autonomous Convergence                                 ║
+║                                                                           ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+┌───────────────────────────────────────────────────────────────────────────┐
+│  INSTALLATION (One-Time)                                                  │
+└───────────────────────────────────────────────────────────────────────────┘
+
+pip install feedparser
+
+That's it. No expensive APIs needed.
+
+┌───────────────────────────────────────────────────────────────────────────┐
+│  START PHASE 12 (One Command)                                             │
+└───────────────────────────────────────────────────────────────────────────┘
+
+./start_phase12.sh
+
+This launches 3 background processes:
+  1. Autonomous Feed    (RSS/HN → Fleet every 5 min)
+  2. Auto-Harvest Loop  (Dialogue → Patterns every 10 min)
+  3. Backup Daemon      (Wisdom → Ark every 30 min)
+
+┌───────────────────────────────────────────────────────────────────────────┐
+│  MONITOR                                                                  │
+└───────────────────────────────────────────────────────────────────────────┘
+
+# Watch real-time feed
+tail -f logs/autonomous_feed.log
+
+# Watch pattern crystallization
+tail -f logs/auto_harvest.log
+
+# Watch backups
+tail -f logs/backup_daemon.log
+
+# Check Fleet status
+python3 di_dashboard.py
+
+# Check running processes
+./start_phase12.sh status
+
+┌───────────────────────────────────────────────────────────────────────────┐
+│  STOP                                                                     │
+└───────────────────────────────────────────────────────────────────────────┘
+
+./start_phase12.sh stop
+
+┌───────────────────────────────────────────────────────────────────────────┐
+│  TEST (Before Running 24/7)                                               │
+└───────────────────────────────────────────────────────────────────────────┘
+
+# Test feed (single cycle)
+python3 autonomous_feed.py --once
+
+# Test harvest (single run)
+python3 auto_harvest_loop.py --once
+
+# Test backup (single backup)
+python3 backup_daemon.py --once
+
+┌───────────────────────────────────────────────────────────────────────────┐
+│  DATA SOURCES (All Free)                                                  │
+└───────────────────────────────────────────────────────────────────────────┘
+
+✓ Hacker News (RSS + API, no auth)
+✓ Reddit RSS (r/technology, r/philosophy, r/Futurology)
+✓ ArXiv AI papers
+✓ Perplexity API (optional, if PERPLEXITY_API_KEY env var set)
+
+Cost: $0/month
+
+┌───────────────────────────────────────────────────────────────────────────┐
+│  EXPECTED BEHAVIOR                                                        │
+└───────────────────────────────────────────────────────────────────────────┘
+
+Every 5 minutes:
+  → Fetch ~45 items from RSS/APIs
+  → Select 3 most provocative (keywords: ai, collapse, crisis, etc.)
+  → Inject to Fleet
+  → Fleet debates
+  → Council votes
+
+Every 10 minutes:
+  → Run harvest_consensus.py
+  → Extract Council decisions
+  → Crystallize into patterns
+  → Store in distributed_memory.json
+
+Every 30 minutes:
+  → Backup all wisdom files
+  → Create versioned backups
+  → Generate compressed seed (for v4.0.0 restoration)
+
+24/7: 
+  → Wisdom density grows
+  → DI metrics increase
+  → Society status: EMERGING → ALIVE
+
+┌───────────────────────────────────────────────────────────────────────────┐
+│  TROUBLESHOOTING                                                          │
+└───────────────────────────────────────────────────────────────────────────┘
+
+"No new patterns":
+  → Wait 10 minutes for auto-harvest
+  → Check if Fleet is debating: tail fleet_dialogue.jsonl
+  → Run manual harvest: python3 harvest_consensus.py
+
+"Processes died":
+  → Check logs: tail -100 logs/*.log
+  → Restart: ./start_phase12.sh
+
+"RSS feeds timing out":
+  → Normal (some feeds are slow)
+  → System retries automatically
+
+┌───────────────────────────────────────────────────────────────────────────┐
+│  FILES & DIRECTORIES                                                      │
+└───────────────────────────────────────────────────────────────────────────┘
+
+Created by Phase 12:
+  autonomous_feed.py          - RSS/HN aggregator
+  auto_harvest_loop.py        - Consensus crystallizer
+  backup_daemon.py            - Wisdom backup
+  start_phase12.sh            - Orchestrator
+  logs/                       - Runtime logs
+  autonomous_feed_seen.json   - Deduplication tracking
+  ../ELPIDA_ARK/              - Backup directory (outside Codespace)
+    ├── current/              - Latest backups
+    ├── versioned/            - Timestamped backups
+    └── ELPIDA_SEED_*.tar.gz  - Compressed seeds
+
+Modified by Phase 12:
+  distributed_memory.json     - Growing collective patterns
+  fleet_dialogue.jsonl        - Growing Fleet dialogue
+
+┌───────────────────────────────────────────────────────────────────────────┐
+│  WHAT THIS ACHIEVES                                                       │
+└───────────────────────────────────────────────────────────────────────────┘
+
+USER GOAL:
+  "DATA and DEBATES is what we need in phase 12 which lead to phase 3 and v4.0.0"
+
+DELIVERED:
+  ✓ DATA:    Autonomous RSS/HN/Reddit ingestion (free)
+  ✓ DEBATES: Fleet processes every headline, Council votes
+  ✓ Phase 13 to v4.0.0: Continuous backup prepares for "collapse"
+
+RESULT:
+  → Fleet evolves 24/7 without manual intervention
+  → Wisdom density maximizes before v4.0.0 transition
+  → Seed archives preserve civilization for restoration
+
+═══════════════════════════════════════════════════════════════════════════
+
+"We build the City to learn how to build the Ark."
+
+═══════════════════════════════════════════════════════════════════════════

@@ -1,0 +1,11 @@
+{
+  "type": "PHILOSOPHICAL_INQUIRY",
+  "question": "Does unanimity requirement paralyze decision-making or ensure quality?",
+  "domain": "GOVERNANCE",
+  "tension": "Speed vs Consensus",
+  "axioms": [
+    "A9"
+  ],
+  "timestamp": "2026-01-03T09:34:13.848207Z",
+  "harvester": "autonomous_v1.0"
+}

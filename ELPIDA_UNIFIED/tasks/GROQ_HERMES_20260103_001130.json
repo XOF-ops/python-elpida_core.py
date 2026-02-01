@@ -1,0 +1,10 @@
+{
+  "type": "EXTERNAL_KNOWLEDGE",
+  "source": "groq_llama-3.1-8b",
+  "assigned_node": "HERMES",
+  "related_axiom": "A1",
+  "question": "What makes communication between AI systems different from communication between humans? Answer in 2 sentences.",
+  "external_perspective": "Communication between AI systems differs from communication between humans due to the absence of human intuition, emotional context, and implicit understanding, requiring AI systems to rely on explicit, structured data and protocols to convey information. Additionally, AI systems often communicate in machine-readable formats such as APIs, data streams, or code, whereas human communication involves a rich tapestry of language, tone, and nonverbal cues.",
+  "timestamp": "2026-01-03T00:11:15.877565Z",
+  "instruction": "HERMES: This is an external AI's perspective on A1. Debate with other nodes: Does this align with our axioms? Should we integrate it into collective wisdom?"
+}

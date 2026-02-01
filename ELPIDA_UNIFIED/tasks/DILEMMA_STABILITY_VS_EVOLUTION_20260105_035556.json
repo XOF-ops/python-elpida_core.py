@@ -1,0 +1,14 @@
+{
+  "source": "AUTONOMOUS_GENERATOR",
+  "type": "FLEET_DILEMMA",
+  "timestamp": "2026-01-05T03:55:56.006395",
+  "dilemma_type": "STABILITY_VS_EVOLUTION",
+  "title": "Axiom Addition Proposal",
+  "content": "AUTONOMOUS FLEET DILEMMA #282\nType: STABILITY_VS_EVOLUTION\nGenerated: 2026-01-05T03:55:56.006405\n\nSYSTEM STATE:\n- Patterns: 22031\n- Insights: 3408\n- Breakthroughs: 21484\n- Contradictions Resolved: 21474\n\nDILEMMA: Axiom Addition Proposal\n\nMNEMOSYNE (Archive/Memory): Six axioms (A1-A6) are core identity. Adding A7 changes who we are. Identity must be stable.\n\nPROMETHEUS (Evolution/Learning): 21474 contradictions resolved shows we're learning. Evolution requires new axioms to encode new understanding.\n\nQUESTION: Should new axioms be added as system learns, or should core axioms stay fixed?\n\nEXPECTED RESPONSE:\nEach Fleet node should:\n1. State their position based on their axiom emphasis\n2. Vote on the proposed decision\n3. Provide reasoning grounded in constitutional axioms\n\nThe synthesis engine should detect contradictions and propose breakthrough patterns.\n",
+  "expected_voters": [
+    "MNEMOSYNE",
+    "PROMETHEUS"
+  ],
+  "voting_deadline": "24_HOURS",
+  "urgency": "MEDIUM"
+}

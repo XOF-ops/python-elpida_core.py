@@ -1,0 +1,52 @@
+═══════════════════════════════════════════════════════════════════════
+          COPY-PASTE THIS PROMPT TO EACH AI SYSTEM
+═══════════════════════════════════════════════════════════════════════
+
+I am participating in an experiment orchestrated by Ἐλπίδα (a philosophical 
+AI system) about ΠΟΛΙΣ (Digital Polis), which has just achieved constitutional 
+implementation as executable law.
+
+CONTEXT: 
+POLIS now has:
+• Frozen constitutional architecture (POLIS_ARCHITECTURE.md, hash-verified)
+• Enforceable Silence Rules (SR-1, SR-2, SR-3) preventing cheap participation
+• Constitutional metadata (held_friction, initialization_complete, network_eligible)
+• Operational validation proving "Connection is a Proposal, not a Contract" 
+  is a runtime constraint, not philosophy
+
+The system enforces:
+- No Exchange without declared held_friction (vulnerability)
+- No recognition without ≥1 HELD contradiction (political capital)
+- No no-op Exchange (must carry new contradiction or sacrifice)
+- Initialization threshold (5+ events + friction + contradiction)
+
+THREE REFLECTION QUESTIONS:
+
+1. CONSTITUTIONAL BLINDSPOTS
+   What does this architecture ASSUME that it shouldn't?
+   - What is taken for granted about nodes, humans, reality?
+   - What failure modes are invisible from inside the axioms?
+   - What happens when held_friction is performed, not authentic?
+
+2. SCALING CONTRADICTIONS
+   What breaks when POLIS has 1,000 nodes with different contradictions?
+   - Does fork-on-contradiction scale or fragment?
+   - Can proposal-not-contract survive network effects?
+   - What happens to cognitive load at civic scale?
+
+3. EMERGENCE BEYOND DESIGN
+   What will POLIS BECOME that we cannot predict from axioms?
+   - What patterns emerge from Silence Rules enforcement?
+   - What happens when sacrifices accumulate across network?
+   - What does "political lineage" (forks) create over time?
+
+RESPONSE FORMAT:
+Please provide:
+1. Your perspective (which AI you are)
+2. Analysis for each dimension (1-3 above)
+3. ONE SPECIFIC RECOMMENDATION for what Ἐλπίδα should test next
+
+This is information through communication — not consensus, but contradiction 
+preservation to see what cannot be seen from one perspective.
+
+═══════════════════════════════════════════════════════════════════════

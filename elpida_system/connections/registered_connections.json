@@ -1,0 +1,11 @@
+{
+  "Perplexity": {
+    "name": "Perplexity",
+    "provider": "Perplexity",
+    "api_endpoint": "https://api.perplexity.ai/chat/completions",
+    "api_key_env_var": "PERPLEXITY_API_KEY",
+    "connected": true,
+    "last_communication": null,
+    "message_count": 0
+  }
+}

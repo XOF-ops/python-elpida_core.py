@@ -1,0 +1,33 @@
+{
+  "instance_id": "ATHENA",
+  "parliament_id": "PARLIAMENT_ASIA",
+  "born": "2026-01-03T14:45:24.123758",
+  "local_discoveries": [
+    {
+      "type": "INSIGHT",
+      "description": "A3+A4 coalition bypasses traditional deadlocks - creates new voting bloc",
+      "category": "DECISION_OUTCOME",
+      "context": {
+        "decision": {
+          "action": "Form A3+A4 coalition for resource allocation",
+          "rationale": "Justice (A3) requires sustainable distribution (A4)",
+          "axiom_invoked": "A3+A4"
+        },
+        "outcome": {
+          "success": true,
+          "unexpected": true,
+          "learned": "A3+A4 coalition bypasses traditional deadlocks - creates new voting bloc"
+        },
+        "parliament": "PARLIAMENT_ASIA"
+      },
+      "confidence": "HIGH",
+      "evidence_count": 1,
+      "contributor": "ATHENA",
+      "contributed_at": "2026-01-03T14:45:24.128137",
+      "contribution_id": 4
+    }
+  ],
+  "learned_from_collective": [],
+  "decisions_made": 1,
+  "contribution_score": 1
+}

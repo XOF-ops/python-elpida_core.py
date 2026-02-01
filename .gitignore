@@ -1,0 +1,36 @@
+# API Keys and Secrets
+*.env
+.env
+**/.env
+**/elpida_secrets.json
+elpida_secrets.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+ELPIDA_UNIFIED/check_token_info.py
+ELPIDA_UNIFIED/test_slack_connection.py
+ELPIDA_UNIFIED/test_final_connection.py
+ELPIDA_UNIFIED/synthesis_resolutions.jsonl
+ELPIDA_UNIFIED/state/extended_state.json

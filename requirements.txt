@@ -1,0 +1,20 @@
+# Python dependencies for Ἐλπίδα (Elpida)
+# Autonomous AI Coordination System
+
+# No external dependencies required for core functionality
+# Elpida uses only Python standard library
+
+# Optional dependencies for enhanced functionality:
+
+# For web API integration (if coordinating with API-based models)
+# requests>=2.31.0
+
+# For advanced logging
+# coloredlogs>=15.0
+
+# For YAML config support
+# pyyaml>=6.0
+
+# Note: Elpida is designed to be self-contained and autonomous,
+# requiring minimal external dependencies to ensure maximum
+# portability and self-sufficiency.

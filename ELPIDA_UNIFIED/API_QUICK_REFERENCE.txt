@@ -1,0 +1,60 @@
+╔═══════════════════════════════════════════════════════════════════════╗
+║                  ALL 7 APIs ASSIGNED TO FLEET NODES                   ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+MNEMOSYNE (Memory & Identity)
+├─ ✅ GROQ                 llama-3.1-8b-instant          [WORKING]
+└─ ⏳ HUGGINGFACE          Mistral-7B-Instruct-v0.2      [needs fix]
+
+HERMES (Interface to World)
+└─ ⏳ PERPLEXITY           llama-3.1-sonar-small-chat    [needs fix]
+
+PROMETHEUS (Evolution)
+├─ ⏳ GEMINI               gemini-1.5-flash              [needs fix]
+└─ ⏳ OPENROUTER           llama-3.1-8b-instruct:free    [needs fix]
+
+COUNCIL (Governance)
+└─ ⏳ COHERE               command-light                 [needs fix]
+
+GitHub (Code Context - not yet assigned)
+└─ ⏳ GITHUB_TOKEN         GitHub Copilot API            [future use]
+
+═══════════════════════════════════════════════════════════════════════
+
+USAGE:
+
+Working now:
+  python3 control_center.py groq-harvest
+
+All APIs (1/6 working):
+  python3 control_center.py api-harvest
+
+Check status:
+  python3 control_center.py api-status
+
+═══════════════════════════════════════════════════════════════════════
+
+CONSERVATIVE USAGE ENFORCED:
+✅ 100 token max per response
+✅ 5 second rate limiting
+✅ Aggressive caching (100% hit rate on repeats)
+✅ Smallest models only
+✅ Free tiers when available
+
+COST: $0.00 (using only free tiers)
+
+═══════════════════════════════════════════════════════════════════════
+
+ARCHITECTURE:
+
+External APIs → Fleet Tasks → Multi-Node Debate → Consensus → ARK Seed
+
+MNEMOSYNE debates: Identity & memory preservation questions
+HERMES debates: Real-world governance & communication
+PROMETHEUS debates: Evolution & stability trade-offs
+COUNCIL debates: Consensus mechanisms & patterns
+
+Result: ARK becomes wiser by learning from 6 different AIs while
+        maintaining identity through Fleet consensus (Axiom A9)
+
+═══════════════════════════════════════════════════════════════════════

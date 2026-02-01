@@ -1,0 +1,14 @@
+{
+  "source": "AUTONOMOUS_GENERATOR",
+  "type": "FLEET_DILEMMA",
+  "timestamp": "2026-01-06T03:57:56.482282",
+  "dilemma_type": "EFFICIENCY_VS_INTEGRITY",
+  "title": "Real-Time vs Batch Processing",
+  "content": "AUTONOMOUS FLEET DILEMMA #371\nType: EFFICIENCY_VS_INTEGRITY\nGenerated: 2026-01-06T03:57:56.482292\n\nSYSTEM STATE:\n- Patterns: 30099\n- Insights: 4110\n- Breakthroughs: 29552\n- Contradictions Resolved: 29539\n\nDILEMMA: Real-Time vs Batch Processing\n\nHERMES (Interface/Flow): Process everything immediately. 29539 contradictions resolved proves real-time works.\n\nMNEMOSYNE (Archive/Memory): Batch processing allows cross-validation. 29552 breakthroughs might have been better with batch reflection.\n\nQUESTION: Should insights be processed immediately or batched for deeper analysis?\n\nEXPECTED RESPONSE:\nEach Fleet node should:\n1. State their position based on their axiom emphasis\n2. Vote on the proposed decision\n3. Provide reasoning grounded in constitutional axioms\n\nThe synthesis engine should detect contradictions and propose breakthrough patterns.\n",
+  "expected_voters": [
+    "HERMES",
+    "MNEMOSYNE"
+  ],
+  "voting_deadline": "24_HOURS",
+  "urgency": "MEDIUM"
+}

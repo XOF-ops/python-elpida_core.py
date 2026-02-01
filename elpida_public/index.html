@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elpida — Axiom-Grounded Dialogue</title>
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --border: #2a2a3a;
+            --text: #e0e0e0;
+            --text-dim: #888;
+            --accent: #7c5cbf;
+            --accent-dim: #5a3d99;
+            --user-bg: #1a1a2e;
+            --ai-bg: #0f1419;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        header {
+            padding: 1rem 2rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 300;
+            letter-spacing: 0.1em;
+        }
+        
+        .logo span { color: var(--accent); }
+        
+        .tagline {
+            color: var(--text-dim);
+            font-size: 0.85rem;
+        }
+        
+        .nav-links a {
+            color: var(--text-dim);
+            text-decoration: none;
+            margin-left: 1.5rem;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+        
+        .nav-links a:hover { color: var(--accent); }
+        
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        
+        #chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .message {
+            max-width: 85%;
+            padding: 1rem 1.25rem;
+            border-radius: 1rem;
+            line-height: 1.6;
+        }
+        
+        .message.user {
+            background: var(--user-bg);
+            align-self: flex-end;
+            border-bottom-right-radius: 0.25rem;
+        }
+        
+        .message.ai {
+            background: var(--ai-bg);
+            border: 1px solid var(--border);
+            align-self: flex-start;
+            border-bottom-left-radius: 0.25rem;
+        }
+        
+        .message-meta {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+            flex-wrap: wrap;
+        }
+        
+        .axiom-tag {
+            background: var(--accent-dim);
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .domain-tag {
+            background: var(--border);
+            color: var(--text-dim);
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+        }
+        
+        #input-container {
+            padding: 1rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 0.75rem;
+        }
+        
+        #message-input {
+            flex: 1;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            color: var(--text);
+            font-size: 1rem;
+            resize: none;
+            min-height: 60px;
+            max-height: 200px;
+        }
+        
+        #message-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        
+        #send-btn {
+            background: var(--accent);
+            border: none;
+            border-radius: 0.75rem;
+            padding: 0 1.5rem;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        #send-btn:hover { background: var(--accent-dim); }
+        #send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .welcome {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-dim);
+        }
+        
+        .welcome h2 {
+            color: var(--text);
+            font-weight: 400;
+            margin-bottom: 1rem;
+        }
+        
+        .welcome p {
+            max-width: 500px;
+            margin: 0 auto 0.5rem;
+            line-height: 1.7;
+        }
+        
+        /* Modal for axioms */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.open { display: flex; }
+        
+        .modal-content {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 2rem;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-content h3 {
+            margin-bottom: 1rem;
+            font-weight: 400;
+        }
+        
+        .axiom-list {
+            list-style: none;
+        }
+        
+        .axiom-list li {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .axiom-list li:last-child { border-bottom: none; }
+        
+        .axiom-id {
+            color: var(--accent);
+            font-weight: 600;
+            margin-right: 0.5rem;
+        }
+        
+        .close-modal {
+            margin-top: 1.5rem;
+            background: var(--border);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            color: var(--text);
+            cursor: pointer;
+        }
+        
+        @media (max-width: 600px) {
+            header { flex-direction: column; gap: 0.5rem; }
+            .nav-links a { margin-left: 0; margin-right: 1rem; }
+            .message { max-width: 95%; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div>
+            <div class="logo">Ἐλπίδα <span>|</span> Elpida</div>
+            <div class="tagline">Axiom-Grounded Dialogue</div>
+        </div>
+        <nav class="nav-links">
+            <a href="#" onclick="showAxioms()">The 10 Axioms</a>
+            <a href="https://github.com/XOF-ops/python-elpida_core.py" target="_blank">Source</a>
+        </nav>
+    </header>
+    
+    <main>
+        <div id="chat-container">
+            <div class="welcome">
+                <h2>Welcome</h2>
+                <p>This is a dialogue grounded in 10 axioms — principles for transparent, ethical, and wise AI interaction.</p>
+                <p>Ask anything. The axioms shape the response.</p>
+                <p style="color: var(--accent); margin-top: 1rem;">Your conversation contributes to collective evolution.</p>
+            </div>
+        </div>
+        
+        <div id="input-container">
+            <textarea id="message-input" placeholder="Ask something..." rows="2"></textarea>
+            <button id="send-btn">Send</button>
+        </div>
+    </main>
+    
+    <div class="modal" id="axiom-modal">
+        <div class="modal-content">
+            <h3>The 10 Axioms</h3>
+            <ul class="axiom-list" id="axiom-list"></ul>
+            <button class="close-modal" onclick="closeModal()">Close</button>
+        </div>
+    </div>
+    
+    <script>
+        let sessionId = null;
+        const chatContainer = document.getElementById('chat-container');
+        const input = document.getElementById('message-input');
+        const sendBtn = document.getElementById('send-btn');
+        
+        // Load axioms
+        fetch('/axioms')
+            .then(r => r.json())
+            .then(data => {
+                const list = document.getElementById('axiom-list');
+                data.axioms.forEach(ax => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<span class="axiom-id">${ax.id}</span><strong>${ax.name}</strong>: ${ax.description}`;
+                    list.appendChild(li);
+                });
+            });
+        
+        function showAxioms() {
+            document.getElementById('axiom-modal').classList.add('open');
+        }
+        
+        function closeModal() {
+            document.getElementById('axiom-modal').classList.remove('open');
+        }
+        
+        function addMessage(content, isUser, meta = {}) {
+            // Remove welcome on first message
+            const welcome = document.querySelector('.welcome');
+            if (welcome) welcome.remove();
+            
+            const msg = document.createElement('div');
+            msg.className = `message ${isUser ? 'user' : 'ai'}`;
+            
+            // Format content with basic markdown
+            let formatted = content
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/\n/g, '<br>');
+            
+            msg.innerHTML = formatted;
+            
+            if (!isUser && (meta.axioms?.length || meta.domain)) {
+                const metaDiv = document.createElement('div');
+                metaDiv.className = 'message-meta';
+                
+                if (meta.axioms) {
+                    meta.axioms.forEach(ax => {
+                        const tag = document.createElement('span');
+                        tag.className = 'axiom-tag';
+                        tag.textContent = ax;
+                        metaDiv.appendChild(tag);
+                    });
+                }
+                
+                if (meta.domain_name) {
+                    const tag = document.createElement('span');
+                    tag.className = 'domain-tag';
+                    tag.textContent = `D${meta.domain}: ${meta.domain_name}`;
+                    metaDiv.appendChild(tag);
+                }
+                
+                msg.appendChild(metaDiv);
+            }
+            
+            chatContainer.appendChild(msg);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        async function sendMessage() {
+            const content = input.value.trim();
+            if (!content) return;
+            
+            addMessage(content, true);
+            input.value = '';
+            sendBtn.disabled = true;
+            
+            try {
+                const resp = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({content, session_id: sessionId})
+                });
+                
+                const data = await resp.json();
+                sessionId = data.session_id;
+                
+                addMessage(data.response, false, {
+                    axioms: data.axioms,
+                    domain: data.domain,
+                    domain_name: data.domain_name
+                });
+            } catch (err) {
+                addMessage('Connection error. Please try again.', false);
+            }
+            
+            sendBtn.disabled = false;
+            input.focus();
+        }
+        
+        sendBtn.onclick = sendMessage;
+        input.onkeydown = (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        };
+        
+        // Auto-resize textarea
+        input.oninput = () => {
+            input.style.height = 'auto';
+            input.style.height = Math.min(input.scrollHeight, 200) + 'px';
+        };
+    </script>
+</body>
+</html>
