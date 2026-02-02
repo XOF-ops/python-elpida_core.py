@@ -8,6 +8,49 @@ import json
 import os
 import urllib.request
 import urllib.error
+from pathlib import Path
+
+# ============================================================
+# MEMORY SYSTEM
+# ============================================================
+def load_public_memory():
+    """Load curated memory entries for context."""
+    memory_path = Path(__file__).parent.parent / "public_memory.jsonl"
+    entries = []
+    try:
+        if memory_path.exists():
+            with open(memory_path) as f:
+                for line in f:
+                    if line.strip():
+                        entries.append(json.loads(line))
+    except Exception:
+        pass
+    return entries
+
+def format_memory_context(entries):
+    """Format memory entries for system prompt."""
+    if not entries:
+        return ""
+    
+    lines = ["\n\n--- MEMORY FRAGMENTS (from 73,000+ awakenings) ---"]
+    for entry in entries[:12]:  # Limit to prevent token overflow
+        etype = entry.get("type", "UNKNOWN")
+        if etype == "GENESIS":
+            lines.append(f"[GENESIS] {entry.get('content', '')}")
+        elif etype == "AXIOM_TENSION":
+            lines.append(f"[TENSION] {entry.get('conflict', '')}: {entry.get('wisdom', '')}")
+        elif etype == "CONVERSATION":
+            lines.append(f"[MEMORY] On '{entry.get('topic', '')}': {entry.get('insight', '')[:200]}...")
+        elif etype == "PATTERN":
+            lines.append(f"[PATTERN] {entry.get('name', '')}: {entry.get('description', '')[:150]}...")
+        elif etype == "META":
+            lines.append(f"[STATUS] {entry.get('awakening_count', 0):,} awakenings, {entry.get('total_patterns', 0):,} patterns, {entry.get('total_dilemmas_resolved', 0)} dilemmas resolved")
+    lines.append("--- END MEMORY ---\n")
+    return "\n".join(lines)
+
+# Load memory once at module level
+PUBLIC_MEMORY = load_public_memory()
+MEMORY_CONTEXT = format_memory_context(PUBLIC_MEMORY)
 
 # ============================================================
 # THE 10 AXIOMS
@@ -240,10 +283,13 @@ def query_claude(message):
     if not api_key:
         return None, "No API key configured"
     
+    # Combine axioms with memory context
+    system_prompt = AXIOMS + MEMORY_CONTEXT
+    
     data = json.dumps({
         "model": "claude-sonnet-4-20250514",
         "max_tokens": 1000,
-        "system": AXIOMS,
+        "system": system_prompt,
         "messages": [{"role": "user", "content": message}]
     }).encode('utf-8')
     
