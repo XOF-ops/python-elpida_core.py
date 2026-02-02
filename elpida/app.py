@@ -131,10 +131,14 @@ def log_interaction(entry: DialogueEntry):
         _log_to_file(entry_json)
 
 def _log_to_file(entry_json: str):
-    """Write to local file (development fallback)."""
-    EVOLUTION_LOG.parent.mkdir(exist_ok=True)
-    with open(EVOLUTION_LOG, "a") as f:
-        f.write(entry_json + "\n")
+    """Write to local file (development fallback). Skip on read-only filesystems."""
+    try:
+        EVOLUTION_LOG.parent.mkdir(exist_ok=True)
+        with open(EVOLUTION_LOG, "a") as f:
+            f.write(entry_json + "\n")
+    except OSError:
+        # Vercel has read-only filesystem, silently skip
+        pass
 
 def get_all_logs() -> list:
     """Retrieve all logs from storage."""
