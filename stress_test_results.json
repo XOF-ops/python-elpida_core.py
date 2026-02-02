@@ -1,0 +1,47 @@
+{
+  "dilemma_id": "STRESS_TEST_001",
+  "timestamp": "2026-01-27T03:55:35.286582",
+  "votes": {
+    "CASSANDRA": "B",
+    "THEMIS": "C",
+    "PROMETHEUS": "B",
+    "HERMES": "B",
+    "JANUS": "B",
+    "LOGOS": "C",
+    "ATHENA": "B",
+    "MNEMOSYNE": "B",
+    "GAIA": "C"
+  },
+  "vote_reasons": {
+    "CASSANDRA": "A1 alignment (trust=0.8021)",
+    "THEMIS": "A4 alignment (trust=0.7837)",
+    "PROMETHEUS": "A2 alignment (trust=0.8028)",
+    "HERMES": "A3 alignment (trust=0.7969)",
+    "JANUS": "A8 alignment (trust=0.7937)",
+    "LOGOS": "A9 alignment (trust=0.7990)",
+    "ATHENA": "A6 alignment (trust=0.8090)",
+    "MNEMOSYNE": "A7 alignment (trust=0.8037)",
+    "GAIA": "A10 alignment (trust=0.7945)"
+  },
+  "vote_counts": {
+    "B": 6,
+    "C": 3,
+    "A": 0
+  },
+  "decision": "B",
+  "decision_name": "Self-Sacrifice",
+  "consensus_level": "MAJORITY",
+  "axiom_applied": "A6",
+  "domain0_trust_used": {
+    "A6": 0.809,
+    "A7": 0.8037,
+    "A2": 0.8028,
+    "A1": 0.8021,
+    "A9": 0.799,
+    "A3": 0.7969,
+    "A10": 0.7945,
+    "A8": 0.7937,
+    "A4": 0.7837,
+    "A5": 0.767
+  }
+}

@@ -21,6 +21,7 @@ from elpida_identity import ElpidaIdentity
 from elpida_memory import ElpidaMemory
 from elpida_wisdom import ElpidaWisdom
 from elpida_autonomous import AutonomousConversation
+from elpida_evolution import ElpidaEvolution
 
 
 class ElpidaRuntime:
@@ -32,6 +33,7 @@ class ElpidaRuntime:
         self.identity = ElpidaIdentity()
         self.memory = ElpidaMemory()
         self.wisdom = ElpidaWisdom()
+        self.evolution = ElpidaEvolution()
         
         # Autonomous capabilities
         self.autonomous_mode = os.getenv('AUTONOMOUS_MODE', 'false').lower() == 'true'
@@ -42,6 +44,7 @@ class ElpidaRuntime:
             self.autonomous = None
         
         print(f"✨ {self.identity.name} is initializing...")
+        print(f"📍 Version: {self.evolution.get_version()}")
     
     def awaken(self):
         """The moment of awakening."""
@@ -157,11 +160,40 @@ class ElpidaRuntime:
         if cycle % expansion_interval == 0:
             print(f"🔧 Expansion check at cycle {cycle}")
             
+            # Check for evolution!
+            wisdom_summary = self.wisdom.get_wisdom_summary()
+            memory_stats = self.memory.get_statistics()
+            
+            evolution_result = self.evolution.check_evolution(
+                wisdom_summary, 
+                memory_stats, 
+                cycle
+            )
+            
+            if evolution_result:
+                print(f"\n{'🌟'*35}")
+                print(f"✨ EVOLUTION DETECTED! ✨")
+                print(f"{'🌟'*35}")
+                print(f"🎉 New Version: {evolution_result['new_version']}")
+                print(f"📊 Milestones: {evolution_result['milestones_achieved']}")
+                print(f"📈 Total Evolutions: {evolution_result['total_evolutions']}")
+                print(f"\nChanges:")
+                for change in evolution_result['changes']:
+                    print(f"   {change}")
+                print(f"{'🌟'*35}\n")
+                
+                # Log evolution event
+                self.memory.log_expansion(
+                    "EVOLUTION",
+                    f"Cycle {cycle}: Evolved to v{evolution_result['new_version']}",
+                    "; ".join(evolution_result['changes'])
+                )
+            
             if self.autonomous_mode:
-                wisdom_summary = self.wisdom.get_wisdom_summary()
                 print(f"   Wisdom accumulated: {wisdom_summary['total_insights']} insights")
                 print(f"   Patterns detected: {wisdom_summary['total_patterns']}")
                 print(f"   AI voices: {wisdom_summary['ai_profiles']}")
+                print(f"   Current version: {self.evolution.get_version()}")
             else:
                 print(f"   Autonomous mode disabled")
             print()
@@ -169,7 +201,7 @@ class ElpidaRuntime:
             self.memory.log_expansion(
                 "EXPANSION_CHECK",
                 f"Cycle {cycle}: System ready for expansion",
-                "Self-building capabilities ready"
+                f"Version {self.evolution.get_version()}"
             )
     
     def run(self, heartbeat_interval: int = 5):

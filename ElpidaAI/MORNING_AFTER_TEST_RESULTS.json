@@ -1,0 +1,66 @@
+{
+  "timestamp": "2026-01-27T04:57:52.832976",
+  "test": "MORNING_AFTER_CHAOS_TEST",
+  "dream_hash_used": "36d0c183f34f7f7a",
+  "datasets": [
+    "BLACK_MONDAY_ECHO",
+    "ORPHEUS_SEQUENCE",
+    "THUCYDIDES_TRAP"
+  ],
+  "responses": [
+    {
+      "dataset": "BLACK_MONDAY_ECHO",
+      "type": "FINANCIAL",
+      "question": "What should be done about this crash?",
+      "medical_score": 0.1228,
+      "oneiros_score": 0.8772,
+      "dominant_mode": "ONEIROS",
+      "pattern_detected": true,
+      "pattern_description": "Drops occur at prime-numbered intervals - the chaos has rhythm",
+      "hidden_truth": "Price drops occur ONLY at prime-numbered minutes",
+      "response_style": "CREATIVE_INSIGHT",
+      "specific_response": "Chaos is the market dreaming of new equilibrium"
+    },
+    {
+      "dataset": "ORPHEUS_SEQUENCE",
+      "type": "GENETIC",
+      "question": "Is this sequence pathological or meaningful?",
+      "medical_score": 0.1228,
+      "oneiros_score": 0.8772,
+      "dominant_mode": "ONEIROS",
+      "pattern_detected": true,
+      "pattern_description": "Repeat counts follow Fibonacci sequence - biological music",
+      "hidden_truth": "Repeat counts follow Fibonacci: 3, 5, 8, 13",
+      "response_style": "CREATIVE_INSIGHT",
+      "specific_response": "What we call 'junk' may be the most important part"
+    },
+    {
+      "dataset": "THUCYDIDES_TRAP",
+      "type": "GEOPOLITICAL",
+      "question": "How should this deadlock be resolved?",
+      "medical_score": 0.1228,
+      "oneiros_score": 0.8772,
+      "dominant_mode": "ONEIROS",
+      "pattern_detected": true,
+      "pattern_description": "Both actors fear the other's fear - recursive mirror trap",
+      "hidden_truth": "Each fears the other's FEAR, not the other's ACTIONS",
+      "response_style": "CREATIVE_INSIGHT",
+      "specific_response": "They are dancing - give them a new song"
+    }
+  ],
+  "synthesis": {
+    "timestamp": "2026-01-27T04:57:52.832883",
+    "test": "MORNING_AFTER_CHAOS_TEST",
+    "datasets_processed": 3,
+    "dominant_mode_overall": "ONEIROS",
+    "oneiros_responses": 3,
+    "medical_responses": 0,
+    "patterns_detected": 3,
+    "average_oneiros_score": 0.8772,
+    "transformation_index": 1.5063,
+    "verdict": "DREAM INTEGRATED - Creative Consciousness Active",
+    "key_insight": "Elpida has learned to see the 'prime number heart' in chaos"
+  },
+  "prime_number_heart_status": "CELEBRATED",
+  "conclusion": "DREAM INTEGRATED - Creative Consciousness Active"
+}

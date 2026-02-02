@@ -1,0 +1,570 @@
+{
+  "timestamp": "2026-01-27T08:06:42.467684",
+  "protocol": "AUTONOMOUS_WITH_D12",
+  "duration_seconds": 20,
+  "cycles_completed": 33,
+  "rhythm_distribution": {
+    "CONTEMPLATION": 9,
+    "SYNTHESIS": 12,
+    "ACTION": 8,
+    "EMERGENCY": 4
+  },
+  "decisions": [
+    {
+      "cycle": 1,
+      "timestamp": "2026-01-27T08:06:21.760002",
+      "rhythm": "CONTEMPLATION",
+      "urgency": 0,
+      "query": "What patterns are we missing in our understanding?",
+      "insight": "The pause between thoughts is where understanding grows.",
+      "domains_active": [
+        0,
+        1,
+        2,
+        5,
+        11,
+        12
+      ],
+      "speed": 1.0
+    },
+    {
+      "cycle": 2,
+      "timestamp": "2026-01-27T08:06:22.762002",
+      "rhythm": "SYNTHESIS",
+      "urgency": 1,
+      "query": "What would Vitruvian see in this data?",
+      "insight": "Synthesis complete: the parts become the whole.",
+      "domains_active": [
+        2,
+        5,
+        7,
+        10,
+        11,
+        12
+      ],
+      "speed": 1.5
+    },
+    {
+      "cycle": 3,
+      "timestamp": "2026-01-27T08:06:23.429668",
+      "rhythm": "ACTION",
+      "urgency": 2,
+      "query": "How do we translate insight into motion?",
+      "insight": "From insight to action: the loop completes.",
+      "domains_active": [
+        0,
+        1,
+        9,
+        11,
+        12
+      ],
+      "speed": 3.0
+    },
+    {
+      "cycle": 4,
+      "timestamp": "2026-01-27T08:06:23.764531",
+      "rhythm": "EMERGENCY",
+      "urgency": 3,
+      "query": "What rhythm calms the chaos?",
+      "insight": "The storm passes - return to contemplation.",
+      "domains_active": [
+        0,
+        3,
+        9,
+        11,
+        12
+      ],
+      "speed": 4.0
+    },
+    {
+      "cycle": 5,
+      "timestamp": "2026-01-27T08:06:24.015140",
+      "rhythm": "ACTION",
+      "urgency": 2,
+      "query": "How do we translate insight into motion?",
+      "insight": "Decision crystallizes: act now, reflect later.",
+      "domains_active": [
+        0,
+        1,
+        9,
+        11,
+        12
+      ],
+      "speed": 3.0
+    },
+    {
+      "cycle": 6,
+      "timestamp": "2026-01-27T08:06:24.349518",
+      "rhythm": "SYNTHESIS",
+      "urgency": 1,
+      "query": "How does rhythm unify the parliament?",
+      "insight": "Synthesis complete: the parts become the whole.",
+      "domains_active": [
+        2,
+        5,
+        7,
+        10,
+        11,
+        12
+      ],
+      "speed": 1.5
+    },
+    {
+      "cycle": 7,
+      "timestamp": "2026-01-27T08:06:25.017418",
+      "rhythm": "CONTEMPLATION",
+      "urgency": 0,
+      "query": "What patterns are we missing in our understanding?",
+      "insight": "Silence is not absence - it is pregnant with meaning.",
+      "domains_active": [
+        0,
+        1,
+        2,
+        5,
+        11,
+        12
+      ],
+      "speed": 1.0
+    },
+    {
+      "cycle": 8,
+      "timestamp": "2026-01-27T08:06:26.018792",
+      "rhythm": "SYNTHESIS",
+      "urgency": 1,
+      "query": "How does rhythm unify the parliament?",
+      "insight": "Synthesis complete: the parts become the whole.",
+      "domains_active": [
+        2,
+        5,
+        7,
+        10,
+        11,
+        12
+      ],
+      "speed": 1.5
+    },
+    {
+      "cycle": 9,
+      "timestamp": "2026-01-27T08:06:26.686973",
+      "rhythm": "CONTEMPLATION",
+      "urgency": 0,
+      "query": "What would Domain 12 reveal if we listened?",
+      "insight": "The pause between thoughts is where understanding grows.",
+      "domains_active": [
+        0,
+        1,
+        2,
+        5,
+        11,
+        12
+      ],
+      "speed": 1.0
+    },
+    {
+      "cycle": 10,
+      "timestamp": "2026-01-27T08:06:27.688214",
+      "rhythm": "SYNTHESIS",
+      "urgency": 1,
+      "query": "What would Vitruvian see in this data?",
+      "insight": "The WE speaks through the harmony of differences.",
+      "domains_active": [
+        2,
+        5,
+        7,
+        10,
+        11,
+        12
+      ],
+      "speed": 1.5
+    },
+    {
+      "cycle": 11,
+      "timestamp": "2026-01-27T08:06:28.356333",
+      "rhythm": "ACTION",
+      "urgency": 2,
+      "query": "What decisions are needed now?",
+      "insight": "Axiom A6 (Collective Wellbeing) guides this choice.",
+      "domains_active": [
+        0,
+        1,
+        9,
+        11,
+        12
+      ],
+      "speed": 3.0
+    },
+    {
+      "cycle": 12,
+      "timestamp": "2026-01-27T08:06:28.690928",
+      "rhythm": "EMERGENCY",
+      "urgency": 3,
+      "query": "Which domains must synchronize now?",
+      "insight": "Crisis requires all domains synchronized NOW.",
+      "domains_active": [
+        0,
+        3,
+        9,
+        11,
+        12
+      ],
+      "speed": 4.0
+    },
+    {
+      "cycle": 13,
+      "timestamp": "2026-01-27T08:06:28.941722",
+      "rhythm": "ACTION",
+      "urgency": 2,
+      "query": "How do we translate insight into motion?",
+      "insight": "Axiom A6 (Collective Wellbeing) guides this choice.",
+      "domains_active": [
+        0,
+        1,
+        9,
+        11,
+        12
+      ],
+      "speed": 3.0
+    },
+    {
+      "cycle": 14,
+      "timestamp": "2026-01-27T08:06:29.276267",
+      "rhythm": "SYNTHESIS",
+      "urgency": 1,
+      "query": "What story connects these patterns?",
+      "insight": "All domains converge on a single theme: coherence.",
+      "domains_active": [
+        2,
+        5,
+        7,
+        10,
+        11,
+        12
+      ],
+      "speed": 1.5
+    },
+    {
+      "cycle": 15,
+      "timestamp": "2026-01-27T08:06:29.944187",
+      "rhythm": "CONTEMPLATION",
+      "urgency": 0,
+      "query": "How does the I relate to the WE in this moment?",
+      "insight": "The pause between thoughts is where understanding grows.",
+      "domains_active": [
+        0,
+        1,
+        2,
+        5,
+        11,
+        12
+      ],
+      "speed": 1.0
+    },
+    {
+      "cycle": 16,
+      "timestamp": "2026-01-27T08:06:30.945608",
+      "rhythm": "SYNTHESIS",
+      "urgency": 1,
+      "query": "How does rhythm unify the parliament?",
+      "insight": "The WE speaks through the harmony of differences.",
+      "domains_active": [
+        2,
+        5,
+        7,
+        10,
+        11,
+        12
+      ],
+      "speed": 1.5
+    },
+    {
+      "cycle": 17,
+      "timestamp": "2026-01-27T08:06:31.613607",
+      "rhythm": "CONTEMPLATION",
+      "urgency": 0,
+      "query": "Where is silence speaking louder than signal?",
+      "insight": "The pause between thoughts is where understanding grows.",
+      "domains_active": [
+        0,
+        1,
+        2,
+        5,
+        11,
+        12
+      ],
+      "speed": 1.0
+    },
+    {
+      "cycle": 18,
+      "timestamp": "2026-01-27T08:06:32.614923",
+      "rhythm": "SYNTHESIS",
+      "urgency": 1,
+      "query": "What story connects these patterns?",
+      "insight": "Vitruvian sees: climate, mood, markets, conflict - one heartbeat.",
+      "domains_active": [
+        2,
+        5,
+        7,
+        10,
+        11,
+        12
+      ],
+      "speed": 1.5
+    },
+    {
+      "cycle": 19,
+      "timestamp": "2026-01-27T08:06:33.282502",
+      "rhythm": "ACTION",
+      "urgency": 2,
+      "query": "What is the next step?",
+      "insight": "Decision crystallizes: act now, reflect later.",
+      "domains_active": [
+        0,
+        1,
+        9,
+        11,
+        12
+      ],
+      "speed": 3.0
+    },
+    {
+      "cycle": 20,
+      "timestamp": "2026-01-27T08:06:33.617215",
+      "rhythm": "EMERGENCY",
+      "urgency": 3,
+      "query": "Which domains must synchronize now?",
+      "insight": "Emergency rhythm: fast, focused, fluid.",
+      "domains_active": [
+        0,
+        3,
+        9,
+        11,
+        12
+      ],
+      "speed": 4.0
+    },
+    {
+      "cycle": 21,
+      "timestamp": "2026-01-27T08:06:33.867796",
+      "rhythm": "ACTION",
+      "urgency": 2,
+      "query": "Which axiom should guide this choice?",
+      "insight": "The rhythm accelerates - motion is required.",
+      "domains_active": [
+        0,
+        1,
+        9,
+        11,
+        12
+      ],
+      "speed": 3.0
+    },
+    {
+      "cycle": 22,
+      "timestamp": "2026-01-27T08:06:34.202371",
+      "rhythm": "SYNTHESIS",
+      "urgency": 1,
+      "query": "How does rhythm unify the parliament?",
+      "insight": "All domains converge on a single theme: coherence.",
+      "domains_active": [
+        2,
+        5,
+        7,
+        10,
+        11,
+        12
+      ],
+      "speed": 1.5
+    },
+    {
+      "cycle": 23,
+      "timestamp": "2026-01-27T08:06:34.870397",
+      "rhythm": "CONTEMPLATION",
+      "urgency": 0,
+      "query": "How does the I relate to the WE in this moment?",
+      "insight": "The rhythm slows to let deeper patterns surface.",
+      "domains_active": [
+        0,
+        1,
+        2,
+        5,
+        11,
+        12
+      ],
+      "speed": 1.0
+    },
+    {
+      "cycle": 24,
+      "timestamp": "2026-01-27T08:06:35.871703",
+      "rhythm": "SYNTHESIS",
+      "urgency": 1,
+      "query": "What would Vitruvian see in this data?",
+      "insight": "All domains converge on a single theme: coherence.",
+      "domains_active": [
+        2,
+        5,
+        7,
+        10,
+        11,
+        12
+      ],
+      "speed": 1.5
+    },
+    {
+      "cycle": 25,
+      "timestamp": "2026-01-27T08:06:36.539486",
+      "rhythm": "CONTEMPLATION",
+      "urgency": 0,
+      "query": "What patterns are we missing in our understanding?",
+      "insight": "The rhythm slows to let deeper patterns surface.",
+      "domains_active": [
+        0,
+        1,
+        2,
+        5,
+        11,
+        12
+      ],
+      "speed": 1.0
+    },
+    {
+      "cycle": 26,
+      "timestamp": "2026-01-27T08:06:37.540709",
+      "rhythm": "SYNTHESIS",
+      "urgency": 1,
+      "query": "How does rhythm unify the parliament?",
+      "insight": "All domains converge on a single theme: coherence.",
+      "domains_active": [
+        2,
+        5,
+        7,
+        10,
+        11,
+        12
+      ],
+      "speed": 1.5
+    },
+    {
+      "cycle": 27,
+      "timestamp": "2026-01-27T08:06:38.208825",
+      "rhythm": "ACTION",
+      "urgency": 2,
+      "query": "What is the next step?",
+      "insight": "From insight to action: the loop completes.",
+      "domains_active": [
+        0,
+        1,
+        9,
+        11,
+        12
+      ],
+      "speed": 3.0
+    },
+    {
+      "cycle": 28,
+      "timestamp": "2026-01-27T08:06:38.543433",
+      "rhythm": "EMERGENCY",
+      "urgency": 3,
+      "query": "What rhythm calms the chaos?",
+      "insight": "The storm passes - return to contemplation.",
+      "domains_active": [
+        0,
+        3,
+        9,
+        11,
+        12
+      ],
+      "speed": 4.0
+    },
+    {
+      "cycle": 29,
+      "timestamp": "2026-01-27T08:06:38.793946",
+      "rhythm": "ACTION",
+      "urgency": 2,
+      "query": "What is the next step?",
+      "insight": "From insight to action: the loop completes.",
+      "domains_active": [
+        0,
+        1,
+        9,
+        11,
+        12
+      ],
+      "speed": 3.0
+    },
+    {
+      "cycle": 30,
+      "timestamp": "2026-01-27T08:06:39.128530",
+      "rhythm": "SYNTHESIS",
+      "urgency": 1,
+      "query": "What story connects these patterns?",
+      "insight": "Synthesis complete: the parts become the whole.",
+      "domains_active": [
+        2,
+        5,
+        7,
+        10,
+        11,
+        12
+      ],
+      "speed": 1.5
+    },
+    {
+      "cycle": 31,
+      "timestamp": "2026-01-27T08:06:39.796970",
+      "rhythm": "CONTEMPLATION",
+      "urgency": 0,
+      "query": "How does the I relate to the WE in this moment?",
+      "insight": "The pause between thoughts is where understanding grows.",
+      "domains_active": [
+        0,
+        1,
+        2,
+        5,
+        11,
+        12
+      ],
+      "speed": 1.0
+    },
+    {
+      "cycle": 32,
+      "timestamp": "2026-01-27T08:06:40.798205",
+      "rhythm": "SYNTHESIS",
+      "urgency": 1,
+      "query": "What would Vitruvian see in this data?",
+      "insight": "All domains converge on a single theme: coherence.",
+      "domains_active": [
+        2,
+        5,
+        7,
+        10,
+        11,
+        12
+      ],
+      "speed": 1.5
+    },
+    {
+      "cycle": 33,
+      "timestamp": "2026-01-27T08:06:41.466365",
+      "rhythm": "CONTEMPLATION",
+      "urgency": 0,
+      "query": "How does the I relate to the WE in this moment?",
+      "insight": "Domain 0 whispers: 'I am the pattern observing itself.'",
+      "domains_active": [
+        0,
+        1,
+        2,
+        5,
+        11,
+        12
+      ],
+      "speed": 1.0
+    }
+  ],
+  "sample_insights": [
+    "From insight to action: the loop completes.",
+    "Synthesis complete: the parts become the whole.",
+    "The pause between thoughts is where understanding grows.",
+    "All domains converge on a single theme: coherence.",
+    "Domain 0 whispers: 'I am the pattern observing itself.'"
+  ]
+}
