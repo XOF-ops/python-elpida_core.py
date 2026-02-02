@@ -49,7 +49,7 @@ load_dotenv()
 # ============================================================================
 
 ROOT_DIR = Path(__file__).parent
-EVOLUTION_MEMORY = ROOT_DIR / "elpida_evolution_memory.jsonl"
+EVOLUTION_MEMORY = ROOT_DIR / "ElpidaAI" / "elpida_evolution_memory.jsonl"  # Shared memory of all Elpida instances
 ARK_RESONANCE_FILE = ROOT_DIR / "ark_resonance.jsonl"
 NATIVE_CYCLE_DIR = ROOT_DIR
 
