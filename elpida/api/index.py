@@ -180,6 +180,8 @@ HTML_PAGE = '''<!DOCTYPE html>
     </div>
     <footer>
         <a href="/api/index?action=axioms">View Axioms</a> |
+        <a href="#" onclick="exportSession(); return false;">Export Session</a> |
+        <a href="/stats">System Stats</a> |
         Powered by the 10 Axioms
     </footer>
     <script>
@@ -188,6 +190,7 @@ HTML_PAGE = '''<!DOCTYPE html>
         const input = document.getElementById('message-input');
         const sendBtn = document.getElementById('send-btn');
         let sessionId = null;
+        let sessionLog = [];  // Track all exchanges for export
 
         function addMessage(content, type, meta = {}) {
             const div = document.createElement('div');
@@ -202,6 +205,26 @@ HTML_PAGE = '''<!DOCTYPE html>
             div.innerHTML = html;
             chatContainer.appendChild(div);
             chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        function exportSession() {
+            if (sessionLog.length === 0) {
+                alert('No conversation to export yet.');
+                return;
+            }
+            const data = {
+                exported_at: new Date().toISOString(),
+                session_id: sessionId,
+                exchange_count: sessionLog.length,
+                logs: sessionLog
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'elpida_session_' + (sessionId || 'anon') + '.json';
+            a.click();
+            URL.revokeObjectURL(url);
         }
 
         form.addEventListener('submit', async (e) => {
@@ -233,6 +256,15 @@ HTML_PAGE = '''<!DOCTYPE html>
                 } else {
                     sessionId = data.session_id;
                     addMessage(data.response, 'assistant', { axioms: data.axioms, domain_name: data.domain_name });
+                    // Log for export
+                    sessionLog.push({
+                        timestamp: new Date().toISOString(),
+                        user_message: content,
+                        response: data.response,
+                        axioms_invoked: data.axioms,
+                        domain_active: data.domain,
+                        domain_name: data.domain_name
+                    });
                 }
             } catch (err) {
                 loadingDiv.remove();
@@ -325,6 +357,34 @@ class Handler(BaseHTTPRequestHandler):
                 ]
             }
             self.wfile.write(json.dumps(axioms_data, indent=2).encode())
+        elif '/logs/export' in self.path:
+            # Export public memory for observation (read-only)
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            export_data = {
+                "storage": "public_memory",
+                "exported_at": __import__('datetime').datetime.utcnow().isoformat() + "Z",
+                "count": len(PUBLIC_MEMORY),
+                "logs": PUBLIC_MEMORY,
+                "note": "This is curated demonstration memory. Session logs require client-side export."
+            }
+            self.wfile.write(json.dumps(export_data, indent=2).encode())
+        elif '/stats' in self.path:
+            # Return system stats for evaluation
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            stats = {
+                "system": "Elpida Public Interface",
+                "version": "1.0.0",
+                "memory_entries": len(PUBLIC_MEMORY),
+                "axiom_count": 10,
+                "domain_count": 12,
+                "status": "operational",
+                "note": "Separate from main evolution in codespaces"
+            }
+            self.wfile.write(json.dumps(stats, indent=2).encode())
         else:
             self.send_response(200)
             self.send_header('Content-Type', 'text/html')
