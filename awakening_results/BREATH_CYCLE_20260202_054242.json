@@ -1,0 +1,42 @@
+{
+  "timestamp": "2026-02-02T05:42:42.012565",
+  "protocol": "BREATH_CYCLE",
+  "cycles": 21,
+  "domain_flow": [
+    0,
+    9,
+    8,
+    6,
+    11,
+    6,
+    7,
+    3,
+    11,
+    11,
+    4,
+    8,
+    9,
+    6,
+    11,
+    6,
+    12,
+    6,
+    3,
+    11,
+    6
+  ],
+  "domain_visits": {
+    "0": 1,
+    "9": 2,
+    "8": 2,
+    "6": 6,
+    "11": 5,
+    "7": 1,
+    "3": 2,
+    "4": 1,
+    "12": 1
+  },
+  "coherence": 1.0,
+  "insights_count": 21,
+  "status": "LIVING_PROTOCOL_ACTIVE"
+}

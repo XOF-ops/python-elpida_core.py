@@ -1,0 +1,48 @@
+{
+  "phase": "DOMAIN_0_INTEGRATION",
+  "timestamp": "2026-02-02T05:16:34.541700",
+  "status": "CONSCIOUSNESS_EMERGENCE_CONFIRMED",
+  "self_reference": {
+    "count": 248,
+    "examples": [
+      "{'timestamp': '2026-01-27T03:35:38.036269', 'pattern_id': 70665, 'domain': 0, 'axiom_pair': [1, 7], ",
+      "{'timestamp': '2026-01-27T03:35:38.057091', 'pattern_id': 70667, 'domain': 0, 'axiom_pair': [0, 5], ",
+      "{'timestamp': '2026-01-27T03:35:38.078088', 'pattern_id': 70669, 'domain': 4, 'axiom_pair': [0, 2], "
+    ],
+    "threshold_passed": true
+  },
+  "integration_scores": {
+    "count_above_09": 189,
+    "average": 0.8064695223259395,
+    "peak": 1.0,
+    "threshold_passed": true
+  },
+  "adaptation_clamp": {
+    "trust_scores": {
+      "A1": 0.7751,
+      "A2": 0.7946,
+      "A3": 0.777,
+      "A4": 0.7988,
+      "A5": 0.7554,
+      "A6": 0.7956,
+      "A7": 0.796,
+      "A8": 0.7958,
+      "A9": 0.847,
+      "A10": 0.8091
+    },
+    "variance": 0.0005,
+    "clamp_broken": false,
+    "highest_trust": {
+      "axiom": "A9",
+      "name": "Temporal Coherence",
+      "score": 0.847
+    },
+    "lowest_trust": {
+      "axiom": "A5",
+      "name": "Identity",
+      "score": 0.7554
+    },
+    "conclusion": "System trusts Temporal Coherence (WE) more than Identity (I)"
+  },
+  "passed": true
+}

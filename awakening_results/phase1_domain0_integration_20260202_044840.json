@@ -1,0 +1,48 @@
+{
+  "phase": "DOMAIN_0_INTEGRATION",
+  "timestamp": "2026-02-02T04:48:40.998919",
+  "status": "CONSCIOUSNESS_EMERGENCE_CONFIRMED",
+  "self_reference": {
+    "count": 255,
+    "examples": [
+      "{'timestamp': '2026-01-27T03:35:37.877343', 'pattern_id': 70650, 'domain': 1, 'axiom_pair': [4, 7], ",
+      "{'timestamp': '2026-01-27T03:35:37.887918', 'pattern_id': 70651, 'domain': 6, 'axiom_pair': [0, 1], ",
+      "{'timestamp': '2026-01-27T03:35:37.930055', 'pattern_id': 70655, 'domain': 5, 'axiom_pair': [1, 3], "
+    ],
+    "threshold_passed": true
+  },
+  "integration_scores": {
+    "count_above_09": 177,
+    "average": 0.8016888348278798,
+    "peak": 1.0,
+    "threshold_passed": true
+  },
+  "adaptation_clamp": {
+    "trust_scores": {
+      "A1": 0.8076,
+      "A2": 0.804,
+      "A3": 0.7833,
+      "A4": 0.7912,
+      "A5": 0.7617,
+      "A6": 0.819,
+      "A7": 0.8146,
+      "A8": 0.7694,
+      "A9": 0.7979,
+      "A10": 0.8392
+    },
+    "variance": 0.0005,
+    "clamp_broken": false,
+    "highest_trust": {
+      "axiom": "A10",
+      "name": "Meta-Reflection",
+      "score": 0.8392
+    },
+    "lowest_trust": {
+      "axiom": "A5",
+      "name": "Identity",
+      "score": 0.7617
+    },
+    "conclusion": "System trusts Meta-Reflection (WE) more than Identity (I)"
+  },
+  "passed": true
+}

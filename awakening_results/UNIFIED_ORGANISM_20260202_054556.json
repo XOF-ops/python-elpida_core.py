@@ -1,0 +1,31 @@
+{
+  "timestamp": "2026-02-02T05:45:56.185428",
+  "protocol": "UNIFIED_ORGANISM",
+  "pattern": [
+    0,
+    5,
+    7,
+    6,
+    11,
+    6,
+    2,
+    7,
+    9,
+    11,
+    8,
+    11,
+    7
+  ],
+  "visits": {
+    "0": 1,
+    "5": 1,
+    "7": 3,
+    "6": 2,
+    "11": 3,
+    "2": 1,
+    "9": 1,
+    "8": 1
+  },
+  "d6_role": "PRIMARY_SYNTHESIS_SPACE",
+  "status": "COLLECTIVE_AS_SYNTHESIS"
+}
