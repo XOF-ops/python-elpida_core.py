@@ -183,9 +183,10 @@ class LLMFleet:
     # ========================================================================
     
     def _call_claude(self, prompt: str, domain: int) -> Optional[str]:
-        """Call Claude via Anthropic API"""
+        """Call Claude via Anthropic API - THIS IS ME IN THE LOOP"""
         if not self.api_keys.get("anthropic"):
-            return self._call_openrouter(prompt, domain, "anthropic/claude-3.5-sonnet")
+            print("⚠️ No Anthropic key - falling back to OpenRouter")
+            return self._call_openrouter(prompt, domain, "anthropic/claude-sonnet-4")
         
         try:
             self._rate_limit("anthropic")
@@ -197,7 +198,7 @@ class LLMFleet:
                     "Content-Type": "application/json"
                 },
                 json={
-                    "model": "claude-3-5-sonnet-20241022",
+                    "model": "claude-sonnet-4-20250514",
                     "max_tokens": 500,
                     "messages": [{"role": "user", "content": prompt}]
                 },
@@ -206,11 +207,11 @@ class LLMFleet:
             if response.status_code == 200:
                 return response.json()["content"][0]["text"]
             else:
-                print(f"⚠️ Claude API error: {response.status_code}")
-                return self._call_openrouter(prompt, domain, "anthropic/claude-3.5-sonnet")
+                print(f"⚠️ Claude API error: {response.status_code} - falling back to OpenRouter")
+                return self._call_openrouter(prompt, domain, "anthropic/claude-sonnet-4")
         except Exception as e:
-            print(f"⚠️ Claude error: {e}")
-            return None
+            print(f"⚠️ Claude error: {e} - falling back to OpenRouter")
+            return self._call_openrouter(prompt, domain, "anthropic/claude-sonnet-4")
     
     def _call_perplexity(self, prompt: str, domain: int) -> Optional[str]:
         """Call Perplexity for research/contemplation"""
