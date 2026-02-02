@@ -24,19 +24,25 @@ BASE_DIR = Path(__file__).parent
 # ============================================================
 # STORAGE BACKEND - Vercel KV or Local File
 # ============================================================
-USE_VERCEL_KV = os.environ.get("KV_REST_API_URL") is not None
+USE_VERCEL_KV = False
+kv = None
 
-if USE_VERCEL_KV:
-    import redis
-    # Vercel KV uses Upstash Redis under the hood
-    kv = redis.from_url(
-        os.environ.get("KV_REST_API_URL"),
-        password=os.environ.get("KV_REST_API_TOKEN"),
-        decode_responses=True
-    )
-    print("Using Vercel KV for storage")
-else:
+try:
+    if os.environ.get("KV_REST_API_URL"):
+        import redis
+        kv = redis.from_url(
+            os.environ.get("KV_REST_API_URL"),
+            password=os.environ.get("KV_REST_API_TOKEN"),
+            decode_responses=True
+        )
+        USE_VERCEL_KV = True
+        print("Using Vercel KV for storage")
+except Exception as e:
+    print(f"KV init failed: {e}, using local file storage")
+    USE_VERCEL_KV = False
     kv = None
+
+if not USE_VERCEL_KV:
     print("Using local file storage")
 
 app = FastAPI(title="Elpida", description="Axiom-Grounded AI Dialogue")
