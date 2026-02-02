@@ -26,20 +26,30 @@ BASE_DIR = Path(__file__).parent
 # ============================================================
 USE_VERCEL_KV = os.environ.get("KV_REST_API_URL") is not None
 
+kv = None
 if USE_VERCEL_KV:
-    import redis
-    # Vercel KV uses Upstash Redis under the hood
-    kv = redis.from_url(
-        os.environ.get("KV_REST_API_URL"),
-        password=os.environ.get("KV_REST_API_TOKEN"),
-        decode_responses=True
-    )
-    print("Using Vercel KV for storage")
-else:
-    kv = None
-    print("Using local file storage")
+    try:
+        import redis
+        # Vercel KV uses Upstash Redis under the hood
+        kv = redis.from_url(
+            os.environ.get("KV_REST_API_URL"),
+            password=os.environ.get("KV_REST_API_TOKEN"),
+            decode_responses=True
+        )
+        print("Using Vercel KV for storage")
+    except Exception as e:
+        print(f"KV init failed: {e}, falling back to memory")
+        USE_VERCEL_KV = False
+        kv = None
+
+# In-memory fallback for serverless (no file writes)
+memory_logs = []
 
 app = FastAPI(title="Elpida", description="Axiom-Grounded AI Dialogue")
+
+# Mangum handler for Vercel serverless
+from mangum import Mangum
+handler = Mangum(app)
 
 # Add CORS middleware
 app.add_middleware(
@@ -117,18 +127,24 @@ def log_interaction(entry: DialogueEntry):
         # Append to Redis list (persists across deploys)
         try:
             kv.rpush(KV_LOG_KEY, entry_json)
+            return
         except Exception as e:
             print(f"KV write error: {e}")
-            # Fallback to local
-            _log_to_file(entry_json)
-    else:
-        _log_to_file(entry_json)
+    
+    # In-memory fallback for serverless (can't write files)
+    try:
+        memory_logs.append(entry.dict())
+    except:
+        pass
 
 def _log_to_file(entry_json: str):
-    """Write to local file (development fallback)."""
-    EVOLUTION_LOG.parent.mkdir(exist_ok=True)
-    with open(EVOLUTION_LOG, "a") as f:
-        f.write(entry_json + "\n")
+    """Write to local file (development only - not used in serverless)."""
+    try:
+        EVOLUTION_LOG.parent.mkdir(exist_ok=True)
+        with open(EVOLUTION_LOG, "a") as f:
+            f.write(entry_json + "\n")
+    except:
+        pass
 
 def get_all_logs() -> list:
     """Retrieve all logs from storage."""
@@ -138,12 +154,10 @@ def get_all_logs() -> list:
             return [json.loads(log) for log in logs]
         except Exception as e:
             print(f"KV read error: {e}")
-            return []
-    else:
-        if not EVOLUTION_LOG.exists():
-            return []
-        with open(EVOLUTION_LOG) as f:
-            return [json.loads(line) for line in f]
+            return memory_logs
+    
+    # Return in-memory logs for serverless
+    return memory_logs
 
 def detect_axioms(text: str) -> list:
     """Detect which axioms were invoked in a response."""
