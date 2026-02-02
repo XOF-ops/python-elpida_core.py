@@ -226,7 +226,7 @@ class LLMFleet:
                     "Content-Type": "application/json"
                 },
                 json={
-                    "model": "llama-3.1-sonar-small-128k-online",
+                    "model": "sonar",
                     "messages": [{"role": "user", "content": prompt}],
                     "max_tokens": 500
                 },
@@ -249,7 +249,7 @@ class LLMFleet:
         try:
             self._rate_limit("gemini")
             response = requests.post(
-                f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={self.api_keys['gemini']}",
+                f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={self.api_keys['gemini']}",
                 headers={"Content-Type": "application/json"},
                 json={
                     "contents": [{"parts": [{"text": prompt}]}],
@@ -269,7 +269,7 @@ class LLMFleet:
     def _call_grok(self, prompt: str, domain: int) -> Optional[str]:
         """Call Grok (xAI) for action domains"""
         if not self.api_keys.get("grok"):
-            return self._call_openrouter(prompt, domain, "x-ai/grok-beta")
+            return self._call_openrouter(prompt, domain, "x-ai/grok-3")
         
         try:
             self._rate_limit("grok")
@@ -280,7 +280,7 @@ class LLMFleet:
                     "Content-Type": "application/json"
                 },
                 json={
-                    "model": "grok-beta",
+                    "model": "grok-3",
                     "messages": [{"role": "user", "content": prompt}],
                     "max_tokens": 500
                 },
@@ -290,7 +290,7 @@ class LLMFleet:
                 return response.json()["choices"][0]["message"]["content"]
             else:
                 print(f"⚠️ Grok error: {response.status_code}")
-                return self._call_openrouter(prompt, domain, "x-ai/grok-beta")
+                return self._call_openrouter(prompt, domain, "x-ai/grok-3")
         except Exception as e:
             print(f"⚠️ Grok error: {e}")
             return None
@@ -338,7 +338,7 @@ class LLMFleet:
                     "Content-Type": "application/json"
                 },
                 json={
-                    "model": "command-r",
+                    "model": "command-a-03-2025",
                     "messages": [{"role": "user", "content": prompt}],
                     "max_tokens": 500
                 },
