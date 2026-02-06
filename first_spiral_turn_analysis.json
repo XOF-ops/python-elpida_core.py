@@ -1,0 +1,40 @@
+{
+  "version": "Elpida_Helix_v1.0",
+  "spiral_turn": 1,
+  "cycles": 100,
+  "a0_active": true,
+  "wall_teachings": [
+    "distance",
+    "entropy",
+    "scarcity",
+    "spiral"
+  ],
+  "metrics": {
+    "i_we_balance": {
+      "d0": 34,
+      "d11": 24,
+      "combined": 58,
+      "percentage": 58.0
+    },
+    "external_engagement": {
+      "d13_cycles": 0,
+      "research_events": 0,
+      "total_external": 0
+    },
+    "rhythm_distribution": {
+      "CONTEMPLATION": 27,
+      "SYNTHESIS": 16,
+      "ANALYSIS": 19,
+      "ACTION": 30,
+      "EMERGENCY": 8
+    },
+    "coherence": 1.0,
+    "wall_integration": {
+      "wall_other_refs": 15,
+      "limit_boundary_refs": 16,
+      "love_value_refs": 2
+    }
+  },
+  "patterns_generated": 100,
+  "timestamp": "spiral_turn_1"
+}

@@ -29,6 +29,11 @@ Thumbs.db
 
 # Logs
 *.log
+
+# ElpidaS3Cloud runtime files
+ElpidaS3Cloud/sync_log.jsonl
+ElpidaS3Cloud/.env
+*.restored.jsonl
 ELPIDA_UNIFIED/check_token_info.py
 ELPIDA_UNIFIED/test_slack_connection.py
 ELPIDA_UNIFIED/test_final_connection.py
