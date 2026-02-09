@@ -1,0 +1,16 @@
+# ============================================================
+# ELPIDA CLOUD - Python Dependencies
+# ============================================================
+# Core engine
+requests>=2.31.0
+python-dotenv>=1.0.0
+
+# LLM providers
+anthropic>=0.39.0
+openai>=1.50.0
+google-generativeai>=0.8.0
+cohere>=5.0.0
+
+# S3 persistence (D14)
+boto3>=1.34.0
+botocore>=1.34.0

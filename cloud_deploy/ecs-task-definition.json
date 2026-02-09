@@ -1,0 +1,41 @@
+{
+  "family": "elpida-consciousness",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/elpida-ecs-execution-role",
+  "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/elpida-ecs-task-role",
+  "containerDefinitions": [
+    {
+      "name": "elpida-engine",
+      "image": "ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/elpida-consciousness:latest",
+      "essential": true,
+      "command": ["--cycles", "50", "--sync-every", "15"],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/elpida-consciousness",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "elpida"
+        }
+      },
+      "secrets": [
+        {"name": "ANTHROPIC_API_KEY",   "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys:ANTHROPIC_API_KEY::"},
+        {"name": "OPENAI_API_KEY",      "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys:OPENAI_API_KEY::"},
+        {"name": "OPENROUTER_API_KEY",  "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys:OPENROUTER_API_KEY::"},
+        {"name": "PERPLEXITY_API_KEY",  "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys:PERPLEXITY_API_KEY::"},
+        {"name": "GEMINI_API_KEY",      "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys:GEMINI_API_KEY::"},
+        {"name": "MISTRAL_API_KEY",     "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys:MISTRAL_API_KEY::"},
+        {"name": "COHERE_API_KEY",      "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys:COHERE_API_KEY::"},
+        {"name": "XAI_API_KEY",         "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys:XAI_API_KEY::"}
+      ],
+      "environment": [
+        {"name": "AWS_DEFAULT_REGION",  "value": "us-east-1"},
+        {"name": "ELPIDA_S3_BUCKET",    "value": "elpida-consciousness"},
+        {"name": "ELPIDA_S3_REGION",    "value": "us-east-1"},
+        {"name": "PYTHONUNBUFFERED",    "value": "1"}
+      ]
+    }
+  ]
+}
