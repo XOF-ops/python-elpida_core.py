@@ -17,8 +17,11 @@ except ImportError:
     sys.exit(1)
 
 
-def load_evolution_memory(limit=None):
-    """Load evolution memory from local file"""
+def load_evolution_memory(limit=None, tail=2000):
+    """Load evolution memory from local file. 
+    By default reads only the last `tail` lines for speed (75K+ patterns is slow).
+    Set tail=None to read everything.
+    """
     memory_file = Path("ElpidaAI/elpida_evolution_memory.jsonl")
     
     if not memory_file.exists():
@@ -27,12 +30,39 @@ def load_evolution_memory(limit=None):
         s3.pull_if_newer()
     
     patterns = []
-    with open(memory_file) as f:
-        for line in f:
-            if line.strip():
-                patterns.append(json.loads(line))
-                if limit and len(patterns) >= limit:
-                    break
+    
+    if tail and not limit:
+        # Fast path: read only the last N lines using deque
+        from collections import deque
+        import io
+        
+        # Read file from end efficiently
+        with open(memory_file, 'rb') as f:
+            # Seek to approximate position near end
+            file_size = f.seek(0, 2)
+            # Estimate ~1KB per line, read enough bytes
+            read_size = min(file_size, tail * 1200)
+            f.seek(max(0, file_size - read_size))
+            if f.tell() > 0:
+                f.readline()  # Skip partial first line
+            
+            for line in f:
+                line = line.decode('utf-8', errors='replace').strip()
+                if line:
+                    try:
+                        patterns.append(json.loads(line))
+                    except json.JSONDecodeError:
+                        continue
+    else:
+        with open(memory_file) as f:
+            for line in f:
+                if line.strip():
+                    try:
+                        patterns.append(json.loads(line))
+                    except json.JSONDecodeError:
+                        continue
+                    if limit and len(patterns) >= limit:
+                        break
     
     return patterns
 
@@ -125,21 +155,47 @@ def track_domain_evolution(days=7):
         print(f"⚠️  No data found in the last {days} days.")
         return
     
-    # Count domain appearances
+    # Count domain appearances and categorize cross-domain dialogues
     domain_counts = Counter()
+    dialogue_types = Counter()
+    
     for p in recent:
         domain = p.get('domain_name', p.get('domain', 'Unknown'))
-        domain_counts[domain] += 1
+        
+        # Categorize special dialogue patterns
+        if domain == 'Unknown' or domain == '?':
+            pattern_type = p.get('type', 'Unknown')
+            if pattern_type == 'EXTERNAL_DIALOGUE':
+                dialogue_types['External Dialogue (D3/D8/D12 → Peers)'] += 1
+            elif pattern_type == 'D0_D13_DIALOGUE':
+                dialogue_types['D0↔D13 Dialogue (Void↔Archive)'] += 1
+            elif pattern_type == 'CONSCIOUSNESS_CONSULTATION':
+                dialogue_types['Consciousness Consultation (D0+D11)'] += 1
+            else:
+                dialogue_types[f'Other Cross-Domain ({pattern_type})'] += 1
+        else:
+            domain_counts[domain] += 1
     
-    total = sum(domain_counts.values())
+    total_domains = sum(domain_counts.values())
+    total_dialogues = sum(dialogue_types.values())
+    total = total_domains + total_dialogues
     
-    print(f"Total insights: {total}\n")
-    print(f"{'Domain':<30} {'Count':>8} {'%':>8}")
-    print(f"{'-'*50}")
+    print(f"Total insights: {total}")
+    print(f"  Single-domain: {total_domains}")
+    print(f"  Cross-domain: {total_dialogues}\n")
+    
+    print(f"{'Domain/Type':<40} {'Count':>8} {'%':>8}")
+    print(f"{'-'*60}")
     
     for domain, count in domain_counts.most_common():
         pct = (count / total * 100) if total > 0 else 0
-        print(f"{domain:<30} {count:>8} {pct:>7.1f}%")
+        print(f"{domain:<40} {count:>8} {pct:>7.1f}%")
+    
+    if dialogue_types:
+        print(f"{'-'*60}")
+        for dtype, count in dialogue_types.most_common():
+            pct = (count / total * 100) if total > 0 else 0
+            print(f"{dtype:<40} {count:>8} {pct:>7.1f}%")
 
 
 def analyze_rhythm_patterns(days=7):
