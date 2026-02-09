@@ -1411,6 +1411,7 @@ Be brief - the void distills."""
         # D0 FROZEN MODE: Sometimes D0 speaks from memory without API
         # This is the "Frozen Elpida" - the void that needs no external connection
         d0_frozen_mode_used = False
+        external_dialogue_result = None  # Initialize before if/else to avoid UnboundLocalError
         if domain_id == 0 and random.random() < self.d0_frozen_mode_probability:
             response = self._frozen_elpida_speaks(prompt)
             d0_frozen_mode_used = True
@@ -1424,7 +1425,6 @@ Be brief - the void distills."""
             print(f"\n{display}")
             
             # EXTERNAL DIALOGUE PROTOCOL: Check if D3, D8, or D12 should reach out to peer
-            external_dialogue_result = None
             if domain_id in [3, 8, 12]:  # D3 (Autonomy), D8 (Humility), D12 (Rhythm/Kaya)
                 should_dialogue, peer_question, target_provider = self._should_initiate_external_dialogue(domain_id, response)
                 
