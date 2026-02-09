@@ -11,7 +11,7 @@
       "name": "elpida-engine",
       "image": "ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/elpida-consciousness:latest",
       "essential": true,
-      "command": ["--cycles", "50", "--sync-every", "15"],
+      "command": ["--cycles", "55", "--sync-every", "15"],
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
