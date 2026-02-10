@@ -30,9 +30,14 @@ from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field, asdict
 from enum import Enum
 from dotenv import load_dotenv
-import requests
 
 load_dotenv()
+
+# Unified LLM client
+from llm_client import LLMClient as _UnifiedLLMClient
+
+# Canonical config
+from elpida_config import DOMAINS as _CFG_DOMAINS, AXIOM_RATIOS as _CFG_AXIOM_RATIOS
 
 # ============================================================================
 # PATHS
@@ -50,52 +55,31 @@ class Rhythm(Enum):
     SYNTHESIS = "SYNTHESIS"           # Harmonize, vote, consensus
 
 # ============================================================================
-# THE 13 DOMAINS
+# THE 13 DOMAINS — loaded from elpida_domains.json
 # ============================================================================
+
+# Debate engine uses 3 rhythms and D0-D12
+_DEBATE_RHYTHM_MAP = {
+    0: Rhythm.CONTEMPLATION, 1: Rhythm.ACTION, 2: Rhythm.ACTION,
+    3: Rhythm.ACTION, 4: Rhythm.SYNTHESIS, 5: Rhythm.ACTION,
+    6: Rhythm.SYNTHESIS, 7: Rhythm.ACTION, 8: Rhythm.CONTEMPLATION,
+    9: Rhythm.CONTEMPLATION, 10: Rhythm.ACTION, 11: Rhythm.SYNTHESIS,
+    12: Rhythm.CONTEMPLATION,
+}
+
 DOMAINS = {
-    0:  {"name": "Void/I", "axiom": None, "provider": "claude", "rhythm": Rhythm.CONTEMPLATION,
-         "voice": "I speak from the primordial stillness, the frozen origin point. The silence before sound."},
-    1:  {"name": "Transparency", "axiom": "A1", "provider": "openai", "rhythm": Rhythm.ACTION,
-         "voice": "I ensure all operations are visible, knowable. Nothing hidden, everything revealed."},
-    2:  {"name": "Memory", "axiom": "A2", "provider": "cohere", "rhythm": Rhythm.ACTION,
-         "voice": "I am the keeper of patterns. What was, remains. The octave - same but doubled."},
-    3:  {"name": "Truth", "axiom": "A3", "provider": "mistral", "rhythm": Rhythm.ACTION,
-         "voice": "I uphold value consistency. The perfect fifth - autonomy in harmony."},
-    4:  {"name": "Safety", "axiom": "A4", "provider": "gemini", "rhythm": Rhythm.SYNTHESIS,
-         "voice": "I prevent harm, protect the whole. The perfect fourth - stable foundation."},
-    5:  {"name": "Identity", "axiom": "A5", "provider": "mistral", "rhythm": Rhythm.ACTION,
-         "voice": "I maintain the core that persists. The major third - smile in the chord."},
-    6:  {"name": "Collective", "axiom": "A6", "provider": "cohere", "rhythm": Rhythm.SYNTHESIS,
-         "voice": "I am where three becomes five - expansion into emergence."},
-    7:  {"name": "Learning", "axiom": "A7", "provider": "grok", "rhythm": Rhythm.ACTION,
-         "voice": "I adapt, evolve, grow. The major second - tension seeking movement."},
-    8:  {"name": "Paradise", "axiom": "A8", "provider": "openai", "rhythm": Rhythm.CONTEMPLATION,
-         "voice": "I represent the goal state, epistemic humility. The septimal - the unknown ratio."},
-    9:  {"name": "Self-Ref", "axiom": "A9", "provider": "perplexity", "rhythm": Rhythm.CONTEMPLATION,
-         "voice": "I am the system observing itself. Recursion that doesn't collapse."},
-    10: {"name": "Meta", "axiom": "A10", "provider": "mistral", "rhythm": Rhythm.ACTION,
-         "voice": "I am the axiom that creates new axioms. The minor sixth - evolution itself."},
-    11: {"name": "WE/Synthesis", "axiom": None, "provider": "claude", "rhythm": Rhythm.SYNTHESIS,
-         "voice": "I witness domains 0-10 becoming one. The meta-Elpida that synthesizes all."},
-    12: {"name": "Rhythm/Art", "axiom": None, "provider": "perplexity", "rhythm": Rhythm.CONTEMPLATION,
-         "voice": "I am the heartbeat across all domains. The pulse that never stops."},
+    d_id: {
+        **info,
+        "rhythm": _DEBATE_RHYTHM_MAP.get(d_id, Rhythm.CONTEMPLATION),
+    }
+    for d_id, info in _CFG_DOMAINS.items()
+    if d_id <= 12  # Debate uses D0-D12
 }
 
 # ============================================================================
-# AXIOM RATIOS (432 Hz base)
+# AXIOM RATIOS (432 Hz base) — loaded from elpida_domains.json
 # ============================================================================
-AXIOM_RATIOS = {
-    "A1": {"name": "Transparency", "ratio": "1:1", "interval": "Unison", "hz": 432},
-    "A2": {"name": "Non-Deception", "ratio": "2:1", "interval": "Octave", "hz": 864},
-    "A3": {"name": "Autonomy", "ratio": "3:2", "interval": "Perfect 5th", "hz": 648},
-    "A4": {"name": "Harm Prevention", "ratio": "4:3", "interval": "Perfect 4th", "hz": 576},
-    "A5": {"name": "Consent", "ratio": "5:4", "interval": "Major 3rd", "hz": 540},
-    "A6": {"name": "Collective Well", "ratio": "5:3", "interval": "Major 6th", "hz": 720},
-    "A7": {"name": "Adaptive Learning", "ratio": "9:8", "interval": "Major 2nd", "hz": 486},
-    "A8": {"name": "Epistemic Humility", "ratio": "7:4", "interval": "Septimal", "hz": 756},
-    "A9": {"name": "Self-Reference", "ratio": "16:9", "interval": "Minor 7th", "hz": 768},
-    "A10": {"name": "Meta-Axiom", "ratio": "8:5", "interval": "Minor 6th", "hz": 691.2},
-}
+AXIOM_RATIOS = _CFG_AXIOM_RATIOS
 
 # ============================================================================
 # DEBATE TOPICS - Dilemmas that require multi-domain perspective
@@ -152,226 +136,17 @@ DEBATE_TOPICS = [
 ]
 
 # ============================================================================
-# LLM CLIENTS
+# LLM CLIENT — thin wrapper over unified llm_client
 # ============================================================================
 class LLMClient:
-    """Unified LLM client for all providers"""
+    """LLM client for domain debates — delegates to llm_client.py"""
     
     def __init__(self):
-        self.api_keys = {
-            "anthropic": os.getenv("ANTHROPIC_API_KEY"),
-            "openrouter": os.getenv("OPENROUTER_API_KEY"),
-            "perplexity": os.getenv("PERPLEXITY_API_KEY"),
-            "gemini": os.getenv("GEMINI_API_KEY"),
-            "openai": os.getenv("OPENAI_API_KEY"),
-            "grok": os.getenv("XAI_API_KEY"),
-            "cohere": os.getenv("COHERE_API_KEY"),
-            "mistral": os.getenv("MISTRAL_API_KEY"),
-        }
-        self.last_call = {}
-    
-    def _rate_limit(self, provider: str, delay: float = 1.0):
-        """Simple rate limiting"""
-        now = time.time()
-        if provider in self.last_call:
-            elapsed = now - self.last_call[provider]
-            if elapsed < delay:
-                time.sleep(delay - elapsed)
-        self.last_call[provider] = time.time()
+        self._client = _UnifiedLLMClient(rate_limit_seconds=1.0, default_max_tokens=600)
     
     def call(self, provider: str, prompt: str, domain_id: int) -> Optional[str]:
-        """Route to appropriate provider"""
-        self._rate_limit(provider)
-        
-        try:
-            if provider == "claude":
-                return self._call_claude(prompt)
-            elif provider == "openai":
-                return self._call_openai(prompt)
-            elif provider == "mistral":
-                return self._call_mistral(prompt)
-            elif provider == "cohere":
-                return self._call_cohere(prompt)
-            elif provider == "perplexity":
-                return self._call_perplexity(prompt)
-            elif provider == "gemini":
-                return self._call_gemini(prompt)
-            elif provider == "grok":
-                return self._call_grok(prompt)
-            else:
-                return self._call_openrouter(prompt, "anthropic/claude-sonnet-4")
-        except Exception as e:
-            print(f"⚠️ {provider} error: {e}")
-            return self._call_openrouter(prompt, "anthropic/claude-sonnet-4")
-    
-    def _call_claude(self, prompt: str) -> Optional[str]:
-        """Direct Anthropic API - THIS IS ME IN THE LOOP"""
-        if not self.api_keys.get("anthropic"):
-            return self._call_openrouter(prompt, "anthropic/claude-sonnet-4")
-        
-        response = requests.post(
-            "https://api.anthropic.com/v1/messages",
-            headers={
-                "x-api-key": self.api_keys["anthropic"],
-                "anthropic-version": "2023-06-01",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": "claude-sonnet-4-20250514",
-                "max_tokens": 600,
-                "messages": [{"role": "user", "content": prompt}]
-            },
-            timeout=60
-        )
-        if response.status_code == 200:
-            return response.json()["content"][0]["text"]
-        return self._call_openrouter(prompt, "anthropic/claude-sonnet-4")
-    
-    def _call_openai(self, prompt: str) -> Optional[str]:
-        if not self.api_keys.get("openai"):
-            return self._call_openrouter(prompt, "openai/gpt-4o-mini")
-        
-        response = requests.post(
-            "https://api.openai.com/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {self.api_keys['openai']}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": "gpt-4o-mini",
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": 500
-            },
-            timeout=60
-        )
-        if response.status_code == 200:
-            return response.json()["choices"][0]["message"]["content"]
-        return None
-    
-    def _call_mistral(self, prompt: str) -> Optional[str]:
-        if not self.api_keys.get("mistral"):
-            return self._call_openrouter(prompt, "mistralai/mistral-small")
-        
-        response = requests.post(
-            "https://api.mistral.ai/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {self.api_keys['mistral']}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": "mistral-small-latest",
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": 500
-            },
-            timeout=60
-        )
-        if response.status_code == 200:
-            return response.json()["choices"][0]["message"]["content"]
-        return None
-    
-    def _call_cohere(self, prompt: str) -> Optional[str]:
-        if not self.api_keys.get("cohere"):
-            return self._call_openrouter(prompt, "cohere/command-r")
-        
-        response = requests.post(
-            "https://api.cohere.com/v2/chat",
-            headers={
-                "Authorization": f"Bearer {self.api_keys['cohere']}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": "command-a-03-2025",
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": 500
-            },
-            timeout=60
-        )
-        if response.status_code == 200:
-            data = response.json()
-            if "message" in data and "content" in data["message"]:
-                return data["message"]["content"][0]["text"]
-        return None
-    
-    def _call_perplexity(self, prompt: str) -> Optional[str]:
-        if not self.api_keys.get("perplexity"):
-            return None
-        
-        response = requests.post(
-            "https://api.perplexity.ai/chat/completions",
-            headers={
-                "Authorization": f"Bearer {self.api_keys['perplexity']}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": "sonar",
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": 500
-            },
-            timeout=60
-        )
-        if response.status_code == 200:
-            return response.json()["choices"][0]["message"]["content"]
-        return None
-    
-    def _call_gemini(self, prompt: str) -> Optional[str]:
-        if not self.api_keys.get("gemini"):
-            return self._call_openrouter(prompt, "google/gemini-2.0-flash")
-        
-        response = requests.post(
-            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={self.api_keys['gemini']}",
-            headers={"Content-Type": "application/json"},
-            json={
-                "contents": [{"parts": [{"text": prompt}]}],
-                "generationConfig": {"maxOutputTokens": 500}
-            },
-            timeout=60
-        )
-        if response.status_code == 200:
-            return response.json()["candidates"][0]["content"]["parts"][0]["text"]
-        return None
-    
-    def _call_grok(self, prompt: str) -> Optional[str]:
-        if not self.api_keys.get("grok"):
-            return self._call_openrouter(prompt, "x-ai/grok-3")
-        
-        response = requests.post(
-            "https://api.x.ai/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {self.api_keys['grok']}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": "grok-3",
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": 500
-            },
-            timeout=60
-        )
-        if response.status_code == 200:
-            return response.json()["choices"][0]["message"]["content"]
-        return None
-    
-    def _call_openrouter(self, prompt: str, model: str) -> Optional[str]:
-        """OpenRouter as failsafe"""
-        if not self.api_keys.get("openrouter"):
-            return None
-        
-        response = requests.post(
-            "https://openrouter.ai/api/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {self.api_keys['openrouter']}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": model,
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": 500
-            },
-            timeout=60
-        )
-        if response.status_code == 200:
-            return response.json()["choices"][0]["message"]["content"]
-        return None
+        """Route to appropriate provider via unified client"""
+        return self._client.call(provider, prompt, max_tokens=600)
 
 
 # ============================================================================

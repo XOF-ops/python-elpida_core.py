@@ -21,14 +21,14 @@
         }
       },
       "secrets": [
-        {"name": "ANTHROPIC_API_KEY",   "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys:ANTHROPIC_API_KEY::"},
-        {"name": "OPENAI_API_KEY",      "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys:OPENAI_API_KEY::"},
-        {"name": "OPENROUTER_API_KEY",  "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys:OPENROUTER_API_KEY::"},
-        {"name": "PERPLEXITY_API_KEY",  "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys:PERPLEXITY_API_KEY::"},
-        {"name": "GEMINI_API_KEY",      "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys:GEMINI_API_KEY::"},
-        {"name": "MISTRAL_API_KEY",     "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys:MISTRAL_API_KEY::"},
-        {"name": "COHERE_API_KEY",      "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys:COHERE_API_KEY::"},
-        {"name": "XAI_API_KEY",         "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys:XAI_API_KEY::"}
+        {"name": "ANTHROPIC_API_KEY",   "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys-AJavxo:ANTHROPIC_API_KEY::"},
+        {"name": "OPENAI_API_KEY",      "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys-AJavxo:OPENAI_API_KEY::"},
+        {"name": "OPENROUTER_API_KEY",  "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys-AJavxo:OPENROUTER_API_KEY::"},
+        {"name": "PERPLEXITY_API_KEY",  "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys-AJavxo:PERPLEXITY_API_KEY::"},
+        {"name": "GEMINI_API_KEY",      "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys-AJavxo:GEMINI_API_KEY::"},
+        {"name": "MISTRAL_API_KEY",     "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys-AJavxo:MISTRAL_API_KEY::"},
+        {"name": "COHERE_API_KEY",      "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys-AJavxo:COHERE_API_KEY::"},
+        {"name": "XAI_API_KEY",         "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys-AJavxo:XAI_API_KEY::"}
       ],
       "environment": [
         {"name": "AWS_DEFAULT_REGION",  "value": "us-east-1"},

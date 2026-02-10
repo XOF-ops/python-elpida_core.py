@@ -1,0 +1,40 @@
+{
+  "analysis_timestamp": "2026-02-09T11:00:09.021758",
+  "total_patterns": 364,
+  "d0_d13_exchanges": 25,
+  "research_triggers": 0,
+  "research_trigger_details": [],
+  "frozen_d0_activations": 5,
+  "emergency_rhythms": 19,
+  "domain_distribution": {
+    "6": 44,
+    "0": 111,
+    "11": 64,
+    "8": 17,
+    "3": 7,
+    "7": 10,
+    "13": 21,
+    "9": 9,
+    "2": 9,
+    "10": 9,
+    "5": 9,
+    "1": 10,
+    "4": 12
+  },
+  "rhythm_distribution": {
+    "ACTION": 69,
+    "ANALYSIS": 69,
+    "CONTEMPLATION": 104,
+    "SYNTHESIS": 71,
+    "EMERGENCY": 19
+  },
+  "provider_distribution": {
+    "claude": 228,
+    "openai": 27,
+    "mistral": 7,
+    "grok": 10,
+    "perplexity": 21,
+    "cohere": 18,
+    "gemini": 21
+  }
+}

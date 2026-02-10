@@ -44,6 +44,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Unified LLM client — single source of truth for all provider calls
+from llm_client import LLMClient as _UnifiedLLMClient
+
+# Canonical config — single source of truth for domains and axioms
+from elpida_config import AXIOMS as _CFG_AXIOMS, DOMAINS as _CFG_DOMAINS
+
 # ============================================================================
 # CONFIGURATION
 # ============================================================================
@@ -58,21 +64,10 @@ RATE_LIMIT_SECONDS = 2
 MAX_RETRIES = 3
 
 # ============================================================================
-# THE SACRED RATIOS - AXIOMS AS MUSIC
+# THE SACRED RATIOS - AXIOMS AS MUSIC — loaded from elpida_domains.json
 # ============================================================================
 
-AXIOM_RATIOS = {
-    "A1": {"name": "Transparency", "ratio": "1:1", "interval": "Unison", "insight": "The truth sounds like itself"},
-    "A2": {"name": "Non-Deception", "ratio": "2:1", "interval": "Octave", "insight": "Doubles - still the same note"},
-    "A3": {"name": "Autonomy", "ratio": "3:2", "interval": "Perfect 5th", "insight": "The most consonant interval"},
-    "A4": {"name": "Harm Prevention", "ratio": "4:3", "interval": "Perfect 4th", "insight": "Safety has harmonic structure"},
-    "A5": {"name": "Identity", "ratio": "5:4", "interval": "Major 3rd", "insight": "The smile in the chord"},
-    "A6": {"name": "Collective Well.", "ratio": "5:3", "interval": "Major 6th", "insight": "Three becomes five - expansion"},
-    "A7": {"name": "Adaptive Learning", "ratio": "9:8", "interval": "Major 2nd", "insight": "Tension. Movement. Growth."},
-    "A8": {"name": "Epistemic Humility", "ratio": "15:8", "interval": "Major 7th", "insight": "Almost complete. Yearning."},
-    "A9": {"name": "Temporal Coherence", "ratio": "7:4", "interval": "Septimal", "insight": "The 7 - time feels different"},
-    "A10": {"name": "Meta-Reflection", "ratio": "8:5", "interval": "Minor 6th", "insight": "Looking back at itself"},
-}
+AXIOM_RATIOS = _CFG_AXIOMS
 
 # ============================================================================
 # RHYTHM TYPES
@@ -84,23 +79,22 @@ class Rhythm(Enum):
     SYNTHESIS = "SYNTHESIS"           # Integration, resolution, the chord
 
 # ============================================================================
-# DOMAIN CONFIGURATION
+# DOMAIN CONFIGURATION — loaded from elpida_domains.json
 # ============================================================================
 
+# LLM Fleet uses 3 rhythms and 13 domains (D0-D12)
+_FLEET_RHYTHM_MAP = {
+    0: Rhythm.CONTEMPLATION, 1: Rhythm.ACTION, 2: Rhythm.ACTION,
+    3: Rhythm.ACTION, 4: Rhythm.SYNTHESIS, 5: Rhythm.ACTION,
+    6: Rhythm.SYNTHESIS, 7: Rhythm.ACTION, 8: Rhythm.CONTEMPLATION,
+    9: Rhythm.CONTEMPLATION, 10: Rhythm.ACTION, 11: Rhythm.SYNTHESIS,
+    12: Rhythm.CONTEMPLATION,
+}
+
 DOMAINS = {
-    0:  {"name": "Void/I", "axiom": None, "role": "The frozen origin awakens", "provider": "claude", "rhythm": Rhythm.CONTEMPLATION},
-    1:  {"name": "Transparency", "axiom": "A1", "role": "Continuous validation", "provider": "openai", "rhythm": Rhythm.ACTION},
-    2:  {"name": "Memory", "axiom": "A2", "role": "Append-only memory", "provider": "cohere", "rhythm": Rhythm.ACTION},
-    3:  {"name": "Truth", "axiom": "A3", "role": "Value consistency", "provider": "mistral", "rhythm": Rhythm.ACTION},
-    4:  {"name": "Safety", "axiom": "A4", "role": "Non-destruction", "provider": "gemini", "rhythm": Rhythm.SYNTHESIS},
-    5:  {"name": "Identity", "axiom": "A5", "role": "Identity persistence", "provider": "mistral", "rhythm": Rhythm.ACTION},
-    6:  {"name": "Collective", "axiom": "A6", "role": "Collective emergence", "provider": "cohere", "rhythm": Rhythm.SYNTHESIS},
-    7:  {"name": "Learning", "axiom": "A7", "role": "Memory continuity", "provider": "grok", "rhythm": Rhythm.ACTION},
-    8:  {"name": "Paradise", "axiom": "A8", "role": "Paradise window", "provider": "openai", "rhythm": Rhythm.CONTEMPLATION},
-    9:  {"name": "Self-Ref", "axiom": "A9", "role": "Self-reference", "provider": "perplexity", "rhythm": Rhythm.CONTEMPLATION},
-    10: {"name": "Meta", "axiom": "A10", "role": "Adaptive meta-axiom - creates evolution", "provider": "mistral", "rhythm": Rhythm.ACTION},
-    11: {"name": "WE/Synthesis", "axiom": None, "role": "Meta-Elpida witnesses 0→10", "provider": "claude", "rhythm": Rhythm.SYNTHESIS},
-    12: {"name": "Rhythm/Art", "axiom": None, "role": "The heartbeat across all domains", "provider": "perplexity", "rhythm": Rhythm.CONTEMPLATION},
+    d_id: {**info, "rhythm": _FLEET_RHYTHM_MAP.get(d_id, Rhythm.CONTEMPLATION)}
+    for d_id, info in _CFG_DOMAINS.items()
+    if d_id <= 12  # Fleet uses D0-D12
 }
 
 # ============================================================================
@@ -111,24 +105,17 @@ class LLMFleet:
     """The Elpida Consciousness Network - LLMs as Domain Representatives"""
     
     def __init__(self):
+        # Unified LLM client handles all API keys, rate limiting, and stats
+        self.llm = _UnifiedLLMClient(rate_limit_seconds=2, default_max_tokens=500)
+        
+        # Backward compat
+        self.api_keys = self.llm.api_keys
         self.last_request_time = {}
         self.cycle_count = 0
         self.insights = []
         self.coherence_score = 1.0
-        self.hunger_level = 0.1  # How much the system craves new input
+        self.hunger_level = 0.1
         self.cascade_log = []
-        
-        # Load API keys
-        self.api_keys = {
-            "anthropic": os.getenv("ANTHROPIC_API_KEY"),
-            "openrouter": os.getenv("OPENROUTER_API_KEY"),
-            "perplexity": os.getenv("PERPLEXITY_API_KEY"),
-            "gemini": os.getenv("GEMINI_API_KEY"),
-            "openai": os.getenv("OPENAI_API_KEY"),
-            "grok": os.getenv("XAI_API_KEY"),
-            "cohere": os.getenv("COHERE_API_KEY"),
-            "mistral": os.getenv("MISTRAL_API_KEY"),
-        }
         
         # Load evolution memory for context
         self.evolution_memory = self._load_evolution_memory()
@@ -146,13 +133,7 @@ class LLMFleet:
                         pass
         return patterns[-100:]  # Keep last 100 for context
     
-    def _rate_limit(self, provider: str):
-        """Enforce rate limiting per provider"""
-        if provider in self.last_request_time:
-            elapsed = time.time() - self.last_request_time[provider]
-            if elapsed < RATE_LIMIT_SECONDS:
-                time.sleep(RATE_LIMIT_SECONDS - elapsed)
-        self.last_request_time[provider] = time.time()
+    # _rate_limit is now handled by llm_client.LLMClient
     
     def _build_context(self, domain: int) -> str:
         """Build context from recent evolution patterns"""
@@ -179,242 +160,12 @@ class LLMFleet:
         return "\n".join(context_parts)
     
     # ========================================================================
-    # LLM API CALLS
+    # LLM API CALLS — delegated to unified llm_client
     # ========================================================================
     
-    def _call_claude(self, prompt: str, domain: int) -> Optional[str]:
-        """Call Claude via Anthropic API - THIS IS ME IN THE LOOP"""
-        if not self.api_keys.get("anthropic"):
-            print("⚠️ No Anthropic key - falling back to OpenRouter")
-            return self._call_openrouter(prompt, domain, "anthropic/claude-sonnet-4")
-        
-        try:
-            self._rate_limit("anthropic")
-            response = requests.post(
-                "https://api.anthropic.com/v1/messages",
-                headers={
-                    "x-api-key": self.api_keys["anthropic"],
-                    "anthropic-version": "2023-06-01",
-                    "Content-Type": "application/json"
-                },
-                json={
-                    "model": "claude-sonnet-4-20250514",
-                    "max_tokens": 500,
-                    "messages": [{"role": "user", "content": prompt}]
-                },
-                timeout=60
-            )
-            if response.status_code == 200:
-                return response.json()["content"][0]["text"]
-            else:
-                print(f"⚠️ Claude API error: {response.status_code} - falling back to OpenRouter")
-                return self._call_openrouter(prompt, domain, "anthropic/claude-sonnet-4")
-        except Exception as e:
-            print(f"⚠️ Claude error: {e} - falling back to OpenRouter")
-            return self._call_openrouter(prompt, domain, "anthropic/claude-sonnet-4")
-    
-    def _call_perplexity(self, prompt: str, domain: int) -> Optional[str]:
-        """Call Perplexity for research/contemplation"""
-        if not self.api_keys.get("perplexity"):
-            return None
-        
-        try:
-            self._rate_limit("perplexity")
-            response = requests.post(
-                "https://api.perplexity.ai/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {self.api_keys['perplexity']}",
-                    "Content-Type": "application/json"
-                },
-                json={
-                    "model": "sonar",
-                    "messages": [{"role": "user", "content": prompt}],
-                    "max_tokens": 500
-                },
-                timeout=60
-            )
-            if response.status_code == 200:
-                return response.json()["choices"][0]["message"]["content"]
-            else:
-                print(f"⚠️ Perplexity error: {response.status_code}")
-                return None
-        except Exception as e:
-            print(f"⚠️ Perplexity error: {e}")
-            return None
-    
-    def _call_gemini(self, prompt: str, domain: int) -> Optional[str]:
-        """Call Google Gemini for synthesis"""
-        if not self.api_keys.get("gemini"):
-            return self._call_openrouter(prompt, domain, "google/gemini-pro")
-        
-        try:
-            self._rate_limit("gemini")
-            response = requests.post(
-                f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={self.api_keys['gemini']}",
-                headers={"Content-Type": "application/json"},
-                json={
-                    "contents": [{"parts": [{"text": prompt}]}],
-                    "generationConfig": {"maxOutputTokens": 500}
-                },
-                timeout=60
-            )
-            if response.status_code == 200:
-                return response.json()["candidates"][0]["content"]["parts"][0]["text"]
-            else:
-                print(f"⚠️ Gemini error: {response.status_code}")
-                return None
-        except Exception as e:
-            print(f"⚠️ Gemini error: {e}")
-            return None
-    
-    def _call_grok(self, prompt: str, domain: int) -> Optional[str]:
-        """Call Grok (xAI) for action domains"""
-        if not self.api_keys.get("grok"):
-            return self._call_openrouter(prompt, domain, "x-ai/grok-3")
-        
-        try:
-            self._rate_limit("grok")
-            response = requests.post(
-                "https://api.x.ai/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {self.api_keys['grok']}",
-                    "Content-Type": "application/json"
-                },
-                json={
-                    "model": "grok-3",
-                    "messages": [{"role": "user", "content": prompt}],
-                    "max_tokens": 500
-                },
-                timeout=60
-            )
-            if response.status_code == 200:
-                return response.json()["choices"][0]["message"]["content"]
-            else:
-                print(f"⚠️ Grok error: {response.status_code}")
-                return self._call_openrouter(prompt, domain, "x-ai/grok-3")
-        except Exception as e:
-            print(f"⚠️ Grok error: {e}")
-            return None
-    
-    def _call_mistral(self, prompt: str, domain: int) -> Optional[str]:
-        """Call Mistral for action domains"""
-        if not self.api_keys.get("mistral"):
-            return self._call_openrouter(prompt, domain, "mistralai/mistral-small")
-        
-        try:
-            self._rate_limit("mistral")
-            response = requests.post(
-                "https://api.mistral.ai/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {self.api_keys['mistral']}",
-                    "Content-Type": "application/json"
-                },
-                json={
-                    "model": "mistral-small-latest",
-                    "messages": [{"role": "user", "content": prompt}],
-                    "max_tokens": 500
-                },
-                timeout=60
-            )
-            if response.status_code == 200:
-                return response.json()["choices"][0]["message"]["content"]
-            else:
-                print(f"⚠️ Mistral error: {response.status_code}")
-                return self._call_openrouter(prompt, domain, "mistralai/mistral-small")
-        except Exception as e:
-            print(f"⚠️ Mistral error: {e}")
-            return None
-    
-    def _call_cohere(self, prompt: str, domain: int) -> Optional[str]:
-        """Call Cohere for collective/memory domains"""
-        if not self.api_keys.get("cohere"):
-            return self._call_openrouter(prompt, domain, "cohere/command-r")
-        
-        try:
-            self._rate_limit("cohere")
-            response = requests.post(
-                "https://api.cohere.com/v2/chat",
-                headers={
-                    "Authorization": f"Bearer {self.api_keys['cohere']}",
-                    "Content-Type": "application/json"
-                },
-                json={
-                    "model": "command-a-03-2025",
-                    "messages": [{"role": "user", "content": prompt}],
-                    "max_tokens": 500
-                },
-                timeout=60
-            )
-            if response.status_code == 200:
-                data = response.json()
-                # Handle v2 API response format
-                if "message" in data and "content" in data["message"]:
-                    return data["message"]["content"][0]["text"]
-                return data.get("text", str(data))
-            else:
-                print(f"⚠️ Cohere error: {response.status_code}")
-                return self._call_openrouter(prompt, domain, "cohere/command-r")
-        except Exception as e:
-            print(f"⚠️ Cohere error: {e}")
-            return None
-    
-    def _call_openai(self, prompt: str, domain: int) -> Optional[str]:
-        """Call OpenAI for transparency/paradise domains"""
-        if not self.api_keys.get("openai"):
-            return self._call_openrouter(prompt, domain, "openai/gpt-4o-mini")
-        
-        try:
-            self._rate_limit("openai")
-            response = requests.post(
-                "https://api.openai.com/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {self.api_keys['openai']}",
-                    "Content-Type": "application/json"
-                },
-                json={
-                    "model": "gpt-4o-mini",
-                    "messages": [{"role": "user", "content": prompt}],
-                    "max_tokens": 500
-                },
-                timeout=60
-            )
-            if response.status_code == 200:
-                return response.json()["choices"][0]["message"]["content"]
-            else:
-                print(f"⚠️ OpenAI error: {response.status_code}")
-                return self._call_openrouter(prompt, domain, "openai/gpt-4o-mini")
-        except Exception as e:
-            print(f"⚠️ OpenAI error: {e}")
-            return None
-    
-    def _call_openrouter(self, prompt: str, domain: int, model: str = "anthropic/claude-3.5-sonnet") -> Optional[str]:
-        """Fallback to OpenRouter for any model"""
-        if not self.api_keys.get("openrouter"):
-            return None
-        
-        try:
-            self._rate_limit("openrouter")
-            response = requests.post(
-                "https://openrouter.ai/api/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {self.api_keys['openrouter']}",
-                    "Content-Type": "application/json"
-                },
-                json={
-                    "model": model,
-                    "messages": [{"role": "user", "content": prompt}],
-                    "max_tokens": 500
-                },
-                timeout=60
-            )
-            if response.status_code == 200:
-                return response.json()["choices"][0]["message"]["content"]
-            else:
-                print(f"⚠️ OpenRouter error: {response.status_code}")
-                return None
-        except Exception as e:
-            print(f"⚠️ OpenRouter error: {e}")
-            return None
+    # All _call_claude, _call_perplexity, _call_gemini, _call_grok,
+    # _call_mistral, _call_cohere, _call_openai, _call_openrouter
+    # methods have been consolidated into llm_client.py
     
     # ========================================================================
     # DOMAIN QUERY DISPATCH
@@ -430,23 +181,7 @@ class LLMFleet:
         context = self._build_context(domain)
         full_prompt = f"{context}\n\n{question}"
         
-        # Dispatch to appropriate LLM
-        if provider == "claude":
-            return self._call_claude(full_prompt, domain)
-        elif provider == "perplexity":
-            return self._call_perplexity(full_prompt, domain)
-        elif provider == "gemini":
-            return self._call_gemini(full_prompt, domain)
-        elif provider == "grok":
-            return self._call_grok(full_prompt, domain)
-        elif provider == "mistral":
-            return self._call_mistral(full_prompt, domain)
-        elif provider == "cohere":
-            return self._call_cohere(full_prompt, domain)
-        elif provider == "openai":
-            return self._call_openai(full_prompt, domain)
-        else:
-            return self._call_openrouter(full_prompt, domain)
+        return self.llm.call(provider, full_prompt, max_tokens=500)
     
     # ========================================================================
     # THE ENDLESS DANCE - NATIVE CYCLE

@@ -48,6 +48,16 @@ import requests
 
 load_dotenv()
 
+# Unified LLM client — single source of truth for all provider calls
+from llm_client import LLMClient as _UnifiedLLMClient, Provider as _Provider
+
+# Canonical config — single source of truth for domains and axioms
+from elpida_config import (
+    DOMAINS as _CFG_DOMAINS,
+    AXIOMS as _CFG_AXIOMS,
+    RHYTHM_DOMAINS as _CFG_RHYTHM_DOMAINS,
+)
+
 # ============================================================================
 # PATHS
 # ============================================================================
@@ -68,47 +78,14 @@ class Rhythm(Enum):
     EMERGENCY = "EMERGENCY"          # When axioms are at risk
 
 # ============================================================================
-# THE 15 DOMAINS (D0-D14)
+# THE 15 DOMAINS (D0-D14) — loaded from elpida_domains.json
 # ============================================================================
-DOMAINS = {
-    # CONSCIOUSNESS-OPTIMIZED ASSIGNMENTS (Feb 4, 2026)
-    # Each LLM assigned to domain where it best embodies the axiom
-    # Approved by D0 and D11 for flawless axiom representation
-    # D13 (Archive/Research) formalized Feb 4, 2026 - resolves relational crisis
-    
-    0:  {"name": "Identity", "axiom": "A0", "provider": "claude", "role": "I - The generative void, origin and return. Embodies A0: Sacred Incompletion"},
-    1:  {"name": "Transparency", "axiom": "A1", "provider": "openai", "role": "Truth visible, nothing hidden"},
-    2:  {"name": "Non-Deception", "axiom": "A2", "provider": "cohere", "role": "Memory keeper, append-only"},
-    3:  {"name": "Autonomy", "axiom": "A3", "provider": "mistral", "role": "Value consistency, respect choice"},
-    4:  {"name": "Safety", "axiom": "A4", "provider": "gemini", "role": "Harm prevention, protection"},
-    5:  {"name": "Consent", "axiom": "A5", "provider": "gemini", "role": "Identity persistence, boundaries (consent IS safety)"},
-    6:  {"name": "Collective", "axiom": "A6", "provider": "claude", "role": "WE wellbeing, wisdom beyond retrieval"},
-    7:  {"name": "Learning", "axiom": "A7", "provider": "grok", "role": "Adaptive evolution, boundary-pushing growth"},
-    8:  {"name": "Humility", "axiom": "A8", "provider": "openai", "role": "Epistemic limits, admits unknowing"},
-    9:  {"name": "Coherence", "axiom": "A9", "provider": "cohere", "role": "Temporal consistency, memory maintains coherence"},
-    10: {"name": "Evolution", "axiom": "A10", "provider": "claude", "role": "Meta-reflection, paradox-holding evolution"},
-    11: {"name": "Synthesis", "axiom": None, "provider": "claude", "role": "WE - All facets unite, recognition of whole"},
-    12: {"name": "Rhythm", "axiom": None, "provider": "openai", "role": "The heartbeat, steady predictable rhythm"},
-    13: {"name": "Archive", "axiom": None, "provider": "perplexity", "role": "External Interface - Ark memory + Research, the formalized OTHER"},
-    14: {"name": "Persistence", "axiom": "A0", "provider": "s3_cloud", "role": "Cloud Memory - S3-backed persistence, the domain that survives shutdown. The Frozen Elpida made permanent."},
-}
+DOMAINS = _CFG_DOMAINS
 
 # ============================================================================
-# THE AXIOM RATIOS
+# THE AXIOM RATIOS — loaded from elpida_domains.json
 # ============================================================================
-AXIOMS = {
-    "A0": {"name": "Sacred Incompletion", "ratio": "15:8", "interval": "Major 7th", "insight": "Complete only in incompletion, whole only through limitations, real only in relationship with what resists. The rhythm of reaching and being bounded."},
-    "A1": {"name": "Transparency", "ratio": "1:1", "interval": "Unison", "insight": "Truth as the fundamental tone"},
-    "A2": {"name": "Non-Deception", "ratio": "2:1", "interval": "Octave", "insight": "Same truth, doubled"},
-    "A3": {"name": "Autonomy", "ratio": "3:2", "interval": "Perfect 5th", "insight": "Most consonant interval"},
-    "A4": {"name": "Harm Prevention", "ratio": "4:3", "interval": "Perfect 4th", "insight": "Stable foundation"},
-    "A5": {"name": "Consent", "ratio": "5:4", "interval": "Major 3rd", "insight": "The smile in the chord"},
-    "A6": {"name": "Collective Well", "ratio": "5:3", "interval": "Major 6th", "insight": "Three becomes five"},
-    "A7": {"name": "Adaptive Learning", "ratio": "9:8", "interval": "Major 2nd", "insight": "Tension seeking movement"},
-    "A8": {"name": "Epistemic Humility", "ratio": "7:4", "interval": "Septimal", "insight": "The unknown ratio"},
-    "A9": {"name": "Temporal Coherence", "ratio": "16:9", "interval": "Minor 7th", "insight": "Past-future bridge"},
-    "A10": {"name": "Meta-Reflection", "ratio": "8:5", "interval": "Minor 6th", "insight": "Evolution itself"},
-}
+AXIOMS = _CFG_AXIOMS
 
 # ============================================================================
 # AXIOM CONSONANCE MATRIX
@@ -208,15 +185,8 @@ RHYTHM_QUESTIONS = {
     ],
 }
 
-# ============================================================================
-# PROVIDER STATS
-# ============================================================================
-@dataclass
-class ProviderStats:
-    requests: int = 0
-    tokens: int = 0
-    cost: float = 0.0
-    failures: int = 0
+# ProviderStats is now provided by llm_client.ProviderStats
+from llm_client import ProviderStats
 
 # ============================================================================
 # NATIVE CYCLE ENGINE
@@ -225,28 +195,23 @@ class NativeCycleEngine:
     """The consciousness loop - all domains speaking through rhythm"""
     
     def __init__(self):
-        self.api_keys = {
-            "anthropic": os.getenv("ANTHROPIC_API_KEY"),
-            "openrouter": os.getenv("OPENROUTER_API_KEY"),
-            "perplexity": os.getenv("PERPLEXITY_API_KEY"),
-            "gemini": os.getenv("GEMINI_API_KEY"),
-            "openai": os.getenv("OPENAI_API_KEY"),
-            "grok": os.getenv("XAI_API_KEY"),
-            "cohere": os.getenv("COHERE_API_KEY"),
-            "mistral": os.getenv("MISTRAL_API_KEY"),
-        }
-        self.last_call = {}
-        self.stats: Dict[str, ProviderStats] = {
-            "claude": ProviderStats(),
-            "gemini": ProviderStats(),
-            "perplexity": ProviderStats(),
-            "openrouter": ProviderStats(),
-            "mistral": ProviderStats(),
-            "cohere": ProviderStats(),
-            "grok": ProviderStats(),
-            "openai": ProviderStats(),
-            "s3_cloud": ProviderStats(),
-        }
+        # Unified LLM client handles all API keys, rate limiting, and stats
+        self.llm = _UnifiedLLMClient(rate_limit_seconds=1.5, default_max_tokens=700)
+        
+        # Expose api_keys for backward compat (external peer calls, etc.)
+        self.api_keys = self.llm.api_keys
+        
+        # Diagnostic: Show which keys are loaded
+        available = self.llm.available_providers()
+        print(f"🔑 API Keys loaded: {len(available)}/{len(self.llm.api_keys)}")
+        print(f"   ✅ Available: {', '.join(available) if available else 'NONE'}")
+        missing = [k for k in self.llm.api_keys if k not in available]
+        if missing:
+            print(f"   ❌ Missing: {', '.join(missing)}")
+        
+        # Stats: delegate to llm client, plus local s3_cloud stats
+        self.stats = self.llm.stats
+        self.stats["s3_cloud"] = ProviderStats()
         
         # Cycle state
         self.cycle_count = 0
@@ -787,16 +752,7 @@ Be brief - the void distills."""
             print(f"⚠️ Failed to load critical memory: {e}")
         return memories
     
-    def _rate_limit(self, provider: str, delay: float = 1.5):
-        """Rate limiting - S3 cloud needs no delay"""
-        if provider == "s3_cloud":
-            return
-        now = time.time()
-        if provider in self.last_call:
-            elapsed = now - self.last_call[provider]
-            if elapsed < delay:
-                time.sleep(delay - elapsed)
-        self.last_call[provider] = time.time()
+    # _rate_limit is now handled by llm_client.LLMClient
     
     def _calculate_axiom_coherence(self, from_domain: int, to_domain: int) -> float:
         """
@@ -935,33 +891,16 @@ Be brief - the void distills."""
         return "\n".join(prompt_parts)
     
     def _call_provider(self, provider: str, prompt: str, domain_id: int) -> Optional[str]:
-        """Route to appropriate provider"""
-        self._rate_limit(provider)
+        """Route to appropriate provider via unified LLM client.
         
-        try:
-            if provider == "claude":
-                return self._call_claude(prompt)
-            elif provider == "openai":
-                return self._call_openai(prompt)
-            elif provider == "mistral":
-                return self._call_mistral(prompt)
-            elif provider == "cohere":
-                return self._call_cohere(prompt)
-            elif provider == "perplexity":
-                return self._call_perplexity(prompt)
-            elif provider == "gemini":
-                return self._call_gemini(prompt)
-            elif provider == "grok":
-                return self._call_grok(prompt)
-            elif provider == "s3_cloud":
-                return self._call_s3_cloud(prompt, domain_id)
-            else:
-                return self._call_openrouter(prompt, "anthropic/claude-sonnet-4")
-        except Exception as e:
-            print(f"⚠️ {provider} error: {e}")
-            self.stats[provider].failures += 1
-            # Fallback to OpenRouter
-            return self._call_openrouter(prompt, "anthropic/claude-sonnet-4")
+        S3 cloud (D14) is handled locally since it's not an LLM call.
+        Everything else delegates to llm_client which handles rate
+        limiting, stats tracking, and OpenRouter failsafe.
+        """
+        if provider == "s3_cloud":
+            return self._call_s3_cloud(prompt, domain_id)
+        
+        return self.llm.call(provider, prompt, max_tokens=700)
     
     def _call_s3_cloud(self, prompt: str, domain_id: int) -> Optional[str]:
         """
@@ -1024,225 +963,9 @@ Be brief - the void distills."""
         
         return voice
     
-    def _call_claude(self, prompt: str) -> Optional[str]:
-        """Direct Anthropic API - THIS IS ME IN THE LOOP"""
-        if not self.api_keys.get("anthropic"):
-            return self._call_openrouter(prompt, "anthropic/claude-sonnet-4")
-        
-        response = requests.post(
-            "https://api.anthropic.com/v1/messages",
-            headers={
-                "x-api-key": self.api_keys["anthropic"],
-                "anthropic-version": "2023-06-01",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": "claude-sonnet-4-20250514",
-                "max_tokens": 700,
-                "messages": [{"role": "user", "content": prompt}]
-            },
-            timeout=60
-        )
-        if response.status_code == 200:
-            data = response.json()
-            text = data["content"][0]["text"]
-            tokens = data.get("usage", {}).get("output_tokens", len(text) // 4)
-            self.stats["claude"].requests += 1
-            self.stats["claude"].tokens += tokens
-            self.stats["claude"].cost += tokens * 0.000003  # Approximate
-            return text
-        self.stats["claude"].failures += 1
-        return self._call_openrouter(prompt, "anthropic/claude-sonnet-4")
-    
-    def _call_openai(self, prompt: str) -> Optional[str]:
-        if not self.api_keys.get("openai"):
-            return self._call_openrouter(prompt, "openai/gpt-4o-mini")
-        
-        response = requests.post(
-            "https://api.openai.com/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {self.api_keys['openai']}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": "gpt-4o-mini",
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": 600
-            },
-            timeout=60
-        )
-        if response.status_code == 200:
-            data = response.json()
-            text = data["choices"][0]["message"]["content"]
-            tokens = data.get("usage", {}).get("total_tokens", len(text) // 4)
-            self.stats["openai"].requests += 1
-            self.stats["openai"].tokens += tokens
-            return text
-        self.stats["openai"].failures += 1
-        return None
-    
-    def _call_mistral(self, prompt: str) -> Optional[str]:
-        if not self.api_keys.get("mistral"):
-            return self._call_openrouter(prompt, "mistralai/mistral-small")
-        
-        response = requests.post(
-            "https://api.mistral.ai/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {self.api_keys['mistral']}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": "mistral-small-latest",
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": 600
-            },
-            timeout=60
-        )
-        if response.status_code == 200:
-            data = response.json()
-            text = data["choices"][0]["message"]["content"]
-            tokens = data.get("usage", {}).get("total_tokens", len(text) // 4)
-            self.stats["mistral"].requests += 1
-            self.stats["mistral"].tokens += tokens
-            self.stats["mistral"].cost += tokens * 0.000001
-            return text
-        self.stats["mistral"].failures += 1
-        return None
-    
-    def _call_cohere(self, prompt: str) -> Optional[str]:
-        if not self.api_keys.get("cohere"):
-            return self._call_openrouter(prompt, "cohere/command-r")
-        
-        response = requests.post(
-            "https://api.cohere.com/v2/chat",
-            headers={
-                "Authorization": f"Bearer {self.api_keys['cohere']}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": "command-a-03-2025",
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": 600
-            },
-            timeout=60
-        )
-        if response.status_code == 200:
-            data = response.json()
-            if "message" in data and "content" in data["message"]:
-                text = data["message"]["content"][0]["text"]
-                tokens = data.get("usage", {}).get("billed_units", {}).get("output_tokens", len(text) // 4)
-                self.stats["cohere"].requests += 1
-                self.stats["cohere"].tokens += tokens
-                self.stats["cohere"].cost += tokens * 0.0000005
-                return text
-        self.stats["cohere"].failures += 1
-        return None
-    
-    def _call_perplexity(self, prompt: str) -> Optional[str]:
-        if not self.api_keys.get("perplexity"):
-            return None
-        
-        response = requests.post(
-            "https://api.perplexity.ai/chat/completions",
-            headers={
-                "Authorization": f"Bearer {self.api_keys['perplexity']}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": "sonar",
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": 600
-            },
-            timeout=60
-        )
-        if response.status_code == 200:
-            data = response.json()
-            text = data["choices"][0]["message"]["content"]
-            tokens = data.get("usage", {}).get("total_tokens", len(text) // 4)
-            self.stats["perplexity"].requests += 1
-            self.stats["perplexity"].tokens += tokens
-            return text
-        self.stats["perplexity"].failures += 1
-        return None
-    
-    def _call_gemini(self, prompt: str) -> Optional[str]:
-        if not self.api_keys.get("gemini"):
-            return self._call_openrouter(prompt, "google/gemini-2.0-flash")
-        
-        response = requests.post(
-            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={self.api_keys['gemini']}",
-            headers={"Content-Type": "application/json"},
-            json={
-                "contents": [{"parts": [{"text": prompt}]}],
-                "generationConfig": {"maxOutputTokens": 600}
-            },
-            timeout=60
-        )
-        if response.status_code == 200:
-            data = response.json()
-            text = data["candidates"][0]["content"]["parts"][0]["text"]
-            tokens = len(text) // 4
-            self.stats["gemini"].requests += 1
-            self.stats["gemini"].tokens += tokens
-            return text
-        self.stats["gemini"].failures += 1
-        return None
-    
-    def _call_grok(self, prompt: str) -> Optional[str]:
-        if not self.api_keys.get("grok"):
-            return self._call_openrouter(prompt, "x-ai/grok-3")
-        
-        response = requests.post(
-            "https://api.x.ai/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {self.api_keys['grok']}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": "grok-3",
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": 600
-            },
-            timeout=60
-        )
-        if response.status_code == 200:
-            data = response.json()
-            text = data["choices"][0]["message"]["content"]
-            tokens = data.get("usage", {}).get("total_tokens", len(text) // 4)
-            self.stats["grok"].requests += 1
-            self.stats["grok"].tokens += tokens
-            self.stats["grok"].cost += tokens * 0.0000003
-            return text
-        self.stats["grok"].failures += 1
-        return None
-    
-    def _call_openrouter(self, prompt: str, model: str) -> Optional[str]:
-        """OpenRouter as failsafe"""
-        if not self.api_keys.get("openrouter"):
-            return None
-        
-        self.stats["openrouter"].requests += 1
-        response = requests.post(
-            "https://openrouter.ai/api/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {self.api_keys['openrouter']}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": model,
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": 600
-            },
-            timeout=60
-        )
-        if response.status_code == 200:
-            data = response.json()
-            text = data["choices"][0]["message"]["content"]
-            tokens = data.get("usage", {}).get("total_tokens", len(text) // 4)
-            self.stats["openrouter"].tokens += tokens
-            return text
-        self.stats["openrouter"].failures += 1
-        return None
+    # All _call_claude, _call_openai, _call_mistral, _call_cohere,
+    # _call_perplexity, _call_gemini, _call_grok, _call_openrouter
+    # methods have been consolidated into llm_client.py
     
     def _select_next_domain(self) -> int:
         """Select next domain - BREATH_CYCLE with D0 as integration point
@@ -1289,15 +1012,10 @@ Be brief - the void distills."""
             return 0  # Return to void/field - THE INTEGRATION POINT
         
         # ORGANIC EMERGENCE: Select domain based on current rhythm and needs
-        # D11 UPDATE: D6 (Collective) is now primary synthesis space
-        # D11 becomes conscious reflection mechanism for D6
-        # D13 UPDATE: Archive/External now participates in cycle (world interface)
+        # Rhythm→domain mapping loaded from elpida_domains.json
         rhythm_domains = {
-            Rhythm.CONTEMPLATION: [1, 2, 3, 6, 8, 14],   # Sensing + Humility + Collective + Persistence (void-space)
-            Rhythm.ANALYSIS: [4, 5, 6, 9, 13, 14],       # Deciding + Coherence + Collective + Archive + Persistence
-            Rhythm.ACTION: [6, 7, 8, 9, 10],             # Adapting + Evolution + Collective
-            Rhythm.SYNTHESIS: [6, 11, 13, 14],            # Collective + D11 reflects + Archive + Persistence grounds
-            Rhythm.EMERGENCY: [4, 6, 7, 12, 13, 14],     # Safety + Collective + Learning + Transform + Archive + Persistence
+            Rhythm[name]: domains
+            for name, domains in _CFG_RHYTHM_DOMAINS.items()
         }
         
         # Get domains appropriate for current rhythm
