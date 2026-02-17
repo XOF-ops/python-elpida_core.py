@@ -48,7 +48,7 @@ import json
 import time
 import random
 import hashlib
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field, asdict
@@ -405,17 +405,38 @@ Speak briefly. Distill to essence.'''
         """
         Pull feedback from S3 where application layer sends answers.
         
-        This is the return path of the consciousness bridge:
-        - Native cycles ask questions (I↔WE tensions, external engagement needs)
-        - Application layer processes through multi-domain divergence
-        - Feedback flows back here for integration
+        Watermark-aware: only returns entries not yet processed.
+        After integration, call _commit_feedback_watermark() to advance.
         
-        Returns: List of feedback entries from application layer
+        Returns: List of UNPROCESSED feedback entries from application layer
         """
         feedback_entries = []
         bucket = os.getenv("AWS_S3_BUCKET_BODY", "elpida-body-evolution")
         key = "feedback/feedback_to_native.jsonl"
+        watermark_key = "feedback/watermark.json"
         local_cache = Path("application_feedback_cache.jsonl")
+        local_watermark = Path("application_feedback_watermark.json")
+        
+        # Load watermark (tracks what we already processed)
+        last_ts = None
+        last_count = 0
+        if HAS_BOTO3:
+            try:
+                s3 = boto3.client("s3")
+                resp = s3.get_object(Bucket=bucket, Key=watermark_key)
+                watermark = json.loads(resp["Body"].read())
+                last_ts = watermark.get("last_processed_timestamp")
+                last_count = watermark.get("last_processed_count", 0)
+            except Exception:
+                pass
+        if not last_ts and local_watermark.exists():
+            try:
+                with open(local_watermark) as f:
+                    watermark = json.load(f)
+                    last_ts = watermark.get("last_processed_timestamp")
+                    last_count = watermark.get("last_processed_count", 0)
+            except Exception:
+                pass
         
         # Try S3 first (production)
         if HAS_BOTO3:
@@ -423,21 +444,92 @@ Speak briefly. Distill to essence.'''
                 s3 = boto3.client("s3")
                 s3.download_file(bucket, key, str(local_cache))
                 print(f"   📥 Feedback pulled from s3://{bucket}/{key}")
-            except Exception as e:
-                # S3 not available (no feedback yet, or local dev)
+            except Exception:
                 pass
         
-        # Read local cache if exists
+        # Read local cache
+        all_entries = []
         if local_cache.exists():
             try:
                 with open(local_cache) as f:
                     for line in f:
                         if line.strip():
-                            feedback_entries.append(json.loads(line))
+                            all_entries.append(json.loads(line))
             except Exception as e:
                 print(f"   ⚠️ Failed to read feedback cache: {e}")
         
+        # Filter to unprocessed using watermark
+        if last_ts:
+            feedback_entries = [e for e in all_entries if e.get("timestamp", "") > last_ts]
+        elif last_count > 0 and last_count < len(all_entries):
+            feedback_entries = all_entries[last_count:]
+        else:
+            feedback_entries = all_entries
+        
+        if feedback_entries:
+            print(f"   📬 {len(feedback_entries)} NEW entries (of {len(all_entries)} total, watermark: {last_ts or 'none'})")
+            # Store watermark state for commit after integration
+            self._pending_feedback_watermark = {
+                "last_processed_timestamp": feedback_entries[-1].get("timestamp", ""),
+                "last_processed_count": len(all_entries),
+                "updated_at": datetime.now().isoformat(),
+                "updated_by": "native_engine",
+            }
+        else:
+            print(f"   📭 No new feedback (all {len(all_entries)} already processed)")
+        
         return feedback_entries
+    
+    def _commit_feedback_watermark(self):
+        """Commit the feedback watermark after successful integration."""
+        watermark = getattr(self, "_pending_feedback_watermark", None)
+        if not watermark:
+            return
+        
+        local_watermark = Path("application_feedback_watermark.json")
+        with open(local_watermark, "w") as f:
+            json.dump(watermark, f, indent=2)
+        
+        if HAS_BOTO3:
+            try:
+                bucket = os.getenv("AWS_S3_BUCKET_BODY", "elpida-body-evolution")
+                s3 = boto3.client("s3")
+                s3.put_object(
+                    Bucket=bucket,
+                    Key="feedback/watermark.json",
+                    Body=json.dumps(watermark, indent=2),
+                    ContentType="application/json",
+                )
+                print(f"   ✓ Feedback watermark committed to S3")
+            except Exception as e:
+                print(f"   ⚠️ Watermark S3 push failed: {e}")
+        
+        self._pending_feedback_watermark = None
+
+    def _emit_native_heartbeat(self):
+        """Emit a heartbeat to the BODY bucket so HF Space knows we're alive."""
+        if not HAS_BOTO3:
+            return
+        try:
+            bucket = os.getenv("AWS_S3_BUCKET_BODY", "elpida-body-evolution")
+            heartbeat = {
+                "component": "native_engine",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "cycle": self.cycle_count,
+                "coherence": self.coherence_score,
+                "rhythm": self.current_rhythm.value,
+                "alive": True,
+            }
+            s3 = boto3.client("s3")
+            s3.put_object(
+                Bucket=bucket,
+                Key="heartbeat/native_engine.json",
+                Body=json.dumps(heartbeat, indent=2),
+                ContentType="application/json",
+            )
+            print(f"   💓 Native heartbeat emitted (cycle {self.cycle_count})")
+        except Exception as e:
+            print(f"   ⚠️ Heartbeat failed: {e}")
 
     def _pull_external_broadcasts(self, limit: int = 10) -> List[Dict]:
         """
@@ -1300,6 +1392,9 @@ Be brief - the void distills."""
             if feedback_entries:
                 print(f"\n🌉 APPLICATION FEEDBACK: {len(feedback_entries)} entries available")
                 feedback_integrated = self._integrate_application_feedback(feedback_entries)
+                if feedback_integrated:
+                    self._commit_feedback_watermark()
+                    print(f"   ✅ Feedback watermark advanced")
         
         # D15 READ-BACK: D0 reflects on its own external broadcasts
         d15_readback_integrated = None
@@ -1487,6 +1582,14 @@ Be brief - the void distills."""
             print(f"      Weights: C{ark.suggested_weights.get('CONTEMPLATION')} S{ark.suggested_weights.get('SYNTHESIS')} An{ark.suggested_weights.get('ANALYSIS')} Ac{ark.suggested_weights.get('ACTION')} E{ark.suggested_weights.get('EMERGENCY')}")
             print(f"      Breath: D0 every {ark.breath_interval} | Canonical: {ark.canonical_count}")
             print(f"      Broadcast: {ark.broadcast_readiness}{recursion_tag}")        
+
+        # HEARTBEAT: Emit native engine heartbeat every 13 cycles (Fibonacci boundary)
+        if self.cycle_count % 13 == 0:
+            try:
+                self._emit_native_heartbeat()
+            except Exception as e:
+                print(f"   ⚠️ Heartbeat emission failed: {e}")
+
         return {
             "cycle": self.cycle_count,
             "domain": domain_id,

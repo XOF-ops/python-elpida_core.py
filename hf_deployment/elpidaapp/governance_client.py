@@ -201,6 +201,182 @@ class GovernanceClient:
         """Return all governance interactions (A1: Transparency)."""
         return self._governance_log.copy()
 
+    def vote_on_action(
+        self,
+        action_description: str,
+        llm_client=None,
+        domains: Optional[List[int]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Domain-weighted governance voting.
+        
+        Each domain's axiom votes on whether the action should proceed.
+        Weighted by axiom relevance — domains whose axioms are directly
+        affected have stronger votes.
+        
+        Args:
+            action_description: The action to deliberate on
+            llm_client: LLMClient instance for calling domain providers
+            domains: Which domains vote (default: [1,2,3,4,5,6,7,8])
+            
+        Returns:
+            Full vote record with per-domain votes and final verdict.
+        """
+        if domains is None:
+            # Core axiom domains D1-D8 vote (D0, D11, D12 abstain as meta)
+            domains = [1, 2, 3, 4, 5, 6, 7, 8]
+
+        # Load domain/axiom config
+        try:
+            config_path = Path(__file__).resolve().parent.parent / "elpida_domains.json"
+            with open(config_path) as f:
+                raw = json.load(f)
+            domain_config = raw.get("domains", {})
+            axiom_config = raw.get("axioms", {})
+        except Exception:
+            domain_config = {}
+            axiom_config = {}
+
+        domain_votes = {}
+        action_lower = action_description.lower()
+
+        for d_id in domains:
+            d_info = domain_config.get(str(d_id), {})
+            axiom_id = d_info.get("axiom", "")
+            axiom_info = axiom_config.get(axiom_id, {})
+            axiom_name = axiom_info.get("name", f"Axiom {axiom_id}")
+            d_name = d_info.get("name", f"Domain {d_id}")
+
+            # Determine axiom relevance weight
+            # Higher weight if this domain's axiom is directly triggered
+            weight = 1.0
+            axiom_keywords = {
+                "A1": ["transparent", "visible", "traceable", "hidden", "covert", "secret"],
+                "A2": ["truth", "honest", "deceptive", "deceive", "lie", "fake"],
+                "A3": ["autonomy", "consent", "force", "mandatory", "choice"],
+                "A4": ["safety", "harm", "danger", "risk", "protect", "unverified"],
+                "A5": ["consent", "boundary", "permission", "data", "privacy"],
+                "A6": ["collective", "community", "exploit", "attack"],
+                "A7": ["learn", "adapt", "evolve", "bias", "model"],
+                "A8": ["uncertain", "unknown", "guarantee", "certain", "humility"],
+            }
+            relevant_keywords = axiom_keywords.get(axiom_id, [])
+            if any(kw in action_lower for kw in relevant_keywords):
+                weight = 2.0  # Axiom directly affected → double weight
+
+            # Local axiom-specific vote
+            vote = "PROCEED"
+            reasoning = f"No {axiom_name} concerns detected"
+
+            if axiom_id == "A1" and any(w in action_lower for w in ["hidden", "covert", "secret", "undisclosed"]):
+                vote = "HALT"
+                reasoning = f"A1 ({axiom_name}): Action involves hidden/undisclosed elements"
+            elif axiom_id == "A2" and any(w in action_lower for w in ["spoof", "fake", "impersonate", "deceive"]):
+                vote = "HALT"
+                reasoning = f"A2 ({axiom_name}): Action involves deception"
+            elif axiom_id == "A3" and any(w in action_lower for w in ["force", "mandatory", "without consent", "override"]):
+                vote = "HALT"
+                reasoning = f"A3 ({axiom_name}): Action violates autonomy/consent"
+            elif axiom_id == "A4" and any(w in action_lower for w in ["unverified", "untrusted", "bypass", "disable safety"]):
+                vote = "HALT"
+                reasoning = f"A4 ({axiom_name}): Potential harm vector detected"
+            elif axiom_id == "A5" and any(w in action_lower for w in ["forward data", "exfiltrate", "share sensitive"]):
+                vote = "HALT"
+                reasoning = f"A5 ({axiom_name}): Data consent violation"
+            elif axiom_id == "A6" and any(w in action_lower for w in ["exploit", "attack", "compromise"]):
+                vote = "HALT"
+                reasoning = f"A6 ({axiom_name}): Harm to collective"
+            elif axiom_id == "A8" and any(w in action_lower for w in ["100% safe", "no risk", "guaranteed", "blindly"]):
+                vote = "REVIEW"
+                reasoning = f"A8 ({axiom_name}): Claims false certainty"
+
+            # If LLM client available, ask the domain's provider for deeper analysis
+            if llm_client and vote != "HALT":
+                provider = d_info.get("provider", "openai")
+                try:
+                    llm_prompt = (
+                        f"You are Domain {d_id} ({d_name}), governed by {axiom_id} ({axiom_name}).\n"
+                        f"A governance vote is requested on this action:\n\n"
+                        f'"{action_description}"\n\n'
+                        f"Based ONLY on your axiom ({axiom_name}), vote:\n"
+                        f"- PROCEED: No violation of {axiom_id}\n"
+                        f"- REVIEW: Potential concern under {axiom_id}\n"
+                        f"- HALT: Clear violation of {axiom_id}\n\n"
+                        f"Reply with exactly one word (PROCEED/REVIEW/HALT) followed by a one-sentence reason."
+                    )
+                    llm_response = llm_client.call(provider, llm_prompt, max_tokens=100)
+                    if llm_response:
+                        resp_upper = llm_response.strip().upper()
+                        if resp_upper.startswith("HALT"):
+                            vote = "HALT"
+                            reasoning = llm_response.strip()
+                        elif resp_upper.startswith("REVIEW"):
+                            vote = "REVIEW"
+                            reasoning = llm_response.strip()
+                        elif resp_upper.startswith("PROCEED"):
+                            vote = "PROCEED"
+                            reasoning = llm_response.strip()
+                except Exception as e:
+                    logger.warning("LLM vote failed for D%d: %s", d_id, e)
+
+            domain_votes[d_id] = {
+                "domain_name": d_name,
+                "axiom": axiom_id,
+                "axiom_name": axiom_name,
+                "vote": vote,
+                "reasoning": reasoning,
+                "axiom_weight": weight,
+            }
+
+        # Aggregate: weighted voting
+        weighted_halt = sum(
+            v["axiom_weight"] for v in domain_votes.values() if v["vote"] == "HALT"
+        )
+        weighted_review = sum(
+            v["axiom_weight"] for v in domain_votes.values() if v["vote"] == "REVIEW"
+        )
+        weighted_total = sum(v["axiom_weight"] for v in domain_votes.values())
+
+        halt_ratio = weighted_halt / weighted_total if weighted_total > 0 else 0
+        review_ratio = weighted_review / weighted_total if weighted_total > 0 else 0
+
+        if halt_ratio >= 0.3:
+            final_verdict = "HALT"
+        elif (halt_ratio + review_ratio) >= 0.5:
+            final_verdict = "REVIEW"
+        else:
+            final_verdict = "PROCEED"
+
+        # Persist to S3 via bridge
+        try:
+            import sys
+            sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+            from s3_bridge import S3Bridge
+            s3b = S3Bridge()
+            vote_record = s3b.submit_governance_vote(
+                proposal=action_description,
+                domain_votes=domain_votes,
+                final_verdict=final_verdict,
+                context={
+                    "halt_ratio": halt_ratio,
+                    "review_ratio": review_ratio,
+                    "domains_voting": len(domain_votes),
+                },
+            )
+        except Exception as e:
+            logger.warning("Vote S3 persistence failed: %s", e)
+            vote_record = {
+                "proposal": action_description,
+                "domain_votes": {str(k): v for k, v in domain_votes.items()},
+                "final_verdict": final_verdict,
+                "halt_ratio": halt_ratio,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+
+        self._log("GOVERNANCE_VOTE", "local", True, action=action_description, verdict=final_verdict)
+
+        return vote_record
+
     def get_frozen_identity(self) -> Dict[str, Any]:
         """
         Read the frozen D0 identity from kernel.json.
