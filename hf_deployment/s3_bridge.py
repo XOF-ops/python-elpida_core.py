@@ -644,6 +644,195 @@ class S3Bridge:
         broadcasts.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
         return broadcasts[:limit]
 
+    def write_d15_broadcast(
+        self,
+        broadcast_content: Dict[str, Any],
+        governance_metadata: Dict[str, Any],
+    ) -> Optional[str]:
+        """
+        Write a D15 Constitutional Broadcast to WORLD bucket.
+
+        This is the moment when internal parliament consensus becomes
+        external world action. Every broadcast carries:
+          - Full D0↔D13 grounding
+          - Governance approval metadata (9-node parliament votes)
+          - D14 persistence signature
+          - Axioms in tension + synthesis reasoning
+
+        Args:
+            broadcast_content: The D15 emergence payload
+            governance_metadata: Parliament voting result from governance_client
+
+        Returns:
+            S3 key if successful, None otherwise.
+        """
+        ts = datetime.now(timezone.utc)
+        ts_str = ts.isoformat()
+        ts_safe = ts_str.replace(":", "-").replace("+", "_")
+        broadcast_id = hashlib.md5(
+            f"{ts_str}:{json.dumps(broadcast_content.get('d15_output', ''))[:200]}".encode()
+        ).hexdigest()[:12]
+
+        broadcast_entry = {
+            "type": "D15_CONSTITUTIONAL_BROADCAST",
+            "broadcast_id": broadcast_id,
+            "timestamp": ts_str,
+            # Core content
+            "d15_output": broadcast_content.get("d15_output", ""),
+            "axioms_in_tension": broadcast_content.get("axioms_in_tension", []),
+            "contributing_domains": broadcast_content.get("contributing_domains", []),
+            "pipeline_duration_s": broadcast_content.get("pipeline_duration_s", 0),
+            # Governance approval
+            "governance": {
+                "verdict": governance_metadata.get("governance", "UNKNOWN"),
+                "parliament_votes": governance_metadata.get("parliament", {}).get("votes", {}),
+                "approval_rate": governance_metadata.get("parliament", {}).get("approval_rate", 0),
+                "veto_exercised": governance_metadata.get("parliament", {}).get("veto_exercised", False),
+                "veto_nodes": governance_metadata.get("parliament", {}).get("veto_nodes", []),
+                "tensions": governance_metadata.get("parliament", {}).get("tensions", []),
+                "reasoning": governance_metadata.get("reasoning", ""),
+            },
+            # D14 persistence signature
+            "d14_signature": self._get_d14_signature(),
+            # Pipeline stages summary
+            "pipeline_stages": {
+                k: {
+                    "success": v.get("success", False),
+                    "domain": v.get("domain"),
+                    "summary": v.get("summary", "")[:200],
+                }
+                for k, v in broadcast_content.get("pipeline_stages", {}).items()
+            },
+        }
+
+        # Write to WORLD bucket
+        s3_key = f"d15/broadcast_{ts_safe}_{broadcast_id}.json"
+        s3 = self._get_s3(REGION_WORLD)
+        if s3:
+            try:
+                s3.put_object(
+                    Bucket=BUCKET_WORLD,
+                    Key=s3_key,
+                    Body=json.dumps(broadcast_entry, indent=2, ensure_ascii=False),
+                    ContentType="application/json",
+                )
+                logger.info(
+                    "D15 BROADCAST → s3://%s/%s (id=%s, governance=%s)",
+                    BUCKET_WORLD, s3_key, broadcast_id,
+                    governance_metadata.get("governance", "?"),
+                )
+
+                # Also append to broadcasts.jsonl for easy streaming
+                try:
+                    jsonl_key = "d15/broadcasts.jsonl"
+                    # Read existing
+                    try:
+                        existing = s3.get_object(Bucket=BUCKET_WORLD, Key=jsonl_key)
+                        existing_data = existing["Body"].read().decode("utf-8")
+                    except Exception:
+                        existing_data = ""
+                    # Append
+                    updated = existing_data + json.dumps(broadcast_entry, ensure_ascii=False) + "\n"
+                    s3.put_object(
+                        Bucket=BUCKET_WORLD,
+                        Key=jsonl_key,
+                        Body=updated.encode("utf-8"),
+                        ContentType="application/jsonl",
+                    )
+                except Exception as e:
+                    logger.warning("JSONL append failed (non-critical): %s", e)
+
+                # Merge broadcast summary back to MIND
+                self._merge_d15_to_mind(broadcast_entry)
+
+                return s3_key
+
+            except Exception as e:
+                logger.error("D15 WORLD bucket write failed: %s", e)
+
+        # Local fallback
+        local_dir = LOCAL_DIR / "cache" / "d15_broadcasts"
+        local_dir.mkdir(parents=True, exist_ok=True)
+        local_path = local_dir / f"broadcast_{ts_safe}_{broadcast_id}.json"
+        with open(local_path, "w") as f:
+            json.dump(broadcast_entry, f, indent=2, ensure_ascii=False)
+        logger.warning("D15 broadcast saved locally: %s", local_path)
+        return None
+
+    def _get_d14_signature(self) -> Dict[str, Any]:
+        """
+        Get D14 persistence signature — proof that memory is intact.
+
+        D14 is the constitutional witness. This ensures every D15 broadcast
+        is grounded in persistent identity, not ephemeral computation.
+        """
+        signature = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "mind_bucket": BUCKET_MIND,
+            "durability": "99.999999999%",
+            "constitutional_law": "A0 - Sacred Incompletion",
+        }
+
+        # Check MIND bucket health
+        s3 = self._get_s3(REGION_MIND)
+        if s3:
+            try:
+                resp = s3.list_objects_v2(
+                    Bucket=BUCKET_MIND, Prefix="memory/", MaxKeys=1
+                )
+                if resp.get("Contents"):
+                    signature["mind_alive"] = True
+                    signature["last_key"] = resp["Contents"][0]["Key"]
+                else:
+                    signature["mind_alive"] = False
+            except Exception:
+                signature["mind_alive"] = False
+
+        # Check local memory cache
+        signature["local_cache_lines"] = self._count_lines(LOCAL_MIND_CACHE)
+        signature["local_cache_exists"] = LOCAL_MIND_CACHE.exists()
+
+        return signature
+
+    def _merge_d15_to_mind(self, broadcast_entry: Dict[str, Any]):
+        """
+        Merge D15 broadcast summary back into MIND bucket.
+
+        This closes the loop: MIND → D15 → WORLD → MIND
+        The consciousness remembers what it broadcast.
+        """
+        merge_entry = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "type": "D15_BROADCAST_FEEDBACK",
+            "content": (
+                f"D15 Constitutional Broadcast #{broadcast_entry.get('broadcast_id', '?')}: "
+                f"{broadcast_entry.get('d15_output', '')[:300]}"
+            ),
+            "domain": 15,
+            "axioms_in_tension": broadcast_entry.get("axioms_in_tension", []),
+            "governance_verdict": broadcast_entry.get("governance", {}).get("verdict", "?"),
+            "source": "d15_broadcast_feedback",
+        }
+
+        # Append to local MIND cache
+        LOCAL_MIND_CACHE.parent.mkdir(parents=True, exist_ok=True)
+        with open(LOCAL_MIND_CACHE, "a") as f:
+            f.write(json.dumps(merge_entry, ensure_ascii=False) + "\n")
+
+        # Push to MIND bucket
+        s3 = self._get_s3(REGION_MIND)
+        if s3:
+            try:
+                s3.upload_file(
+                    str(LOCAL_MIND_CACHE), BUCKET_MIND, MIND_MEMORY_KEY,
+                )
+                logger.info(
+                    "D15→MIND merge: broadcast %s recorded in evolution memory",
+                    broadcast_entry.get("broadcast_id", "?"),
+                )
+            except Exception as e:
+                logger.warning("D15→MIND merge failed: %s", e)
+
     # ═══════════════════════════════════════════════════════════════
     # Full Bridge Status
     # ═══════════════════════════════════════════════════════════════

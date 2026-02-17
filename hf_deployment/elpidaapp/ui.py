@@ -705,6 +705,60 @@ with tab_gov:
             with gc2:
                 st.markdown(f"**Source:** {gresult.get('source', 'unknown')}")
                 st.markdown(f"**Reasoning:** {gresult.get('reasoning', '')}")
+
+            # ── Parliament Vote Details ──
+            parliament = gresult.get("parliament", {})
+            if parliament:
+                st.divider()
+                st.markdown("#### 🏛 Parliament Deliberation")
+                
+                parliament_votes = parliament.get("votes", {})
+                if parliament_votes:
+                    # Build vote columns
+                    vote_icons = {
+                        "APPROVE": "🟢", "LEAN_APPROVE": "🟡",
+                        "ABSTAIN": "⚪", "LEAN_REJECT": "🟠",
+                        "REJECT": "🔴", "VETO": "⛔",
+                    }
+                    
+                    # Show 3 columns of 3 nodes each
+                    node_list = list(parliament_votes.items())
+                    for row_start in range(0, len(node_list), 3):
+                        row = node_list[row_start:row_start + 3]
+                        cols = st.columns(len(row))
+                        for col, (name, vote_data) in zip(cols, row):
+                            with col:
+                                vote = vote_data.get("vote", "ABSTAIN")
+                                icon = vote_icons.get(vote, "❓")
+                                score = vote_data.get("score", 0)
+                                axiom = vote_data.get("axiom_invoked", "")
+                                st.markdown(
+                                    f"**{icon} {name}**  \n"
+                                    f"`{vote}` (score: {score:.0f})  \n"
+                                    f"_{axiom}_"
+                                )
+                
+                # VETO display
+                if parliament.get("veto_exercised"):
+                    veto_nodes = parliament.get("veto_nodes", [])
+                    st.error(f"⛔ VETO exercised by: {', '.join(veto_nodes)}")
+                
+                # Tensions + synthesis
+                tensions = parliament.get("tensions", [])
+                if tensions:
+                    with st.expander(f"Tensions Held ({len(tensions)})", expanded=False):
+                        for t in tensions:
+                            pair = t.get("axiom_pair", t.get("pair", ("?", "?")))
+                            synthesis = t.get("synthesis", "")
+                            if isinstance(pair, (list, tuple)) and len(pair) == 2:
+                                st.markdown(f"**{pair[0]} ↔ {pair[1]}:** {synthesis}")
+                            else:
+                                st.markdown(f"**Tension:** {synthesis}")
+                
+                # Session count
+                session_ct = parliament.get("session_count", 0)
+                if session_ct > 0:
+                    st.caption(f"Parliament session #{session_ct} — vote memory accumulating")
         else:
             st.markdown(f"**Source:** kernel (immutable, pre-semantic)")
 

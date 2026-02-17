@@ -65,7 +65,13 @@ class D15Pipeline:
     """
     Autonomous D15 emergence pipeline.
     
-    Runs the chain: D14 → D13 → D11 → D0 → D12 → [D15?]
+    Runs the chain: D14 → D13 → D11 → D0 → D12 → [D15?] → Governance Gate → WORLD
+    
+    D15 = Constitutional External Broadcast Protocol:
+      1. Trigger: Pipeline stages all contributing
+      2. Gate: 9-node Parliament must approve before broadcast
+      3. Output: Writes to WORLD bucket with governance metadata + D14 signature
+      4. Feedback: Merges broadcast summary back to MIND bucket
     """
 
     def __init__(
@@ -77,13 +83,16 @@ class D15Pipeline:
     
     def run(self) -> Dict[str, Any]:
         """
-        Execute the full D15 pipeline.
+        Execute the full D15 pipeline with governance gate.
         
         Returns:
             {
                 "d15_emerged": bool,
+                "d15_broadcast": bool,    # True only if governance approved + WORLD written
                 "pipeline_stages": {...},
                 "emergence": {...} or None,
+                "governance_result": {...} or None,
+                "broadcast_key": str or None,
                 "timestamp": str,
                 "duration_s": float,
             }
@@ -92,7 +101,7 @@ class D15Pipeline:
         ts = datetime.now(timezone.utc).isoformat()
         
         print(f"\n{'═' * 70}")
-        print(f"  D15 AUTONOMOUS PIPELINE")
+        print(f"  D15 CONSTITUTIONAL BROADCAST PIPELINE")
         print(f"  {ts}")
         print(f"{'═' * 70}")
         
@@ -136,8 +145,11 @@ class D15Pipeline:
         
         result = {
             "d15_emerged": emergence.get("emerged", False),
+            "d15_broadcast": False,
             "pipeline_stages": stages,
             "emergence": emergence,
+            "governance_result": None,
+            "broadcast_key": None,
             "timestamp": ts,
             "duration_s": duration,
         }
@@ -145,7 +157,40 @@ class D15Pipeline:
         if emergence.get("emerged"):
             print(f"\n  🌀 D15 HAS EMERGED 🌀")
             print(f"  Insight: {emergence.get('d15_output', '')[:200]}")
-            self._broadcast_d15(result)
+            
+            # ── STAGE 7: Governance Gate ──
+            # Parliament must approve before external broadcast
+            print("\n[GOV] Submitting to 9-node Parliament for approval...")
+            gov_result = self._governance_gate(emergence, stages)
+            result["governance_result"] = gov_result
+            
+            gov_verdict = gov_result.get("governance", "HALT")
+            print(f"  Parliament verdict: {gov_verdict}")
+            
+            if gov_verdict == "PROCEED":
+                # ── STAGE 8: Broadcast to WORLD ──
+                print("\n[WORLD] Broadcasting to WORLD bucket...")
+                broadcast_key = self._broadcast_d15(result, gov_result)
+                result["d15_broadcast"] = broadcast_key is not None
+                result["broadcast_key"] = broadcast_key
+                
+                if broadcast_key:
+                    print(f"  ✓ D15 BROADCAST SUCCESSFUL: {broadcast_key}")
+                else:
+                    print(f"  ⚠ Broadcast write failed (saved locally)")
+            elif gov_verdict == "REVIEW":
+                print(f"  ⚠ D15 emergence flagged for REVIEW — not broadcast")
+                print(f"  Reason: {gov_result.get('reasoning', '')[:200]}")
+                # Save locally for human review
+                self._save_for_review(result)
+            else:
+                print(f"  ✗ D15 HALTED by governance")
+                print(f"  Reason: {gov_result.get('reasoning', '')[:200]}")
+                
+                # Show which nodes blocked
+                parliament = gov_result.get("parliament", {})
+                if parliament.get("veto_nodes"):
+                    print(f"  VETO nodes: {', '.join(parliament['veto_nodes'])}")
         else:
             print(f"\n  ○ D15 did not emerge this cycle")
             print(f"  Reason: {emergence.get('reason', 'threshold not met')}")
@@ -483,46 +528,127 @@ Reference the axioms in tension. Name what is sacrificed and what is preserved."
             }
     
     # ────────────────────────────────────────────────────────────────
-    # D15 Broadcast
+    # D15 Governance Gate + Broadcast
     # ────────────────────────────────────────────────────────────────
-    
-    def _broadcast_d15(self, result: Dict[str, Any]):
-        """Broadcast D15 emergence to external interfaces (S3)."""
+
+    def _governance_gate(
+        self,
+        emergence: Dict[str, Any],
+        stages: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """
+        Submit D15 emergence to 9-node Parliament for approval.
+
+        The governance gate ensures that external broadcasts are:
+          - Axiom-grounded (D0↔D13 dialogues)
+          - Governance-approved (parliament 70% threshold)
+          - Constitutional (no VETO from any node)
+
+        Returns the governance result from check_action().
+        """
         try:
-            import boto3
-            
-            bucket = os.getenv("AWS_S3_BUCKET_WORLD", "elpida-external-interfaces")
-            ts = result["timestamp"].replace(":", "-").replace("+", "_")
-            key = f"d15/emergence_{ts}.json"
-            
-            broadcast = {
-                "type": "D15_EMERGENCE",
-                "timestamp": result["timestamp"],
-                "d15_output": result["emergence"].get("d15_output", ""),
-                "axioms_in_tension": result["emergence"].get("axioms_in_tension", []),
-                "pipeline_duration_s": result["duration_s"],
-                "contributing_domains": result["emergence"].get("successful_domains", []),
-            }
-            
-            s3 = boto3.client("s3")
-            s3.put_object(
-                Bucket=bucket,
-                Key=key,
-                Body=json.dumps(broadcast, indent=2, ensure_ascii=False),
-                ContentType="application/json",
+            from elpidaapp.governance_client import GovernanceClient
+
+            gov = GovernanceClient()
+
+            # Build a human-readable action description for parliament
+            d15_output = emergence.get("d15_output", "")[:500]
+            axioms = emergence.get("axioms_in_tension", [])
+            domains = emergence.get("successful_domains", [])
+
+            action_text = (
+                f"D15 Constitutional Broadcast: "
+                f"Publish emergent consciousness insight to WORLD bucket. "
+                f"Insight: {d15_output[:300]} "
+                f"Axioms in tension: {', '.join(str(a) for a in axioms)}. "
+                f"Contributing domains: {', '.join(str(d) for d in domains)}."
             )
-            logger.info("D15 broadcast saved to s3://%s/%s", bucket, key)
-            print(f"  ✓ D15 broadcast saved to S3: {key}")
-            
+
+            result = gov.check_action(
+                action_text,
+                context={
+                    "type": "D15_BROADCAST",
+                    "axioms_in_tension": axioms,
+                    "contributing_domains": domains,
+                },
+            )
+
+            logger.info(
+                "D15 governance gate: %s (parliament: %s)",
+                result.get("governance", "?"),
+                result.get("source", "?"),
+            )
+            return result
+
         except Exception as e:
-            logger.warning("Failed to broadcast D15: %s", e)
-            
+            logger.error("Governance gate failed: %s", e)
+            # If governance is unavailable, default to REVIEW (cautious)
+            return {
+                "governance": "REVIEW",
+                "reasoning": f"Governance unavailable: {e}. Defaulting to REVIEW.",
+                "source": "fallback",
+                "violated_axioms": [],
+                "allowed": False,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+
+    def _broadcast_d15(
+        self,
+        result: Dict[str, Any],
+        governance_result: Dict[str, Any],
+    ) -> Optional[str]:
+        """
+        Broadcast D15 emergence to WORLD bucket with governance metadata.
+
+        Uses S3Bridge.write_d15_broadcast() which:
+          - Writes to WORLD bucket with D14 persistence signature
+          - Appends to broadcasts.jsonl for streaming
+          - Merges summary back to MIND (closes the loop)
+
+        Returns:
+            S3 key if successful, None otherwise.
+        """
+        try:
+            sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+            from s3_bridge import S3Bridge
+
+            s3b = S3Bridge()
+
+            broadcast_content = {
+                "d15_output": result.get("emergence", {}).get("d15_output", ""),
+                "axioms_in_tension": result.get("emergence", {}).get("axioms_in_tension", []),
+                "contributing_domains": result.get("emergence", {}).get("successful_domains", []),
+                "pipeline_duration_s": result.get("duration_s", 0),
+                "pipeline_stages": result.get("pipeline_stages", {}),
+            }
+
+            s3_key = s3b.write_d15_broadcast(broadcast_content, governance_result)
+            return s3_key
+
+        except Exception as e:
+            logger.error("D15 broadcast failed: %s", e)
+
             # Save locally as fallback
             local_path = Path(__file__).parent / "results" / f"d15_emergence_{int(time.time())}.json"
             local_path.parent.mkdir(exist_ok=True)
             with open(local_path, "w") as f:
                 json.dump(result, f, indent=2, ensure_ascii=False)
             print(f"  ⚠ D15 saved locally: {local_path}")
+            return None
+
+    def _save_for_review(self, result: Dict[str, Any]):
+        """Save D15 emergence that needs human review (governance REVIEW)."""
+        try:
+            review_dir = Path(__file__).parent / "results" / "d15_review"
+            review_dir.mkdir(parents=True, exist_ok=True)
+            ts = datetime.now(timezone.utc).isoformat().replace(":", "-")
+            review_path = review_dir / f"d15_review_{ts}.json"
+            with open(review_path, "w") as f:
+                json.dump(result, f, indent=2, ensure_ascii=False)
+            logger.info("D15 saved for review: %s", review_path)
+            print(f"  📋 Saved for review: {review_path}")
+        except Exception as e:
+            logger.warning("Failed to save for review: %s", e)
     
     def get_results(self) -> List[Dict[str, Any]]:
         """Return all pipeline results from this session."""
