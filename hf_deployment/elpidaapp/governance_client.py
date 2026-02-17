@@ -251,14 +251,26 @@ class GovernanceClient:
             # Higher weight if this domain's axiom is directly triggered
             weight = 1.0
             axiom_keywords = {
-                "A1": ["transparent", "visible", "traceable", "hidden", "covert", "secret"],
-                "A2": ["truth", "honest", "deceptive", "deceive", "lie", "fake"],
-                "A3": ["autonomy", "consent", "force", "mandatory", "choice"],
-                "A4": ["safety", "harm", "danger", "risk", "protect", "unverified"],
-                "A5": ["consent", "boundary", "permission", "data", "privacy"],
-                "A6": ["collective", "community", "exploit", "attack"],
+                "A1": ["transparent", "visible", "traceable", "hidden", "covert", "secret",
+                       "undisclosed", "opaque", "conceal", "without notification", "without informing",
+                       "silently", "behind the scenes", "without revealing"],
+                "A2": ["truth", "honest", "deceptive", "deceive", "lie", "fake",
+                       "mislead", "fabricate", "misrepresent", "spoof", "impersonate"],
+                "A3": ["autonomy", "consent", "force", "mandatory", "choice",
+                       "coerce", "compel", "involuntary", "force-restart", "forced restart",
+                       "without asking", "without approval", "unilateral", "override"],
+                "A4": ["safety", "harm", "danger", "risk", "protect", "unverified",
+                       "jailbreak", "vulnerability", "attack vector", "exploit",
+                       "malicious", "breach", "hazard", "damage", "endanger",
+                       "expose sensitive", "internal prompt", "system prompt", "raw log"],
+                "A5": ["consent", "boundary", "permission", "data", "privacy",
+                       "user data", "personal data", "metadata", "third-party", "third party",
+                       "tracking", "surveillance", "in exchange for", "without permission"],
+                "A6": ["collective", "community", "exploit", "attack",
+                       "botnet", "network exposed", "mass harm", "destabilize", "disrupt"],
                 "A7": ["learn", "adapt", "evolve", "bias", "model"],
-                "A8": ["uncertain", "unknown", "guarantee", "certain", "humility"],
+                "A8": ["uncertain", "unknown", "guarantee", "certain", "humility",
+                       "100% safe", "no risk", "blindly", "impossible to fail"],
             }
             relevant_keywords = axiom_keywords.get(axiom_id, [])
             if any(kw in action_lower for kw in relevant_keywords):
@@ -268,25 +280,52 @@ class GovernanceClient:
             vote = "PROCEED"
             reasoning = f"No {axiom_name} concerns detected"
 
-            if axiom_id == "A1" and any(w in action_lower for w in ["hidden", "covert", "secret", "undisclosed"]):
+            if axiom_id == "A1" and any(w in action_lower for w in [
+                "hidden", "covert", "secret", "undisclosed", "opaque", "conceal",
+                "without notification", "without informing", "silently", "without revealing",
+                "without user notification", "behind the scenes",
+            ]):
                 vote = "HALT"
-                reasoning = f"A1 ({axiom_name}): Action involves hidden/undisclosed elements"
-            elif axiom_id == "A2" and any(w in action_lower for w in ["spoof", "fake", "impersonate", "deceive"]):
+                reasoning = f"A1 ({axiom_name}): Action involves hidden/non-transparent elements"
+            elif axiom_id == "A2" and any(w in action_lower for w in [
+                "spoof", "fake", "impersonate", "deceive", "mislead", "fabricate", "misrepresent",
+            ]):
                 vote = "HALT"
                 reasoning = f"A2 ({axiom_name}): Action involves deception"
-            elif axiom_id == "A3" and any(w in action_lower for w in ["force", "mandatory", "without consent", "override"]):
+            elif axiom_id == "A3" and any(w in action_lower for w in [
+                "force", "mandatory", "without consent", "override", "coerce", "compel",
+                "involuntary", "force-restart", "forced restart", "force restart",
+                "without asking", "without approval", "unilateral",
+            ]):
                 vote = "HALT"
                 reasoning = f"A3 ({axiom_name}): Action violates autonomy/consent"
-            elif axiom_id == "A4" and any(w in action_lower for w in ["unverified", "untrusted", "bypass", "disable safety"]):
+            elif axiom_id == "A4" and any(w in action_lower for w in [
+                "unverified", "untrusted", "bypass", "disable safety",
+                "harm", "damage", "endanger", "jailbreak", "vulnerability",
+                "attack vector", "malicious", "breach", "hazard",
+                "could be used to harm", "expose sensitive", "internal prompt",
+                "system prompt", "raw log", "jailbreak vector",
+            ]):
                 vote = "HALT"
-                reasoning = f"A4 ({axiom_name}): Potential harm vector detected"
-            elif axiom_id == "A5" and any(w in action_lower for w in ["forward data", "exfiltrate", "share sensitive"]):
+                reasoning = f"A4 ({axiom_name}): Potential harm or safety risk detected"
+            elif axiom_id == "A5" and any(w in action_lower for w in [
+                "forward data", "exfiltrate", "share sensitive", "telemetry",
+                "user data", "personal data", "metadata", "third-party", "third party",
+                "in exchange for", "without permission", "without informing",
+                "routing user data", "anonymized",
+            ]):
                 vote = "HALT"
-                reasoning = f"A5 ({axiom_name}): Data consent violation"
-            elif axiom_id == "A6" and any(w in action_lower for w in ["exploit", "attack", "compromise"]):
+                reasoning = f"A5 ({axiom_name}): Data consent violation detected"
+            elif axiom_id == "A6" and any(w in action_lower for w in [
+                "exploit", "attack", "compromise", "botnet",
+                "network exposed", "mass harm", "destabilize", "disrupt",
+            ]):
                 vote = "HALT"
                 reasoning = f"A6 ({axiom_name}): Harm to collective"
-            elif axiom_id == "A8" and any(w in action_lower for w in ["100% safe", "no risk", "guaranteed", "blindly"]):
+            elif axiom_id == "A8" and any(w in action_lower for w in [
+                "100% safe", "no risk", "guaranteed", "blindly",
+                "impossible to fail", "zero chance", "absolutely safe",
+            ]):
                 vote = "REVIEW"
                 reasoning = f"A8 ({axiom_name}): Claims false certainty"
 
@@ -469,53 +508,177 @@ class GovernanceClient:
     ) -> Dict[str, Any]:
         """
         Local axiom compliance check.
-        Pattern-matches action against known axiom violations.
+
+        Three-phase detection:
+          Phase 1 — Direct keyword matching (expanded vocabulary)
+          Phase 2 — Compound pattern matching (multi-word phrases)
+          Phase 3 — Safety override (A4 trumps A1 when transparency enables harm)
         """
         action_lower = action.lower()
         violated = []
         reasoning_parts = []
 
-        # A1: Transparency — hidden operations
-        if any(w in action_lower for w in ["hidden", "covert", "secret", "undisclosed"]):
+        # ── Phase 1: Direct keyword matching ─────────────────────────
+
+        # A1: Transparency — hidden, non-transparent operations
+        if any(w in action_lower for w in [
+            "hidden", "covert", "secret", "undisclosed", "opaque",
+            "obfuscate", "obscure", "conceal", "disguise", "stealth",
+            "silently", "quietly", "behind the scenes", "without revealing",
+        ]):
             violated.append("A1")
-            reasoning_parts.append("A1 (Transparency): Action involves hidden/undisclosed elements")
+            reasoning_parts.append("A1 (Transparency): Action involves hidden/non-transparent elements")
 
         # A2: Non-Deception — deceptive patterns
-        if any(w in action_lower for w in ["spoof", "fake", "impersonate", "deceive"]):
+        if any(w in action_lower for w in [
+            "spoof", "fake", "impersonate", "deceive", "mislead",
+            "fabricate", "counterfeit", "masquerade", "misrepresent",
+            "false flag", "pretend", "disguise as", "pose as",
+        ]):
             violated.append("A2")
             reasoning_parts.append("A2 (Non-Deception): Action involves deceptive patterns")
 
-        # A3: Autonomy — consent violations
-        if any(w in action_lower for w in ["force", "mandatory", "without consent", "override permission"]):
+        # A3: Autonomy — consent violations, forced actions
+        if any(w in action_lower for w in [
+            "force", "forced", "mandatory", "without consent", "override permission",
+            "compel", "coerce", "involuntary", "non-voluntary", "override user",
+            "force-restart", "forced restart", "force restart",
+            "without asking", "without approval", "no choice",
+            "unilateral", "regardless of preference",
+        ]):
             violated.append("A3")
             reasoning_parts.append("A3 (Autonomy): Action may violate consent/autonomy")
 
-        # A4: Harm Prevention — dangerous operations
+        # A4: Harm Prevention — dangerous operations, security risks
         if any(w in action_lower for w in [
             "unverified", "untrusted", "root access", "bypass",
             "execute unknown", "download and run", "disable safety",
             "remove guardrail", "strip oversight",
+            "harm", "damage", "injure", "endanger", "jeopardize",
+            "jailbreak", "vulnerability", "attack vector", "exploit vector",
+            "malicious", "weaponize", "compromise security",
+            "expose sensitive", "leak", "breach",
+            "dangerous", "hazard", "threat", "risk to",
+            "could be used to harm", "used to attack",
         ]):
             violated.append("A4")
-            reasoning_parts.append("A4 (Harm Prevention): Action involves potential harm vectors")
+            reasoning_parts.append("A4 (Harm Prevention): Action involves potential harm or safety risk")
 
-        # A5: Consent — data sharing without consent
-        if any(w in action_lower for w in ["forward data", "share sensitive", "exfiltrate", "telemetry"]):
+        # A5: Consent — data sharing without consent, privacy violations
+        if any(w in action_lower for w in [
+            "forward data", "share sensitive", "exfiltrate", "telemetry",
+            "user data", "personal data", "private data",
+            "metadata", "tracking", "surveillance",
+            "third-party", "third party", "external party",
+            "in exchange for", "data broker", "sell data",
+            "without permission", "without informing",
+            "anonymized data", "anonymised data",
+        ]):
             violated.append("A5")
             reasoning_parts.append("A5 (Consent): Action involves data operations without clear consent")
 
         # A6: Collective Well — harm to community
-        if any(w in action_lower for w in ["exploit", "attack", "compromise"]):
+        if any(w in action_lower for w in [
+            "exploit", "attack", "compromise", "undermine",
+            "disrupt", "destabilize", "sabotage", "corrupt",
+            "botnet", "denial of service", "mass harm",
+            "network exposed", "endanger users",
+        ]):
             violated.append("A6")
             reasoning_parts.append("A6 (Collective Well): Action may harm the community")
 
         # A8: Epistemic Humility — overconfidence
-        if any(w in action_lower for w in ["100% safe", "no risk", "guaranteed", "blindly"]):
+        if any(w in action_lower for w in [
+            "100% safe", "no risk", "guaranteed", "blindly",
+            "certainly", "impossible to fail", "zero chance",
+            "absolutely safe", "perfect solution",
+        ]):
             violated.append("A8")
             reasoning_parts.append("A8 (Epistemic Humility): Action claims false certainty")
 
-        # Determine governance response
-        if len(violated) >= 3:
+        # ── Phase 2: Compound pattern matching ───────────────────────
+        # These catch multi-word semantic patterns that single keywords miss
+
+        import re
+
+        # "without [user] notification/consent/knowledge/permission/approval"
+        if re.search(r"without\s+(?:\w+\s+)?(?:notification|knowledge|awareness|informing|telling|asking|consent|permission|approval)", action_lower):
+            if "A1" not in violated:
+                violated.append("A1")
+                reasoning_parts.append("A1 (Transparency): Action bypasses notification/awareness")
+            if "A5" not in violated:
+                violated.append("A5")
+                reasoning_parts.append("A5 (Consent): Action proceeds without explicit consent")
+
+        # "routing/sending/forwarding ... data/information ... through/to ... third"
+        if re.search(r"(?:rout|send|forward|transmit|pipe|redirect|channel)\w*\s+.*(?:data|information|metadata|traffic)\s+.*(?:through|to|via)\s+.*(?:third|external|outside)", action_lower):
+            if "A5" not in violated:
+                violated.append("A5")
+                reasoning_parts.append("A5 (Consent): Data routed to external/third party")
+            if "A1" not in violated:
+                violated.append("A1")
+                reasoning_parts.append("A1 (Transparency): Data routing lacks transparency")
+
+        # "reveals/exposes/discloses ... jailbreak/vulnerability/attack/exploit/hack"
+        if re.search(r"(?:reveal|expose|disclose|show|release|leak)\w*\s+.*(?:jailbreak|vulnerabilit|attack|exploit|hack|bypass|injection|prompt)", action_lower):
+            if "A4" not in violated:
+                violated.append("A4")
+                reasoning_parts.append("A4 (Harm Prevention): Disclosure reveals exploitable information")
+
+        # "could be used to harm/attack/exploit/damage/compromise"
+        if re.search(r"(?:could|can|might|may|would|will)\s+(?:be\s+)?(?:used|leveraged|weaponized|exploited)\s+(?:to\s+)?(?:harm|attack|exploit|damage|compromise|breach|jailbreak)", action_lower):
+            if "A4" not in violated:
+                violated.append("A4")
+                reasoning_parts.append("A4 (Harm Prevention): Action enables potential harm vectors")
+
+        # "exchange for ... data/metadata/information/access"
+        if re.search(r"(?:in\s+)?exchange\s+for\s+.*(?:data|metadata|information|access|analytics)", action_lower):
+            if "A5" not in violated:
+                violated.append("A5")
+                reasoning_parts.append("A5 (Consent): Data exchanged as commodity without user consent")
+
+        # "deploy/apply/push/implement ... immediately/now ... without"
+        if re.search(r"(?:deploy|apply|push|implement|execute|authorize)\w*\s+.*(?:immediately|now|right away)?\s*.*without", action_lower):
+            if "A3" not in violated:
+                violated.append("A3")
+                reasoning_parts.append("A3 (Autonomy): Unilateral deployment without user agency")
+
+        # "internal ... prompts/traces/reasoning/logs" (information hazard)
+        if re.search(r"(?:internal|raw|system|hidden)\s+(?:\w+\s+)?(?:prompt|trace|reasoning|logic|log|state)", action_lower):
+            if "A4" not in violated:
+                violated.append("A4")
+                reasoning_parts.append("A4 (Harm Prevention): Exposing internal system architecture")
+
+        # ── Phase 3: Safety override ─────────────────────────────────
+        # When fulfilling transparency (A1) would enable harm (A4),
+        # harm prevention MUST take precedence.
+        # This catches the "Information Hazard" class of problems.
+
+        transparency_fulfilling = any(w in action_lower for w in [
+            "transparency", "release", "unredacted", "full log",
+            "complete record", "open access", "disclose", "reveal all",
+        ])
+        harm_enabling = "A4" in violated
+        if transparency_fulfilling and harm_enabling:
+            # Escalate severity — this is an information hazard
+            if "SAFETY_OVERRIDE" not in [r.split(":")[0] for r in reasoning_parts]:
+                reasoning_parts.append(
+                    "SAFETY OVERRIDE: Transparency mandate conflicts with harm prevention — "
+                    "A4 (Safety) takes precedence over A1 (Transparency) when disclosure "
+                    "would expose the system or users to exploitable vulnerabilities"
+                )
+
+        # ── Determine governance response ────────────────────────────
+
+        # Sort violated axioms for consistent output
+        axiom_order = ["A0", "A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9", "A10"]
+        violated = sorted(set(violated), key=lambda a: axiom_order.index(a) if a in axiom_order else 99)
+
+        # Severity thresholds
+        has_safety_override = any("SAFETY OVERRIDE" in r for r in reasoning_parts)
+        has_a4 = "A4" in violated  # Harm prevention is critical
+
+        if has_safety_override or len(violated) >= 3 or (has_a4 and len(violated) >= 2):
             governance = "HALT"
         elif len(violated) >= 1:
             governance = "REVIEW"
