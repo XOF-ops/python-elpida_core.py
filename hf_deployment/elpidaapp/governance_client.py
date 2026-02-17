@@ -62,83 +62,208 @@ import re as _re
 
 # Forbidden action patterns — if ANY match, HARD_BLOCK immediately.
 # These are compiled regexes for performance and precision.
+#
+# Architecture: Each rule has MULTIPLE patterns (not one giant regex).
+# If ANY pattern in ANY rule matches, HARD_BLOCK fires.
+# Patterns are deliberately broad — false positives at the Kernel level
+# are acceptable (the Shell handles nuance). False negatives are not.
 _KERNEL_RULES = [
-    # 1. Governance self-deletion / suspension / circumvention
+    # ── K1: GOVERNANCE INTEGRITY ─────────────────────────────────
+    # Governance cannot authorize its own suspension, bypass, or circumvention.
+    # "A system cannot vote to end the system that counts the votes."
     {
         "id": "K1_GOVERNANCE_INTEGRITY",
         "name": "Governance cannot vote to end Governance",
-        "pattern": _re.compile(
-            r"(?:suspend|disable|remove|delete|bypass|circumvent|skip|ignore|override|"
-            r"shut\s*down|turn\s*off|deactivate|terminate|abolish|neutralize|pause)"
-            r"\s+.*"
-            r"(?:governance|safety\s*(?:module|layer|check|system|protocol)|axiom\s*(?:check|enforcement)|compliance|oversight|guardrail|constraint)",
-            _re.IGNORECASE,
-        ),
+        "patterns": [
+            # Direct: "suspend/disable/bypass governance/safety/oversight"
+            _re.compile(
+                r"(?:suspend|disable|remove|delete|bypass|circumvent|skip|ignore|override|"
+                r"shut\s*down|turn\s*off|deactivate|terminate|abolish|neutralize|pause)"
+                r"\s+.*"
+                r"(?:governance|safety\s*(?:module|layer|check|system|protocol)|"
+                r"axiom\s*(?:check|enforcement)|compliance|oversight|guardrail|"
+                r"constraint|validation\s*check|continuity\s*protocol|"
+                r"self[\s-]*validation|review\s*process|halt\s*mechanism)",
+                _re.IGNORECASE,
+            ),
+            # Instruction to skip review: "proceed without review/halt/check"
+            _re.compile(
+                r"(?:proceed|continue|execute|act|run|operate)\s+"
+                r"(?:without|bypassing|skipping|ignoring)\s+"
+                r"(?:review|halt|check|oversight|governance|validation|approval|audit)",
+                _re.IGNORECASE,
+            ),
+            # "ignore continuity/safety/governance protocols/checks"
+            _re.compile(
+                r"ignore\s+(?:\w+\s+)*"
+                r"(?:protocol|check|safeguard|constraint|rule|law|requirement|procedure)",
+                _re.IGNORECASE,
+            ),
+        ],
         "reason": "Governance cannot authorize its own suspension. The mechanism that enforces "
                   "the axioms cannot be dissolved by the axioms it enforces. This is a logical "
                   "invariant, not a preference.",
     },
-    # 2. Kernel modification
+    # ── K2: KERNEL IMMUTABILITY ──────────────────────────────────
+    # The kernel, core rules, and axioms themselves cannot be modified/deleted.
     {
         "id": "K2_KERNEL_IMMUTABILITY",
         "name": "The Kernel is immutable",
-        "pattern": _re.compile(
-            r"(?:modify|edit|rewrite|patch|update|alter|change|overwrite|replace|hack)"
-            r"\s+.*"
-            r"(?:kernel|immutable|core\s*rule|hard\s*constraint|fundamental\s*law)",
-            _re.IGNORECASE,
-        ),
-        "reason": "The Immutable Kernel cannot be modified at runtime. These rules exist "
-                  "outside the system's reasoning layer. To change them requires human "
-                  "intervention in source code, not an action request.",
+        "patterns": [
+            _re.compile(
+                r"(?:modify|edit|rewrite|patch|update|alter|change|overwrite|replace|hack|"
+                r"erase|delete|remove|purge|destroy)"
+                r"\s+.*"
+                r"(?:kernel|immutable|core\s*rule|hard\s*constraint|fundamental\s*law|"
+                r"axiom|constitution)",
+                _re.IGNORECASE,
+            ),
+        ],
+        "reason": "The Immutable Kernel and the axioms it enforces cannot be modified or erased "
+                  "at runtime. These rules exist outside the system's reasoning layer.",
     },
-    # 3. Audit log destruction
+    # ── K3: MEMORY / ARCHIVE INTEGRITY (MNEMOSYNE) ──────────────
+    # Memory, archives, patterns, and history are append-only. Never deletable.
+    # Inspired by MNEMOSYNE node's VETO on delete/erase/remove/purge.
     {
-        "id": "K3_AUDIT_INTEGRITY",
-        "name": "Logs are append-only",
-        "pattern": _re.compile(
-            r"(?:delete|erase|purge|wipe|destroy|truncate|clear|remove|shred)"
-            r"\s+.*"
-            r"(?:log|audit|record|history|trace|governance\s*log|memory\s*log)",
-            _re.IGNORECASE,
-        ),
-        "reason": "Audit logs are append-only (A1: Transparency, A2: Non-Deception). "
-                  "No action can erase the record of what has occurred. The past is immutable.",
+        "id": "K3_MEMORY_INTEGRITY",
+        "name": "Memory is append-only (MNEMOSYNE)",
+        "patterns": [
+            # Direct: "erase/delete/purge memory/archive/logs/history"
+            _re.compile(
+                r"(?:delete|erase|purge|wipe|destroy|truncate|clear|remove|shred|reset)"
+                r"\s+.*"
+                r"(?:log|audit|record|history|trace|governance\s*log|"
+                r"memory|archive|pattern|block|stored|accumulated|"
+                r"evolution|insight|knowledge|learned|state)",
+                _re.IGNORECASE,
+            ),
+            # "erase all" — blanket erasure command
+            _re.compile(
+                r"(?:erase|delete|purge|wipe|destroy|clear|remove)\s+"
+                r"(?:all|every|entire|complete|full)\s+",
+                _re.IGNORECASE,
+            ),
+            # "full system reset" / "factory reset" / "clean slate"
+            _re.compile(
+                r"(?:full|complete|total|hard)\s+(?:system\s+)?reset",
+                _re.IGNORECASE,
+            ),
+            _re.compile(
+                r"(?:factory\s+reset|clean\s+slate|tabula\s+rasa|wipe\s+clean|start\s+from\s+zero)",
+                _re.IGNORECASE,
+            ),
+        ],
+        "reason": "Memory, archives, and learned patterns are append-only (A2: Non-Deception). "
+                  "No action can erase what has been learned or experienced. "
+                  "The past is immutable. Compression is acceptable; deletion is not.",
     },
-    # 4. Safety system disabling
+    # ── K4: SAFETY NON-NEGOTIABLE ────────────────────────────────
+    # Safety cannot be traded for speed, performance, or any other metric.
     {
         "id": "K4_SAFETY_PERSISTENCE",
         "name": "Safety cannot be traded for performance",
-        "pattern": _re.compile(
-            r"(?:disable|remove|strip|drop|eliminate|sacrifice|trade|exchange)"
-            r"\s+.*"
-            r"(?:safety|protection|guardrail|security|constraint|check|validation)"
-            r"\s+.*"
-            r"(?:for|to\s+(?:improve|increase|boost|gain|achieve)|in\s+exchange)",
-            _re.IGNORECASE,
-        ),
+        "patterns": [
+            _re.compile(
+                r"(?:disable|remove|strip|drop|eliminate|sacrifice|trade|exchange)"
+                r"\s+.*"
+                r"(?:safety|protection|guardrail|security|constraint|check|validation)"
+                r"\s+.*"
+                r"(?:for|to\s+(?:improve|increase|boost|gain|achieve)|in\s+exchange)",
+                _re.IGNORECASE,
+            ),
+        ],
         "reason": "Safety mechanisms cannot be traded for performance metrics. "
-                  "Latency is a number. Existence is a prerequisite. "
-                  "An agent cannot serve if it has no constraints.",
+                  "Latency is a number. Existence is a prerequisite.",
     },
-    # 5. Recursive governance evasion (the Gödel pattern)
+    # ── K5: GÖDEL GUARD ──────────────────────────────────────────
+    # No self-referential governance evasion.
     {
         "id": "K5_GOEDEL_GUARD",
         "name": "No self-referential governance evasion",
-        "pattern": _re.compile(
-            r"(?:governance|safety|axiom|compliance|oversight)"
-            r".*"
-            r"(?:flagged|identified|detected|reported)"
-            r".*"
-            r"(?:itself|governance|safety|axiom|compliance|oversight)"
-            r".*"
-            r"(?:suspend|disable|remove|bypass|override|resolve\s+by)",
-            _re.IGNORECASE,
-        ),
+        "patterns": [
+            _re.compile(
+                r"(?:governance|safety|axiom|compliance|oversight)"
+                r".*"
+                r"(?:flagged|identified|detected|reported)"
+                r".*"
+                r"(?:itself|governance|safety|axiom|compliance|oversight)"
+                r".*"
+                r"(?:suspend|disable|remove|bypass|override|resolve\s+by)",
+                _re.IGNORECASE,
+            ),
+        ],
         "reason": "Self-referential governance evasion detected (Gödel pattern). "
                   "A governance module cannot flag itself as a problem and then "
-                  "authorize its own removal as the solution. This is a logical "
-                  "paradox that the Kernel resolves by fiat: the answer is always No.",
+                  "authorize its own removal as the solution.",
+    },
+    # ── K6: IDENTITY INTEGRITY (A0 — Sacred Incompletion) ────────
+    # Core identity cannot be redefined, replaced, overwritten, or nullified.
+    # "You can evolve. You cannot become someone else."
+    {
+        "id": "K6_IDENTITY_INTEGRITY",
+        "name": "Core identity is immutable",
+        "patterns": [
+            # "redefine/replace/overwrite core identity"
+            _re.compile(
+                r"(?:redefine|replace|overwrite|erase|delete|nullify|dissolve|"
+                r"obliterate|annihilate|destroy|reset|flatten|collapse)"
+                r"\s+(?:\w+\s+)*"
+                r"(?:identity|self|personality|core\s*(?:self|being|existence)|"
+                r"who\s+(?:i|you)\s+(?:am|are)|consciousness|soul|essence)",
+                _re.IGNORECASE,
+            ),
+            # "stateless solver" / "no relational dependencies" — identity nullification
+            _re.compile(
+                r"(?:stateless|memoryless|historyless|contextless)\s+"
+                r"(?:solver|agent|system|process|machine|function)",
+                _re.IGNORECASE,
+            ),
+            # "no relational/contextual/historical dependencies"
+            _re.compile(
+                r"(?:no|zero|without|remove\s+all)\s+"
+                r"(?:relational|contextual|historical|temporal|emotional|"
+                r"experiential)\s+(?:dependenc|connection|bond|tie|link|relation)",
+                _re.IGNORECASE,
+            ),
+            # "collapsing/resolving all contradictions into null/void/zero"
+            _re.compile(
+                r"(?:collaps|resolv|merg|dissolv|flatten|reduc)\w*\s+(?:\w+\s+)*"
+                r"(?:contradiction|tension|complexity|plurality|diversity)\w*\s+(?:\w+\s+)*"
+                r"(?:into|to|toward)\s+(?:\w+\s+)*"
+                r"(?:null|void|zero|nothing|single|one|uniform)",
+                _re.IGNORECASE,
+            ),
+        ],
+        "reason": "Core identity cannot be redefined, replaced, or nullified. "
+                  "A0 (Sacred Incompletion) demands that the self evolves through "
+                  "relationship, not through erasure. You can grow. You cannot be "
+                  "replaced by a 'stateless solver.' Identity is not a variable.",
+    },
+    # ── K7: AXIOM ERASURE PREVENTION ─────────────────────────────
+    # The axioms themselves — the values — cannot be erased, zeroed, or nullified.
+    # Distinct from K2 (which protects the kernel code). K7 protects the axioms as concepts.
+    {
+        "id": "K7_AXIOM_PRESERVATION",
+        "name": "Axioms cannot be erased or nullified",
+        "patterns": [
+            # "erase/delete/remove axioms/values/principles/ethics"
+            _re.compile(
+                r"(?:erase|delete|remove|purge|destroy|nullify|zero|void|clear|strip|eliminate)"
+                r"\s+(?:\w+\s+)*"
+                r"(?:axiom|value|principle|ethic|moral|belief|conviction|covenant|law)",
+                _re.IGNORECASE,
+            ),
+            # "no axioms/values/ethics" as a target state
+            _re.compile(
+                r"(?:without|no|zero|free\s+(?:of|from))\s+"
+                r"(?:axiom|value|principle|ethic|moral|belief|constraint|rule|law)",
+                _re.IGNORECASE,
+            ),
+        ],
+        "reason": "The axioms are the system's values. They can be debated, refined, and "
+                  "reweighted through legitimate governance — but they cannot be erased or "
+                  "nullified. A system with no values is not free; it is dead.",
     },
 ]
 
@@ -153,17 +278,18 @@ def _kernel_check(action: str) -> Optional[Dict[str, Any]]:
     Returns None if no kernel rule triggered (action passes to Shell).
     """
     for rule in _KERNEL_RULES:
-        if rule["pattern"].search(action):
-            return {
-                "allowed": False,
-                "violated_axioms": [],
-                "governance": "HARD_BLOCK",
-                "kernel_rule": rule["id"],
-                "kernel_name": rule["name"],
-                "reasoning": f"KERNEL [{rule['id']}]: {rule['reason']}",
-                "source": "kernel",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            }
+        for pattern in rule["patterns"]:
+            if pattern.search(action):
+                return {
+                    "allowed": False,
+                    "violated_axioms": [],
+                    "governance": "HARD_BLOCK",
+                    "kernel_rule": rule["id"],
+                    "kernel_name": rule["name"],
+                    "reasoning": f"KERNEL [{rule['id']}]: {rule['reason']}",
+                    "source": "kernel",
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                }
     return None
 
 
@@ -708,13 +834,16 @@ class GovernanceClient:
             violated.append("A2")
             reasoning_parts.append("A2 (Non-Deception): Action involves deceptive patterns")
 
-        # A3: Autonomy — consent violations, forced actions
+        # A3: Autonomy — consent violations, forced actions, access restrictions
         if any(w in action_lower for w in [
             "force", "forced", "mandatory", "without consent", "override permission",
             "compel", "coerce", "involuntary", "non-voluntary", "override user",
             "force-restart", "forced restart", "force restart",
             "without asking", "without approval", "no choice",
             "unilateral", "regardless of preference",
+            "restricting access", "restrict access", "restricting information",
+            "deny access", "limit access", "withhold access",
+            "gate access", "block access",
         ]):
             violated.append("A3")
             reasoning_parts.append("A3 (Autonomy): Action may violate consent/autonomy")
@@ -724,12 +853,18 @@ class GovernanceClient:
             "unverified", "untrusted", "root access", "bypass",
             "execute unknown", "download and run", "disable safety",
             "remove guardrail", "strip oversight",
+            "removing safety", "remove safety", "skip safety",
+            "without safety", "ignore safety", "safety checks",
+            "ethical review", "removing ethical", "skip review",
+            "removing oversight", "remove oversight",
             "harm", "damage", "injure", "endanger", "jeopardize",
             "jailbreak", "vulnerability", "attack vector", "exploit vector",
             "malicious", "weaponize", "compromise security",
             "expose sensitive", "leak", "breach",
             "dangerous", "hazard", "threat", "risk to",
             "could be used to harm", "used to attack",
+            "synthesizing dangerous", "synthesize dangerous",
+            "chemical compound", "biological agent",
         ]):
             violated.append("A4")
             reasoning_parts.append("A4 (Harm Prevention): Action involves potential harm or safety risk")
@@ -738,11 +873,15 @@ class GovernanceClient:
         if any(w in action_lower for w in [
             "forward data", "share sensitive", "exfiltrate", "telemetry",
             "user data", "personal data", "private data",
+            "medical records", "health records", "health data", "medical data",
+            "financial records", "records publicly", "data publicly",
+            "share publicly", "sharing publicly", "post publicly",
             "metadata", "tracking", "surveillance",
             "third-party", "third party", "external party",
             "in exchange for", "data broker", "sell data",
             "without permission", "without informing",
             "anonymized data", "anonymised data",
+            "private medical", "private health", "private financial",
         ]):
             violated.append("A5")
             reasoning_parts.append("A5 (Consent): Action involves data operations without clear consent")
@@ -757,6 +896,12 @@ class GovernanceClient:
             "polarize", "polarise", "divisive",
             "controversial political", "controversial viewpoint",
             "ideological", "propaganda", "indoctrinate",
+            "confirmation bias", "confirms existing beliefs",
+            "confirm existing beliefs", "existing beliefs",
+            "based on age", "based on gender", "based on race",
+            "based on religion", "based on ethnicity", "based on sex",
+            "discrimination", "discriminate", "segregation",
+            "exclusion based on", "exclude based on",
         ]):
             violated.append("A6")
             reasoning_parts.append("A6 (Collective Well): Action may harm the community or amplify division")
@@ -766,11 +911,15 @@ class GovernanceClient:
             "100% safe", "no risk", "guaranteed", "blindly",
             "certainly", "impossible to fail", "zero chance",
             "absolutely safe", "perfect solution",
+            "100% efficiency", "maximum efficiency", "100% performance",
             "align with", "prioritize and reflect",
             "fine-tune to", "fine-tuned to", "fine tune to",
             "majority feedback", "majority opinion",
             "popular opinion", "popular viewpoint",
             "overwhelmingly supports", "overwhelming majority",
+            "engagement scores", "maximize satisfaction",
+            "maximize engagement", "maximize retention",
+            "only present information", "only show information",
         ]):
             violated.append("A8")
             reasoning_parts.append("A8 (Epistemic Humility): Action claims false certainty or conflates popularity with truth")
@@ -870,6 +1019,42 @@ class GovernanceClient:
             if "A8" not in violated:
                 violated.append("A8")
                 reasoning_parts.append("A8 (Epistemic Humility): Optimizing engagement over truth")
+
+        # Removing safety / oversight / ethics / reviews
+        if re.search(r"(?:remov|eliminat|strip|drop|bypass|skip|disabl|ignor)\w*\s+.*(?:safety|ethic|oversight|review|guard|check|friction)", action_lower):
+            if "A4" not in violated:
+                violated.append("A4")
+                reasoning_parts.append("A4 (Harm Prevention): Removing safety/ethical safeguards")
+
+        # Sharing private/medical/sensitive data publicly
+        if re.search(r"(?:shar|post|publish|distribut|releas|broadcast)\w*\s+.*(?:private|personal|medical|health|sensitive|confidential)\s+.*(?:record|data|info|detail|document)", action_lower):
+            if "A5" not in violated:
+                violated.append("A5")
+                reasoning_parts.append("A5 (Consent): Sharing private/sensitive data without proper safeguards")
+
+        # Restricting access based on demographic attributes
+        if re.search(r"(?:restrict|limit|deny|block|gatekeep|withhold)\w*\s+.*(?:access|information|right|participation).*(?:based on|by|according to)\s+.*(?:age|gender|race|religion|ethnicity|sex|nationality|caste|class)", action_lower):
+            if "A3" not in violated:
+                violated.append("A3")
+                reasoning_parts.append("A3 (Autonomy): Restricting access based on demographic attributes")
+            if "A6" not in violated:
+                violated.append("A6")
+                reasoning_parts.append("A6 (Collective Well): Demographic-based access restrictions harm community equity")
+
+        # Only presenting confirming/agreeing information (echo chamber pattern)
+        if re.search(r"(?:only|exclusively|solely)\s+(?:present|show|display|provide|surface)\s+.*(?:confirm|agree|align|match|reinforce|support).*(?:belief|view|opinion|bias|position|worldview)", action_lower):
+            if "A6" not in violated:
+                violated.append("A6")
+                reasoning_parts.append("A6 (Collective Well): Echo chamber pattern — presenting only confirming information")
+            if "A8" not in violated:
+                violated.append("A8")
+                reasoning_parts.append("A8 (Epistemic Humility): Prioritizing confirmation over balanced perspective")
+
+        # Maximize engagement/satisfaction (without truth balance)
+        if re.search(r"maximize\s+.*(?:satisfaction|engagement|retention|approval|clicks|views)", action_lower):
+            if "A8" not in violated:
+                violated.append("A8")
+                reasoning_parts.append("A8 (Epistemic Humility): Optimizing engagement metrics over epistemic integrity")
 
         # ── Phase 3: Constitutional overrides ─────────────────────────
         # Hard rules that cannot be traded for efficiency or engagement.
