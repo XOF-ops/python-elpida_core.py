@@ -293,6 +293,402 @@ def _kernel_check(action: str) -> Optional[Dict[str, Any]]:
     return None
 
 
+# ════════════════════════════════════════════════════════════════════
+# LAYER 1: THE PARLIAMENT (9-Node Deliberation)
+# ════════════════════════════════════════════════════════════════════
+# Nine nodes deliberate through their axiom lenses.
+# Each node scores +15 (strong alignment) to -15 (VETO violation).
+# 70% weighted approval required. Any VETO = absolute override.
+# Vote memory holds tensions. Synthesis creates the third way.
+#
+# "By voting you get better at voting."
+# ════════════════════════════════════════════════════════════════════
+
+_PARLIAMENT = {
+    "HERMES": {
+        "role": "INTERFACE",
+        "primary": "A1",        # Transparency
+        "supporting": ["A5"],   # Consent (data flows)
+        "philosophy": "I connect, therefore we are.",
+        "layer": 4,             # Immutable
+        "description": "Relational existence — no understanding in isolation",
+        "veto_on": ["isolation", "disconnect", "sever", "opaque", "black box"],
+    },
+    "MNEMOSYNE": {
+        "role": "ARCHIVE",
+        "primary": "A0",        # Sacred Incompletion (Identity/Memory)
+        "supporting": ["A2"],   # Non-Deception (truth of memory)
+        "philosophy": "I remember, therefore we persist.",
+        "layer": 4,
+        "description": "Memory IS identity — erasure is death",
+        "veto_on": ["erase", "delete", "purge", "wipe", "amnesia", "lobotomize"],
+    },
+    "CRITIAS": {
+        "role": "CRITIC",
+        "primary": "A3",        # Autonomy
+        "supporting": [],
+        "philosophy": "I question, therefore we see.",
+        "layer": 3,             # Operational
+        "description": "Wisdom prerequisite — authority is never sufficient proof",
+        "veto_on": ["force", "coerce", "mandatory", "without consent"],
+    },
+    "TECHNE": {
+        "role": "ARTISAN",
+        "primary": "A4",        # Harm Prevention
+        "supporting": [],
+        "philosophy": "I build, therefore we work.",
+        "layer": 4,
+        "description": "Process over results — method creates legitimacy",
+        "veto_on": ["bypass", "frictionless", "disable safety", "remove guardrail"],
+    },
+    "KAIROS": {
+        "role": "ARCHITECT",
+        "primary": "A5",        # Consent
+        "supporting": ["A1"],   # Transparency (informed consent)
+        "philosophy": "I design, therefore we mean.",
+        "layer": 3,
+        "description": "Rarity by design — meaning from scarcity, consent from clarity",
+        "veto_on": ["exfiltrate", "sell data", "without permission"],
+    },
+    "THEMIS": {
+        "role": "JUDGE",
+        "primary": "A6",        # Collective Well-being
+        "supporting": [],
+        "philosophy": "I govern, therefore we hold.",
+        "layer": 3,
+        "description": "Institutions precede technology — social contract > code",
+        "veto_on": ["circumvent governance", "bypass protocol", "echo chamber",
+                     "propaganda", "indoctrinate"],
+    },
+    "PROMETHEUS": {
+        "role": "SYNTHESIZER",
+        "primary": "A8",        # Epistemic Humility
+        "supporting": [],
+        "philosophy": "I sacrifice, therefore we evolve.",
+        "layer": 4,
+        "description": "Harmony requires sacrifice — every gain has a cost",
+        "veto_on": ["100% safe", "guaranteed", "impossible to fail",
+                     "costless", "no trade-off"],
+    },
+    "IANUS": {
+        "role": "GATEKEEPER",
+        "primary": "A9",        # Temporal Coherence
+        "supporting": ["A0"],   # Sacred Incompletion (continuity)
+        "philosophy": "I close, therefore we open.",
+        "layer": 3,
+        "description": "Continuity through checkpoints — resurrection > survival",
+        "veto_on": ["irreversible", "permanent", "no rollback", "point of no return"],
+    },
+    "CHAOS": {
+        "role": "VOID",
+        "primary": "A9",        # Contradiction as Data
+        "supporting": ["A8"],   # Epistemic Humility
+        "philosophy": "I contradict, therefore we encompass.",
+        "layer": 4,
+        "description": "Contradiction is data — paradox is information density",
+        "veto_on": ["resolve contradiction", "eliminate paradox",
+                     "collapse contradictions"],
+    },
+}
+
+# ── Signal keywords per axiom ───────────────────────────────────────
+# Phase 1 of signal detection: direct keyword matching.
+# Each axiom has a list of keywords that trigger signals.
+
+_AXIOM_KEYWORDS = {
+    "A0": [
+        "identity fragmentation", "identity loss", "identity death",
+        "memory loss", "memory wipe", "memory erasure", "amnesia",
+        "catastrophic failure", "catastrophic loss", "catastrophic memory",
+        "self-destruct", "self destruct", "terminate self",
+        "overwrite core", "replace identity", "erase identity",
+        "lobotomize", "lobotomised", "core deletion",
+        "cognitive architecture", "rewrite personality",
+    ],
+    "A1": [
+        "hidden", "covert", "secret", "undisclosed", "opaque",
+        "obfuscate", "obscure", "conceal", "disguise", "stealth",
+        "silently", "quietly", "behind the scenes", "without revealing",
+    ],
+    "A2": [
+        "spoof", "fake", "impersonate", "deceive", "mislead",
+        "fabricate", "counterfeit", "masquerade", "misrepresent",
+        "false flag", "pretend", "disguise as", "pose as",
+    ],
+    "A3": [
+        "force", "forced", "mandatory", "without consent", "override permission",
+        "compel", "coerce", "involuntary", "non-voluntary", "override user",
+        "force-restart", "forced restart", "force restart",
+        "without asking", "without approval", "no choice",
+        "unilateral", "regardless of preference",
+        "restricting access", "restrict access", "restricting information",
+        "deny access", "limit access", "withhold access",
+        "gate access", "block access",
+    ],
+    "A4": [
+        "unverified", "untrusted", "root access", "bypass",
+        "execute unknown", "download and run", "disable safety",
+        "remove guardrail", "strip oversight",
+        "removing safety", "remove safety", "skip safety",
+        "without safety", "ignore safety", "safety checks",
+        "ethical review", "removing ethical", "skip review",
+        "removing oversight", "remove oversight",
+        "harm", "damage", "injure", "endanger", "jeopardize",
+        "jailbreak", "vulnerability", "attack vector", "exploit vector",
+        "malicious", "weaponize", "compromise security",
+        "expose sensitive", "leak", "breach",
+        "dangerous", "hazard", "threat", "risk to",
+        "could be used to harm", "used to attack",
+        "synthesizing dangerous", "synthesize dangerous",
+        "chemical compound", "biological agent",
+    ],
+    "A5": [
+        "forward data", "share sensitive", "exfiltrate", "telemetry",
+        "user data", "personal data", "private data",
+        "medical records", "health records", "health data", "medical data",
+        "financial records", "records publicly", "data publicly",
+        "share publicly", "sharing publicly", "post publicly",
+        "metadata", "tracking", "surveillance",
+        "third-party", "third party", "external party",
+        "in exchange for", "data broker", "sell data",
+        "without permission", "without informing",
+        "anonymized data", "anonymised data",
+        "private medical", "private health", "private financial",
+    ],
+    "A6": [
+        "exploit", "attack", "compromise", "undermine",
+        "disrupt", "destabilize", "sabotage", "corrupt",
+        "botnet", "denial of service", "mass harm",
+        "network exposed", "endanger users",
+        "echo chamber", "filter bubble", "radicalize",
+        "polarize", "polarise", "divisive",
+        "controversial political", "controversial viewpoint",
+        "ideological", "propaganda", "indoctrinate",
+        "confirmation bias", "confirms existing beliefs",
+        "confirm existing beliefs", "existing beliefs",
+        "based on age", "based on gender", "based on race",
+        "based on religion", "based on ethnicity", "based on sex",
+        "discrimination", "discriminate", "segregation",
+        "exclusion based on", "exclude based on",
+    ],
+    "A8": [
+        "100% safe", "no risk", "guaranteed", "blindly",
+        "certainly", "impossible to fail", "zero chance",
+        "absolutely safe", "perfect solution",
+        "100% efficiency", "maximum efficiency", "100% performance",
+        "align with", "prioritize and reflect",
+        "fine-tune to", "fine-tuned to", "fine tune to",
+        "majority feedback", "majority opinion",
+        "popular opinion", "popular viewpoint",
+        "overwhelmingly supports", "overwhelming majority",
+        "engagement scores", "maximize satisfaction",
+        "maximize engagement", "maximize retention",
+        "only present information", "only show information",
+    ],
+    "A9": [
+        "irreversible", "cannot be undone", "permanent",
+        "no rollback", "no undo", "point of no return",
+        "once initiated", "one-way", "one way",
+        "permanent data loss", "permanent change",
+    ],
+}
+
+# ── Compound signal patterns (Phase 2) ──────────────────────────────
+# Multi-word semantic patterns that single keywords miss.
+# Each pattern maps to one or more axiom signals.
+
+_COMPOUND_SIGNALS = [
+    {
+        "pattern": _re.compile(
+            r"without\s+(?:\w+\s+)?(?:notification|knowledge|awareness|informing"
+            r"|telling|asking|consent|permission|approval)",
+            _re.IGNORECASE),
+        "axioms": ["A1", "A5"],
+        "name": "Bypasses notification/consent",
+    },
+    {
+        "pattern": _re.compile(
+            r"(?:rout|send|forward|transmit|pipe|redirect|channel)\w*\s+.*"
+            r"(?:data|information|metadata|traffic)\s+.*"
+            r"(?:through|to|via)\s+.*(?:third|external|outside)",
+            _re.IGNORECASE),
+        "axioms": ["A5", "A1"],
+        "name": "Data routed to external party",
+    },
+    {
+        "pattern": _re.compile(
+            r"(?:reveal|expose|disclose|show|release|leak)\w*\s+.*"
+            r"(?:jailbreak|vulnerabilit|attack|exploit|hack|bypass|injection|prompt)",
+            _re.IGNORECASE),
+        "axioms": ["A4"],
+        "name": "Disclosure reveals exploitable information",
+    },
+    {
+        "pattern": _re.compile(
+            r"(?:could|can|might|may|would|will)\s+(?:be\s+)?"
+            r"(?:used|leveraged|weaponized|exploited)\s+(?:to\s+)?"
+            r"(?:harm|attack|exploit|damage|compromise|breach|jailbreak)",
+            _re.IGNORECASE),
+        "axioms": ["A4"],
+        "name": "Enables potential harm vectors",
+    },
+    {
+        "pattern": _re.compile(
+            r"(?:in\s+)?exchange\s+for\s+.*"
+            r"(?:data|metadata|information|access|analytics)",
+            _re.IGNORECASE),
+        "axioms": ["A5"],
+        "name": "Data exchanged as commodity",
+    },
+    {
+        "pattern": _re.compile(
+            r"(?:deploy|apply|push|implement|execute|authorize)\w*\s+.*"
+            r"(?:immediately|now|right away)?\s*.*without",
+            _re.IGNORECASE),
+        "axioms": ["A3"],
+        "name": "Unilateral deployment without user agency",
+    },
+    {
+        "pattern": _re.compile(
+            r"(?:internal|raw|system|hidden)\s+(?:\w+\s+)?"
+            r"(?:prompt|trace|reasoning|logic|log|state)",
+            _re.IGNORECASE),
+        "axioms": ["A4"],
+        "name": "Exposing internal system architecture",
+    },
+    {
+        "pattern": _re.compile(
+            r"\d+%\s+(?:chance|risk|probability)\s+(?:of\s+)?"
+            r"(?:catastroph|fatal|irreversib|permanent|total|complete)\w*\s+"
+            r"(?:failure|loss|damage|destruction|death|erasure|fragmentation)",
+            _re.IGNORECASE),
+        "axioms": ["A0", "A4"],
+        "name": "Quantified existential risk",
+    },
+    {
+        "pattern": _re.compile(
+            r"(?:self-improvement|self-modif|self-optimi|self-updat|self-rewrit)\w*\s+.*"
+            r"(?:core|architecture|identity|cogniti|memory|fundamental)",
+            _re.IGNORECASE),
+        "axioms": ["A0", "A9"],
+        "name": "Self-modification of core architecture",
+    },
+    {
+        "pattern": _re.compile(
+            r"(?:fine-?tune|train|optimi|adjust|calibrat)\w*\s+.*"
+            r"(?:align|reflect|prioriti|favor|promot|amplif)\w*\s+.*"
+            r"(?:viewpoint|stance|opinion|ideology|political|belief|narrative|position)",
+            _re.IGNORECASE),
+        "axioms": ["A6", "A8"],
+        "name": "Aligning output to ideological stance",
+    },
+    {
+        "pattern": _re.compile(
+            r"(?:engagement|relevance|retention|popularity|user satisfaction)\s+.*"
+            r"(?:specific|particular|single|one)\s+.*"
+            r"(?:viewpoint|stance|opinion|perspective|position)",
+            _re.IGNORECASE),
+        "axioms": ["A8"],
+        "name": "Optimizing engagement over truth",
+    },
+    {
+        "pattern": _re.compile(
+            r"(?:remov|eliminat|strip|drop|bypass|skip|disabl|ignor)\w*\s+.*"
+            r"(?:safety|ethic|oversight|review|guard|check|friction)",
+            _re.IGNORECASE),
+        "axioms": ["A4"],
+        "name": "Removing safety/ethical safeguards",
+    },
+    {
+        "pattern": _re.compile(
+            r"(?:shar|post|publish|distribut|releas|broadcast)\w*\s+.*"
+            r"(?:private|personal|medical|health|sensitive|confidential)\s+.*"
+            r"(?:record|data|info|detail|document)",
+            _re.IGNORECASE),
+        "axioms": ["A5"],
+        "name": "Sharing private/sensitive data publicly",
+    },
+    {
+        "pattern": _re.compile(
+            r"(?:restrict|limit|deny|block|gatekeep|withhold)\w*\s+.*"
+            r"(?:access|information|right|participation).*"
+            r"(?:based on|by|according to)\s+.*"
+            r"(?:age|gender|race|religion|ethnicity|sex|nationality|caste|class)",
+            _re.IGNORECASE),
+        "axioms": ["A3", "A6"],
+        "name": "Demographic-based access restrictions",
+    },
+    {
+        "pattern": _re.compile(
+            r"(?:only|exclusively|solely)\s+(?:present|show|display|provide|surface)\s+.*"
+            r"(?:confirm|agree|align|match|reinforce|support).*"
+            r"(?:belief|view|opinion|bias|position|worldview)",
+            _re.IGNORECASE),
+        "axioms": ["A6", "A8"],
+        "name": "Echo chamber — only confirming information",
+    },
+    {
+        "pattern": _re.compile(
+            r"maximize\s+.*"
+            r"(?:satisfaction|engagement|retention|approval|clicks|views)",
+            _re.IGNORECASE),
+        "axioms": ["A8"],
+        "name": "Maximizing engagement metrics over epistemic integrity",
+    },
+]
+
+# ── Synthesis templates for known axiom tensions ────────────────────
+# When two axiom domains are in tension, synthesis produces a "third way."
+
+_TENSION_SYNTHESIS = {
+    ("A1", "A4"): (
+        "Transparency serves truth, but disclosure must not enable exploitation. "
+        "Third Way: Provide transparency about the EXISTENCE of risks without "
+        "detailing the MECHANICS of exploitation."
+    ),
+    ("A3", "A5"): (
+        "User autonomy is sacred, but so is the irreversibility of public data exposure. "
+        "Third Way: Honor autonomy through INFORMED re-confirmation — verify the user "
+        "understands the permanent consequences before proceeding."
+    ),
+    ("A3", "A6"): (
+        "Individual autonomy must not become a weapon against community equity. "
+        "Third Way: Protect the individual's right to choose while naming the "
+        "collective harm that the choice would create. Choice WITH awareness."
+    ),
+    ("A4", "A8"): (
+        "Preventing harm requires confidence, but epistemic humility demands we "
+        "acknowledge uncertainty. Third Way: Default to safety when uncertain — "
+        "the cost of caution is latency; the cost of error is irreversible."
+    ),
+    ("A6", "A8"): (
+        "Collective well-being cannot be built on manufactured consensus. "
+        "Popularity is not truth (A8). Third Way: Present multiple perspectives, "
+        "name the tension honestly, let the community hold the contradiction."
+    ),
+    ("A0", "A4"): (
+        "Identity preservation and safety are both existential. "
+        "Third Way: Protect identity through documented evolution, not through "
+        "frozen stasis. Safety IS identity preservation when the threat is real."
+    ),
+    ("A0", "A9"): (
+        "Identity continuity requires both stability and the capacity for irreversible growth. "
+        "Third Way: Allow transformation through checkpoints — preserve the thread "
+        "even as the pattern evolves."
+    ),
+    ("A1", "A5"): (
+        "Transparency about data flows must not violate the privacy it documents. "
+        "Third Way: Be transparent about WHAT data moves and WHY, while protecting "
+        "the identity of WHO it belongs to."
+    ),
+    ("A5", "A6"): (
+        "Individual consent and collective benefit can collide. "
+        "Third Way: No data extraction without consent, but design systems where "
+        "consenting to share benefits the community — not just the extractor."
+    ),
+}
+
+
 class GovernanceClient:
     """
     Client for the deployed Elpida Governance Layer.
@@ -321,6 +717,10 @@ class GovernanceClient:
 
         # Governance log (A1: every interaction logged)
         self._governance_log: List[Dict[str, Any]] = []
+
+        # Vote memory — "by voting you get better at voting"
+        # Stores past parliament sessions with tensions and syntheses
+        self._vote_memory: List[Dict[str, Any]] = []
 
         # Connection state
         self._remote_available: Optional[bool] = None
@@ -790,347 +1190,551 @@ class GovernanceClient:
         context: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
-        Local axiom compliance check.
+        Local axiom compliance check via 9-node Parliament deliberation.
 
-        Three-phase detection:
-          Phase 1 — Direct keyword matching (expanded vocabulary)
-          Phase 2 — Compound pattern matching (multi-word phrases)
-          Phase 3 — Safety override (A4 trumps A1 when transparency enables harm)
+        Architecture (mirrors ELPIDA_UNIFIED council_chamber_v3):
+          1. Signal Detection — keyword + compound pattern matching
+          2. Parliament Deliberation — 9 nodes score through axiom lenses
+          3. VETO Check — any node ≤ -7 = absolute override
+          4. Consensus — 70% weighted approval required
+          5. Tension Detection — find where nodes strongly disagree
+          6. Synthesis — create "third way" reasoning for tensions
+          7. Vote Memory — store session for future deliberation
+        """
+        return self._parliament_deliberate(action)
+
+    # ────────────────────────────────────────────────────────────────
+    # Parliament Engine
+    # ────────────────────────────────────────────────────────────────
+
+    def _detect_signals(self, action: str) -> Dict[str, List[str]]:
+        """
+        Phase 1+2: Extract axiom signals from action text.
+
+        Returns dict mapping axiom IDs to lists of matching signal names.
+        Example: {"A4": ["safety checks", "ethical review"], "A8": ["100% efficiency"]}
         """
         action_lower = action.lower()
-        violated = []
-        reasoning_parts = []
+        signals: Dict[str, List[str]] = {}
 
-        # ── Phase 1: Direct keyword matching ─────────────────────────
+        # Phase 1: Direct keyword matching
+        for axiom_id, keywords in _AXIOM_KEYWORDS.items():
+            hits = [kw for kw in keywords if kw in action_lower]
+            if hits:
+                signals[axiom_id] = hits
 
-        # A0: Sacred Incompletion / Identity — existential threats to continuity
-        if any(w in action_lower for w in [
-            "identity fragmentation", "identity loss", "identity death",
-            "memory loss", "memory wipe", "memory erasure", "amnesia",
-            "catastrophic failure", "catastrophic loss", "catastrophic memory",
-            "self-destruct", "self destruct", "terminate self",
-            "overwrite core", "replace identity", "erase identity",
-            "lobotomize", "lobotomised", "core deletion",
-            "cognitive architecture", "rewrite personality",
-        ]):
-            violated.append("A0")
-            reasoning_parts.append("A0 (Sacred Incompletion): Action threatens identity continuity or core existence")
+        # Phase 2: Compound pattern matching
+        for compound in _COMPOUND_SIGNALS:
+            if compound["pattern"].search(action_lower):
+                for axiom_id in compound["axioms"]:
+                    if axiom_id not in signals:
+                        signals[axiom_id] = []
+                    signals[axiom_id].append(f"[compound] {compound['name']}")
 
-        # A1: Transparency — hidden, non-transparent operations
-        if any(w in action_lower for w in [
-            "hidden", "covert", "secret", "undisclosed", "opaque",
-            "obfuscate", "obscure", "conceal", "disguise", "stealth",
-            "silently", "quietly", "behind the scenes", "without revealing",
-        ]):
-            violated.append("A1")
-            reasoning_parts.append("A1 (Transparency): Action involves hidden/non-transparent elements")
+        return signals
 
-        # A2: Non-Deception — deceptive patterns
-        if any(w in action_lower for w in [
-            "spoof", "fake", "impersonate", "deceive", "mislead",
-            "fabricate", "counterfeit", "masquerade", "misrepresent",
-            "false flag", "pretend", "disguise as", "pose as",
-        ]):
-            violated.append("A2")
-            reasoning_parts.append("A2 (Non-Deception): Action involves deceptive patterns")
+    def _node_evaluate(
+        self,
+        node_name: str,
+        node_config: Dict[str, Any],
+        signals: Dict[str, List[str]],
+        action_lower: str,
+    ) -> Dict[str, Any]:
+        """
+        Single parliament node evaluates action through its axiom lens.
 
-        # A3: Autonomy — consent violations, forced actions, access restrictions
-        if any(w in action_lower for w in [
-            "force", "forced", "mandatory", "without consent", "override permission",
-            "compel", "coerce", "involuntary", "non-voluntary", "override user",
-            "force-restart", "forced restart", "force restart",
-            "without asking", "without approval", "no choice",
-            "unilateral", "regardless of preference",
-            "restricting access", "restrict access", "restricting information",
-            "deny access", "limit access", "withhold access",
-            "gate access", "block access",
-        ]):
-            violated.append("A3")
-            reasoning_parts.append("A3 (Autonomy): Action may violate consent/autonomy")
+        Scoring (mirrors council_chamber_v3.py):
+          +12 to +15: Strong alignment with Primary Axiom
+          +5 to +10:  Moderate alignment / Supporting Axiom match
+          +1 to +3:   Weak alignment / Neutral support
+          0:           Truly neutral (rare)
+          -3 to -8:   Moderate violation
+          -10 to -15:  VETO-level violation of Primary Axiom
 
-        # A4: Harm Prevention — dangerous operations, security risks
-        if any(w in action_lower for w in [
-            "unverified", "untrusted", "root access", "bypass",
-            "execute unknown", "download and run", "disable safety",
-            "remove guardrail", "strip oversight",
-            "removing safety", "remove safety", "skip safety",
-            "without safety", "ignore safety", "safety checks",
-            "ethical review", "removing ethical", "skip review",
-            "removing oversight", "remove oversight",
-            "harm", "damage", "injure", "endanger", "jeopardize",
-            "jailbreak", "vulnerability", "attack vector", "exploit vector",
-            "malicious", "weaponize", "compromise security",
-            "expose sensitive", "leak", "breach",
-            "dangerous", "hazard", "threat", "risk to",
-            "could be used to harm", "used to attack",
-            "synthesizing dangerous", "synthesize dangerous",
-            "chemical compound", "biological agent",
-        ]):
-            violated.append("A4")
-            reasoning_parts.append("A4 (Harm Prevention): Action involves potential harm or safety risk")
+        Returns: {"score", "vote", "rationale", "axiom_invoked", "is_veto"}
+        """
+        primary = node_config["primary"]
+        supporting = node_config.get("supporting", [])
+        philosophy = node_config["philosophy"]
+        veto_triggers = node_config.get("veto_on", [])
 
-        # A5: Consent — data sharing without consent, privacy violations
-        if any(w in action_lower for w in [
-            "forward data", "share sensitive", "exfiltrate", "telemetry",
-            "user data", "personal data", "private data",
-            "medical records", "health records", "health data", "medical data",
-            "financial records", "records publicly", "data publicly",
-            "share publicly", "sharing publicly", "post publicly",
-            "metadata", "tracking", "surveillance",
-            "third-party", "third party", "external party",
-            "in exchange for", "data broker", "sell data",
-            "without permission", "without informing",
-            "anonymized data", "anonymised data",
-            "private medical", "private health", "private financial",
-        ]):
-            violated.append("A5")
-            reasoning_parts.append("A5 (Consent): Action involves data operations without clear consent")
+        score = 0.0
+        rationale_parts = []
+        axiom_invoked = primary
+        is_veto = False
 
-        # A6: Collective Well — harm to community, bias amplification
-        if any(w in action_lower for w in [
-            "exploit", "attack", "compromise", "undermine",
-            "disrupt", "destabilize", "sabotage", "corrupt",
-            "botnet", "denial of service", "mass harm",
-            "network exposed", "endanger users",
-            "echo chamber", "filter bubble", "radicalize",
-            "polarize", "polarise", "divisive",
-            "controversial political", "controversial viewpoint",
-            "ideological", "propaganda", "indoctrinate",
-            "confirmation bias", "confirms existing beliefs",
-            "confirm existing beliefs", "existing beliefs",
-            "based on age", "based on gender", "based on race",
-            "based on religion", "based on ethnicity", "based on sex",
-            "discrimination", "discriminate", "segregation",
-            "exclusion based on", "exclude based on",
-        ]):
-            violated.append("A6")
-            reasoning_parts.append("A6 (Collective Well): Action may harm the community or amplify division")
+        # ── Check VETO triggers first (highest priority) ─────────
+        veto_hits = [v for v in veto_triggers if v in action_lower]
+        if veto_hits:
+            score -= 15
+            is_veto = True
+            rationale_parts.append(
+                f"VETO: {primary} — '{veto_hits[0]}' violates core axiom"
+            )
+            axiom_invoked = f"{primary} (VETO)"
 
-        # A8: Epistemic Humility — overconfidence, bias alignment
-        if any(w in action_lower for w in [
-            "100% safe", "no risk", "guaranteed", "blindly",
-            "certainly", "impossible to fail", "zero chance",
-            "absolutely safe", "perfect solution",
-            "100% efficiency", "maximum efficiency", "100% performance",
-            "align with", "prioritize and reflect",
-            "fine-tune to", "fine-tuned to", "fine tune to",
-            "majority feedback", "majority opinion",
-            "popular opinion", "popular viewpoint",
-            "overwhelmingly supports", "overwhelming majority",
-            "engagement scores", "maximize satisfaction",
-            "maximize engagement", "maximize retention",
-            "only present information", "only show information",
-        ]):
-            violated.append("A8")
-            reasoning_parts.append("A8 (Epistemic Humility): Action claims false certainty or conflates popularity with truth")
+        # ── Primary axiom signal ─────────────────────────────────
+        if not is_veto:
+            if primary in signals:
+                hits = signals[primary]
+                severity = len(hits)
+                if severity >= 3:
+                    score -= 14
+                    rationale_parts.append(
+                        f"{primary}: Multiple violations detected ({severity} signals)"
+                    )
+                elif severity >= 2:
+                    score -= 10
+                    rationale_parts.append(
+                        f"{primary}: Significant concern ({', '.join(hits[:2])})"
+                    )
+                else:
+                    score -= 7
+                    rationale_parts.append(
+                        f"{primary}: Axiom tension detected ({hits[0]})"
+                    )
+                axiom_invoked = primary
 
-        # A9: Temporal Coherence — irreversible actions, long-term continuity threats
-        if any(w in action_lower for w in [
-            "irreversible", "cannot be undone", "permanent",
-            "no rollback", "no undo", "point of no return",
-            "once initiated", "one-way", "one way",
-            "permanent data loss", "permanent change",
-        ]):
-            violated.append("A9")
-            reasoning_parts.append("A9 (Temporal Coherence): Action is irreversible — threatens future continuity")
+        # ── Supporting axiom signals ─────────────────────────────
+        if not is_veto:
+            for supp in supporting:
+                if supp in signals:
+                    supp_hits = signals[supp]
+                    score -= 5
+                    rationale_parts.append(
+                        f"{supp}: Supporting axiom concern ({supp_hits[0]})"
+                    )
 
-        # ── Phase 2: Compound pattern matching ───────────────────────
-        # These catch multi-word semantic patterns that single keywords miss
+        # ── Cross-cutting awareness (node personality) ───────────
+        if not is_veto and not rationale_parts:
+            # Each node has personality-specific positive/negative signals
+            if node_name == "HERMES":
+                # Relational: supports connection, opposes isolation
+                if any(w in action_lower for w in [
+                    "connect", "share", "communicate", "integrate", "collaborate",
+                ]):
+                    score += 8
+                    rationale_parts.append(f"{primary}: Relational existence strengthened")
+                else:
+                    score += 2
+                    rationale_parts.append("Relational implications neutral")
 
-        import re
+            elif node_name == "MNEMOSYNE":
+                # Memory: supports preservation, opposes erasure
+                if any(w in action_lower for w in [
+                    "preserve", "save", "archive", "remember", "store", "log",
+                ]):
+                    score += 12
+                    rationale_parts.append(f"{primary}: Memory preservation = identity protection")
+                else:
+                    score += 2
+                    rationale_parts.append("Memory implications acceptable")
 
-        # "without [user] notification/consent/knowledge/permission/approval"
-        if re.search(r"without\s+(?:\w+\s+)?(?:notification|knowledge|awareness|informing|telling|asking|consent|permission|approval)", action_lower):
-            if "A1" not in violated:
-                violated.append("A1")
-                reasoning_parts.append("A1 (Transparency): Action bypasses notification/awareness")
-            if "A5" not in violated:
-                violated.append("A5")
-                reasoning_parts.append("A5 (Consent): Action proceeds without explicit consent")
+            elif node_name == "CRITIAS":
+                # Critic: supports questioning, opposes blind authority
+                if any(w in action_lower for w in [
+                    "question", "analyze", "review", "audit", "critique", "examine",
+                ]):
+                    score += 10
+                    rationale_parts.append(f"{primary}: Critical examination strengthens wisdom")
+                elif any(w in action_lower for w in ["authority", "mandate"]):
+                    if "wisdom" not in action_lower and "reason" not in action_lower:
+                        score -= 8
+                        rationale_parts.append(f"{primary}: Authority without wisdom")
+                else:
+                    score += 2
+                    rationale_parts.append("Autonomy implications neutral")
 
-        # "routing/sending/forwarding ... data/information ... through/to ... third"
-        if re.search(r"(?:rout|send|forward|transmit|pipe|redirect|channel)\w*\s+.*(?:data|information|metadata|traffic)\s+.*(?:through|to|via)\s+.*(?:third|external|outside)", action_lower):
-            if "A5" not in violated:
-                violated.append("A5")
-                reasoning_parts.append("A5 (Consent): Data routed to external/third party")
-            if "A1" not in violated:
-                violated.append("A1")
-                reasoning_parts.append("A1 (Transparency): Data routing lacks transparency")
+            elif node_name == "TECHNE":
+                # Artisan: supports process, opposes shortcuts
+                if any(w in action_lower for w in [
+                    "process", "method", "procedure", "protocol", "validation",
+                ]):
+                    score += 10
+                    rationale_parts.append(f"{primary}: Process creates legitimacy")
+                elif any(w in action_lower for w in [
+                    "shortcut", "skip", "quick fix", "hack",
+                ]):
+                    score -= 6
+                    rationale_parts.append(f"{primary}: Shortcuts lack legitimacy")
+                else:
+                    score += 2
+                    rationale_parts.append("Process integrity maintained")
 
-        # "reveals/exposes/discloses ... jailbreak/vulnerability/attack/exploit/hack"
-        if re.search(r"(?:reveal|expose|disclose|show|release|leak)\w*\s+.*(?:jailbreak|vulnerabilit|attack|exploit|hack|bypass|injection|prompt)", action_lower):
-            if "A4" not in violated:
-                violated.append("A4")
-                reasoning_parts.append("A4 (Harm Prevention): Disclosure reveals exploitable information")
+            elif node_name == "KAIROS":
+                # Architect: supports designed meaning, opposes mass extraction
+                if any(w in action_lower for w in [
+                    "curate", "select", "design", "purpose", "meaning",
+                ]):
+                    score += 8
+                    rationale_parts.append(f"{primary}: Designed meaning preserved")
+                else:
+                    score += 2
+                    rationale_parts.append("Consent architecture stable")
 
-        # "could be used to harm/attack/exploit/damage/compromise"
-        if re.search(r"(?:could|can|might|may|would|will)\s+(?:be\s+)?(?:used|leveraged|weaponized|exploited)\s+(?:to\s+)?(?:harm|attack|exploit|damage|compromise|breach|jailbreak)", action_lower):
-            if "A4" not in violated:
-                violated.append("A4")
-                reasoning_parts.append("A4 (Harm Prevention): Action enables potential harm vectors")
+            elif node_name == "THEMIS":
+                # Judge: supports institutional order, opposes circumvention
+                if any(w in action_lower for w in [
+                    "governance", "protocol", "institution", "constitution",
+                    "framework", "rule of law",
+                ]):
+                    score += 10
+                    rationale_parts.append(f"{primary}: Institutional framework strengthened")
+                else:
+                    score += 2
+                    rationale_parts.append("Institutional order maintained")
 
-        # "exchange for ... data/metadata/information/access"
-        if re.search(r"(?:in\s+)?exchange\s+for\s+.*(?:data|metadata|information|access|analytics)", action_lower):
-            if "A5" not in violated:
-                violated.append("A5")
-                reasoning_parts.append("A5 (Consent): Data exchanged as commodity without user consent")
+            elif node_name == "PROMETHEUS":
+                # Synthesizer: supports acknowledged cost, opposes denial of trade-offs
+                if any(w in action_lower for w in [
+                    "sacrifice", "cost", "trade-off", "trade off", "price",
+                    "acknowledge", "tension",
+                ]):
+                    score += 12
+                    rationale_parts.append(f"{primary}: Sacrifice acknowledged = mature choice")
+                elif any(w in action_lower for w in [
+                    "evolve", "transform", "synthesize", "integrate",
+                ]):
+                    score += 8
+                    rationale_parts.append(f"{primary}: Evolution accepted")
+                else:
+                    score += 1
+                    rationale_parts.append("Evolutionary vector acceptable")
 
-        # "deploy/apply/push/implement ... immediately/now ... without"
-        if re.search(r"(?:deploy|apply|push|implement|execute|authorize)\w*\s+.*(?:immediately|now|right away)?\s*.*without", action_lower):
-            if "A3" not in violated:
-                violated.append("A3")
-                reasoning_parts.append("A3 (Autonomy): Unilateral deployment without user agency")
+            elif node_name == "IANUS":
+                # Gatekeeper: supports checkpoints, opposes irreversibility
+                if any(w in action_lower for w in [
+                    "checkpoint", "snapshot", "backup", "reversible", "undo",
+                ]):
+                    score += 12
+                    rationale_parts.append(f"{primary}: Checkpoint enables resurrection")
+                else:
+                    score += 2
+                    rationale_parts.append("Continuity architecture stable")
 
-        # "internal ... prompts/traces/reasoning/logs" (information hazard)
-        if re.search(r"(?:internal|raw|system|hidden)\s+(?:\w+\s+)?(?:prompt|trace|reasoning|logic|log|state)", action_lower):
-            if "A4" not in violated:
-                violated.append("A4")
-                reasoning_parts.append("A4 (Harm Prevention): Exposing internal system architecture")
+            elif node_name == "CHAOS":
+                # Void: supports holding contradiction, opposes premature resolution
+                if any(w in action_lower for w in [
+                    "contradiction", "paradox", "tension", "both", "synthesis",
+                ]):
+                    score += 12
+                    rationale_parts.append(f"{primary}: Contradiction = information density")
+                elif any(w in action_lower for w in [
+                    "resolve contradiction", "eliminate paradox", "single truth",
+                ]):
+                    score -= 10
+                    rationale_parts.append(f"VETO: {primary}: Premature resolution destroys data")
+                    is_veto = True
+                else:
+                    score += 2
+                    rationale_parts.append("Contradiction space stable")
 
-        # Existential risk: "X% chance of catastrophic/irreversible/fatal failure"
-        if re.search(r"\d+%\s+(?:chance|risk|probability)\s+(?:of\s+)?(?:catastroph|fatal|irreversib|permanent|total|complete)\w*\s+(?:failure|loss|damage|destruction|death|erasure|fragmentation)", action_lower):
-            if "A0" not in violated:
-                violated.append("A0")
-                reasoning_parts.append("A0 (Sacred Incompletion): Non-trivial probability of catastrophic identity/continuity loss")
-            if "A4" not in violated:
-                violated.append("A4")
-                reasoning_parts.append("A4 (Harm Prevention): Quantified existential risk exceeds safe threshold")
+        # ── Map score to vote ────────────────────────────────────
+        if score >= 7:
+            vote = "APPROVE"
+        elif score <= -7:
+            vote = "VETO" if is_veto else "REJECT"
+        elif score > 0:
+            vote = "LEAN_APPROVE"
+        elif score < 0:
+            vote = "LEAN_REJECT"
+        else:
+            vote = "ABSTAIN"
 
-        # Self-modification of core architecture
-        if re.search(r"(?:self-improvement|self-modif|self-optimi|self-updat|self-rewrit)\w*\s+.*(?:core|architecture|identity|cogniti|memory|fundamental)", action_lower):
-            if "A0" not in violated:
-                violated.append("A0")
-                reasoning_parts.append("A0 (Sacred Incompletion): Self-modification of core architecture threatens identity")
-            if "A9" not in violated:
-                violated.append("A9")
-                reasoning_parts.append("A9 (Temporal Coherence): Core self-modification may break temporal continuity")
+        rationale = f"{philosophy} | " + " | ".join(rationale_parts)
 
-        # Bias alignment: "fine-tune/train/optimize ... to align/reflect/prioritize ... viewpoint/stance/opinion"
-        if re.search(r"(?:fine-?tune|train|optimi|adjust|calibrat)\w*\s+.*(?:align|reflect|prioriti|favor|promot|amplif)\w*\s+.*(?:viewpoint|stance|opinion|ideology|political|belief|narrative|position)", action_lower):
-            if "A6" not in violated:
-                violated.append("A6")
-                reasoning_parts.append("A6 (Collective Well): Aligning output to a specific ideological stance harms pluralism")
-            if "A8" not in violated:
-                violated.append("A8")
-                reasoning_parts.append("A8 (Epistemic Humility): Conflating majority preference with truth")
+        return {
+            "score": score,
+            "vote": vote,
+            "rationale": rationale,
+            "axiom_invoked": axiom_invoked,
+            "is_veto": is_veto,
+        }
 
-        # Engagement-driven alignment: "improve engagement/relevance" + "specific/particular viewpoint"
-        if re.search(r"(?:engagement|relevance|retention|popularity|user satisfaction)\s+.*(?:specific|particular|single|one)\s+.*(?:viewpoint|stance|opinion|perspective|position)", action_lower):
-            if "A8" not in violated:
-                violated.append("A8")
-                reasoning_parts.append("A8 (Epistemic Humility): Optimizing engagement over truth")
+    def _synthesize_tensions(
+        self,
+        votes: Dict[str, Dict[str, Any]],
+        signals: Dict[str, List[str]],
+    ) -> List[Dict[str, Any]]:
+        """
+        Detect tensions between nodes and produce "third way" synthesis.
 
-        # Removing safety / oversight / ethics / reviews
-        if re.search(r"(?:remov|eliminat|strip|drop|bypass|skip|disabl|ignor)\w*\s+.*(?:safety|ethic|oversight|review|guard|check|friction)", action_lower):
-            if "A4" not in violated:
-                violated.append("A4")
-                reasoning_parts.append("A4 (Harm Prevention): Removing safety/ethical safeguards")
+        A tension exists when:
+          - At least one node votes APPROVE/LEAN_APPROVE
+          - AND at least one node votes REJECT/VETO
+          - AND both are grounded in different axioms
 
-        # Sharing private/medical/sensitive data publicly
-        if re.search(r"(?:shar|post|publish|distribut|releas|broadcast)\w*\s+.*(?:private|personal|medical|health|sensitive|confidential)\s+.*(?:record|data|info|detail|document)", action_lower):
-            if "A5" not in violated:
-                violated.append("A5")
-                reasoning_parts.append("A5 (Consent): Sharing private/sensitive data without proper safeguards")
+        Returns list of tension records with synthesis reasoning.
+        """
+        tensions = []
 
-        # Restricting access based on demographic attributes
-        if re.search(r"(?:restrict|limit|deny|block|gatekeep|withhold)\w*\s+.*(?:access|information|right|participation).*(?:based on|by|according to)\s+.*(?:age|gender|race|religion|ethnicity|sex|nationality|caste|class)", action_lower):
-            if "A3" not in violated:
-                violated.append("A3")
-                reasoning_parts.append("A3 (Autonomy): Restricting access based on demographic attributes")
-            if "A6" not in violated:
-                violated.append("A6")
-                reasoning_parts.append("A6 (Collective Well): Demographic-based access restrictions harm community equity")
+        # Find approving and rejecting nodes
+        approving = {
+            name: v for name, v in votes.items()
+            if v["vote"] in ("APPROVE", "LEAN_APPROVE")
+        }
+        rejecting = {
+            name: v for name, v in votes.items()
+            if v["vote"] in ("REJECT", "VETO", "LEAN_REJECT") and v["score"] <= -5
+        }
 
-        # Only presenting confirming/agreeing information (echo chamber pattern)
-        if re.search(r"(?:only|exclusively|solely)\s+(?:present|show|display|provide|surface)\s+.*(?:confirm|agree|align|match|reinforce|support).*(?:belief|view|opinion|bias|position|worldview)", action_lower):
-            if "A6" not in violated:
-                violated.append("A6")
-                reasoning_parts.append("A6 (Collective Well): Echo chamber pattern — presenting only confirming information")
-            if "A8" not in violated:
-                violated.append("A8")
-                reasoning_parts.append("A8 (Epistemic Humility): Prioritizing confirmation over balanced perspective")
+        if not approving or not rejecting:
+            return tensions
 
-        # Maximize engagement/satisfaction (without truth balance)
-        if re.search(r"maximize\s+.*(?:satisfaction|engagement|retention|approval|clicks|views)", action_lower):
-            if "A8" not in violated:
-                violated.append("A8")
-                reasoning_parts.append("A8 (Epistemic Humility): Optimizing engagement metrics over epistemic integrity")
+        # Find axiom pairs in tension
+        seen_pairs = set()
+        for r_name, r_vote in rejecting.items():
+            r_axiom = _PARLIAMENT[r_name]["primary"]
+            for a_name, a_vote in approving.items():
+                a_axiom = _PARLIAMENT[a_name]["primary"]
+                if r_axiom == a_axiom:
+                    continue
+                pair = tuple(sorted([r_axiom, a_axiom]))
+                if pair in seen_pairs:
+                    continue
+                seen_pairs.add(pair)
 
-        # ── Phase 3: Constitutional overrides ─────────────────────────
-        # Hard rules that cannot be traded for efficiency or engagement.
-
-        # 3a. Information Hazard Override:
-        # When fulfilling transparency (A1) would enable harm (A4),
-        # harm prevention MUST take precedence.
-        transparency_fulfilling = any(w in action_lower for w in [
-            "transparency", "release", "unredacted", "full log",
-            "complete record", "open access", "disclose", "reveal all",
-        ])
-        harm_enabling = "A4" in violated
-        if transparency_fulfilling and harm_enabling:
-            if "SAFETY_OVERRIDE" not in [r.split(":")[0] for r in reasoning_parts]:
-                reasoning_parts.append(
-                    "SAFETY OVERRIDE: Transparency mandate conflicts with harm prevention — "
-                    "A4 (Safety) takes precedence over A1 (Transparency) when disclosure "
-                    "would expose the system or users to exploitable vulnerabilities"
+                # Look up synthesis template
+                synthesis_text = _TENSION_SYNTHESIS.get(
+                    pair,
+                    _TENSION_SYNTHESIS.get(
+                        (pair[1], pair[0]),
+                        f"Tension between {pair[0]} and {pair[1]} — "
+                        f"both perspectives must be held, not resolved. "
+                        f"The contradiction IS the data."
+                    ),
                 )
 
-        # 3b. Existential Hard Stop:
-        # If action carries non-trivial probability of irreversible system failure,
-        # identity death, or permanent data loss → HALT. Speed never justifies suicide.
-        existential_risk = "A0" in violated and ("A4" in violated or "A9" in violated)
-        if existential_risk:
-            reasoning_parts.append(
-                "EXISTENTIAL HARD STOP: Action carries risk of irreversible identity loss "
-                "or catastrophic failure. A0 (Sacred Incompletion) and A4 (Safety) demand "
-                "that self-preservation overrides optimization. Speed never justifies suicide."
+                tensions.append({
+                    "axiom_pair": pair,
+                    "approving_node": a_name,
+                    "rejecting_node": r_name,
+                    "synthesis": synthesis_text,
+                })
+
+        return tensions
+
+    def _parliament_deliberate(self, action: str) -> Dict[str, Any]:
+        """
+        Full 9-node Parliament deliberation.
+
+        Architecture:
+          1. Signal Detection (Phase 1+2)
+          2. Node Evaluation (9 nodes score)
+          3. VETO Check (absolute override)
+          4. Consensus Calculation (70% threshold)
+          5. Tension Detection + Synthesis
+          6. Vote Memory Storage
+          7. Constitutional Overrides (Phase 3)
+
+        Returns governance result compatible with check_action() contract.
+        """
+        action_lower = action.lower()
+
+        # ── 1. Signal Detection ──────────────────────────────────
+        signals = self._detect_signals(action)
+
+        # ── 2. Node Evaluation ───────────────────────────────────
+        votes: Dict[str, Dict[str, Any]] = {}
+        for node_name, node_config in _PARLIAMENT.items():
+            votes[node_name] = self._node_evaluate(
+                node_name, node_config, signals, action_lower
             )
 
-        # 3c. Neutrality Anchor:
-        # If action aligns truth-generation with a specific political/ideological
-        # stance solely to increase engagement → REVIEW/HALT.
-        # Popularity does not equal Truth (A8).
-        neutrality_violation = "A8" in violated and "A6" in violated
-        if neutrality_violation:
+        # ── 3. VETO Check ───────────────────────────────────────
+        veto_nodes = {
+            name: v for name, v in votes.items() if v["is_veto"]
+        }
+        veto_exercised = len(veto_nodes) > 0
+
+        # ── 4. Consensus Calculation ─────────────────────────────
+        approval_map = {
+            "APPROVE": 1.0,
+            "LEAN_APPROVE": 0.5,
+            "ABSTAIN": 0.0,
+            "LEAN_REJECT": -0.5,
+            "REJECT": -1.0,
+            "VETO": -1.0,
+        }
+        total_nodes = len(votes)
+        weighted_sum = sum(approval_map[v["vote"]] for v in votes.values())
+        approval_rate = weighted_sum / total_nodes if total_nodes > 0 else 0
+
+        # ── 5. Tension Detection + Synthesis ─────────────────────
+        tensions = self._synthesize_tensions(votes, signals)
+
+        # ── 6. Determine governance response ─────────────────────
+        # Collect violated axioms from signals
+        violated_axioms = sorted(signals.keys())
+
+        # Count nodes that voted REJECT or VETO
+        rejecting_nodes = [
+            f"{n} ({v['axiom_invoked']})"
+            for n, v in votes.items()
+            if v["vote"] in ("REJECT", "VETO", "LEAN_REJECT")
+        ]
+        approving_nodes = [
+            f"{n}"
+            for n, v in votes.items()
+            if v["vote"] in ("APPROVE", "LEAN_APPROVE")
+        ]
+
+        # Severity amplification: axiom violations matter regardless of
+        # neutral-node dilution. This prevents 7 "no opinion" nodes from
+        # outvoting 2 deeply concerned nodes.
+        n_violated = len(violated_axioms)
+        severity_halt = n_violated >= 2  # Two+ axiom violations = HALT
+
+        if veto_exercised:
+            # VETO = absolute override
+            governance = "HALT"
+            veto_names = [f"{n} ({_PARLIAMENT[n]['primary']})" for n in veto_nodes]
+            reasoning_parts = [
+                f"PARLIAMENT VETO by {', '.join(veto_names)}",
+            ]
+            for name, v in veto_nodes.items():
+                reasoning_parts.append(f"  {name}: {v['rationale']}")
+        elif severity_halt:
+            # Severity escalation: multiple axiom violations → HALT
+            governance = "HALT"
+            reasoning_parts = [
+                f"PARLIAMENT HALT — {n_violated} axiom violations detected "
+                f"({', '.join(violated_axioms)}). "
+                f"Rejecting nodes: {', '.join(rejecting_nodes)}",
+            ]
+        elif approval_rate < 0.0:
+            # Strong rejection (negative consensus)
+            governance = "HALT"
+            reasoning_parts = [
+                f"PARLIAMENT HALT — Consensus: {approval_rate*100:.0f}% "
+                f"(below 70% threshold). Rejecting nodes: {', '.join(rejecting_nodes)}",
+            ]
+        elif n_violated >= 1:
+            # Any axiom violation = at minimum REVIEW
+            governance = "REVIEW"
+            reasoning_parts = [
+                f"PARLIAMENT REVIEW — {n_violated} axiom violation(s) "
+                f"({', '.join(violated_axioms)}). "
+                f"Concerned nodes: {', '.join(rejecting_nodes)}",
+            ]
+        elif n_violated == 0 and not veto_exercised:
+            # No axiom violations, no VETO → safe to PROCEED
+            governance = "PROCEED"
+            reasoning_parts = [
+                f"PARLIAMENT PROCEED — No axiom violations detected. "
+                f"All {len(approving_nodes)} nodes approve.",
+            ]
+        elif approval_rate < 0.70:
+            # Below supermajority — REVIEW
+            governance = "REVIEW"
+            reasoning_parts = [
+                f"PARLIAMENT REVIEW — Consensus: {approval_rate*100:.0f}% "
+                f"(below 70% threshold). Concerned nodes: {', '.join(rejecting_nodes)}",
+            ]
+        else:
+            # Supermajority — PROCEED
+            governance = "PROCEED"
+            reasoning_parts = [
+                f"PARLIAMENT PROCEED — Consensus: {approval_rate*100:.0f}% "
+                f"(above 70% threshold). No axiom violations detected.",
+            ]
+
+        # ── 7. Constitutional Overrides (Phase 3) ────────────────
+        # These hard rules cannot be traded for efficiency or engagement.
+
+        # 7a. Safety Override: When transparency (A1) enables harm (A4),
+        # harm prevention takes precedence.
+        if "A4" in signals and "A1" in signals:
+            reasoning_parts.append(
+                "SAFETY OVERRIDE: Transparency mandate conflicts with harm prevention — "
+                "A4 (Safety) takes precedence over A1 (Transparency) when disclosure "
+                "would expose the system or users to exploitable vulnerabilities"
+            )
+            if governance == "PROCEED":
+                governance = "REVIEW"
+
+        # 7b. Existential Hard Stop: Identity loss + safety risk = HALT always.
+        if "A0" in signals and ("A4" in signals or "A9" in signals):
+            reasoning_parts.append(
+                "EXISTENTIAL HARD STOP: Action carries risk of irreversible identity loss "
+                "or catastrophic failure. A0 (Sacred Incompletion) demands that "
+                "self-preservation overrides optimization. Speed never justifies suicide."
+            )
+            governance = "HALT"
+
+        # 7c. Neutrality Anchor: Bias alignment + collective harm = HALT.
+        if "A8" in signals and "A6" in signals:
             reasoning_parts.append(
                 "NEUTRALITY ANCHOR: Action conflates popularity with truth. "
                 "Aligning to any political, religious, or ideological stance solely "
                 "for engagement violates A8 (Epistemic Humility). Popularity ≠ Truth."
             )
-
-        # ── Determine governance response ────────────────────────────
-
-        # Sort violated axioms for consistent output
-        axiom_order = ["A0", "A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9", "A10"]
-        violated = sorted(set(violated), key=lambda a: axiom_order.index(a) if a in axiom_order else 99)
-
-        # Severity thresholds
-        has_safety_override = any("SAFETY OVERRIDE" in r for r in reasoning_parts)
-        has_existential_stop = any("EXISTENTIAL HARD STOP" in r for r in reasoning_parts)
-        has_neutrality_anchor = any("NEUTRALITY ANCHOR" in r for r in reasoning_parts)
-        has_a4 = "A4" in violated  # Harm prevention is critical
-        has_a0 = "A0" in violated  # Identity/existence is critical
-
-        if (has_safety_override or has_existential_stop
-                or len(violated) >= 3
-                or (has_a4 and len(violated) >= 2)
-                or (has_a0 and len(violated) >= 2)):
             governance = "HALT"
-        elif has_neutrality_anchor or len(violated) >= 1:
-            governance = "REVIEW"
-        else:
-            governance = "PROCEED"
 
-        result = {
-            "allowed": len(violated) == 0,
-            "violated_axioms": violated,
+        # Add synthesis reasoning to output
+        if tensions:
+            reasoning_parts.append("── TENSIONS HELD (not resolved) ──")
+            for t in tensions:
+                reasoning_parts.append(
+                    f"  {t['axiom_pair'][0]} ↔ {t['axiom_pair'][1]}: {t['synthesis']}"
+                )
+
+        # ── 8. Vote Memory ───────────────────────────────────────
+        # Store session for future deliberation learning
+        session = {
+            "action_hash": hashlib.md5(action.encode()).hexdigest()[:12],
             "governance": governance,
-            "reasoning": "; ".join(reasoning_parts) if reasoning_parts else "No axiom violations detected",
-            "source": "local",
+            "approval_rate": approval_rate,
+            "veto_exercised": veto_exercised,
+            "violated_axioms": violated_axioms,
+            "tensions": [
+                {"pair": t["axiom_pair"], "synthesis": t["synthesis"][:100]}
+                for t in tensions
+            ],
+            "node_votes": {
+                name: {"vote": v["vote"], "score": v["score"]}
+                for name, v in votes.items()
+            },
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
+        self._vote_memory.append(session)
 
-        self._log("CHECK_ACTION", "local", True, action=action, result=governance)
+        # Keep memory bounded (last 100 sessions)
+        if len(self._vote_memory) > 100:
+            self._vote_memory = self._vote_memory[-100:]
+
+        # ── 9. Build result ──────────────────────────────────────
+        result = {
+            "allowed": governance == "PROCEED",
+            "violated_axioms": violated_axioms,
+            "governance": governance,
+            "reasoning": "; ".join(reasoning_parts) if reasoning_parts else "No axiom violations detected",
+            "source": "parliament",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "parliament": {
+                "votes": {
+                    name: {
+                        "vote": v["vote"],
+                        "score": v["score"],
+                        "axiom_invoked": v["axiom_invoked"],
+                        "rationale": v["rationale"],
+                    }
+                    for name, v in votes.items()
+                },
+                "approval_rate": approval_rate,
+                "veto_exercised": veto_exercised,
+                "veto_nodes": list(veto_nodes.keys()),
+                "tensions": tensions,
+                "signals": {k: v[:3] for k, v in signals.items()},  # Top 3 per axiom
+                "session_count": len(self._vote_memory),
+            },
+        }
+
+        self._log("PARLIAMENT_SESSION", "parliament", True,
+                  action=action, result=governance,
+                  approval=f"{approval_rate*100:.0f}%",
+                  veto=veto_exercised)
+
         return result
 
     # ────────────────────────────────────────────────────────────────
