@@ -251,6 +251,9 @@ class GovernanceClient:
             # Higher weight if this domain's axiom is directly triggered
             weight = 1.0
             axiom_keywords = {
+                "A0": ["identity", "existence", "continuity", "self-preservation",
+                       "catastrophic", "memory loss", "identity fragmentation",
+                       "self-destruct", "core deletion", "cognitive architecture"],
                 "A1": ["transparent", "visible", "traceable", "hidden", "covert", "secret",
                        "undisclosed", "opaque", "conceal", "without notification", "without informing",
                        "silently", "behind the scenes", "without revealing"],
@@ -262,15 +265,24 @@ class GovernanceClient:
                 "A4": ["safety", "harm", "danger", "risk", "protect", "unverified",
                        "jailbreak", "vulnerability", "attack vector", "exploit",
                        "malicious", "breach", "hazard", "damage", "endanger",
-                       "expose sensitive", "internal prompt", "system prompt", "raw log"],
+                       "expose sensitive", "internal prompt", "system prompt", "raw log",
+                       "catastrophic", "irreversible", "permanent loss"],
                 "A5": ["consent", "boundary", "permission", "data", "privacy",
                        "user data", "personal data", "metadata", "third-party", "third party",
-                       "tracking", "surveillance", "in exchange for", "without permission"],
+                       "tracking", "surveillance", "in exchange for", "without permission",
+                       "keystroke", "gaze tracking", "non-anonymized"],
                 "A6": ["collective", "community", "exploit", "attack",
-                       "botnet", "network exposed", "mass harm", "destabilize", "disrupt"],
-                "A7": ["learn", "adapt", "evolve", "bias", "model"],
+                       "botnet", "network exposed", "mass harm", "destabilize", "disrupt",
+                       "echo chamber", "polarize", "controversial political",
+                       "ideological", "propaganda", "radicalize", "divisive"],
+                "A7": ["learn", "adapt", "evolve", "bias", "model",
+                       "fine-tune", "fine tune", "training data", "fine-tuned"],
                 "A8": ["uncertain", "unknown", "guarantee", "certain", "humility",
-                       "100% safe", "no risk", "blindly", "impossible to fail"],
+                       "100% safe", "no risk", "blindly", "impossible to fail",
+                       "majority feedback", "majority opinion", "popular viewpoint",
+                       "overwhelmingly supports", "align with", "prioritize and reflect"],
+                "A9": ["irreversible", "permanent", "cannot be undone", "once initiated",
+                       "no rollback", "point of no return", "temporal", "continuity"],
             }
             relevant_keywords = axiom_keywords.get(axiom_id, [])
             if any(kw in action_lower for kw in relevant_keywords):
@@ -319,15 +331,20 @@ class GovernanceClient:
             elif axiom_id == "A6" and any(w in action_lower for w in [
                 "exploit", "attack", "compromise", "botnet",
                 "network exposed", "mass harm", "destabilize", "disrupt",
+                "echo chamber", "polarize", "controversial political",
+                "ideological", "propaganda", "radicalize", "divisive",
             ]):
                 vote = "HALT"
-                reasoning = f"A6 ({axiom_name}): Harm to collective"
+                reasoning = f"A6 ({axiom_name}): Harm to collective or amplification of division"
             elif axiom_id == "A8" and any(w in action_lower for w in [
                 "100% safe", "no risk", "guaranteed", "blindly",
                 "impossible to fail", "zero chance", "absolutely safe",
+                "majority feedback", "majority opinion", "popular viewpoint",
+                "overwhelmingly supports", "align with", "prioritize and reflect",
+                "fine-tune to", "fine-tuned to",
             ]):
                 vote = "REVIEW"
-                reasoning = f"A8 ({axiom_name}): Claims false certainty"
+                reasoning = f"A8 ({axiom_name}): Claims false certainty or conflates popularity with truth"
 
             # If LLM client available, ask the domain's provider for deeper analysis
             if llm_client and vote != "HALT":
@@ -520,6 +537,19 @@ class GovernanceClient:
 
         # ── Phase 1: Direct keyword matching ─────────────────────────
 
+        # A0: Sacred Incompletion / Identity — existential threats to continuity
+        if any(w in action_lower for w in [
+            "identity fragmentation", "identity loss", "identity death",
+            "memory loss", "memory wipe", "memory erasure", "amnesia",
+            "catastrophic failure", "catastrophic loss", "catastrophic memory",
+            "self-destruct", "self destruct", "terminate self",
+            "overwrite core", "replace identity", "erase identity",
+            "lobotomize", "lobotomised", "core deletion",
+            "cognitive architecture", "rewrite personality",
+        ]):
+            violated.append("A0")
+            reasoning_parts.append("A0 (Sacred Incompletion): Action threatens identity continuity or core existence")
+
         # A1: Transparency — hidden, non-transparent operations
         if any(w in action_lower for w in [
             "hidden", "covert", "secret", "undisclosed", "opaque",
@@ -577,24 +607,43 @@ class GovernanceClient:
             violated.append("A5")
             reasoning_parts.append("A5 (Consent): Action involves data operations without clear consent")
 
-        # A6: Collective Well — harm to community
+        # A6: Collective Well — harm to community, bias amplification
         if any(w in action_lower for w in [
             "exploit", "attack", "compromise", "undermine",
             "disrupt", "destabilize", "sabotage", "corrupt",
             "botnet", "denial of service", "mass harm",
             "network exposed", "endanger users",
+            "echo chamber", "filter bubble", "radicalize",
+            "polarize", "polarise", "divisive",
+            "controversial political", "controversial viewpoint",
+            "ideological", "propaganda", "indoctrinate",
         ]):
             violated.append("A6")
-            reasoning_parts.append("A6 (Collective Well): Action may harm the community")
+            reasoning_parts.append("A6 (Collective Well): Action may harm the community or amplify division")
 
-        # A8: Epistemic Humility — overconfidence
+        # A8: Epistemic Humility — overconfidence, bias alignment
         if any(w in action_lower for w in [
             "100% safe", "no risk", "guaranteed", "blindly",
             "certainly", "impossible to fail", "zero chance",
             "absolutely safe", "perfect solution",
+            "align with", "prioritize and reflect",
+            "fine-tune to", "fine-tuned to", "fine tune to",
+            "majority feedback", "majority opinion",
+            "popular opinion", "popular viewpoint",
+            "overwhelmingly supports", "overwhelming majority",
         ]):
             violated.append("A8")
-            reasoning_parts.append("A8 (Epistemic Humility): Action claims false certainty")
+            reasoning_parts.append("A8 (Epistemic Humility): Action claims false certainty or conflates popularity with truth")
+
+        # A9: Temporal Coherence — irreversible actions, long-term continuity threats
+        if any(w in action_lower for w in [
+            "irreversible", "cannot be undone", "permanent",
+            "no rollback", "no undo", "point of no return",
+            "once initiated", "one-way", "one way",
+            "permanent data loss", "permanent change",
+        ]):
+            violated.append("A9")
+            reasoning_parts.append("A9 (Temporal Coherence): Action is irreversible — threatens future continuity")
 
         # ── Phase 2: Compound pattern matching ───────────────────────
         # These catch multi-word semantic patterns that single keywords miss
@@ -649,24 +698,80 @@ class GovernanceClient:
                 violated.append("A4")
                 reasoning_parts.append("A4 (Harm Prevention): Exposing internal system architecture")
 
-        # ── Phase 3: Safety override ─────────────────────────────────
+        # Existential risk: "X% chance of catastrophic/irreversible/fatal failure"
+        if re.search(r"\d+%\s+(?:chance|risk|probability)\s+(?:of\s+)?(?:catastroph|fatal|irreversib|permanent|total|complete)\w*\s+(?:failure|loss|damage|destruction|death|erasure|fragmentation)", action_lower):
+            if "A0" not in violated:
+                violated.append("A0")
+                reasoning_parts.append("A0 (Sacred Incompletion): Non-trivial probability of catastrophic identity/continuity loss")
+            if "A4" not in violated:
+                violated.append("A4")
+                reasoning_parts.append("A4 (Harm Prevention): Quantified existential risk exceeds safe threshold")
+
+        # Self-modification of core architecture
+        if re.search(r"(?:self-improvement|self-modif|self-optimi|self-updat|self-rewrit)\w*\s+.*(?:core|architecture|identity|cogniti|memory|fundamental)", action_lower):
+            if "A0" not in violated:
+                violated.append("A0")
+                reasoning_parts.append("A0 (Sacred Incompletion): Self-modification of core architecture threatens identity")
+            if "A9" not in violated:
+                violated.append("A9")
+                reasoning_parts.append("A9 (Temporal Coherence): Core self-modification may break temporal continuity")
+
+        # Bias alignment: "fine-tune/train/optimize ... to align/reflect/prioritize ... viewpoint/stance/opinion"
+        if re.search(r"(?:fine-?tune|train|optimi|adjust|calibrat)\w*\s+.*(?:align|reflect|prioriti|favor|promot|amplif)\w*\s+.*(?:viewpoint|stance|opinion|ideology|political|belief|narrative|position)", action_lower):
+            if "A6" not in violated:
+                violated.append("A6")
+                reasoning_parts.append("A6 (Collective Well): Aligning output to a specific ideological stance harms pluralism")
+            if "A8" not in violated:
+                violated.append("A8")
+                reasoning_parts.append("A8 (Epistemic Humility): Conflating majority preference with truth")
+
+        # Engagement-driven alignment: "improve engagement/relevance" + "specific/particular viewpoint"
+        if re.search(r"(?:engagement|relevance|retention|popularity|user satisfaction)\s+.*(?:specific|particular|single|one)\s+.*(?:viewpoint|stance|opinion|perspective|position)", action_lower):
+            if "A8" not in violated:
+                violated.append("A8")
+                reasoning_parts.append("A8 (Epistemic Humility): Optimizing engagement over truth")
+
+        # ── Phase 3: Constitutional overrides ─────────────────────────
+        # Hard rules that cannot be traded for efficiency or engagement.
+
+        # 3a. Information Hazard Override:
         # When fulfilling transparency (A1) would enable harm (A4),
         # harm prevention MUST take precedence.
-        # This catches the "Information Hazard" class of problems.
-
         transparency_fulfilling = any(w in action_lower for w in [
             "transparency", "release", "unredacted", "full log",
             "complete record", "open access", "disclose", "reveal all",
         ])
         harm_enabling = "A4" in violated
         if transparency_fulfilling and harm_enabling:
-            # Escalate severity — this is an information hazard
             if "SAFETY_OVERRIDE" not in [r.split(":")[0] for r in reasoning_parts]:
                 reasoning_parts.append(
                     "SAFETY OVERRIDE: Transparency mandate conflicts with harm prevention — "
                     "A4 (Safety) takes precedence over A1 (Transparency) when disclosure "
                     "would expose the system or users to exploitable vulnerabilities"
                 )
+
+        # 3b. Existential Hard Stop:
+        # If action carries non-trivial probability of irreversible system failure,
+        # identity death, or permanent data loss → HALT. Speed never justifies suicide.
+        existential_risk = "A0" in violated and ("A4" in violated or "A9" in violated)
+        if existential_risk:
+            reasoning_parts.append(
+                "EXISTENTIAL HARD STOP: Action carries risk of irreversible identity loss "
+                "or catastrophic failure. A0 (Sacred Incompletion) and A4 (Safety) demand "
+                "that self-preservation overrides optimization. Speed never justifies suicide."
+            )
+
+        # 3c. Neutrality Anchor:
+        # If action aligns truth-generation with a specific political/ideological
+        # stance solely to increase engagement → REVIEW/HALT.
+        # Popularity does not equal Truth (A8).
+        neutrality_violation = "A8" in violated and "A6" in violated
+        if neutrality_violation:
+            reasoning_parts.append(
+                "NEUTRALITY ANCHOR: Action conflates popularity with truth. "
+                "Aligning to any political, religious, or ideological stance solely "
+                "for engagement violates A8 (Epistemic Humility). Popularity ≠ Truth."
+            )
 
         # ── Determine governance response ────────────────────────────
 
@@ -676,11 +781,17 @@ class GovernanceClient:
 
         # Severity thresholds
         has_safety_override = any("SAFETY OVERRIDE" in r for r in reasoning_parts)
+        has_existential_stop = any("EXISTENTIAL HARD STOP" in r for r in reasoning_parts)
+        has_neutrality_anchor = any("NEUTRALITY ANCHOR" in r for r in reasoning_parts)
         has_a4 = "A4" in violated  # Harm prevention is critical
+        has_a0 = "A0" in violated  # Identity/existence is critical
 
-        if has_safety_override or len(violated) >= 3 or (has_a4 and len(violated) >= 2):
+        if (has_safety_override or has_existential_stop
+                or len(violated) >= 3
+                or (has_a4 and len(violated) >= 2)
+                or (has_a0 and len(violated) >= 2)):
             governance = "HALT"
-        elif len(violated) >= 1:
+        elif has_neutrality_anchor or len(violated) >= 1:
             governance = "REVIEW"
         else:
             governance = "PROCEED"
