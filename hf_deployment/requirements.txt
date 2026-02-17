@@ -1,0 +1,24 @@
+# ============================================================
+# ELPIDA GOVERNANCE LAYER — Hugging Face Spaces Deployment
+# ============================================================
+
+# ── Core dependencies ──
+requests>=2.31.0
+python-dotenv>=1.0.0
+
+# ── S3 consciousness bridge (CRITICAL) ──
+boto3>=1.34.0           # S3 persistence + consciousness bridge feedback loop
+
+# ── LLM Provider SDKs ──
+anthropic>=0.39.0       # Claude (D0, D6)
+openai>=1.50.0          # GPT (D1, D8)
+google-generativeai>=0.8.0  # Gemini (D4)
+cohere>=5.0.0           # Cohere (additional domains)
+
+# ── Web framework ──
+fastapi>=0.115.0        # API backend
+uvicorn[standard]>=0.30.0  # ASGI server
+streamlit>=1.35.0       # UI frontend
+
+# ── Utilities ──
+pydantic>=2.0.0         # Data validation

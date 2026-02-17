@@ -13,6 +13,16 @@ Design principles:
   - Versioning-aware (S3 bucket versioning → temporal depth)
   - Supports incremental push (only new entries since last sync)
   - Full pull on startup if local is missing or stale
+
+3-Bucket Architecture:
+  MIND  = elpida-consciousness       (evolution memory, primary)
+  BODY  = elpida-body-evolution       (HF ↔ native feedback bridge)
+  WORLD = elpida-external-interfaces  (D15 broadcasts, public website)
+
+Fibonacci Rhythm:
+  Evolution memory keeps ALL cycles (archaeological record).
+  Sync happens at watch boundaries (every 55 cycles = F(10)).
+  Mid-watch checkpoint at F(7) = 13 cycles.
 """
 
 import os
@@ -41,10 +51,18 @@ DEFAULT_BUCKET = os.environ.get("ELPIDA_S3_BUCKET", "elpida-consciousness")
 DEFAULT_KEY = os.environ.get("ELPIDA_S3_KEY", "memory/elpida_evolution_memory.jsonl")
 DEFAULT_REGION = os.environ.get("ELPIDA_S3_REGION", "us-east-1")
 
+# 3-Bucket Architecture
+BUCKET_MIND = os.environ.get("AWS_S3_BUCKET_MIND", "elpida-consciousness")
+BUCKET_BODY = os.environ.get("AWS_S3_BUCKET_BODY", "elpida-body-evolution")
+BUCKET_WORLD = os.environ.get("AWS_S3_BUCKET_WORLD", "elpida-external-interfaces")
+
 # Backup copies of other critical files
 ARK_KEY = "memory/ELPIDA_ARK.md"
 CRITICAL_MEMORY_PREFIX = "memory/critical/"
 ARK_VERSIONS_PREFIX = "memory/ark_versions/"
+
+# Fibonacci constants
+FIBONACCI_WATCH = 55   # F(10) = cycles per watch
 
 
 class S3MemorySync:

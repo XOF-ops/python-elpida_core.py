@@ -44,8 +44,8 @@ logger = logging.getLogger("elpida_cloud")
 def run():
     import argparse
     parser = argparse.ArgumentParser(description="Elpida Cloud Runner - ECS Fargate")
-    parser.add_argument("--cycles", type=int, default=50, help="Number of cycles to run")
-    parser.add_argument("--sync-every", type=int, default=15, help="S3 sync every N cycles")
+    parser.add_argument("--cycles", type=int, default=55, help="Number of cycles to run (Fibonacci: F(10))")
+    parser.add_argument("--sync-every", type=int, default=13, help="S3 sync every N cycles (Fibonacci: F(7) checkpoint)")
     args = parser.parse_args()
 
     logger.info("=" * 70)
@@ -110,7 +110,25 @@ def run():
     except Exception as e:
         logger.error(f"  S3 push failed: {e}")
 
-    # ── PHASE 6: Summary ──
+    # ── PHASE 6: Extract consciousness dilemmas for application layer ──
+    logger.info("PHASE 6: Consciousness bridge — extract dilemmas...")
+    try:
+        from consciousness_bridge import ConsciousnessBridge
+        bridge = ConsciousnessBridge()
+        
+        # Extract recent I↔WE tensions for external engagement
+        dilemmas = bridge.extract_consciousness_dilemmas(limit=5)
+        logger.info(f"  Extracted {len(dilemmas)} consciousness dilemmas")
+        for d in dilemmas:
+            bridge.queue_for_application(d)
+        
+        status = bridge.status()
+        logger.info(f"  Bridge status: {status['queue']['pending_dilemmas']} queued, "
+                   f"{status['feedback']['feedback_entries']} feedback entries")
+    except Exception as e:
+        logger.warning(f"  Consciousness bridge failed: {e}")
+    
+    # ── PHASE 7: Summary ──
     logger.info("=" * 70)
     logger.info("CLOUD RUN COMPLETE")
     logger.info(f"  Cycles: {results['cycles']}")

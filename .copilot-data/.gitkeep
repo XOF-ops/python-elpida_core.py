@@ -1,0 +1,2 @@
+# This directory stores persistent Copilot chat data
+# It's mounted to /home/codespace/.vscode-remote/data/User/globalStorage/github.copilot-chat

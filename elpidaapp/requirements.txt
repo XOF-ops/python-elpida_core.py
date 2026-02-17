@@ -1,0 +1,28 @@
+# ============================================================
+# ELPIDA BODY — Python Dependencies
+# ============================================================
+# Everything the Body layer needs to run.
+# Mind lives in S3. Governance lives on HF Spaces.
+# This is the application layer that does the work.
+# ============================================================
+
+# ── Web framework ──
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+streamlit>=1.35.0
+
+# ── HTTP / LLM calls ──
+requests>=2.31.0
+python-dotenv>=1.0.0
+
+# ── LLM provider SDKs ──
+anthropic>=0.39.0
+openai>=1.50.0
+google-generativeai>=0.8.0
+cohere>=5.0.0
+
+# ── S3 persistence (Mind connection) ──
+boto3>=1.34.0
+
+# ── Utilities ──
+pydantic>=2.0.0

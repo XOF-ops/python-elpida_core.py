@@ -1,0 +1,42 @@
+{
+  // Python settings
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+  "python.terminal.activateEnvironment": true,
+  
+  // GitHub Copilot settings
+  "github.copilot.enable": {
+    "*": true,
+    "markdown": true,
+    "plaintext": true,
+    "python": true
+  },
+  
+  // CRITICAL: Enable chat history persistence
+  "github.copilot.chat.persistHistory": true,
+  "github.copilot.chat.historyPath": "${workspaceFolder}/.copilot-chat-history",
+  
+  // File settings
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/node_modules/*/**": true,
+    "**/.venv/**": true,
+    "**/__pycache__/**": true,
+    "**/.copilot-data/**": true,
+    "**/.vscode-user-data/**": true
+  },
+  
+  // Editor settings
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit"
+  },
+  
+  // Files to exclude from the explorer
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    ".copilot-data": true,
+    ".vscode-user-data": true
+  }
+}

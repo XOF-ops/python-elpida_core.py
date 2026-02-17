@@ -24,11 +24,24 @@ venv/
 env/
 
 # IDEs
-.vscode/
 .idea/
 *.swp
 *.swo
 *~
+
+# VS Code - keep settings, exclude user data
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.vscode-user-data/
+
+# Copilot data - keep structure, exclude sensitive data
+.copilot-data/*
+!.copilot-data/.gitkeep
+.copilot-chat-history/*
+!.copilot-chat-history/.gitkeep
 
 # OS
 .DS_Store

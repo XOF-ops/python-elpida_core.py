@@ -1,0 +1,30 @@
+# ELPIDA BODY — File Manifest for New Codespace
+# Copy these files to deploy the Body layer
+
+## Core Package (entire folder)
+elpidaapp/
+
+## Dependencies (from parent directory)
+llm_client.py
+elpida_config.py
+elpida_domains.json
+
+## Frozen Identity (from parent directory)
+kernel/kernel.json
+
+## Optional: S3 Cloud Sync (from parent directory)
+ElpidaS3Cloud/
+  s3_memory_sync.py
+  engine_bridge.py
+  auto_sync.py
+  setup_bucket.py
+  verify.py
+  __init__.py
+  README.md
+  requirements.txt
+
+## Your Secrets (don't commit!)
+.env  # Copy from your secure location
+
+## Total: ~30 files, ~4MB
+## Plus your .env with API keys

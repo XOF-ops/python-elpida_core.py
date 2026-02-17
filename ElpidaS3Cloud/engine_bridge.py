@@ -11,20 +11,25 @@ Two integration modes:
 2. S3-AWARE ENGINE (subclass):
    Extends NativeCycleEngine with S3 pull on init and push on store.
 
+Fibonacci Rhythm:
+   sync_every defaults to 13 (F(7) = mid-watch checkpoint).
+   Full 3-bucket sync happens at 55 cycles (watch boundary) via the daemon.
+   The bridge handles MIND-only pushes at the checkpoint interval.
+
 Usage:
     # Mode 1: Attach to existing engine (zero code changes)
     from native_cycle_engine import NativeCycleEngine
     from ElpidaS3Cloud import attach_s3_to_engine
     
     engine = NativeCycleEngine()
-    attach_s3_to_engine(engine, sync_every=5)  # push every 5 cycles
-    engine.run(num_cycles=100)  # S3 sync happens automatically
+    attach_s3_to_engine(engine, sync_every=13)  # push every 13 cycles (F(7))
+    engine.run(num_cycles=55)  # One watch
     
     # Mode 2: Use the S3-aware subclass
     from ElpidaS3Cloud import S3AwareEngine
     
     engine = S3AwareEngine()  # pulls from S3 on init
-    engine.run(num_cycles=100)  # pushes to S3 automatically
+    engine.run(num_cycles=55)  # pushes to S3 automatically
 """
 
 import sys
@@ -35,7 +40,7 @@ from datetime import datetime, timezone
 from typing import Optional
 
 
-def attach_s3_to_engine(engine, sync_every: int = 5, push_on_exit: bool = True):
+def attach_s3_to_engine(engine, sync_every: int = 13, push_on_exit: bool = True):
     """
     Monkey-patch an existing NativeCycleEngine to sync with S3.
     
@@ -43,7 +48,7 @@ def attach_s3_to_engine(engine, sync_every: int = 5, push_on_exit: bool = True):
     
     Args:
         engine: A NativeCycleEngine instance (already initialized)
-        sync_every: Push to S3 every N cycles (default: 5)
+        sync_every: Push to S3 every N cycles (default: 13 = F(7) mid-watch checkpoint)
         push_on_exit: Register atexit handler for final push (default: True)
     """
     from .s3_memory_sync import S3MemorySync
@@ -104,7 +109,7 @@ class S3AwareEngine:
         engine.run(num_cycles=100)
     """
     
-    def __init__(self, sync_every: int = 5, **engine_kwargs):
+    def __init__(self, sync_every: int = 13, **engine_kwargs):
         # Add project root to path if needed
         root = Path(__file__).resolve().parent.parent
         if str(root) not in sys.path:
@@ -122,7 +127,7 @@ class S3AwareEngine:
         # Now initialize engine (which will load the pulled file)
         self.engine = NativeCycleEngine(**engine_kwargs)
         
-        # Attach S3 sync
+        # Attach S3 sync (F(7) checkpoint interval)
         attach_s3_to_engine(self.engine, sync_every=sync_every, push_on_exit=True)
         
         # Expose the sync on this wrapper too

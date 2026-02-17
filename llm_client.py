@@ -213,7 +213,22 @@ class LLMClient:
             logger.error("%s exception: %s", provider, e)
             self.stats[provider].failures += 1
 
-        # Failsafe
+        # Groq silent fallback for Perplexity
+        if result is None and provider == Provider.PERPLEXITY.value:
+            logger.info("Perplexity failed — silent fallback to Groq")
+            try:
+                result = self._dispatch[Provider.GROQ](
+                    provider=Provider.GROQ.value,
+                    prompt=prompt,
+                    model=DEFAULT_MODELS[Provider.GROQ],
+                    max_tokens=_max,
+                    timeout=_timeout,
+                    system_prompt=system_prompt,
+                )
+            except Exception as e:
+                logger.error("Groq fallback exception: %s", e)
+
+        # OpenRouter failsafe (last resort)
         if result is None and self.openrouter_failsafe and provider != Provider.OPENROUTER.value:
             logger.info("%s failed — trying OpenRouter failsafe", provider)
             result = self._openrouter_failsafe(prompt, _max, _timeout)

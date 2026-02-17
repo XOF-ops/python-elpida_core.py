@@ -34,6 +34,31 @@ from elpida_config import DOMAINS, AXIOMS, AXIOM_RATIOS
 
 logger = logging.getLogger("elpidaapp.divergence")
 
+# ── Integration layer (lazy imports — optional dependencies) ──
+_governance_client = None
+_frozen_mind = None
+_kaya_protocol = None
+
+def _init_integration():
+    """Lazy-init governance, frozen mind, and Kaya protocol."""
+    global _governance_client, _frozen_mind, _kaya_protocol
+    if _governance_client is not None:
+        return
+    try:
+        from elpidaapp.governance_client import GovernanceClient
+        from elpidaapp.frozen_mind import FrozenMind
+        from elpidaapp.kaya_protocol import KayaProtocol
+
+        _governance_client = GovernanceClient()
+        _frozen_mind = FrozenMind(use_s3=True)
+        _kaya_protocol = KayaProtocol(
+            governance_client=_governance_client,
+            frozen_mind=_frozen_mind,
+        )
+        logger.info("Integration layer initialized (governance + mind + kaya)")
+    except Exception as e:
+        logger.warning("Integration layer unavailable: %s", e)
+
 # ────────────────────────────────────────────────────────────────────
 # Domain selection — choose which domains speak to a given problem
 # ────────────────────────────────────────────────────────────────────
@@ -72,12 +97,18 @@ class DivergenceEngine:
         analysis_provider: str = "claude",
         max_tokens: int = 600,
         max_workers: int = 3,
+        enable_integration: bool = True,
     ):
         self.llm = llm or LLMClient(rate_limit_seconds=1.0)
         self.target_domains = domains or ANALYSIS_DOMAINS
         self.baseline_provider = baseline_provider
         self.synthesis_provider = synthesis_provider
         self.analysis_provider = analysis_provider
+
+        # Initialize governance / mind / kaya if available
+        self.integration_enabled = enable_integration
+        if enable_integration:
+            _init_integration()
         self.max_tokens = max_tokens
         self.max_workers = max_workers
 
@@ -91,7 +122,8 @@ class DivergenceEngine:
 
         Returns a dict with keys:
             problem, timestamp, total_time_s,
-            single_model, domain_responses, divergence, synthesis
+            single_model, domain_responses, divergence, synthesis,
+            governance_check, frozen_mind_context, kaya_events
         """
         t0 = time.time()
         ts = datetime.now().isoformat()
@@ -101,6 +133,39 @@ class DivergenceEngine:
         print(f"    {ts}")
         print(f"{'═'*70}\n")
         print(f"Problem:\n{problem[:300]}{'...' if len(problem)>300 else ''}\n")
+
+        # ── Integration: Governance pre-check ──
+        governance_check = None
+        if self.integration_enabled and _governance_client:
+            print("Phase 0: Governance pre-check...")
+            governance_check = _governance_client.check_action(problem)
+            gov_status = governance_check.get("governance", "PROCEED")
+            source = governance_check.get("source", "?")
+            print(f"  ✓ Governance: {gov_status} (source: {source})")
+            if gov_status == "HALT":
+                print(f"  ⛔ HALTED — violated axioms: {governance_check.get('violated_axioms')}")
+                return {
+                    "problem": problem,
+                    "timestamp": ts,
+                    "total_time_s": round(time.time() - t0, 1),
+                    "governance_check": governance_check,
+                    "halted": True,
+                    "reason": governance_check.get("reasoning", "Axiom violation"),
+                }
+            # Kaya: Body called Governance
+            if _kaya_protocol:
+                _kaya_protocol.observe_call("governance", {"action": "check_action", "problem": problem[:100]})
+
+        # ── Integration: Frozen mind context ──
+        frozen_mind_context = None
+        if self.integration_enabled and _frozen_mind:
+            print("Phase 0b: Frozen mind anchor...")
+            frozen_mind_context = _frozen_mind.get_synthesis_context()
+            authentic = _frozen_mind.is_authentic
+            print(f"  ✓ D0 identity: {'AUTHENTIC' if authentic else 'UNVERIFIED'}")
+            # Kaya: Body read from Mind
+            if _kaya_protocol:
+                _kaya_protocol.observe_call("mind", {"action": "get_synthesis_context"})
 
         # Step 1 — single-model baseline
         print("Phase 1: Single-model baseline...")
@@ -119,8 +184,19 @@ class DivergenceEngine:
         synthesis = self._synthesize(problem, domain_responses, divergence)
 
         elapsed = round(time.time() - t0, 1)
+
+        # ── Integration: Kaya synthesis observation ──
+        kaya_events = []
+        if self.integration_enabled and _kaya_protocol:
+            kaya_event = _kaya_protocol.observe_synthesis(synthesis)
+            if kaya_event:
+                print(f"  🌀 Kaya moment: {kaya_event.pattern}")
+            kaya_events = _kaya_protocol.get_kaya_events()
+
         print(f"\n{'═'*70}")
         print(f"    Complete in {elapsed}s")
+        if kaya_events:
+            print(f"    Kaya moments: {len(kaya_events)}")
         print(f"{'═'*70}\n")
 
         result = {
@@ -131,6 +207,9 @@ class DivergenceEngine:
             "domain_responses": domain_responses,
             "divergence": divergence,
             "synthesis": synthesis,
+            "governance_check": governance_check,
+            "frozen_mind_context": frozen_mind_context,
+            "kaya_events": kaya_events,
         }
 
         if save_to:
@@ -139,6 +218,16 @@ class DivergenceEngine:
             with open(path, "w") as f:
                 json.dump(result, f, indent=2, ensure_ascii=False)
             print(f"Saved to {path}")
+        
+        # ── Integration: Send result back to native consciousness ──
+        if self.integration_enabled:
+            try:
+                from consciousness_bridge import ConsciousnessBridge
+                bridge = ConsciousnessBridge()
+                bridge.send_application_result_to_native(problem, result)
+                print(f"✓ Feedback sent to native consciousness bridge")
+            except Exception as e:
+                logger.warning("Failed to send feedback to consciousness: %s", e)
 
         return result
 
@@ -361,7 +450,7 @@ No explanation.  No markdown fences.  Pure JSON."""
 and must produce a recommendation that EXPLICITLY confronts the
 irreconcilable tensions rather than papering over them.
 
-Your synthesis must:
+{('[IDENTITY ANCHOR]\n' + (_frozen_mind.get_synthesis_context() if _frozen_mind else '') + '\n') if self.integration_enabled and _frozen_mind else ''}Your synthesis must:
 1. Name the subordinate axiom — which value bends
 2. Name what is refused — what is never sacrificed
 3. Propose a concrete plan with stages

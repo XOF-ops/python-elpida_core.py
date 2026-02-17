@@ -1,0 +1,58 @@
+{
+  "name": "Elpida Core Python Environment",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11",
+  
+  // Configure mounts to persist VS Code data across Codespace rebuilds
+  "mounts": [
+    // Persist Copilot chat history and agent configurations
+    "source=${localWorkspaceFolder}/.copilot-data,target=/home/codespace/.vscode-remote/data/User/globalStorage/github.copilot-chat,type=bind,consistency=cached",
+    // Persist VS Code user settings
+    "source=${localWorkspaceFolder}/.vscode-user-data,target=/home/codespace/.vscode-remote/data/User,type=bind,consistency=cached"
+  ],
+  
+  // Features to install
+  "features": {
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.11"
+    },
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/aws-cli:1": {}
+  },
+  
+  // Post-create commands
+  "postCreateCommand": "pip install -r requirements.txt 2>/dev/null || true",
+  
+  // VS Code settings for this container
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "github.copilot.enable": {
+          "*": true,
+          "markdown": true,
+          "plaintext": true
+        },
+        // Enable chat history persistence
+        "github.copilot.chat.persistHistory": true
+      },
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "GitHub.copilot",
+        "GitHub.copilot-chat"
+      ]
+    }
+  },
+  
+  // Environment variables
+  "remoteEnv": {
+    "PYTHONPATH": "${containerWorkspaceFolder}"
+  },
+  
+  // Forward ports
+  "forwardPorts": [8000, 8501, 8080],
+  
+  // Use 'postStartCommand' to run commands each time the container starts
+  "postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}"
+}
