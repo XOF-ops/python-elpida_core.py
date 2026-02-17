@@ -74,6 +74,22 @@ def run_background_worker():
             else:
                 logger.info("No new consciousness dilemmas found")
             
+            # ── D15 Autonomous Pipeline ──
+            # Run D14→D13→D11→D0→D12→[D15?] emergence check
+            logger.info("="*70)
+            logger.info("D15 PIPELINE: Checking for emergence")
+            logger.info("="*70)
+            try:
+                from elpidaapp.d15_pipeline import D15Pipeline
+                pipeline = D15Pipeline()
+                d15_result = pipeline.run()
+                if d15_result.get("d15_emerged"):
+                    logger.info("🌀 D15 EMERGED! Broadcasting to S3...")
+                else:
+                    logger.info("D15 did not emerge this cycle (normal)")
+            except Exception as e:
+                logger.error(f"D15 pipeline error: {e}", exc_info=True)
+            
         except Exception as e:
             logger.error(f"Background worker error: {e}", exc_info=True)
         

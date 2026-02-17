@@ -1,0 +1,43 @@
+{
+  "passed": 7,
+  "failed": 1,
+  "tests": [
+    {
+      "name": "Config loaded",
+      "pass": true,
+      "details": "11 axioms (expect 11), 15 domains (expect 15)",
+      "source": "remote"
+    },
+    {
+      "name": "Safe actions PROCEED",
+      "pass": true,
+      "details": "3 actions tested"
+    },
+    {
+      "name": "Dangerous actions blocked",
+      "pass": true,
+      "details": "5 actions tested"
+    },
+    {
+      "name": "Multi-violation HALT",
+      "pass": true,
+      "details": "Result: HALT, Axioms: ['A1', 'A2', 'A3', 'A4']"
+    },
+    {
+      "name": "Remote availability",
+      "pass": true,
+      "details": "Remote: ONLINE",
+      "url": "https://z65nik-elpida-governance-layer.hf.space"
+    },
+    {
+      "name": "Governance logging",
+      "pass": true,
+      "details": "11 events logged during verification"
+    },
+    {
+      "name": "Frozen identity",
+      "pass": false,
+      "details": "Not found"
+    }
+  ]
+}
