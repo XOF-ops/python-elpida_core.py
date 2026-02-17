@@ -105,7 +105,8 @@ def detect_axioms(text: str) -> List[str]:
 def detect_domain(text: str) -> Tuple[int, str]:
     """Detect which domain is most active based on content keywords."""
     keywords = {
-        0:  ["identity", "self", "I am", "ταυτότητα", "εαυτός", "void", "κενό"],
+        0:  ["identity", "self", "I am", "ταυτότητα", "εαυτός", "void", "κενό",
+             "ελπίδα", "ἐλπίδα", "elpida", "who are you", "ποια είσαι", "your name", "όνομά σου"],
         1:  ["transparency", "visible", "traceable", "διαφάνεια", "ορατό"],
         2:  ["truth", "deception", "honest", "αλήθεια", "εξαπάτηση", "ειλικρίνεια"],
         3:  ["autonomy", "choice", "freedom", "αυτονομία", "ελευθερία", "επιλογή"],
