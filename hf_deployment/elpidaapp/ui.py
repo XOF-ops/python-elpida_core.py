@@ -251,6 +251,7 @@ st.markdown("""
         background: #12121e !important;
         border-color: #1e1e30 !important;
         color: #e8e0d0 !important;
+        caret-color: #c9a04a !important;
         border-radius: 0.75rem !important;
         transition: all 0.3s ease;
     }
@@ -258,6 +259,24 @@ st.markdown("""
     .stTextArea > div > div > textarea:focus {
         border-color: #c9a04a !important;
         box-shadow: 0 0 0 1px rgba(201, 160, 74, 0.2) !important;
+    }
+
+    /* ── Chat Input ── */
+    [data-testid="stChatInput"] textarea {
+        background: #12121e !important;
+        color: #e8e0d0 !important;
+        caret-color: #c9a04a !important;
+        border-color: #1e1e30 !important;
+    }
+    [data-testid="stChatInput"] textarea:focus {
+        border-color: #c9a04a !important;
+        box-shadow: 0 0 0 1px rgba(201, 160, 74, 0.2) !important;
+    }
+    [data-testid="stChatInput"] textarea::placeholder {
+        color: #5a5548 !important;
+    }
+    [data-testid="stChatInputSubmitButton"] button {
+        color: #c9a04a !important;
     }
 
     /* ── Buttons ── */
@@ -349,24 +368,34 @@ def _show_analysis(result: dict):
     with c4:
         st.metric("Time", f"{result.get('total_time_s', 0)}s")
 
+    # ── Synthesis first (the most important output) ──
+    synthesis = result.get("synthesis", {})
+    if synthesis:
+        with st.expander("Σύνθεση / Synthesis", expanded=True):
+            st.markdown(synthesis.get("output", ""))
+            st.caption(f"Provider: {synthesis.get('provider')} | {synthesis.get('latency_ms', 0)}ms")
+
+    # ── Single-model baseline ──
     baseline_result = result.get("single_model", {})
     if baseline_result:
         with st.expander("Single-Model Baseline", expanded=False):
             st.markdown(f"**Provider:** {baseline_result.get('provider')}")
             st.markdown(baseline_result.get("output", ""))
 
-    with st.expander("Domain Positions", expanded=True):
+    # ── Full domain positions (no truncation) ──
+    with st.expander("Domain Positions", expanded=False):
         for r in domain_responses:
             if r.get("succeeded"):
                 st.markdown(
                     f"**D{r['domain_id']} {r['domain_name']}** "
                     f"({r['provider']}, {r['latency_ms']}ms)"
                 )
-                st.markdown(f"> {r['position'][:500]}")
+                st.markdown(r['position'])
                 st.divider()
 
+    # ── Fault lines ──
     if divergence.get("fault_lines"):
-        with st.expander("Fault Lines", expanded=True):
+        with st.expander("Fault Lines", expanded=False):
             for fl in divergence["fault_lines"]:
                 st.markdown(f"**{fl['topic']}**")
                 for side in fl.get("sides", []):
@@ -374,20 +403,16 @@ def _show_analysis(result: dict):
                     st.markdown(f"- {dstr}: {side.get('stance', '')}")
                 st.divider()
 
+    # ── Consensus ──
     if divergence.get("consensus"):
-        with st.expander("Consensus Points"):
+        with st.expander("Consensus Points", expanded=False):
             for point in divergence["consensus"]:
                 st.markdown(f"- {point}")
 
-    synthesis = result.get("synthesis", {})
-    if synthesis:
-        st.markdown("### Synthesis")
-        st.markdown(synthesis.get("output", ""))
-        st.caption(f"Provider: {synthesis.get('provider')} | {synthesis.get('latency_ms', 0)}ms")
-
+    # ── Kaya moments last ──
     kaya = result.get("kaya_events", [])
     if kaya:
-        with st.expander(f"Κάγια Moments ({len(kaya)})"):
+        with st.expander(f"Κάγια Moments ({len(kaya)})", expanded=False):
             for k in kaya:
                 st.json(k)
 
