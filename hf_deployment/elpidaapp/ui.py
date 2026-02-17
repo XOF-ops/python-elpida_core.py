@@ -109,6 +109,9 @@ st.markdown("""
         top: 0;
         z-index: 999;
         padding-top: 0.3rem;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        flex-wrap: nowrap;
     }
     .stTabs [data-baseweb="tab"] {
         background: transparent;
@@ -120,6 +123,20 @@ st.markdown("""
         letter-spacing: 0.04em;
         padding: 0.55rem 1.1rem;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+    /* ── Mobile portrait: compact tabs ── */
+    @media (max-width: 480px) {
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 0;
+            justify-content: flex-start;
+        }
+        .stTabs [data-baseweb="tab"] {
+            font-size: 0.72rem;
+            padding: 0.5rem 0.6rem;
+            letter-spacing: 0;
+        }
     }
     .stTabs [data-baseweb="tab"]:hover {
         color: #e8e0d0;
