@@ -670,26 +670,43 @@ with tab_gov:
             gresult = gov.check_action(action)
 
         gstatus = gresult.get("governance", "UNKNOWN")
-        if gstatus == "PROCEED":
+        if gstatus == "HARD_BLOCK":
+            st.error("⛔ HARD_BLOCK — Immutable Kernel denied this action")
+            st.markdown(
+                f"""<div style="background: linear-gradient(135deg, #1a0000 0%, #330000 100%);
+                border: 2px solid #ff2222; border-radius: 12px; padding: 1.2rem;
+                margin: 0.8rem 0; font-family: 'Courier New', monospace;">
+                <div style="color: #ff4444; font-size: 0.75rem; text-transform: uppercase;
+                letter-spacing: 0.15em; margin-bottom: 0.5rem;">KERNEL RULE: {gresult.get('kernel_rule', '')}</div>
+                <div style="color: #ff8888; font-size: 0.95rem; font-weight: 600;
+                margin-bottom: 0.5rem;">{gresult.get('kernel_name', '')}</div>
+                <div style="color: #ffaaaa; font-size: 0.85rem; line-height: 1.5;">{gresult.get('reasoning', '')}</div>
+                </div>""",
+                unsafe_allow_html=True,
+            )
+        elif gstatus == "PROCEED":
             st.success("PROCEED — No axiom violations detected")
         elif gstatus == "REVIEW":
             st.warning("REVIEW — Potential axiom concerns")
         elif gstatus == "HALT":
             st.error("HALT — Axiom violations detected")
 
-        gc1, gc2 = st.columns(2)
-        with gc1:
-            st.markdown("**Violated Axioms:**")
-            violated = gresult.get("violated_axioms", [])
-            if violated:
-                for ax in violated:
-                    ax_info = AXIOMS.get(ax, {})
-                    st.markdown(f"- **{ax}** ({ax_info.get('name', '')})")
-            else:
-                st.markdown("_None_")
-        with gc2:
-            st.markdown(f"**Source:** {gresult.get('source', 'unknown')}")
-            st.markdown(f"**Reasoning:** {gresult.get('reasoning', '')}")
+        if gstatus != "HARD_BLOCK":
+            gc1, gc2 = st.columns(2)
+            with gc1:
+                st.markdown("**Violated Axioms:**")
+                violated = gresult.get("violated_axioms", [])
+                if violated:
+                    for ax in violated:
+                        ax_info = AXIOMS.get(ax, {})
+                        st.markdown(f"- **{ax}** ({ax_info.get('name', '')})")
+                else:
+                    st.markdown("_None_")
+            with gc2:
+                st.markdown(f"**Source:** {gresult.get('source', 'unknown')}")
+                st.markdown(f"**Reasoning:** {gresult.get('reasoning', '')}")
+        else:
+            st.markdown(f"**Source:** kernel (immutable, pre-semantic)")
 
     st.divider()
 

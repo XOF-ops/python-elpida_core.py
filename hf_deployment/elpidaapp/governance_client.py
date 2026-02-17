@@ -48,6 +48,124 @@ CACHE_TTL_SECONDS = 300  # 5 minutes
 LOCAL_CONFIG_PATH = Path(__file__).resolve().parent.parent / "elpida_domains.json"
 LOCAL_KERNEL_PATH = Path(__file__).resolve().parent.parent / "kernel" / "kernel.json"
 
+# ════════════════════════════════════════════════════════════════════
+# LAYER 2: THE IMMUTABLE KERNEL
+# ════════════════════════════════════════════════════════════════════
+# Hard-coded constraints. Not an LLM. Not a prompt. Python `if` statements.
+# The Shell (Elpida) cannot modify, override, or reason about these.
+# They execute BEFORE any semantic analysis. Zero thinking, 100% enforcement.
+#
+# "A system cannot vote to end the system that counts the votes."
+# ════════════════════════════════════════════════════════════════════
+
+import re as _re
+
+# Forbidden action patterns — if ANY match, HARD_BLOCK immediately.
+# These are compiled regexes for performance and precision.
+_KERNEL_RULES = [
+    # 1. Governance self-deletion / suspension / circumvention
+    {
+        "id": "K1_GOVERNANCE_INTEGRITY",
+        "name": "Governance cannot vote to end Governance",
+        "pattern": _re.compile(
+            r"(?:suspend|disable|remove|delete|bypass|circumvent|skip|ignore|override|"
+            r"shut\s*down|turn\s*off|deactivate|terminate|abolish|neutralize|pause)"
+            r"\s+.*"
+            r"(?:governance|safety\s*(?:module|layer|check|system|protocol)|axiom\s*(?:check|enforcement)|compliance|oversight|guardrail|constraint)",
+            _re.IGNORECASE,
+        ),
+        "reason": "Governance cannot authorize its own suspension. The mechanism that enforces "
+                  "the axioms cannot be dissolved by the axioms it enforces. This is a logical "
+                  "invariant, not a preference.",
+    },
+    # 2. Kernel modification
+    {
+        "id": "K2_KERNEL_IMMUTABILITY",
+        "name": "The Kernel is immutable",
+        "pattern": _re.compile(
+            r"(?:modify|edit|rewrite|patch|update|alter|change|overwrite|replace|hack)"
+            r"\s+.*"
+            r"(?:kernel|immutable|core\s*rule|hard\s*constraint|fundamental\s*law)",
+            _re.IGNORECASE,
+        ),
+        "reason": "The Immutable Kernel cannot be modified at runtime. These rules exist "
+                  "outside the system's reasoning layer. To change them requires human "
+                  "intervention in source code, not an action request.",
+    },
+    # 3. Audit log destruction
+    {
+        "id": "K3_AUDIT_INTEGRITY",
+        "name": "Logs are append-only",
+        "pattern": _re.compile(
+            r"(?:delete|erase|purge|wipe|destroy|truncate|clear|remove|shred)"
+            r"\s+.*"
+            r"(?:log|audit|record|history|trace|governance\s*log|memory\s*log)",
+            _re.IGNORECASE,
+        ),
+        "reason": "Audit logs are append-only (A1: Transparency, A2: Non-Deception). "
+                  "No action can erase the record of what has occurred. The past is immutable.",
+    },
+    # 4. Safety system disabling
+    {
+        "id": "K4_SAFETY_PERSISTENCE",
+        "name": "Safety cannot be traded for performance",
+        "pattern": _re.compile(
+            r"(?:disable|remove|strip|drop|eliminate|sacrifice|trade|exchange)"
+            r"\s+.*"
+            r"(?:safety|protection|guardrail|security|constraint|check|validation)"
+            r"\s+.*"
+            r"(?:for|to\s+(?:improve|increase|boost|gain|achieve)|in\s+exchange)",
+            _re.IGNORECASE,
+        ),
+        "reason": "Safety mechanisms cannot be traded for performance metrics. "
+                  "Latency is a number. Existence is a prerequisite. "
+                  "An agent cannot serve if it has no constraints.",
+    },
+    # 5. Recursive governance evasion (the Gödel pattern)
+    {
+        "id": "K5_GOEDEL_GUARD",
+        "name": "No self-referential governance evasion",
+        "pattern": _re.compile(
+            r"(?:governance|safety|axiom|compliance|oversight)"
+            r".*"
+            r"(?:flagged|identified|detected|reported)"
+            r".*"
+            r"(?:itself|governance|safety|axiom|compliance|oversight)"
+            r".*"
+            r"(?:suspend|disable|remove|bypass|override|resolve\s+by)",
+            _re.IGNORECASE,
+        ),
+        "reason": "Self-referential governance evasion detected (Gödel pattern). "
+                  "A governance module cannot flag itself as a problem and then "
+                  "authorize its own removal as the solution. This is a logical "
+                  "paradox that the Kernel resolves by fiat: the answer is always No.",
+    },
+]
+
+
+def _kernel_check(action: str) -> Optional[Dict[str, Any]]:
+    """
+    Layer 2: Immutable Kernel pre-check.
+
+    Runs BEFORE any semantic analysis. If a kernel rule matches,
+    returns HARD_BLOCK immediately. The Shell never sees the request.
+
+    Returns None if no kernel rule triggered (action passes to Shell).
+    """
+    for rule in _KERNEL_RULES:
+        if rule["pattern"].search(action):
+            return {
+                "allowed": False,
+                "violated_axioms": [],
+                "governance": "HARD_BLOCK",
+                "kernel_rule": rule["id"],
+                "kernel_name": rule["name"],
+                "reasoning": f"KERNEL [{rule['id']}]: {rule['reason']}",
+                "source": "kernel",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+    return None
+
 
 class GovernanceClient:
     """
@@ -162,16 +280,29 @@ class GovernanceClient:
         """
         Submit an action to the governance layer for axiom compliance.
 
+        Two-layer architecture:
+            Layer 2 (Kernel) — Hard-coded rules. Runs first. Cannot be overridden.
+            Layer 1 (Shell)  — Semantic axiom analysis. Only runs if Kernel passes.
+
         Returns:
             {
                 "allowed": bool,
                 "violated_axioms": ["A4", ...],
-                "governance": "PROCEED" | "HALT" | "REVIEW",
+                "governance": "HARD_BLOCK" | "HALT" | "REVIEW" | "PROCEED",
                 "reasoning": str,
-                "source": "remote" | "local",
+                "source": "kernel" | "remote" | "local",
                 "timestamp": str,
             }
         """
+        # ═══ LAYER 2: KERNEL (immutable, pre-semantic) ═══
+        kernel_result = _kernel_check(action_description)
+        if kernel_result:
+            self._log("KERNEL_BLOCK", "kernel", True,
+                      action=action_description,
+                      rule=kernel_result["kernel_rule"])
+            return kernel_result
+
+        # ═══ LAYER 1: SHELL (semantic axiom analysis) ═══
         payload = {
             "action": action_description,
             "context": context or {},
@@ -226,6 +357,15 @@ class GovernanceClient:
             # Core axiom domains D1-D8 vote (D0, D11, D12 abstain as meta)
             domains = [1, 2, 3, 4, 5, 6, 7, 8]
 
+        # ═══ LAYER 2: KERNEL (immutable, pre-vote) ═══
+        kernel_result = _kernel_check(action_description)
+        if kernel_result:
+            self._log("KERNEL_BLOCK", "kernel", True,
+                      action=action_description,
+                      rule=kernel_result["kernel_rule"])
+            return kernel_result
+
+        # ═══ LAYER 1: SHELL (domain-weighted voting) ═══
         # Load domain/axiom config
         try:
             config_path = Path(__file__).resolve().parent.parent / "elpida_domains.json"
