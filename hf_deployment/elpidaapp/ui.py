@@ -102,9 +102,13 @@ st.markdown("""
     /* ── Tabs ── */
     .stTabs [data-baseweb="tab-list"] {
         gap: 0.3rem;
-        background: transparent;
+        background: #0b0b14;
         border-bottom: 1px solid #1e1e30;
         justify-content: center;
+        position: sticky;
+        top: 0;
+        z-index: 999;
+        padding-top: 0.3rem;
     }
     .stTabs [data-baseweb="tab"] {
         background: transparent;
@@ -631,10 +635,7 @@ with tab_scanner:
                     f"Problem {i}: {r.get('problem', '')[:80]}...",
                     expanded=(i == 1),
                 ):
-                    if "analysis" in r:
-                        _show_analysis(r["analysis"])
-                    else:
-                        st.markdown(r.get("problem", ""))
+                    _show_analysis(r)
         else:
             with st.spinner(f"Scanning '{scan_topic}'..."):
                 problems = scanner.find_problems(
