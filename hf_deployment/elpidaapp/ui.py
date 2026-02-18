@@ -652,7 +652,13 @@ with tab_scanner:
                     f"Problem {i}: {r.get('problem', '')[:80]}...",
                     expanded=(i == 1),
                 ):
-                    _show_analysis(r)
+                    if r.get("halted"):
+                        st.error(f"⛔ Governance HALT: {r.get('reason', 'Axiom violation')}")
+                        gov = r.get("governance_check", {})
+                        if gov:
+                            st.json(gov)
+                    else:
+                        _show_analysis(r)
                     # ── Sources ──
                     sources = r.get("sources", [])
                     if sources:

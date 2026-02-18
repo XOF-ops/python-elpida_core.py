@@ -163,7 +163,12 @@ class DivergenceEngine:
         governance_check = None
         if self.integration_enabled and _governance_client:
             print("Phase 0: Governance pre-check...")
-            governance_check = _governance_client.check_action(problem)
+            # analysis_mode=True → skip regex Kernel (it false-positives on
+            # policy language like "ignore law" / "sacrifice safety") but
+            # keep the Parliament semantic deliberation.
+            governance_check = _governance_client.check_action(
+                problem, analysis_mode=True
+            )
             gov_status = governance_check.get("governance", "PROCEED")
             source = governance_check.get("source", "?")
             print(f"  ✓ Governance: {gov_status} (source: {source})")

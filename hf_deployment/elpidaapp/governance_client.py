@@ -802,6 +802,8 @@ class GovernanceClient:
         self,
         action_description: str,
         context: Optional[Dict[str, Any]] = None,
+        *,
+        analysis_mode: bool = False,
     ) -> Dict[str, Any]:
         """
         Submit an action to the governance layer for axiom compliance.
@@ -809,6 +811,14 @@ class GovernanceClient:
         Two-layer architecture:
             Layer 2 (Kernel) — Hard-coded rules. Runs first. Cannot be overridden.
             Layer 1 (Shell)  — Semantic axiom analysis. Only runs if Kernel passes.
+
+        Args:
+            analysis_mode: When True, skip the regex Kernel check but keep
+                Parliament deliberation.  Use for content being *analyzed*
+                (e.g. policy dilemmas fed to the Divergence Engine) where
+                policy language like "ignore international law" or
+                "sacrifice safety for…" would false-positive on Kernel
+                patterns designed for governance-evasion attacks.
 
         Returns:
             {
@@ -821,12 +831,14 @@ class GovernanceClient:
             }
         """
         # ═══ LAYER 2: KERNEL (immutable, pre-semantic) ═══
-        kernel_result = _kernel_check(action_description)
-        if kernel_result:
-            self._log("KERNEL_BLOCK", "kernel", True,
-                      action=action_description,
-                      rule=kernel_result["kernel_rule"])
-            return kernel_result
+        # Skipped in analysis_mode — the Parliament (semantic) still deliberates.
+        if not analysis_mode:
+            kernel_result = _kernel_check(action_description)
+            if kernel_result:
+                self._log("KERNEL_BLOCK", "kernel", True,
+                          action=action_description,
+                          rule=kernel_result["kernel_rule"])
+                return kernel_result
 
         # ═══ LAYER 1: SHELL (semantic axiom analysis) ═══
         payload = {
