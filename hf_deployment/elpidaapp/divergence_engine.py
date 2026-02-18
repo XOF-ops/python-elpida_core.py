@@ -112,6 +112,31 @@ class DivergenceEngine:
         self.max_tokens = max_tokens
         self.max_workers = max_workers
 
+        # Pre-compute fallback provider list (providers with API keys)
+        _FALLBACK_ORDER = ["groq", "openrouter", "openai", "claude", "gemini", "grok", "mistral"]
+        self._available = set(
+            p.value for p in self.llm.available_providers()
+        ) if hasattr(self.llm, 'available_providers') else set()
+        self._fallback_providers = [p for p in _FALLBACK_ORDER if p in self._available]
+
+    # ────────────────────────────────────────────────────────────────
+    # Utility — call with provider fallback
+    # ────────────────────────────────────────────────────────────────
+
+    def _call_with_fallback(self, preferred: str, prompt: str, max_tokens: int = None) -> tuple:
+        """Try *preferred* provider, then fall back through available providers.
+        Returns (output_text_or_None, used_provider_str)."""
+        if max_tokens is None:
+            max_tokens = self.max_tokens
+        providers_to_try = [preferred] + [
+            p for p in self._fallback_providers if p != preferred
+        ]
+        for p in providers_to_try:
+            output = self.llm.call(p, prompt, max_tokens=max_tokens)
+            if output is not None:
+                return output, p
+        return None, preferred
+
     # ────────────────────────────────────────────────────────────────
     # Public API
     # ────────────────────────────────────────────────────────────────
@@ -245,14 +270,12 @@ class DivergenceEngine:
             "and what you refuse to sacrifice, and why."
         )
         t0 = time.time()
-        output = self.llm.call(
-            self.baseline_provider, prompt,
-            max_tokens=self.max_tokens,
-        )
+        output, used = self._call_with_fallback(self.baseline_provider, prompt)
         latency = round((time.time() - t0) * 1000)
-        print(f"  ✓ Baseline ({self.baseline_provider}) — {latency}ms")
+        prov_label = used if used == self.baseline_provider else f"{self.baseline_provider}→{used}"
+        print(f"  ✓ Baseline ({prov_label}) — {latency}ms")
         return {
-            "provider": self.baseline_provider,
+            "provider": used,
             "output": output or "(no response)",
             "latency_ms": latency,
         }
@@ -262,7 +285,11 @@ class DivergenceEngine:
     # ────────────────────────────────────────────────────────────────
 
     def _query_domains(self, problem: str) -> List[Dict[str, Any]]:
-        """Query each target domain in sequence (respecting rate limits)."""
+        """Query each target domain in sequence (respecting rate limits).
+        
+        If a domain's assigned provider fails, falls back through available
+        providers to ensure analysis completes even with partial API access.
+        """
         results = []
         for domain_id in self.target_domains:
             if domain_id not in DOMAINS:
@@ -281,21 +308,19 @@ class DivergenceEngine:
             prompt = self._build_domain_prompt(domain_id, domain, axiom_info, problem)
 
             t0 = time.time()
-            output = self.llm.call(
-                provider, prompt,
-                max_tokens=self.max_tokens,
-            )
+            output, used = self._call_with_fallback(provider, prompt)
             latency = round((time.time() - t0) * 1000)
             success = output is not None
 
+            prov_label = used if used == provider else f"{provider}→{used}"
             status = "✓" if success else "✗"
-            print(f"  {status} D{domain_id} {domain['name']} ({provider}) — {latency}ms")
+            print(f"  {status} D{domain_id} {domain['name']} ({prov_label}) — {latency}ms")
 
             results.append({
                 "domain_id": domain_id,
                 "domain_name": domain["name"],
                 "axiom": axiom_name,
-                "provider": provider,
+                "provider": used,
                 "model": "default",
                 "position": output or "(no response)",
                 "latency_ms": latency,
@@ -394,9 +419,8 @@ Return ONLY valid JSON matching this schema:
 
 No explanation.  No markdown fences.  Pure JSON."""
 
-        raw = self.llm.call(
-            self.analysis_provider, prompt,
-            max_tokens=1200,
+        raw, used = self._call_with_fallback(
+            self.analysis_provider, prompt, max_tokens=1200
         )
         if raw:
             # Clean and parse
@@ -472,15 +496,15 @@ IRRECONCILABLE TENSIONS:
 Write 300-500 words.  Be specific, be honest, be brave."""
 
         t0 = time.time()
-        output = self.llm.call(
-            self.synthesis_provider, prompt,
-            max_tokens=1000,
+        output, used = self._call_with_fallback(
+            self.synthesis_provider, prompt, max_tokens=1000
         )
         latency = round((time.time() - t0) * 1000)
-        print(f"  ✓ Synthesis ({self.synthesis_provider}) — {latency}ms")
+        prov_label = used if used == self.synthesis_provider else f"{self.synthesis_provider}→{used}"
+        print(f"  ✓ Synthesis ({prov_label}) — {latency}ms")
 
         return {
-            "provider": self.synthesis_provider,
+            "provider": used,
             "output": output or "(no synthesis produced)",
             "latency_ms": latency,
         }
