@@ -653,14 +653,44 @@ with tab_scanner:
                     expanded=(i == 1),
                 ):
                     _show_analysis(r)
+                    # ── Sources ──
+                    sources = r.get("sources", [])
+                    if sources:
+                        st.markdown("---")
+                        st.markdown("**Sources**")
+                        src_html = '<div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.3rem;">'
+                        for idx, src in enumerate(sources, 1):
+                            url = src.get("url", "")
+                            title = src.get("title", f"Source {idx}")
+                            src_html += (
+                                f'<a href="{url}" target="_blank" rel="noopener" '
+                                f'style="display:inline-flex;align-items:center;gap:0.3rem;'
+                                f'background:rgba(155,125,212,0.1);border:1px solid rgba(155,125,212,0.15);'
+                                f'border-radius:1rem;padding:0.2rem 0.65rem;font-size:0.72rem;'
+                                f'color:#9b7dd4;text-decoration:none;transition:all 0.2s;">'
+                                f'<span style="background:#9b7dd4;color:#0b0b14;border-radius:50%;'
+                                f'width:1.1rem;height:1.1rem;display:inline-flex;align-items:center;'
+                                f'justify-content:center;font-size:0.6rem;font-weight:600;">{idx}</span>'
+                                f'{title}</a>'
+                            )
+                        src_html += '</div>'
+                        st.markdown(src_html, unsafe_allow_html=True)
         else:
             with st.spinner(f"Scanning '{scan_topic}'..."):
-                problems = scanner.find_problems(
+                found = scanner.find_problems(
                     topic=scan_topic, count=prob_count
                 )
-            st.success(f"Found {len(problems)} problems")
-            for i, p in enumerate(problems, 1):
-                st.markdown(f"**{i}.** {p}")
+            st.success(f"Found {len(found)} problems")
+            for i, item in enumerate(found, 1):
+                p_text = item["problem"] if isinstance(item, dict) else item
+                sources = item.get("sources", []) if isinstance(item, dict) else []
+                st.markdown(f"**{i}.** {p_text}")
+                if sources:
+                    src_links = " ".join(
+                        f'[`{idx}`]({s["url"]})'
+                        for idx, s in enumerate(sources, 1)
+                    )
+                    st.caption(f"Sources: {src_links}")
 
 
 # ── Governance ────────────────────────────────────────────────────

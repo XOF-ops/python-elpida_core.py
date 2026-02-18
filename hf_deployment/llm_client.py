@@ -239,6 +239,81 @@ class LLMClient:
         """Return all provider stats as a serialisable dict."""
         return {k: v.to_dict() for k, v in self.stats.items() if v.requests or v.failures}
 
+    def call_with_citations(
+        self,
+        provider: str,
+        prompt: str,
+        *,
+        model: Optional[str] = None,
+        max_tokens: Optional[int] = None,
+        timeout: Optional[int] = None,
+        system_prompt: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Like call(), but returns {"text": str, "citations": list[str]}.
+
+        Citations are URLs extracted from the Perplexity API response.
+        For other providers, citations will be an empty list.
+        """
+        provider = provider.lower().strip()
+        if provider not in {p.value for p in Provider}:
+            provider = Provider.OPENROUTER.value
+
+        self._rate_limit(provider)
+
+        _model = model or DEFAULT_MODELS.get(provider, "")
+        _max = max_tokens or self.default_max_tokens
+        _timeout = timeout or self.default_timeout
+
+        result = None
+        citations: List[str] = []
+        try:
+            key = self.api_keys.get(provider)
+            endpoint = self._OPENAI_COMPAT_ENDPOINTS.get(Provider(provider))
+            if key and endpoint:
+                messages = []
+                if system_prompt:
+                    messages.append({"role": "system", "content": system_prompt})
+                messages.append({"role": "user", "content": prompt})
+
+                response = requests.post(
+                    endpoint,
+                    headers={
+                        "Authorization": f"Bearer {key}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "model": _model,
+                        "messages": messages,
+                        "max_tokens": _max,
+                    },
+                    timeout=_timeout,
+                )
+                if response.status_code == 200:
+                    data = response.json()
+                    result = data["choices"][0]["message"]["content"]
+                    citations = data.get("citations", [])
+                    tokens = data.get("usage", {}).get("total_tokens", len(result) // 4)
+                    self.stats[provider].requests += 1
+                    self.stats[provider].tokens += tokens
+                    self.stats[provider].cost += tokens * COST_PER_TOKEN.get(provider, 0)
+                else:
+                    logger.warning("%s: HTTP %d", provider, response.status_code)
+                    self.stats[provider].failures += 1
+        except Exception as e:
+            logger.error("%s citation call exception: %s", provider, e)
+            self.stats[provider].failures += 1
+
+        # Fallback to regular call if citation-aware call failed
+        if result is None:
+            result = self.call(
+                provider, prompt,
+                model=model, max_tokens=max_tokens,
+                timeout=timeout, system_prompt=system_prompt,
+            )
+
+        return {"text": result, "citations": citations or []}
+
     def available_providers(self) -> list[str]:
         """Return list of providers that have API keys configured."""
         return [p for p, key in self.api_keys.items() if key]

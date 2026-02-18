@@ -75,12 +75,12 @@ class ProblemScanner:
         self,
         topic: Optional[str] = None,
         count: int = 1,
-    ) -> List[str]:
+    ) -> List[Dict[str, Any]]:
         """
         Find real-world dilemmas.
 
-        Returns a list of well-structured problem statements
-        ready for DivergenceEngine.analyze().
+        Returns a list of dicts:
+            {"problem": str, "sources": [{"url": str, "title": str}, ...], "topic": str}
         """
         results = []
 
@@ -88,8 +88,10 @@ class ProblemScanner:
             scan_topic = topic or self._pick_topic(i)
             print(f"\n🔍 Scanning: {scan_topic}...")
 
-            # Step 1: Ask Perplexity for current real-world dilemmas
-            raw_dilemmas = self._research_dilemmas(scan_topic)
+            # Step 1: Ask Perplexity for current real-world dilemmas (with citations)
+            research = self._research_dilemmas(scan_topic)
+            raw_dilemmas = research.get("text") if isinstance(research, dict) else research
+            citations = research.get("citations", []) if isinstance(research, dict) else []
             if not raw_dilemmas:
                 print(f"  ✗ No dilemmas found for '{scan_topic}'")
                 continue
@@ -97,9 +99,26 @@ class ProblemScanner:
             # Step 2: Structure into a proper problem statement
             structured = self._structure_problem(raw_dilemmas, scan_topic)
             if structured:
-                results.append(structured)
+                # Build source list from Perplexity citations
+                sources = []
+                for url in citations:
+                    if isinstance(url, str) and url.startswith("http"):
+                        # Extract a display title from the URL domain
+                        try:
+                            from urllib.parse import urlparse
+                            domain = urlparse(url).netloc.replace("www.", "")
+                            sources.append({"url": url, "title": domain})
+                        except Exception:
+                            sources.append({"url": url, "title": url[:60]})
+
+                results.append({
+                    "problem": structured,
+                    "sources": sources,
+                    "topic": scan_topic,
+                })
                 preview = structured[:100].replace("\n", " ")
-                print(f"  ✓ Problem found: {preview}...")
+                n_src = len(sources)
+                print(f"  ✓ Problem found ({n_src} source{'s' if n_src != 1 else ''}): {preview}...")
 
         return results
 
@@ -111,19 +130,23 @@ class ProblemScanner:
     ) -> List[Dict[str, Any]]:
         """
         Find dilemmas AND run divergence analysis on each.
-        Returns the full analysis results.
+        Returns the full analysis results with sources attached.
         """
         from elpidaapp.divergence_engine import DivergenceEngine
 
-        problems = self.find_problems(topic=topic, count=count)
+        found = self.find_problems(topic=topic, count=count)
         results = []
 
         engine = DivergenceEngine(llm=self.llm)
 
-        for i, problem in enumerate(problems):
+        for i, item in enumerate(found):
+            problem_text = item["problem"] if isinstance(item, dict) else item
+            sources = item.get("sources", []) if isinstance(item, dict) else []
+
             ts = datetime.now().strftime("%Y%m%d_%H%M%S")
             output_path = f"{output_dir}/scan_{ts}_{i}.json"
-            result = engine.analyze(problem, save_to=output_path)
+            result = engine.analyze(problem_text, save_to=output_path)
+            result["sources"] = sources
             results.append(result)
 
         return results
@@ -132,10 +155,12 @@ class ProblemScanner:
         """Cycle through topics for autonomous scanning."""
         return SCAN_TOPICS[index % len(SCAN_TOPICS)]
 
-    def _research_dilemmas(self, topic: str) -> Optional[str]:
+    def _research_dilemmas(self, topic: str) -> Dict[str, Any]:
         """
         Use Perplexity to find real-world active dilemmas
         with genuine competing interests.
+
+        Returns {"text": str, "citations": list[str]}.
         """
         prompt = f"""Find ONE specific, currently active real-world policy dilemma
 related to: {topic}
@@ -156,12 +181,22 @@ Provide:
 
 Be specific.  Use real data.  No generalities."""
 
-        return self.llm.call(
+        # Use citation-aware call to capture Perplexity sources
+        if hasattr(self.llm, 'call_with_citations'):
+            return self.llm.call_with_citations(
+                self.research_provider,
+                prompt,
+                max_tokens=800,
+                timeout=30,
+            )
+        # Fallback for older LLMClient
+        text = self.llm.call(
             self.research_provider,
             prompt,
             max_tokens=800,
             timeout=30,
         )
+        return {"text": text, "citations": []}
 
     def _structure_problem(self, raw_research: str, topic: str) -> Optional[str]:
         """
