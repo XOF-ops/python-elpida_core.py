@@ -179,7 +179,8 @@ Provide:
 4. Why neither plan fully solves the problem
 5. What makes this genuinely hard (not just politics)
 
-Be specific.  Use real data.  No generalities."""
+Be specific.  Use real data.  No generalities.
+At the end, list all source URLs you used (one per line, prefixed with "Source: ")."""
 
         # Use citation-aware call to capture Perplexity sources
         if hasattr(self.llm, 'call_with_citations'):

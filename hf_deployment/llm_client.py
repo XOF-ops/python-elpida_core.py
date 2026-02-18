@@ -253,7 +253,8 @@ class LLMClient:
         Like call(), but returns {"text": str, "citations": list[str]}.
 
         Citations are URLs extracted from the Perplexity API response.
-        For other providers, citations will be an empty list.
+        If Perplexity fails or returns no citations, URLs are extracted
+        from the response text as a fallback.
         """
         provider = provider.lower().strip()
         if provider not in {p.value for p in Provider}:
@@ -292,6 +293,7 @@ class LLMClient:
                 if response.status_code == 200:
                     data = response.json()
                     result = data["choices"][0]["message"]["content"]
+                    # Perplexity returns citations at top level
                     citations = data.get("citations", [])
                     tokens = data.get("usage", {}).get("total_tokens", len(result) // 4)
                     self.stats[provider].requests += 1
@@ -311,6 +313,22 @@ class LLMClient:
                 model=model, max_tokens=max_tokens,
                 timeout=timeout, system_prompt=system_prompt,
             )
+
+        # If no API-level citations, extract URLs from the text
+        if not citations and result:
+            import re
+            urls = re.findall(
+                r'https?://[^\s\)\]\}\,\"\'<>]+',
+                result,
+            )
+            # Deduplicate while preserving order
+            seen = set()
+            for u in urls:
+                # Strip trailing punctuation
+                u = u.rstrip('.,;:!?)')
+                if u not in seen:
+                    seen.add(u)
+                    citations.append(u)
 
         return {"text": result, "citations": citations or []}
 
