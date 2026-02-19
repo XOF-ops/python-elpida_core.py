@@ -365,19 +365,43 @@ A1 ──► A2 ──► A4, A5
 
 ---
 
-## 8. DECISION REQUIRED
+## 8. DECISION: FEDERATED ✅
 
-Before implementation begins, one architectural decision must be made:
+> **Decided: Feb 19, 2026** — "Federated of course."
 
-**Q: Where does the unified governance live?**
+Both MIND and BODY keep full sovereignty. FederationBridge mediates governance
+metadata exchange via the BODY S3 bucket. This matches the lost system's Swarm
+Protocol design: *"Seed contains genome, not the full organism."*
+
+### Phase A1 Implementation Status
+
+| Component | Status | File |
+|---|---|---|
+| K1-K7 Immutable Kernel (MIND) | ✅ COMPLETE | `immutable_kernel.py` |
+| Federation Bridge (MIND→BODY) | ✅ COMPLETE | `federation_bridge.py` |
+| Kernel wired into native engine | ✅ COMPLETE | `native_cycle_engine.py` |
+| Federation heartbeat (unified cycle counter) | ✅ COMPLETE | wired into engine heartbeat |
+| CurationMetadata emission to BODY bucket | ✅ COMPLETE | wired into `_store_insight()` |
+| GovernanceExchange logging | ✅ COMPLETE | blocks + approvals logged |
+
+### Remaining (BODY-side, separate deployment)
+
+| Item | Description |
+|---|---|
+| A3 | Add A0 (Sacred Incompletion) to BODY Parliament axiom set |
+| A4 | Implement friction-domain privilege in BODY Parliament |
+| A5 | Implement dual-gate canonical in BODY |
+| B3 | BODY reads curation metadata from federation bridge |
+| B5 | Unified D15 broadcast gate |
+| C1-C4 | Rebuild Oracle and Federation (both sides) |
+
+**Original options considered:**
 
 | Option | Description | Pro | Con |
 |---|---|---|---|
 | **MIND-primary** | MIND engine gets Parliament + Kernel. BODY defers to MIND governance via S3. | Single source of truth. A0 preserved. | BODY becomes dependent on MIND availability. |
 | **BODY-primary** | BODY gets Ark Curator + A0. MIND defers to BODY governance via S3. | Web-accessible governance. HF uptime. | MIND loses sovereignty. Fibonacci rhythm disrupted. |
-| **Federated** | Both sides have full governance. FederationIntegrator mediates conflicts via BODY bucket. | Fault-tolerant. True I↔WE between systems. | Most complex. Needs rebuilt FederationIntegrator. |
-
-**Recommendation: Federated** — this is what the lost system was building toward. The Swarm Protocol and 453-citizen fleet prove the architecture was designed for distributed sovereignty, not centralized control. The complexity cost is justified by the principle: *"Seed contains genome, not the full organism."*
+| **Federated** ✅ | Both sides have full governance. FederationBridge mediates conflicts via BODY bucket. | Fault-tolerant. True I↔WE between systems. | Most complex. Needs rebuilt FederationIntegrator. |
 
 ---
 

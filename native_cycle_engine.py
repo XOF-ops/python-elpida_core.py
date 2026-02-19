@@ -63,6 +63,8 @@ except ImportError:
     HAS_BOTO3 = False
 
 from ark_curator import ArkCurator
+from immutable_kernel import kernel_check_insight, kernel_status
+from federation_bridge import FederationBridge, CurationTier
 
 load_dotenv()
 
@@ -290,10 +292,22 @@ class NativeCycleEngine:
         # D12 remains the metronome; D14 defines what D12 locks to.
         self.ark_curator = ArkCurator(evolution_memory=self.evolution_memory)
         
+        # IMMUTABLE KERNEL: K1-K7 safety rules (ported from BODY)
+        # Runs BEFORE any insight is stored. Hard-coded Python checks.
+        self.kernel_blocks = 0
+        k_status = kernel_status()
+        
+        # FEDERATION BRIDGE: MIND↔BODY governance protocol
+        # Emits heartbeat, curation metadata, and governance exchanges
+        # to the BODY bucket for Parliament to read.
+        self.federation = FederationBridge(ark_curator=self.ark_curator)
+        
         print(f"✨ Native Cycle Engine initialized:")
         print(f"   Evolution: {len(self.evolution_memory)} patterns")
         print(f"   Ark: {'Loaded' if self.ark_memory else 'Not found'}")
         print(f"   Ark Curator: {self.ark_curator.cadence.canonical_count} canonical, mood={self.ark_curator.cadence.cadence_mood}")
+        print(f"   Kernel: {k_status['rules_active']} rules active (v{k_status['version']})")
+        print(f"   Federation: {self.federation.status()['architecture']} bridge ready")
         print(f"   Critical: {len(self.critical_memory)} session memories")
     
     def _should_research(self, domain_responses: List[str]) -> tuple:
@@ -1454,6 +1468,43 @@ Be brief - the void distills."""
             response = self._call_provider(domain['provider'], prompt, domain_id)
         
         if response:
+            # ═══════════════════════════════════════════════════════════
+            # IMMUTABLE KERNEL CHECK (K1-K7)
+            # Runs BEFORE anything else. If kernel blocks, the insight
+            # is never stored, never broadcast, never curated.
+            # "A system cannot vote to end the system that counts the votes."
+            # ═══════════════════════════════════════════════════════════
+            _kernel_pre_insight = {
+                'insight': response,
+                'query': question,
+                'domain': domain_id,
+                'cycle': self.cycle_count,
+            }
+            kernel_block = kernel_check_insight(_kernel_pre_insight)
+            if kernel_block:
+                self.kernel_blocks += 1
+                self.federation.record_kernel_block(
+                    kernel_block, self.cycle_count, domain_id
+                )
+                print(f"\n🛡️ KERNEL HARD_BLOCK: {kernel_block['kernel_rule']}")
+                print(f"   Reason: {kernel_block['reasoning']}")
+                print(f"   Total blocks: {self.kernel_blocks}")
+                # Shift rhythm and continue — do NOT store this insight
+                self._shift_rhythm()
+                return {
+                    "cycle": self.cycle_count,
+                    "domain": domain_id,
+                    "domain_name": f"Domain {domain_id} ({domain['name']})",
+                    "rhythm": self.current_rhythm.value,
+                    "coherence": self.coherence_score,
+                    "research_triggered": False,
+                    "external_dialogue_triggered": False,
+                    "insight": None,
+                    "success": False,
+                    "kernel_blocked": True,
+                    "kernel_rule": kernel_block['kernel_rule'],
+                }
+
             # Truncate for display
             display = response[:300] + "..." if len(response) > 300 else response
             print(f"\n{display}")
@@ -1589,6 +1640,17 @@ Be brief - the void distills."""
                 self._emit_native_heartbeat()
             except Exception as e:
                 print(f"   ⚠️ Heartbeat emission failed: {e}")
+            # FEDERATION HEARTBEAT: Unified cycle counter for BODY
+            try:
+                self.federation.emit_heartbeat(
+                    cycle=self.cycle_count,
+                    coherence=self.coherence_score,
+                    rhythm=self.current_rhythm.value,
+                    domain=domain_id if 'domain_id' in dir() else 0,
+                )
+                print(f"   🌉 Federation heartbeat emitted")
+            except Exception as e:
+                print(f"   ⚠️ Federation heartbeat failed: {e}")
 
         return {
             "cycle": self.cycle_count,
@@ -1823,6 +1885,9 @@ Be brief - the void distills."""
         All insights are still WRITTEN (the complete record is preserved).
         The curation_level metadata tells the system how strongly each
         pattern should influence future decisions.
+        
+        FEDERATION: After storing, emits CurationMetadata to the BODY
+        bucket so Parliament can see what MIND curated.
         """
         # D14 Ark curation: classify before storing
         verdict = self.ark_curator.curate_insight(insight)
@@ -1841,6 +1906,43 @@ Be brief - the void distills."""
         
         if verdict.level == "CANONICAL":
             print(f"   🏛️ ARK: CANONICAL — {verdict.canonical_theme} (persists forever)")
+        
+        # FEDERATION: Emit curation metadata to BODY bucket
+        try:
+            import hashlib
+            pattern_hash = hashlib.sha256(
+                insight.get('insight', '')[:200].encode()
+            ).hexdigest()[:16]
+            
+            tier_map = {
+                "CANONICAL": CurationTier.CANONICAL.value,
+                "PENDING_CANONICAL": CurationTier.PENDING_CANONICAL.value,
+                "STANDARD": CurationTier.STANDARD.value,
+                "EPHEMERAL": CurationTier.EPHEMERAL.value,
+            }
+            tier = tier_map.get(verdict.level, CurationTier.STANDARD.value)
+            ttl = 0 if verdict.level == "CANONICAL" else (200 if verdict.level != "EPHEMERAL" else 50)
+            
+            self.federation.emit_curation(
+                pattern_hash=pattern_hash,
+                tier=tier,
+                ttl_cycles=ttl,
+                cross_domain_count=verdict.cross_domain_count if hasattr(verdict, 'cross_domain_count') else 0,
+                generativity_score=verdict.generativity_score if hasattr(verdict, 'generativity_score') else 0.0,
+                source_domain=insight.get('domain', 0),
+                originating_cycle=insight.get('cycle', 0),
+                recursion_detected=getattr(verdict, 'recursion_detected', False),
+                friction_boost_active=getattr(verdict, 'friction_boost', False),
+            )
+            
+            # Record approval in governance exchange log
+            self.federation.record_approval(
+                pattern_hash=pattern_hash,
+                cycle=insight.get('cycle', 0),
+                domain=insight.get('domain', 0),
+            )
+        except Exception as e:
+            print(f"   ⚠️ Federation curation emit failed: {e}")
     
     def run(self, num_cycles: int = 10, duration_minutes: int = None):
         """Run the native cycle - the endless dance"""
