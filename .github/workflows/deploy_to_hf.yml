@@ -1,0 +1,43 @@
+name: Deploy to HuggingFace Space
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'hf_deployment/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Push hf_deployment/ to HF Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          set -e
+
+          # Configure git identity
+          git config --global user.email "deploy-bot@elpida"
+          git config --global user.name "Elpida Deploy Bot"
+
+          # Prepare deploy directory
+          rm -rf /tmp/hf_deploy
+          mkdir -p /tmp/hf_deploy
+          cp -r hf_deployment/* /tmp/hf_deploy/
+
+          cd /tmp/hf_deploy
+          git init
+          git lfs install
+
+          git add -A
+          git commit -m "Deploy from GitHub commit ${{ github.sha }}"
+
+          git remote add hf https://z65nik:${HF_TOKEN}@huggingface.co/spaces/z65nik/elpida-governance-layer
+          git push hf main --force
