@@ -1,12 +1,12 @@
 {
-  "mind_cycle": 273,
-  "mind_epoch": "2026-02-19T03:24:15.611888+00:00",
+  "mind_cycle": 52,
+  "mind_epoch": "2026-02-19T09:06:32.307919+00:00",
   "coherence": 1.0,
   "current_rhythm": "ACTION",
-  "current_domain": 6,
+  "current_domain": 0,
   "ark_mood": "breaking",
-  "canonical_count": 48,
-  "pending_canonical_count": 12,
+  "canonical_count": 57,
+  "pending_canonical_count": 11,
   "recursion_warning": true,
   "friction_boost": {
     "3": 1.8,
@@ -16,7 +16,8 @@
   },
   "kernel_version": "1.0.0",
   "kernel_rules": 7,
-  "kernel_blocks_total": 5,
+  "kernel_blocks_total": 1,
+  "dominant_axiom": "A0",
   "federation_version": "1.0.0",
-  "timestamp": "2026-02-19T03:24:15.611914+00:00"
+  "timestamp": "2026-02-19T09:06:32.307953+00:00"
 }
