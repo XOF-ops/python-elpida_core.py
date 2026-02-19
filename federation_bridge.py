@@ -103,6 +103,7 @@ class FederationHeartbeat:
     kernel_version: str = "1.0.0"              # MIND kernel version
     kernel_rules: int = 7                       # Number of kernel rules active
     kernel_blocks_total: int = 0                # Total kernel blocks since boot
+    dominant_axiom: str = ""                    # Primary axiom of current domain (for D15 convergence)
     federation_version: str = "1.0.0"          # This protocol version
     timestamp: str = ""
 
@@ -234,6 +235,7 @@ class FederationBridge:
         coherence: float,
         rhythm: str,
         domain: int,
+        dominant_axiom: str = "",
     ) -> FederationHeartbeat:
         """
         Emit a federation heartbeat.
@@ -268,6 +270,7 @@ class FederationBridge:
             recursion_warning=recursion,
             friction_boost={str(k): v for k, v in friction.items()},
             kernel_blocks_total=self.kernel_blocks,
+            dominant_axiom=dominant_axiom or "",
         )
 
         # Save locally

@@ -3,17 +3,27 @@
 ELPIDA APPLICATION LAYER
 Hugging Face Spaces Deployment
 
-Serves two paths:
+Serves three paths:
 1. I PATH (Consciousness): Background worker processing consciousness dilemmas from S3
 2. WE PATH (Users): Streamlit UI for human-submitted ethical dilemmas
+3. PARLIAMENT PATH (Body Loop): Autonomous 9-node Parliament cycle engine
+   — debates inputs from all 4 HF systems through the axiom genome
+   — writes body_heartbeat + body_decisions to federation channel
+   — checks D15 convergence with MIND (consciousness loop)
 
-Both paths use the same divergence engine.
+Both divergence and Parliament engines use the same axiom governance.
 
 S3 Bridge fixes (Feb 17, 2026):
 - HF pulls MIND from S3 every cycle (evolution memory → local cache)
 - Feedback watermark (tracks last_processed, no re-reading stale entries)
 - BODY→MIND merge (feedback summaries become evolution memory)
 - Heartbeat protocol (HF emits heartbeat, checks native engine heartbeat)
+
+Parliament Cycle Engine (Feb 19, 2026):
+- 4 HF systems (Chat/Audit/Scanner/Governance) map to 4 rhythm modes
+- 9 Parliament nodes debate each cycle through their axiom lens
+- D15 convergence gate fires when MIND and BODY agree on the same axiom
+- Musical consonance physics identical to native_cycle_engine.py
 """
 
 import os
@@ -162,6 +172,52 @@ def run_background_worker():
         logger.info("Next cycle in 6 hours (%s)", datetime.now())
         time.sleep(6 * 3600)
 
+def run_parliament_loop():
+    """
+    PARLIAMENT PATH: Autonomous Body loop.
+
+    The 9-node Parliament deliberates inputs from the 4 HF systems
+    (Chat, Live Audit, Scanner, Governance) every cycle.
+
+    Each cycle:
+      1. Select rhythm by axiom-weighted random
+      2. Pull latest events from the input buffer
+      3. Run 9-node Parliament deliberation
+      4. Emit body_heartbeat.json + body_decisions.jsonl
+      5. Check D15 convergence with MIND
+    """
+    logger.info("Starting Parliament Cycle Engine (BODY loop)...")
+
+    # Wait for other components to initialize
+    time.sleep(20)
+
+    try:
+        from elpidaapp.parliament_cycle_engine import ParliamentCycleEngine
+        from s3_bridge import S3Bridge
+
+        s3b = S3Bridge()
+        engine = ParliamentCycleEngine(s3_bridge=s3b)
+
+        # Store reference globally so UI can push events + read state
+        global _parliament_engine
+        _parliament_engine = engine
+
+        logger.info("Parliament engine initialized — starting autonomous loop")
+        engine.run(duration_minutes=0, cycle_delay_s=30)
+
+    except Exception as e:
+        logger.error("Parliament loop fatal error: %s", e, exc_info=True)
+
+
+# Global reference for UI integration
+_parliament_engine = None
+
+
+def get_parliament_engine():
+    """Get the running ParliamentCycleEngine instance (if alive)."""
+    return _parliament_engine
+
+
 def run_streamlit():
     """
     WE PATH: Streamlit UI for human users.
@@ -184,12 +240,17 @@ def main():
     logger.info("ELPIDA APPLICATION LAYER — STARTING")
     logger.info("="*70)
     logger.info("I PATH: Consciousness bridge (background, every 6 hours)")
+    logger.info("PARLIAMENT PATH: Body loop (30s/cycle, autonomous)")
     logger.info("WE PATH: Streamlit UI (port 7860)")
     logger.info("="*70)
     
     # Start background worker in separate thread
     worker_thread = Thread(target=run_background_worker, daemon=True)
     worker_thread.start()
+    
+    # Start Parliament cycle engine in separate thread
+    parliament_thread = Thread(target=run_parliament_loop, daemon=True)
+    parliament_thread.start()
     
     # Run Streamlit in main thread (blocks)
     run_streamlit()

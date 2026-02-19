@@ -1642,11 +1642,15 @@ Be brief - the void distills."""
                 print(f"   ⚠️ Heartbeat emission failed: {e}")
             # FEDERATION HEARTBEAT: Unified cycle counter for BODY
             try:
+                # Derive dominant axiom from current domain
+                _hb_domain = domain_id if 'domain_id' in dir() else 0
+                _hb_axiom = _CFG_DOMAINS.get(_hb_domain, {}).get('axiom', '')
                 self.federation.emit_heartbeat(
                     cycle=self.cycle_count,
                     coherence=self.coherence_score,
                     rhythm=self.current_rhythm.value,
-                    domain=domain_id if 'domain_id' in dir() else 0,
+                    domain=_hb_domain,
+                    dominant_axiom=_hb_axiom or '',
                 )
                 print(f"   🌉 Federation heartbeat emitted")
             except Exception as e:

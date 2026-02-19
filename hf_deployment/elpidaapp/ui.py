@@ -368,6 +368,30 @@ if "session_id" not in st.session_state:
 if "llm_client" not in st.session_state:
     st.session_state.llm_client = LLMClient(rate_limit_seconds=1.0)
 
+# ── Parliament Engine Integration ─────────────────────────────────
+# Push events from UI tabs into the Parliament body loop input buffer.
+def _push_to_parliament(system: str, content: str, **meta):
+    """Push an event to the Parliament cycle engine's input buffer."""
+    try:
+        import sys as _sys, os as _os
+        _parent = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+        if _parent not in _sys.path:
+            _sys.path.insert(0, _parent)
+        from app import get_parliament_engine
+        engine = get_parliament_engine()
+        if engine:
+            from elpidaapp.parliament_cycle_engine import InputEvent
+            engine.input_buffer.push(InputEvent(
+                system=system,
+                content=content[:1000],
+                timestamp=__import__("datetime").datetime.now(
+                    __import__("datetime").timezone.utc
+                ).isoformat(),
+                metadata=meta,
+            ))
+    except Exception:
+        pass  # Non-critical — Parliament may not be running yet
+
 
 # ═══════════════════════════════════════════════════════════════════
 # Helper: Divergence Analysis Display
@@ -505,6 +529,8 @@ with tab_chat:
 
     if user_input:
         st.session_state.chat_history.append({"role": "user", "content": user_input})
+        # Push to Parliament body loop (CONTEMPLATION rhythm)
+        _push_to_parliament("chat", user_input, source="user_chat")
         with st.spinner(""):
             result = st.session_state.chat_engine.chat(
                 user_input,
@@ -578,6 +604,8 @@ with tab_audit:
         )
 
     if st.button("Analyze", type="primary", disabled=not problem, key="aud_go"):
+        # Push to Parliament body loop (ANALYSIS rhythm)
+        _push_to_parliament("audit", problem, source="live_audit")
         domain_ids = [int(s.split(":")[0][1:]) for s in selected]
         from elpidaapp.divergence_engine import DivergenceEngine
 
@@ -638,6 +666,8 @@ with tab_scanner:
         do_analysis = st.checkbox("Divergence analysis", value=True, key="sc_a")
 
     if st.button("Scan", type="primary", key="sc_go"):
+        # Push to Parliament body loop (ACTION rhythm)
+        _push_to_parliament("scanner", scan_topic, source="scanner_topic")
         from elpidaapp.scanner import ProblemScanner
 
         scanner = ProblemScanner(llm=st.session_state.llm_client)
@@ -717,6 +747,8 @@ with tab_gov:
     )
 
     if st.button("Check", type="primary", disabled=not action, key="gov_go"):
+        # Push to Parliament body loop (SYNTHESIS rhythm)
+        _push_to_parliament("governance", action, source="governance_check")
         from elpidaapp.governance_client import GovernanceClient
 
         gov = GovernanceClient()
