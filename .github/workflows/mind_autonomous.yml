@@ -35,7 +35,7 @@ on:
         default: '13'
 
 env:
-  AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION || 'eu-central-1' }}
+  AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION || 'eu-north-1' }}
 
 jobs:
   mind-cycles:
@@ -57,9 +57,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          # Core deps (match requirements.txt from project root)
-          pip install boto3 google-generativeai anthropic openai requests
-          # If a requirements.txt exists, install it too
+          pip install boto3 google-generativeai anthropic openai requests python-dotenv
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name: Configure AWS credentials
