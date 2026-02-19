@@ -41,4 +41,4 @@ jobs:
           git commit -m "Deploy from GitHub commit ${{ github.sha }}"
 
           git remote add hf https://z65nik:${HF_TOKEN}@huggingface.co/spaces/z65nik/elpida-governance-layer
-          git push hf main --force
+          git push hf HEAD:main --force
