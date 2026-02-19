@@ -109,6 +109,9 @@ AXIOM_RATIOS = {
 # Fibonacci heartbeat interval (same as MIND)
 HEARTBEAT_INTERVAL = 13
 
+# PSO advisory interval (Fibonacci: 21)
+PSO_ADVISORY_INTERVAL = 21
+
 # Convergence threshold constants
 CONVERGENCE_COHERENCE_MIND = 0.85    # MIND coherence must be above this
 CONVERGENCE_APPROVAL_BODY = 0.50     # BODY approval must be above this
@@ -288,6 +291,10 @@ class ParliamentCycleEngine:
         # Convergence gate (imported lazily to avoid circular imports)
         self._convergence_gate = None
 
+        # PSO advisory state
+        self._pso_advisory: Optional[Dict] = None
+        self._pso_last_cycle: int = 0
+
     # ------------------------------------------------------------------
     # Lazy loaders
     # ------------------------------------------------------------------
@@ -434,6 +441,10 @@ class ParliamentCycleEngine:
         if self.cycle_count % HEARTBEAT_INTERVAL == 0:
             self._pull_mind_heartbeat()
 
+        # 2b. Run PSO advisory every 21 cycles (Fibonacci)
+        if self.cycle_count % PSO_ADVISORY_INTERVAL == 0 and self.cycle_count > 0:
+            self._run_pso_advisory(rhythm)
+
         # 3. Assemble action from HF inputs
         action, meta = self._assemble_action(rhythm)
 
@@ -471,6 +482,8 @@ class ParliamentCycleEngine:
                 {"pair": t["axiom_pair"], "synthesis": t["synthesis"][:100]}
                 for t in result.get("parliament", {}).get("tensions", [])
             ],
+            "pso_advisory": self._pso_advisory.get("recommendation", {}).get("dominant_axiom")
+                if self._pso_advisory else None,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "duration_s": round(time.time() - cycle_start, 3),
         }
@@ -607,6 +620,50 @@ class ParliamentCycleEngine:
                 )
             except Exception as e:
                 logger.debug("Body heartbeat S3 push: %s", e)
+
+    # ------------------------------------------------------------------
+    # PSO Advisory
+    # ------------------------------------------------------------------
+
+    def _run_pso_advisory(self, current_rhythm: str):
+        """
+        Run Axiom PSO every 21 cycles to advise Parliament.
+
+        The PSO searches 11-dimensional axiom-space for the optimal balance
+        using parameters derived from axiom ratios:
+          w  = A9 Temporal Coherence (16:9 → 0.8889)
+          c1 = A3 Autonomy          (3:2  → 1.0)
+          c2 = A6 Collective Well-being (5:3 → 1.1111)
+        """
+        try:
+            from .axiom_pso import pso_advise_parliament
+
+            # Build problem context string from recent state
+            problem_context = (
+                f"cycle={self.cycle_count} rhythm={current_rhythm} "
+                f"coherence={self.coherence:.4f} "
+                f"dominant={self.last_dominant_axiom} "
+                f"d15_broadcasts={self.d15_broadcast_count} "
+                f"freq={dict(self._axiom_frequency)}"
+            )
+
+            advisory = pso_advise_parliament(
+                problem_context=problem_context,
+                max_iter=50,
+            )
+            self._pso_advisory = advisory
+            self._pso_last_cycle = self.cycle_count
+
+            rec = advisory.get("recommendation", {})
+            logger.info(
+                "PSO advisory: dominant=%s fitness=%.4f topology=%s converged_iter=%s",
+                rec.get("dominant_axiom"),
+                advisory.get("best_fitness", 0),
+                advisory.get("topology_used"),
+                advisory.get("converged_at"),
+            )
+        except Exception as e:
+            logger.warning("PSO advisory failed: %s", e)
 
     # ------------------------------------------------------------------
     # MIND Heartbeat Pull

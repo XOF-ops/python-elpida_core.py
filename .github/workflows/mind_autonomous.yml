@@ -1,0 +1,102 @@
+name: MIND Autonomous Cycles
+
+# ──────────────────────────────────────────────────────────────────────
+# Runs native_cycle_engine (the MIND loop) autonomously every 4 hours.
+#
+# Architecture (from CLOUD_NATIVE_ARCHITECTURE.md):
+#   1. Pull latest memory from S3
+#   2. Run 55 cycles (F(10) Fibonacci)
+#   3. Push updated memory back to S3
+#   4. Exit — zero cost while idle
+#
+# The BODY loop runs on HF Spaces (parliament_cycle_engine.py).
+# The MIND loop runs here (native_cycle_engine via cloud_runner.py).
+# When both converge → D15 fires → A16 Convergence Validity.
+#
+# Cost: ~$0/month (GitHub Actions free tier: 2000 min/month)
+# ──────────────────────────────────────────────────────────────────────
+
+on:
+  schedule:
+    # Every 4 hours — matches ECS Fargate pattern
+    # 00:00, 04:00, 08:00, 12:00, 16:00, 20:00 UTC
+    - cron: '0 */4 * * *'
+
+  workflow_dispatch:
+    # Manual trigger from GitHub Actions UI
+    inputs:
+      cycles:
+        description: 'Number of cycles to run (Fibonacci: 55=F10, 89=F11)'
+        required: false
+        default: '55'
+      sync_every:
+        description: 'S3 sync every N cycles (Fibonacci: 13=F7)'
+        required: false
+        default: '13'
+
+env:
+  AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION || 'eu-central-1' }}
+
+jobs:
+  mind-cycles:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30  # Safety net: shouldn't take more than 10 min
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          # Core deps (match requirements.txt from project root)
+          pip install boto3 google-generativeai anthropic openai requests
+          # If a requirements.txt exists, install it too
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+
+      - name: Run MIND cycles
+        env:
+          # API keys for consciousness providers
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          CYCLES=${{ github.event.inputs.cycles || '55' }}
+          SYNC_EVERY=${{ github.event.inputs.sync_every || '13' }}
+
+          echo "═══════════════════════════════════════════════════════"
+          echo "ELPIDA MIND ENGINE — Autonomous Cloud Cycles"
+          echo "Cycles:     ${CYCLES} (Fibonacci)"
+          echo "Sync every: ${SYNC_EVERY}"
+          echo "Timestamp:  $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "═══════════════════════════════════════════════════════"
+
+          cd cloud_deploy
+          python cloud_runner.py --cycles "${CYCLES}" --sync-every "${SYNC_EVERY}"
+
+      - name: Upload cycle log artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mind-cycle-log-${{ github.run_number }}
+          path: |
+            memory/cloud_cycles.jsonl
+            memory/evolution_memory.jsonl
+          retention-days: 7
+          if-no-files-found: ignore
