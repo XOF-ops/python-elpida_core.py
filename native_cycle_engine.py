@@ -306,7 +306,7 @@ class NativeCycleEngine:
         print(f"   Evolution: {len(self.evolution_memory)} patterns")
         print(f"   Ark: {'Loaded' if self.ark_memory else 'Not found'}")
         print(f"   Ark Curator: {self.ark_curator.cadence.canonical_count} canonical, mood={self.ark_curator.cadence.cadence_mood}")
-        print(f"   Kernel: {k_status['rules_active']} rules active (v{k_status['version']})")
+        print(f"   Kernel: {k_status['rules_count']} rules active (v{k_status['kernel_version']})")
         print(f"   Federation: {self.federation.status()['architecture']} bridge ready")
         print(f"   Critical: {len(self.critical_memory)} session memories")
     

@@ -253,7 +253,8 @@ class FederationBridge:
             ark_mood = self.ark_curator.cadence.cadence_mood
             canonical = self.ark_curator.cadence.canonical_count
             pending = self.ark_curator.get_pending_canonical_count()
-            recursion = self.ark_curator.cadence.recursion_alert
+            ark_state = self.ark_curator.query()
+            recursion = ark_state.recursion_warning
 
         hb = FederationHeartbeat(
             mind_cycle=cycle,
