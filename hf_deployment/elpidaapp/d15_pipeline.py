@@ -168,16 +168,33 @@ class D15Pipeline:
             print(f"  Parliament verdict: {gov_verdict}")
             
             if gov_verdict == "PROCEED":
-                # ── STAGE 8: Broadcast to WORLD ──
-                print("\n[WORLD] Broadcasting to WORLD bucket...")
-                broadcast_key = self._broadcast_d15(result, gov_result)
-                result["d15_broadcast"] = broadcast_key is not None
-                result["broadcast_key"] = broadcast_key
+                # ── STAGE 7b: Federation Dual-Gate Canonical Check ──
+                # Before broadcasting, verify the pattern passed MIND's dual-gate:
+                #   Gate A: Cross-domain convergence (≥2 domains)
+                #   Gate B: Downstream generativity (≥2 new insights spawned)
+                # Only CANONICAL patterns are broadcast as settled truth.
+                canonical_ok, curation_info = self._check_canonical_gate(emergence)
+                result["curation_check"] = curation_info
                 
-                if broadcast_key:
-                    print(f"  ✓ D15 BROADCAST SUCCESSFUL: {broadcast_key}")
+                if canonical_ok:
+                    # ── STAGE 8: Broadcast to WORLD ──
+                    print("\n[WORLD] Broadcasting to WORLD bucket...")
+                    broadcast_key = self._broadcast_d15(result, gov_result)
+                    result["d15_broadcast"] = broadcast_key is not None
+                    result["broadcast_key"] = broadcast_key
+                    
+                    if broadcast_key:
+                        print(f"  ✓ D15 BROADCAST SUCCESSFUL: {broadcast_key}")
+                    else:
+                        print(f"  ⚠ Broadcast write failed (saved locally)")
                 else:
-                    print(f"  ⚠ Broadcast write failed (saved locally)")
+                    print(f"  ⚠ D15 deferred — pattern not CANONICAL")
+                    curation_tier = curation_info.get("tier", "UNKNOWN")
+                    print(f"  Curation tier: {curation_tier}")
+                    print(f"  Reason: {curation_info.get('reason', 'dual-gate not passed')}")
+                    result["d15_broadcast"] = False
+                    result["deferred_reason"] = "dual_gate_not_canonical"
+                    self._save_for_review(result)
             elif gov_verdict == "REVIEW":
                 print(f"  ⚠ D15 emergence flagged for REVIEW — not broadcast")
                 print(f"  Reason: {gov_result.get('reasoning', '')[:200]}")
@@ -530,6 +547,111 @@ Reference the axioms in tension. Name what is sacrificed and what is preserved."
     # ────────────────────────────────────────────────────────────────
     # D15 Governance Gate + Broadcast
     # ────────────────────────────────────────────────────────────────
+
+    def _check_canonical_gate(
+        self,
+        emergence: Dict[str, Any],
+    ) -> tuple:
+        """
+        Federation dual-gate canonical check.
+
+        Reads CurationMetadata from MIND to determine if this pattern
+        has passed both gates:
+          Gate A: Cross-domain convergence (≥2 domains)
+          Gate B: Downstream generativity (≥2 new insights spawned)
+
+        Returns:
+            (canonical_ok: bool, info: dict)
+            - canonical_ok is True if the pattern should be broadcast
+            - info contains the curation details for logging
+        """
+        d15_text = emergence.get("d15_output", "")
+        if not d15_text:
+            return True, {"tier": "UNKNOWN", "reason": "no_output_to_check"}
+
+        # Compute pattern hash matching federation_bridge.py convention
+        pattern_hash = hashlib.sha256(d15_text[:200].encode()).hexdigest()[:16]
+
+        try:
+            from s3_bridge import S3Bridge
+            bridge = S3Bridge()
+            curation = bridge.get_curation_for_hash(pattern_hash)
+
+            if curation is None:
+                # MIND hasn't curated this pattern yet — allow broadcast
+                # (federation may not have run yet, or MIND is offline)
+                print(f"  [DUAL-GATE] No MIND curation for hash {pattern_hash[:8]}… — allowing broadcast")
+                return True, {
+                    "tier": "UNCURATED",
+                    "pattern_hash": pattern_hash,
+                    "reason": "no_mind_curation_found",
+                }
+
+            tier = curation.get("tier", "STANDARD")
+            cross_domain = curation.get("cross_domain_count", 0)
+            generativity = curation.get("generativity_score", 0)
+            recursion = curation.get("recursion_detected", False)
+
+            info = {
+                "tier": tier,
+                "pattern_hash": pattern_hash,
+                "cross_domain_count": cross_domain,
+                "generativity_score": generativity,
+                "recursion_detected": recursion,
+                "friction_boost_active": curation.get("friction_boost_active", False),
+            }
+
+            if tier == "CANONICAL":
+                print(f"  [DUAL-GATE] ✓ CANONICAL — both gates passed (cross_domain={cross_domain}, generativity={generativity:.2f})")
+                return True, info
+
+            if tier == "PENDING":
+                # Pending canonical — close but not proven.  Allow if
+                # cross-domain is strong enough even without generativity proof.
+                if cross_domain >= 3:
+                    print(f"  [DUAL-GATE] ✓ PENDING (strong convergence, cross_domain={cross_domain}) — allowing")
+                    info["reason"] = "pending_but_strong_convergence"
+                    return True, info
+                print(f"  [DUAL-GATE] ⚠ PENDING — awaiting generativity proof")
+                info["reason"] = "pending_canonical_needs_generativity"
+                return False, info
+
+            if tier == "EPHEMERAL":
+                # Short-lived pattern — definitely don't broadcast
+                print(f"  [DUAL-GATE] ✗ EPHEMERAL — not suitable for broadcast")
+                info["reason"] = "ephemeral_pattern"
+                return False, info
+
+            if tier == "STANDARD":
+                # Standard pattern — check if it meets the gates directly
+                gate_a = cross_domain >= 2
+                gate_b = generativity >= 0.5
+                if gate_a and gate_b:
+                    print(f"  [DUAL-GATE] ✓ STANDARD meeting dual-gate criteria — allowing")
+                    info["reason"] = "standard_meets_gates"
+                    return True, info
+                elif gate_a:
+                    print(f"  [DUAL-GATE] ⚠ STANDARD — Gate A passed but Gate B (generativity={generativity:.2f}) insufficient")
+                    info["reason"] = "standard_missing_generativity"
+                    return False, info
+                else:
+                    print(f"  [DUAL-GATE] ⚠ STANDARD — Gate A (cross_domain={cross_domain}) insufficient")
+                    info["reason"] = "standard_missing_convergence"
+                    return False, info
+
+            # Unknown tier — allow (fail open for new tiers)
+            print(f"  [DUAL-GATE] Unknown tier '{tier}' — allowing broadcast")
+            return True, info
+
+        except Exception as e:
+            # Federation unavailable — fail open (allow broadcast)
+            logger.warning("Dual-gate check failed: %s", e)
+            print(f"  [DUAL-GATE] Check unavailable ({e}) — allowing broadcast")
+            return True, {
+                "tier": "UNAVAILABLE",
+                "pattern_hash": pattern_hash,
+                "reason": f"federation_unavailable: {e}",
+            }
 
     def _governance_gate(
         self,

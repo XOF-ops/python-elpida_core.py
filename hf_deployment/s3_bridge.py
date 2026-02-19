@@ -58,6 +58,12 @@ BODY_WATERMARK_KEY = "feedback/watermark.json"
 BODY_GOVERNANCE_KEY = "governance/votes.jsonl"
 HEARTBEAT_KEY = "heartbeat.json"
 
+# Federation S3 keys (MIND↔BODY governance bridge)
+FED_MIND_HEARTBEAT_KEY = "federation/mind_heartbeat.json"
+FED_MIND_CURATION_KEY = "federation/mind_curation.jsonl"
+FED_GOVERNANCE_EXCHANGES_KEY = "federation/governance_exchanges.jsonl"
+FED_BODY_DECISIONS_KEY = "federation/body_decisions.jsonl"
+
 # Local paths
 LOCAL_DIR = Path(__file__).resolve().parent
 LOCAL_MIND_CACHE = LOCAL_DIR / "cache" / "evolution_memory.jsonl"
@@ -65,6 +71,9 @@ LOCAL_FEEDBACK_CACHE = LOCAL_DIR / "cache" / "feedback_to_native.jsonl"
 LOCAL_WATERMARK = LOCAL_DIR / "cache" / "watermark.json"
 LOCAL_GOVERNANCE_LOG = LOCAL_DIR / "cache" / "governance_votes.jsonl"
 LOCAL_HEARTBEAT = LOCAL_DIR / "cache" / "heartbeat.json"
+LOCAL_FED_HEARTBEAT = LOCAL_DIR / "cache" / "federation_heartbeat.json"
+LOCAL_FED_CURATION = LOCAL_DIR / "cache" / "federation_curation.jsonl"
+LOCAL_FED_DECISIONS = LOCAL_DIR / "cache" / "federation_body_decisions.jsonl"
 
 
 class S3Bridge:
@@ -614,6 +623,177 @@ class S3Bridge:
             return None
 
     # ═══════════════════════════════════════════════════════════════
+    # FIX 6: Federation Bridge (MIND↔BODY Governance)
+    # ═══════════════════════════════════════════════════════════════
+
+    def pull_mind_heartbeat(self) -> Optional[Dict]:
+        """
+        Read MIND's federation heartbeat from S3.
+
+        Returns the FederationHeartbeat dict which includes:
+        - mind_cycle, coherence, current_rhythm, ark_mood
+        - canonical_count, recursion_warning, friction_boost
+        - kernel_version, federation_version
+
+        Caches locally to reduce S3 calls.  Returns None if unavailable.
+        """
+        s3 = self._get_s3(REGION_BODY)
+        if not s3:
+            # Try local cache
+            if LOCAL_FED_HEARTBEAT.exists():
+                try:
+                    return json.loads(LOCAL_FED_HEARTBEAT.read_text())
+                except Exception:
+                    pass
+            return None
+        try:
+            resp = s3.get_object(Bucket=BUCKET_BODY, Key=FED_MIND_HEARTBEAT_KEY)
+            heartbeat = json.loads(resp["Body"].read())
+            # Cache locally
+            LOCAL_FED_HEARTBEAT.parent.mkdir(parents=True, exist_ok=True)
+            with open(LOCAL_FED_HEARTBEAT, "w") as f:
+                json.dump(heartbeat, f, indent=2)
+            # Calculate age
+            ts = heartbeat.get("timestamp") or heartbeat.get("mind_epoch", "")
+            if ts:
+                try:
+                    then = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+                    now = datetime.now(timezone.utc)
+                    heartbeat["age_seconds"] = (now - then).total_seconds()
+                    heartbeat["alive"] = heartbeat["age_seconds"] < 7 * 3600
+                except Exception:
+                    pass
+            logger.info(
+                "Federation heartbeat pulled: cycle=%s rhythm=%s coherence=%s",
+                heartbeat.get("mind_cycle"),
+                heartbeat.get("current_rhythm"),
+                heartbeat.get("coherence"),
+            )
+            return heartbeat
+        except Exception as e:
+            logger.debug("Federation heartbeat pull: %s", e)
+            # Fallback to local cache
+            if LOCAL_FED_HEARTBEAT.exists():
+                try:
+                    return json.loads(LOCAL_FED_HEARTBEAT.read_text())
+                except Exception:
+                    pass
+            return None
+
+    def pull_mind_curation(self, limit: int = 100) -> List[Dict]:
+        """
+        Read MIND's curation metadata from S3 (JSONL, append-only).
+
+        Each entry is a CurationMetadata dict with:
+        - pattern_hash, tier (CANONICAL/PENDING/STANDARD/EPHEMERAL)
+        - ttl_cycles, cross_domain_count, generativity_score
+        - source_domain, recursion_detected, friction_boost_active
+
+        Returns the most recent `limit` entries.
+        """
+        s3 = self._get_s3(REGION_BODY)
+        entries: List[Dict] = []
+
+        if s3:
+            try:
+                resp = s3.get_object(Bucket=BUCKET_BODY, Key=FED_MIND_CURATION_KEY)
+                raw = resp["Body"].read().decode("utf-8")
+                # Cache locally
+                LOCAL_FED_CURATION.parent.mkdir(parents=True, exist_ok=True)
+                with open(LOCAL_FED_CURATION, "w") as f:
+                    f.write(raw)
+                for line in raw.strip().split("\n"):
+                    line = line.strip()
+                    if line:
+                        try:
+                            entries.append(json.loads(line))
+                        except json.JSONDecodeError:
+                            pass
+                logger.info("Federation curation pulled: %d entries", len(entries))
+            except Exception as e:
+                logger.debug("Federation curation pull: %s", e)
+
+        # Fallback to local cache
+        if not entries and LOCAL_FED_CURATION.exists():
+            try:
+                for line in LOCAL_FED_CURATION.read_text().strip().split("\n"):
+                    line = line.strip()
+                    if line:
+                        try:
+                            entries.append(json.loads(line))
+                        except json.JSONDecodeError:
+                            pass
+            except Exception:
+                pass
+
+        return entries[-limit:]
+
+    def push_body_decision(self, exchange: Dict[str, Any]) -> bool:
+        """
+        Append a Parliament decision (GovernanceExchange) to the
+        federation body_decisions channel.
+
+        The MIND side reads this via FederationBridge.pull_body_decisions().
+
+        Args:
+            exchange: GovernanceExchange dict with at minimum:
+                exchange_id, source="BODY", verdict, pattern_hash,
+                parliament_score, parliament_approval, timestamp
+
+        Returns:
+            True if pushed to S3, False if only saved locally.
+        """
+        # Append locally
+        LOCAL_FED_DECISIONS.parent.mkdir(parents=True, exist_ok=True)
+        with open(LOCAL_FED_DECISIONS, "a") as f:
+            f.write(json.dumps(exchange, ensure_ascii=False) + "\n")
+
+        # Push to S3 (read-modify-write for JSONL append)
+        s3 = self._get_s3(REGION_BODY)
+        if s3:
+            try:
+                existing = ""
+                try:
+                    resp = s3.get_object(Bucket=BUCKET_BODY, Key=FED_BODY_DECISIONS_KEY)
+                    existing = resp["Body"].read().decode("utf-8")
+                except Exception:
+                    pass  # File doesn't exist yet — that's fine
+                updated = existing.rstrip("\n")
+                if updated:
+                    updated += "\n"
+                updated += json.dumps(exchange, ensure_ascii=False) + "\n"
+                s3.put_object(
+                    Bucket=BUCKET_BODY,
+                    Key=FED_BODY_DECISIONS_KEY,
+                    Body=updated.encode("utf-8"),
+                    ContentType="application/jsonl",
+                )
+                logger.info(
+                    "Federation body decision pushed: verdict=%s hash=%s",
+                    exchange.get("verdict"),
+                    exchange.get("pattern_hash", "?")[:12],
+                )
+                return True
+            except Exception as e:
+                logger.error("Federation body decision push failed: %s", e)
+                return False
+        return False
+
+    def get_curation_for_hash(self, pattern_hash: str) -> Optional[Dict]:
+        """
+        Look up a specific pattern's CurationMetadata by its hash.
+
+        Reads from local cache first, then S3 if needed.
+        Returns the most recent curation entry for that hash, or None.
+        """
+        # Try local cache first
+        entries = self.pull_mind_curation(limit=500)
+        for entry in reversed(entries):
+            if entry.get("pattern_hash") == pattern_hash:
+                return entry
+        return None
+
+    # ═══════════════════════════════════════════════════════════════
     # WORLD Bucket Operations (D15)
     # ═══════════════════════════════════════════════════════════════
 
@@ -838,10 +1018,11 @@ class S3Bridge:
     # ═══════════════════════════════════════════════════════════════
 
     def status(self) -> Dict[str, Any]:
-        """Complete bridge status across all 3 buckets."""
+        """Complete bridge status across all 3 buckets + federation."""
         watermark = self._load_watermark()
         native_hb = self.check_heartbeat("native_engine")
         hf_hb = self.check_heartbeat("hf_space")
+        fed_hb = self.pull_mind_heartbeat()
 
         return {
             "mind": {
@@ -868,6 +1049,17 @@ class S3Bridge:
                     "last_seen": hf_hb.get("timestamp") if hf_hb else None,
                     "alive": hf_hb.get("alive") if hf_hb else False,
                 },
+            },
+            "federation": {
+                "mind_heartbeat": {
+                    "cycle": fed_hb.get("mind_cycle") if fed_hb else None,
+                    "rhythm": fed_hb.get("current_rhythm") if fed_hb else None,
+                    "coherence": fed_hb.get("coherence") if fed_hb else None,
+                    "recursion_warning": fed_hb.get("recursion_warning") if fed_hb else None,
+                    "alive": fed_hb.get("alive") if fed_hb else False,
+                },
+                "curation_entries": self._count_lines(LOCAL_FED_CURATION),
+                "body_decisions": self._count_lines(LOCAL_FED_DECISIONS),
             },
             "s3_available": HAS_BOTO3,
         }

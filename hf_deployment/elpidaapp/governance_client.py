@@ -726,6 +726,11 @@ class GovernanceClient:
         self._remote_available: Optional[bool] = None
         self._last_check_time: float = 0
 
+        # Federation state (MIND↔BODY governance bridge)
+        self._mind_heartbeat: Optional[Dict[str, Any]] = None
+        self._mind_heartbeat_ts: float = 0  # last pull time
+        self._federation_s3 = None  # lazy S3Bridge reference
+
     # ────────────────────────────────────────────────────────────────
     # Public API
     # ────────────────────────────────────────────────────────────────
@@ -869,6 +874,165 @@ class GovernanceClient:
     def get_governance_log(self) -> List[Dict[str, Any]]:
         """Return all governance interactions (A1: Transparency)."""
         return self._governance_log.copy()
+
+    # ────────────────────────────────────────────────────────────────
+    # Federation Bridge (MIND↔BODY Governance)
+    # ────────────────────────────────────────────────────────────────
+
+    def _get_s3_bridge(self):
+        """Lazy-load S3Bridge for federation operations."""
+        if self._federation_s3 is None:
+            try:
+                import sys, os
+                # s3_bridge.py is one level up from elpidaapp/
+                parent = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                if parent not in sys.path:
+                    sys.path.insert(0, parent)
+                from s3_bridge import S3Bridge
+                self._federation_s3 = S3Bridge()
+            except Exception as e:
+                logger.warning("Federation S3Bridge unavailable: %s", e)
+        return self._federation_s3
+
+    def pull_mind_heartbeat(self) -> Optional[Dict[str, Any]]:
+        """
+        Read MIND's federation heartbeat from S3.
+
+        Cached for 60 seconds to reduce S3 calls.  Returns the
+        FederationHeartbeat dict or None if MIND hasn't emitted one.
+        """
+        now = time.time()
+        if self._mind_heartbeat and (now - self._mind_heartbeat_ts) < 60:
+            return self._mind_heartbeat
+
+        bridge = self._get_s3_bridge()
+        if bridge:
+            try:
+                hb = bridge.pull_mind_heartbeat()
+                if hb:
+                    self._mind_heartbeat = hb
+                    self._mind_heartbeat_ts = now
+                    self._log("FEDERATION_HEARTBEAT", "federation", True,
+                              cycle=hb.get("mind_cycle"),
+                              rhythm=hb.get("current_rhythm"))
+                return hb
+            except Exception as e:
+                logger.warning("Federation heartbeat pull failed: %s", e)
+        return self._mind_heartbeat  # stale cache is better than nothing
+
+    def pull_mind_curation(self, limit: int = 100) -> List[Dict[str, Any]]:
+        """
+        Read MIND's curation metadata (CurationMetadata JSONL).
+
+        Returns a list of curation entries. Each has:
+        - pattern_hash, tier, ttl_cycles, cross_domain_count
+        - generativity_score, recursion_detected, friction_boost_active
+        """
+        bridge = self._get_s3_bridge()
+        if bridge:
+            try:
+                entries = bridge.pull_mind_curation(limit=limit)
+                self._log("FEDERATION_CURATION", "federation", True,
+                          entries=len(entries))
+                return entries
+            except Exception as e:
+                logger.warning("Federation curation pull failed: %s", e)
+        return []
+
+    def push_parliament_decision(
+        self,
+        action: str,
+        result: Dict[str, Any],
+    ) -> bool:
+        """
+        Write a Parliament decision to the federation body_decisions channel.
+
+        Called after _parliament_deliberate() produces a result.  Formats
+        it as a GovernanceExchange and pushes via S3Bridge.
+
+        Args:
+            action: The action text that was deliberated
+            result: The full Parliament result dict
+
+        Returns:
+            True if successfully pushed to S3.
+        """
+        bridge = self._get_s3_bridge()
+        if not bridge:
+            return False
+
+        try:
+            parliament = result.get("parliament", {})
+            action_hash = hashlib.sha256(action.encode()).hexdigest()[:16]
+            ts = datetime.now(timezone.utc).isoformat()
+            exchange_id = hashlib.sha256(
+                f"BODY:{action_hash}:{ts}".encode()
+            ).hexdigest()[:16]
+
+            # Determine verdict
+            governance = result.get("governance", "PROCEED")
+            if governance == "HALT":
+                verdict = "VETOED" if parliament.get("veto_exercised") else "HARD_BLOCK"
+            elif governance == "REVIEW":
+                verdict = "PENDING"
+            else:
+                verdict = "APPROVED"
+
+            exchange = {
+                "exchange_id": exchange_id,
+                "source": "BODY",
+                "verdict": verdict,
+                "pattern_hash": action_hash,
+                "cycle": None,  # BODY doesn't have a cycle counter
+                "domain": None,
+                "kernel_rule": None,
+                "parliament_score": parliament.get("approval_rate", 0),
+                "parliament_approval": parliament.get("approval_rate", 0),
+                "veto_node": (parliament.get("veto_nodes") or [None])[0],
+                "reasoning": result.get("reasoning", "")[:500],
+                "timestamp": ts,
+            }
+
+            pushed = bridge.push_body_decision(exchange)
+            if pushed:
+                self._log("FEDERATION_DECISION_PUSH", "federation", True,
+                          verdict=verdict, hash=action_hash[:8])
+            return pushed
+        except Exception as e:
+            logger.warning("Federation decision push failed: %s", e)
+            return False
+
+    def get_federation_friction_boost(self) -> Dict[str, float]:
+        """
+        Get active friction-domain boost multipliers from MIND heartbeat.
+
+        When MIND detects recursion, it activates friction boosts on
+        D3 (Autonomy), D6 (Coherence), D10 (Paradox), D11 (Emergence).
+        These multipliers should be applied to Parliament node scores
+        that align with those domains.
+
+        Returns:
+            Dict mapping domain_id (str) to boost multiplier (float).
+            Empty dict if no friction boost is active.
+        """
+        hb = self.pull_mind_heartbeat()
+        if not hb:
+            return {}
+
+        # Direct friction boost from heartbeat
+        friction = hb.get("friction_boost", {})
+
+        # Also: if recursion_warning is True but friction_boost is empty,
+        # apply default friction boosts to the friction domains
+        if hb.get("recursion_warning") and not friction:
+            friction = {
+                "3": 1.5,   # D3 Autonomy
+                "6": 1.5,   # D6 Coherence
+                "10": 1.5,  # D10 Paradox
+                "11": 1.5,  # D11 Emergence
+            }
+
+        return friction
 
     def vote_on_action(
         self,
@@ -1553,6 +1717,51 @@ class GovernanceClient:
                 node_name, node_config, signals, action_lower
             )
 
+        # ── 2b. Federation Friction-Domain Privilege Boost ───────
+        # When MIND detects recursion, friction-domain nodes get boosted
+        # scores to prevent the convergence trap.
+        # Domain→Node mapping: D3→CRITIAS, D6→THEMIS, D10→CHAOS, D11→IANUS
+        friction_boost = self.get_federation_friction_boost()
+        if friction_boost:
+            _DOMAIN_TO_NODE = {
+                "3": "CRITIAS",    # D3 Autonomy
+                "6": "THEMIS",     # D6 Coherence / Collective
+                "10": "CHAOS",     # D10 Paradox / Contradiction
+                "11": "IANUS",     # D11 Emergence / Temporal
+            }
+            for domain_id, multiplier in friction_boost.items():
+                node_name = _DOMAIN_TO_NODE.get(str(domain_id))
+                if node_name and node_name in votes:
+                    old_score = votes[node_name]["score"]
+                    # Boost magnitude, preserving sign
+                    # Friction boost amplifies the node's voice (both positive and negative)
+                    new_score = int(old_score * multiplier)
+                    # Clamp to [-15, +15]
+                    new_score = max(-15, min(15, new_score))
+                    if old_score != new_score:
+                        votes[node_name]["score"] = new_score
+                        votes[node_name]["rationale"] += (
+                            f" | FRICTION BOOST ×{multiplier}: "
+                            f"score {old_score}→{new_score} (MIND recursion guard)"
+                        )
+                        logger.info(
+                            "Friction boost: %s score %d→%d (×%.1f)",
+                            node_name, old_score, new_score, multiplier,
+                        )
+                        # Re-evaluate vote category after score change
+                        if new_score >= 7:
+                            votes[node_name]["vote"] = "APPROVE"
+                        elif new_score <= -7:
+                            votes[node_name]["vote"] = (
+                                "VETO" if votes[node_name]["is_veto"] else "REJECT"
+                            )
+                        elif new_score > 0:
+                            votes[node_name]["vote"] = "LEAN_APPROVE"
+                        elif new_score < 0:
+                            votes[node_name]["vote"] = "LEAN_REJECT"
+                        else:
+                            votes[node_name]["vote"] = "ABSTAIN"
+
         # ── 3. VETO Check ───────────────────────────────────────
         veto_nodes = {
             name: v for name, v in votes.items() if v["is_veto"]
@@ -1746,6 +1955,13 @@ class GovernanceClient:
                   action=action, result=governance,
                   approval=f"{approval_rate*100:.0f}%",
                   veto=veto_exercised)
+
+        # ── 10. Federation: Push decision to MIND ────────────────
+        # Non-blocking — failures here don't affect the Parliament result.
+        try:
+            self.push_parliament_decision(action, result)
+        except Exception as e:
+            logger.debug("Federation decision push (non-critical): %s", e)
 
         return result
 
