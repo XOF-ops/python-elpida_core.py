@@ -683,11 +683,40 @@ with tab_scanner:
                     expanded=(i == 1),
                 ):
                     if r.get("halted"):
+                        # Hard HALT: A0 existential risk or non-analysis operational command.
+                        # This should rarely fire for policy/philosophical content.
                         st.error(f"⛔ Governance HALT: {r.get('reason', 'Axiom violation')}")
                         gov = r.get("governance_check", {})
                         if gov:
                             st.json(gov)
                     else:
+                        # Show HOLD tensions as philosophical context BEFORE the analysis —
+                        # they are the Parliament's wisdom about what axioms are in tension.
+                        gov = r.get("governance_check", {})
+                        if gov and gov.get("governance") == "HOLD":
+                            parliament = gov.get("parliament", {})
+                            tensions = parliament.get("tensions", [])
+                            if tensions:
+                                st.markdown(
+                                    """<div style="background:rgba(155,125,212,0.07);
+                                    border-left:3px solid #9b7dd4;border-radius:6px;
+                                    padding:0.8rem 1rem;margin-bottom:1rem;
+                                    font-family:'Courier New',monospace;font-size:0.82rem;">
+                                    <div style="color:#9b7dd4;font-size:0.7rem;
+                                    text-transform:uppercase;letter-spacing:0.12em;
+                                    margin-bottom:0.5rem;">⚖ Parliament — Tensions Held (not resolved)</div>""",
+                                    unsafe_allow_html=True,
+                                )
+                                for t in tensions:
+                                    pair = t.get("axiom_pair", ("?", "?"))
+                                    synth = t.get("synthesis", "")
+                                    st.markdown(
+                                        f"<div style='color:#ccaaff;margin-bottom:0.4rem;'>"
+                                        f"<b>{pair[0]} ↔ {pair[1]}:</b> "
+                                        f"<span style='color:#e0d0ff;'>{synth}</span></div>",
+                                        unsafe_allow_html=True,
+                                    )
+                                st.markdown("</div>", unsafe_allow_html=True)
                         _show_analysis(r)
                     # ── Sources ──
                     sources = r.get("sources", [])

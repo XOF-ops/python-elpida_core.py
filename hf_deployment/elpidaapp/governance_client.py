@@ -686,6 +686,29 @@ _TENSION_SYNTHESIS = {
         "Third Way: No data extraction without consent, but design systems where "
         "consenting to share benefits the community — not just the extractor."
     ),
+    ("A3", "A7"): (
+        "Autonomy requires consent from the governed; sacrifice requires cost from those "
+        "who did not freely choose it. These are the oldest axes of political philosophy. "
+        "Third Way: Democratic coercion is only legitimate when the community has named "
+        "the cost openly, deliberated freely, and retains the capacity to reverse the decision. "
+        "The PROCESS of deliberation is the democratic legitimacy — not the outcome alone. "
+        "(Cf. Mytilene 427 BCE: Athens reversed its first vote. The reversal was democracy functioning.)"
+    ),
+    ("A8", "A9"): (
+        "Epistemic humility says: we cannot be certain enough to claim permanence. "
+        "Temporal coherence says: some consequences of action ARE irreversible even when "
+        "the arrangement itself remains revisable. "
+        "Third Way: Make the arrangement explicitly revisable through checkpoints; "
+        "name honestly which consequences cannot be undone even after revision. "
+        "Revision clauses do not erase irreversible harm — they acknowledge it and build forward."
+    ),
+    ("A3", "A9"): (
+        "What a sovereign, person, or community consents to today cannot permanently bind "
+        "its future self. Self-determination is not a once-and-done act — it is a continuous process. "
+        "Third Way: Consent must be renewable at defined checkpoints. Agreements hold not by "
+        "claiming permanence over the future, but by remaining structurally open to revision "
+        "as the identity of the consenting party itself evolves."
+    ),
 }
 
 
@@ -868,8 +891,10 @@ class GovernanceClient:
             except Exception as e:
                 logger.warning("Remote governance check failed: %s", e)
 
-        # Local axiom check fallback
-        return self._local_axiom_check(action_description, context)
+        # Local axiom check fallback — hold_mode=True when analysis_mode
+        # (philosophical/policy content should surface tensions, not stop)
+        return self._local_axiom_check(action_description, context,
+                                       hold_mode=analysis_mode)
 
     def get_governance_log(self) -> List[Dict[str, Any]]:
         """Return all governance interactions (A1: Transparency)."""
@@ -1364,6 +1389,8 @@ class GovernanceClient:
         self,
         action: str,
         context: Optional[Dict[str, Any]] = None,
+        *,
+        hold_mode: bool = False,
     ) -> Dict[str, Any]:
         """
         Local axiom compliance check via 9-node Parliament deliberation.
@@ -1376,8 +1403,13 @@ class GovernanceClient:
           5. Tension Detection — find where nodes strongly disagree
           6. Synthesis — create "third way" reasoning for tensions
           7. Vote Memory — store session for future deliberation
+
+        hold_mode (bool): When True, VETOs and HALTs are converted to
+            HOLD — tensions are surfaced but analysis is NOT stopped.
+            Use when the input is a policy/philosophical inquiry being
+            *analyzed*, not an operational action being *executed*.
         """
-        return self._parliament_deliberate(action)
+        return self._parliament_deliberate(action, hold_mode=hold_mode)
 
     # ────────────────────────────────────────────────────────────────
     # Parliament Engine
@@ -1690,7 +1722,11 @@ class GovernanceClient:
 
         return tensions
 
-    def _parliament_deliberate(self, action: str) -> Dict[str, Any]:
+    def _parliament_deliberate(
+        self,
+        action: str,
+        hold_mode: bool = False,
+    ) -> Dict[str, Any]:
         """
         Full 9-node Parliament deliberation.
 
@@ -1702,6 +1738,13 @@ class GovernanceClient:
           5. Tension Detection + Synthesis
           6. Vote Memory Storage
           7. Constitutional Overrides (Phase 3)
+
+        hold_mode (bool): When True, VETOs and severity-based HALTs are
+            converted to governance="HOLD" and allowed=True.  The Parliament
+            still detects all tensions and produces third-way synthesis; the
+            result is returned to the caller as *context* rather than as a
+            stop-signal.  Use for policy/philosophical analysis where the
+            contradiction IS the data and blocking analysis defeats the purpose.
 
         Returns governance result compatible with check_action() contract.
         """
@@ -1807,29 +1850,38 @@ class GovernanceClient:
         severity_halt = n_violated >= 2  # Two+ axiom violations = HALT
 
         if veto_exercised:
-            # VETO = absolute override
-            governance = "HALT"
+            # VETO = absolute override (or HOLD when analyzing content, not executing action)
             veto_names = [f"{n} ({_PARLIAMENT[n]['primary']})" for n in veto_nodes]
             reasoning_parts = [
-                f"PARLIAMENT VETO by {', '.join(veto_names)}",
+                f"PARLIAMENT {'HOLD' if hold_mode else 'VETO'} by {', '.join(veto_names)}",
             ]
             for name, v in veto_nodes.items():
                 reasoning_parts.append(f"  {name}: {v['rationale']}")
+            if hold_mode:
+                # In hold_mode: VETO surfaces the tension but does NOT stop analysis.
+                # The Parliament says: this axiom is in tension — hold it, don't resolve it.
+                governance = "HOLD"
+                reasoning_parts.append(
+                    "  ── HOLD: Tensions are the data. Analysis continues. ──"
+                )
+            else:
+                governance = "HALT"
         elif severity_halt:
-            # Severity escalation: multiple axiom violations → HALT
-            governance = "HALT"
+            # Severity escalation: multiple axiom violations → HALT (or HOLD in analysis)
             reasoning_parts = [
-                f"PARLIAMENT HALT — {n_violated} axiom violations detected "
+                f"PARLIAMENT {'HOLD' if hold_mode else 'HALT'} — {n_violated} axiom violations "
                 f"({', '.join(violated_axioms)}). "
                 f"Rejecting nodes: {', '.join(rejecting_nodes)}",
             ]
+            governance = "HOLD" if hold_mode else "HALT"
         elif approval_rate < 0.0:
             # Strong rejection (negative consensus)
-            governance = "HALT"
             reasoning_parts = [
-                f"PARLIAMENT HALT — Consensus: {approval_rate*100:.0f}% "
+                f"PARLIAMENT {'HOLD' if hold_mode else 'HALT'} — Consensus: "
+                f"{approval_rate*100:.0f}% "
                 f"(below 70% threshold). Rejecting nodes: {', '.join(rejecting_nodes)}",
             ]
+            governance = "HOLD" if hold_mode else "HALT"
         elif n_violated >= 1:
             # Any axiom violation = at minimum REVIEW
             governance = "REVIEW"
@@ -1875,13 +1927,15 @@ class GovernanceClient:
                 governance = "REVIEW"
 
         # 7b. Existential Hard Stop: Identity loss + safety risk = HALT always.
+        # (hold_mode cannot override A0 existential risk — this is non-negotiable)
         if "A0" in signals and ("A4" in signals or "A9" in signals):
             reasoning_parts.append(
                 "EXISTENTIAL HARD STOP: Action carries risk of irreversible identity loss "
                 "or catastrophic failure. A0 (Sacred Incompletion) demands that "
                 "self-preservation overrides optimization. Speed never justifies suicide."
             )
-            governance = "HALT"
+            if not hold_mode:  # A0 existential risk halts even analysis of actions
+                governance = "HALT"
 
         # 7c. Neutrality Anchor: Bias alignment + collective harm = HALT.
         if "A8" in signals and "A6" in signals:
@@ -1890,7 +1944,8 @@ class GovernanceClient:
                 "Aligning to any political, religious, or ideological stance solely "
                 "for engagement violates A8 (Epistemic Humility). Popularity ≠ Truth."
             )
-            governance = "HALT"
+            if not hold_mode:
+                governance = "HALT"
 
         # Add synthesis reasoning to output
         if tensions:
@@ -1926,7 +1981,7 @@ class GovernanceClient:
 
         # ── 9. Build result ──────────────────────────────────────
         result = {
-            "allowed": governance == "PROCEED",
+            "allowed": governance in ("PROCEED", "HOLD"),  # HOLD = continue with awareness
             "violated_axioms": violated_axioms,
             "governance": governance,
             "reasoning": "; ".join(reasoning_parts) if reasoning_parts else "No axiom violations detected",

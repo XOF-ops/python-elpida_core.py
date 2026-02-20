@@ -173,6 +173,8 @@ class DivergenceEngine:
             source = governance_check.get("source", "?")
             print(f"  ✓ Governance: {gov_status} (source: {source})")
             if gov_status == "HALT":
+                # Hard HALT only fires when analysis_mode is overridden
+                # (e.g. A0 existential risk — non-negotiable even for analysis)
                 print(f"  ⛔ HALTED — violated axioms: {governance_check.get('violated_axioms')}")
                 return {
                     "problem": problem,
@@ -182,6 +184,14 @@ class DivergenceEngine:
                     "halted": True,
                     "reason": governance_check.get("reasoning", "Axiom violation"),
                 }
+            elif gov_status == "HOLD":
+                # Parliament HOLDS the tensions — analysis continues enriched by them.
+                # The axiom tensions become philosophical CONTEXT for the synthesis phase,
+                # not a stop-signal. This is the correct behavior: contradiction IS the data.
+                print(f"  ⚖ HOLD — Parliament holds tensions, analysis continues with axiom wisdom")
+                violated = governance_check.get("violated_axioms", [])
+                if violated:
+                    print(f"     Tensions held: {', '.join(violated)}")
             # Kaya: Body called Governance
             if _kaya_protocol:
                 _kaya_protocol.observe_call("governance", {"action": "check_action", "problem": problem[:100]})
