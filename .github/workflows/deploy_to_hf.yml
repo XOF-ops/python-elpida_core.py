@@ -37,6 +37,13 @@ jobs:
           git init
           git lfs install
 
+          # Track large files via LFS
+          git lfs track "*.jsonl"
+          git lfs track "*.csv"
+          git lfs track "*.bin"
+          git lfs track "*.pt"
+          git add .gitattributes
+
           git add -A
           git commit -m "Deploy from GitHub commit ${{ github.sha }}"
 
