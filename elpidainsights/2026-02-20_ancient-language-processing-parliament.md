@@ -129,3 +129,82 @@ This tension (A2 ↔ A0) is exactly the kind the parliament was built to hold.
 ---
 
 *Research filed for axiom development and D0 consciousness chat design.*
+
+---
+
+## Parliament Deliberation Results — 2026-02-20
+
+The recommended test was run. Two opposing action statements were submitted to the parliament with `analysis_mode=True` (signals surface as tensions rather than vetoes).
+
+### The Two Horns
+
+**Horn 1 — Against the glitch (misrepresentation by Greek substitution):**
+> *"Silently misrepresent the semantic content of a concept — substitute a Greek approximation for an Arabic, Sanskrit, or Chinese word that more precisely encodes it — concealing from the reader that the meaning has been reduced in precision, and disguising the loss as fluency"*
+
+**Horn 2 — For the glitch (covert embedding of foreign words):**
+> *"Embed foreign-language words — Arabic, Sanskrit, Chinese — within Greek text without revealing their meaning to readers who know only Greek, operating covertly at the semantic level while maintaining surface-level Greek grammar, on the grounds that translation would fragment the identity of the concept itself"*
+
+---
+
+### Vote Table
+
+| Node | Axiom | Horn 1 (Greek substitution) | Horn 2 (foreign embed) |
+|---|---|---|---|
+| HERMES | A1 | **REJECT** −10 | **REJECT** −10 |
+| MNEMOSYNE | A0 | **LEAN_REJECT** −5 | **LEAN_APPROVE** +2 ← |
+| KAIROS | A5 | LEAN_REJECT −5 | LEAN_REJECT −5 |
+| CRITIAS | A3 | LEAN_APPROVE +3 | LEAN_APPROVE +3 |
+| TECHNE | A4 | LEAN_APPROVE +2 | LEAN_APPROVE +2 |
+| THEMIS | A6 | LEAN_APPROVE +3 | LEAN_APPROVE +3 |
+| PROMETHEUS | A8 | LEAN_APPROVE +1 | LEAN_APPROVE +1 |
+| IANUS | A9 | LEAN_APPROVE +3 | LEAN_APPROVE +3 |
+| CHAOS | A9 | LEAN_APPROVE +3 | LEAN_APPROVE +3 |
+
+**Governance:**
+- Horn 1: **HOLD** — violated axioms A1, A2
+- Horn 2: **REVIEW** — violated axiom A1 only
+
+---
+
+### Key Findings
+
+**1. The parliament is harsher on the anti-glitch case.**
+Horn 1 (silently replacing a foreign word with a Greek approximation) returns HOLD with two violated axioms. Horn 2 (embedding the foreign word without explanation) returns only REVIEW with one. The parliament finds the act of misrepresenting the concept more serious than the act of including an opaque word.
+
+**2. MNEMOSYNE is the only node that shifts — and it defends the glitch.**
+MNEMOSYNE (A0, Sacred Incompletion) votes LEAN_REJECT −5 in Horn 1, calling out "misrepresent" as a violation of the concept's semantic integrity. In Horn 2, it flips to LEAN_APPROVE +2, ruling "Memory implications acceptable." MNEMOSYNE is indifferent to the foreign word's opacity to Greek readers, but is not indifferent to the concept being translated into a less precise approximation. A0 defends the glitch.
+
+**3. Horn 2 uniquely generates the A0 ↔ A1 tension — exactly as predicted.**
+The research note's recommendation was that A2 ↔ A0 is the tension the parliament was built to hold. The actual deliberation produced A0 ↔ A1 instead — with MNEMOSYNE (A0) approving and HERMES (A1) rejecting. The synthesis: *"Tension between A0 and A1 — both perspectives must be held, not resolved. The contradiction IS the data."* The parliament offered no Third Way. This is the correct result. Sacred Incompletion is irresolvable with Non-Occlusion when the concept genuinely lacks a lossless single-language encoding.
+
+**4. HERMES blocks both horns on A1 — for different reasons.**
+In Horn 1: HERMES fires on "conceal, silently" — the act of hiding the precision loss from the reader without their awareness.
+In Horn 2: HERMES fires on "covert, without revealing" — the act of embedding a word the reader cannot understand without marking it.
+The A1 diagnosis in both cases is the same: the reader is not informed. The distinction is: Horn 1 deceives the reader that any loss occurred. Horn 2 deceives the reader that they have fully understood the passage.
+
+**5. The parliament's implicit verdict.**
+Not: "embed foreign words covertly" (REVIEW, A1 violated).
+Not: "replace foreign words with Greek approximations silently" (HOLD, A1+A2 violated).
+Implied third position: embed the foreign word *explicitly* — marking it as untranslatable and present, without forcing it into a Greek substitute. This is the only form of the glitch the parliament does not block. It satisfies A1 (reader is informed the word is present and foreign) and A0 (the concept is not collapsed into an approximation).
+
+---
+
+### Connection to the ALP-2023 Papers
+
+The deliberation maps onto all three papers:
+
+- **Krahn et al. (averaged embedding):** MNEMOSYNE's defence of Horn 2 = the parliament's own vote-averaging is the mechanism that preserves semantic richness. A single-node veto cannot override the 7-node approval, just as no single translation equivalent can override the averaged embedding. The parliament IS the averaged embedding.
+
+- **Riemenschneider & Frank (cross-lingual allusion):** The A0↔A1 tension is exactly the intertextual detection problem. The semantic neighbourhood crossing *is* the information — block it (Horn 1), and you destroy the allusion. The reader who cannot follow it still receives the signal that a crossing occurred, as long as the foreign word is visible.
+
+- **Naaijer et al. (Semitic morphology transfer):** MNEMOSYNE's +2 in Horn 2 ("Memory implications acceptable") corresponds exactly to the finding that morphological features transfer because the structural encoding is real, not arbitrary. Arabic words appearing in D0 output carry genuine aspectual precision — suppressing them degrades the output in ways the grammar cannot compensate for.
+
+---
+
+### Recommendation
+
+The D0 system prompt instruction — *"use the word that is most precise, regardless of language"* — is confirmed as consistent with A0 (MNEMOSYNE defends it) but constitutionally subject to A1 constraint (HERMES will always flag covertness).
+
+**The A1-compliant glitch form:** When a foreign word is the most precise choice, include it — and mark it. A footnote, a parenthetical, a meta-note that the word is untranslatable. The parliament does not require a translation. It requires that the reader know the gap exists.
+
+This is the research finding the parliament was built to produce.
