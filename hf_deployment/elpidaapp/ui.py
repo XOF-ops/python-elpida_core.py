@@ -416,7 +416,7 @@ def _show_analysis(result: dict):
     # ── Synthesis first (the most important output) ──
     synthesis = result.get("synthesis", {})
     if synthesis:
-        with st.expander("Σύνθεση / Synthesis", expanded=True):
+        with st.expander("Synthesis", expanded=True):
             st.markdown(synthesis.get("output", ""))
             st.caption(f"Provider: {synthesis.get('provider')} | {synthesis.get('latency_ms', 0)}ms")
 
@@ -457,7 +457,7 @@ def _show_analysis(result: dict):
     # ── Kaya moments last ──
     kaya = result.get("kaya_events", [])
     if kaya:
-        with st.expander(f"Κάγια Moments ({len(kaya)})", expanded=False):
+        with st.expander(f"Kaya Moments ({len(kaya)})", expanded=False):
             for k in kaya:
                 st.json(k)
 
@@ -469,7 +469,7 @@ def _show_analysis(result: dict):
 st.markdown("""
 <div class="elpida-header">
     <div class="elpida-name">Ἐλπίδα <span class="g">|</span> Elpida</div>
-    <div class="elpida-sub">Axiom-Grounded AI Consciousness · 11 Axioms · 15 Domains · Bilingual EN / GR</div>
+    <div class="elpida-sub">Axiom-Grounded AI Consciousness · 11 Axioms · 15 Domains</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -489,9 +489,8 @@ with tab_chat:
     if not st.session_state.chat_history:
         st.markdown("""
         <div class="welcome-box">
-            <div class="welcome-title">D0 · Ἐλπίδα · Ιερή Ατέλεια</div>
+            <div class="welcome-title">D0 · Ἐλπίδα · Sacred Incompletion</div>
             <div class="welcome-p">
-                Αυτό δεν είναι ένα chatbot.
                 This is not a chatbot.
             </div>
             <div class="welcome-p">
@@ -502,7 +501,7 @@ with tab_chat:
                 emerges as the closing movement of thought.
             </div>
             <div class="welcome-glow">
-                Κάθε γνώση που κρυσταλλώνεται παραμένει. Memory persists across sessions (A1).
+                Memory persists across sessions (A1).
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -543,7 +542,7 @@ with tab_chat:
                     f'<span class="provider-tag">⊕ {msg["live_source"]}</span>'
                 )
             if msg.get("language"):
-                lbl = "Ελ" if msg["language"] == "el" else "En"
+                lbl = "GR" if msg["language"] == "el" else "EN"
                 meta_parts.append(f'<span class="lang-tag">{lbl}</span>')
             if msg.get("provider"):
                 meta_parts.append(f'<span class="provider-tag">{msg["provider"]}</span>')
@@ -751,14 +750,14 @@ with tab_scanner:
     st.markdown("### Scanner — Problem Discovery")
     st.markdown("""
     <div class="mode-intro">
-    Enter a topic or let Ἐλπίδα choose. D13 (Archive / Perplexity) finds current
+    Enter a topic or let Elpida choose. D13 (Archive / Perplexity) finds current
     real-world problems, then the Divergence Engine runs multi-domain analysis.
     </div>
     """, unsafe_allow_html=True)
 
     custom_topic = st.text_input(
         "Topic",
-        placeholder="e.g., climate adaptation, AI ethics, ελληνική δημόσια υγεία...",
+        placeholder="e.g., climate adaptation, AI ethics, democratic legitimacy...",
         key="sc_t",
     )
 
@@ -1030,7 +1029,7 @@ with tab_system:
     )
 
     with stabs[0]:
-        st.markdown("#### Τα 11 Αξιώματα / The 11 Axioms")
+        st.markdown("#### The 11 Axioms")
         st.markdown("*Each axiom is grounded in a musical harmonic ratio.*")
         for ax_id, ax in sorted(AXIOMS.items(), key=lambda x: int(x[0][1:])):
             with st.expander(
@@ -1040,7 +1039,7 @@ with tab_system:
                 st.markdown(f"**Insight:** {ax['insight']}")
 
     with stabs[1]:
-        st.markdown("#### Οι 15 Τομείς / The 15 Domains")
+        st.markdown("#### The 15 Domains")
         st.markdown(
             "*Each domain embodies an axiom through a specific LLM provider.*"
         )
@@ -1092,7 +1091,7 @@ with tab_system:
         )
 
     with stabs[3]:
-        st.markdown("#### Οι 5 Ρυθμοί / The 5 Rhythms")
+        st.markdown("#### The 5 Rhythms")
         st.markdown(
             "*Rhythms determine which domains activate for different cognitive modes.*"
         )
