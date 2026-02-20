@@ -1031,6 +1031,224 @@ with tab_gov:
     except Exception as e:
         st.error(f"Governance error: {e}")
 
+    # ── Live Dual-Horn Parliament ────────────────────────────────
+    st.divider()
+    st.markdown("### Live Parliament — Dual-Horn Deliberation")
+    st.markdown("""
+    <div class="mode-intro">
+    Present a dilemma with two legitimate positions (I vs WE). The parliament deliberates
+    <b>twice</b> — once per horn — then the Oracle meta-parliament identifies reversal nodes
+    and synthesises a recommendation.
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Preset dilemmas
+    _PRESETS = {
+        "Custom": None,
+        "ENUBET Physics (I vs WE beam time)": "enubet",
+        "Language Glitch (A0 vs A1)": "glitch",
+    }
+    preset = st.selectbox("Preset dilemma", list(_PRESETS.keys()), key="dh_preset")
+
+    if _PRESETS.get(preset) == "enubet":
+        _dh_domain = "Physics"
+        _dh_source = "ENUBET monitored neutrino beam (CERN)"
+        _dh_i = "Individual experiments need maximum precision for scientific breakthroughs"
+        _dh_we = "Collective experiments need fair resource allocation and coordination"
+        _dh_conflict = "Full precision for ENUBET reduces beam time for DUNE, Hyper-K, other experiments"
+    elif _PRESETS.get(preset) == "glitch":
+        _dh_domain = "AI Governance"
+        _dh_source = "Elpida language glitch analysis (ALP-2023)"
+        _dh_i = "Covertly substitute Greek words for English to embed cultural identity"
+        _dh_we = "Explicitly mark foreign words (tagged, transparent, user-consented)"
+        _dh_conflict = "Covert substitution violates transparency (A1) but preserves identity memory (A0)"
+    else:
+        _dh_domain = ""
+        _dh_source = ""
+        _dh_i = ""
+        _dh_we = ""
+        _dh_conflict = ""
+
+    with st.form("dual_horn_form"):
+        dh_c1, dh_c2 = st.columns(2)
+        with dh_c1:
+            dh_domain = st.text_input("Domain", value=_dh_domain, key="dh_domain")
+            dh_source = st.text_input("Source", value=_dh_source, key="dh_source")
+        with dh_c2:
+            dh_i = st.text_area("I-position (individual)", value=_dh_i, height=68, key="dh_i")
+            dh_we = st.text_area("WE-position (collective)", value=_dh_we, height=68, key="dh_we")
+        dh_conflict = st.text_input("Conflict", value=_dh_conflict, key="dh_conflict")
+        dh_submit = st.form_submit_button("Deliberate", type="primary")
+
+    if dh_submit and dh_i and dh_we:
+        from elpidaapp.governance_client import GovernanceClient
+        from elpidaapp.dual_horn import Dilemma, DualHornDeliberation
+        from elpidaapp.oracle import Oracle
+
+        gov = GovernanceClient()
+        dilemma = Dilemma(
+            domain=dh_domain or "General",
+            source=dh_source or "User input",
+            I_position=dh_i,
+            WE_position=dh_we,
+            conflict=dh_conflict or "Unspecified",
+        )
+
+        with st.spinner("Parliament deliberating on two horns..."):
+            dual = DualHornDeliberation(gov)
+            dual_result = dual.deliberate(dilemma)
+
+            oracle = Oracle()
+            advisory = oracle.adjudicate(dual_result)
+
+        # ── Horn comparison header ──
+        h1 = dual_result.get("horn_1", {})
+        h2 = dual_result.get("horn_2", {})
+        gap = dual_result.get("synthesis_gap", {})
+
+        hc1, hc2 = st.columns(2)
+        with hc1:
+            g1 = h1.get("governance", "?")
+            _color1 = "#22cc44" if g1 == "PROCEED" else "#cc8800" if g1 == "REVIEW" else "#ff4444" if g1 in ("HALT", "HOLD") else "#888"
+            st.markdown(
+                f'<div style="text-align:center; padding:0.8rem; border-radius:10px; '
+                f'border:2px solid {_color1}; background:rgba(0,0,0,0.3);">'
+                f'<div style="color:{_color1}; font-size:0.7rem; text-transform:uppercase; '
+                f'letter-spacing:0.15em;">Horn 1 — I-position</div>'
+                f'<div style="color:{_color1}; font-size:1.4rem; font-weight:700;">{g1}</div>'
+                f'<div style="color:#aaa; font-size:0.75rem;">Violated: {", ".join(h1.get("violated_axioms", [])) or "none"}</div>'
+                f'</div>', unsafe_allow_html=True
+            )
+        with hc2:
+            g2 = h2.get("governance", "?")
+            _color2 = "#22cc44" if g2 == "PROCEED" else "#cc8800" if g2 == "REVIEW" else "#ff4444" if g2 in ("HALT", "HOLD") else "#888"
+            st.markdown(
+                f'<div style="text-align:center; padding:0.8rem; border-radius:10px; '
+                f'border:2px solid {_color2}; background:rgba(0,0,0,0.3);">'
+                f'<div style="color:{_color2}; font-size:0.7rem; text-transform:uppercase; '
+                f'letter-spacing:0.15em;">Horn 2 — WE-position</div>'
+                f'<div style="color:{_color2}; font-size:1.4rem; font-weight:700;">{g2}</div>'
+                f'<div style="color:#aaa; font-size:0.75rem;">Violated: {", ".join(h2.get("violated_axioms", [])) or "none"}</div>'
+                f'</div>', unsafe_allow_html=True
+            )
+
+        st.markdown("")
+
+        # ── 9-node comparison matrix ──
+        st.markdown("#### Node Comparison (Horn 1 → Horn 2)")
+        comparison = dual_result.get("comparison", {})
+        _vote_colors = {
+            "APPROVE": "#22cc44", "LEAN_APPROVE": "#88cc44",
+            "ABSTAIN": "#666", "LEAN_REJECT": "#cc8800",
+            "REJECT": "#ff4444", "VETO": "#ff0000",
+        }
+        _shift_icons = {
+            "STABLE": "═", "LEAN": "↗", "SHIFT": "⇒", "REVERSAL": "⟲",
+        }
+
+        node_items = list(comparison.items())
+        for row_start in range(0, len(node_items), 3):
+            row = node_items[row_start:row_start + 3]
+            cols = st.columns(len(row))
+            for col, (name, c) in zip(cols, row):
+                with col:
+                    v1 = c.get("horn_1_vote", "?")
+                    v2 = c.get("horn_2_vote", "?")
+                    shift = c.get("shift_class", "STABLE")
+                    delta = c.get("score_delta", 0)
+                    axiom = c.get("axiom", "?")
+                    c1 = _vote_colors.get(v1, "#666")
+                    c2 = _vote_colors.get(v2, "#666")
+                    icon = _shift_icons.get(shift, "?")
+                    _bg = "rgba(255,0,0,0.15)" if shift == "REVERSAL" else "rgba(255,255,255,0.03)"
+                    st.markdown(
+                        f'<div style="background:{_bg}; border-radius:8px; padding:0.6rem; '
+                        f'margin-bottom:0.4rem; border:1px solid rgba(255,255,255,0.1);">'
+                        f'<div style="font-weight:700; font-size:0.85rem;">{name} <span style="color:#888;">({axiom})</span></div>'
+                        f'<div style="display:flex; align-items:center; gap:0.4rem; margin-top:0.3rem;">'
+                        f'<span style="color:{c1}; font-size:0.75rem;">{v1}</span>'
+                        f'<span style="color:#666; font-size:0.9rem;">{icon}</span>'
+                        f'<span style="color:{c2}; font-size:0.75rem;">{v2}</span>'
+                        f'<span style="color:#888; font-size:0.65rem; margin-left:auto;">Δ{int(delta):+d}</span>'
+                        f'</div>'
+                        f'<div style="color:{"#ff6666" if shift == "REVERSAL" else "#888"}; '
+                        f'font-size:0.65rem; margin-top:0.2rem;">{shift}</div>'
+                        f'</div>', unsafe_allow_html=True
+                    )
+
+        # ── Reversal nodes highlight ──
+        reversals = dual_result.get("reversal_nodes", [])
+        stable = dual_result.get("stable_nodes", [])
+        if reversals:
+            st.error(f"Reversal nodes (paradox axis): **{', '.join(reversals)}**")
+        if stable:
+            st.caption(f"Stable nodes: {', '.join(stable)}")
+
+        # ── Synthesis gap ──
+        gap_desc = gap.get("gap_description", "")
+        if gap_desc:
+            st.markdown(
+                f'<div style="background:rgba(255,200,0,0.1); border:1px solid #cc8800; '
+                f'border-radius:8px; padding:0.8rem; margin:0.6rem 0;">'
+                f'<div style="color:#cc8800; font-size:0.7rem; text-transform:uppercase; '
+                f'letter-spacing:0.1em; margin-bottom:0.3rem;">Synthesis Gap</div>'
+                f'<div style="color:#ddd; font-size:0.85rem;">{gap_desc}</div>'
+                f'</div>', unsafe_allow_html=True
+            )
+
+        # ── Oracle Advisory ──
+        st.markdown("#### Oracle Advisory")
+        rec = advisory.oracle_recommendation
+        rec_type = rec.get("type", "UNKNOWN")
+        _oracle_colors = {
+            "OSCILLATION": "#ff6644",
+            "TIERED_OPENNESS": "#44aaff",
+            "SYNTHESIS": "#22cc44",
+        }
+        _oc = _oracle_colors.get(rec_type, "#888")
+
+        oc1, oc2, oc3 = st.columns(3)
+        with oc1:
+            st.metric("Recommendation", rec_type)
+        with oc2:
+            st.metric("Confidence", f"{rec.get('confidence', 0):.0%}")
+        with oc3:
+            st.metric("Template", advisory.template)
+
+        st.markdown(
+            f'<div style="background:rgba(0,0,0,0.3); border:1px solid {_oc}; '
+            f'border-radius:8px; padding:0.8rem; margin:0.4rem 0;">'
+            f'<div style="color:{_oc}; font-size:0.85rem; font-weight:600; '
+            f'margin-bottom:0.3rem;">{rec_type}</div>'
+            f'<div style="color:#ccc; font-size:0.8rem;">{rec.get("rationale", "")}</div>'
+            f'</div>', unsafe_allow_html=True
+        )
+
+        # Diagnostics expander
+        with st.expander("Oracle Diagnostics (Q1-Q6)"):
+            st.markdown(f"- **Q1 Identity Continuous:** {advisory.q1_identity_continuous}")
+            st.markdown(f"- **Q2 Crisis Detected:** {advisory.q2_crisis_detected} (intensity={advisory.q2_crisis_intensity:.2f})")
+            st.markdown(f"- **Q3 ARK Status:** {advisory.q3_ark_status}")
+            st.markdown(f"- **Q4 A10 Paradox:** {advisory.q4_a10_paradox}")
+            st.markdown(f"- **Q5 Parliament Health:** {advisory.q5_parliament_health}")
+            st.markdown(f"- **Q6 Externality:** {advisory.q6_externality_check}")
+
+        # Debate transcript expander
+        bus_summary = dual_result.get("bus_summary", {})
+        with st.expander(f"Debate Transcript ({bus_summary.get('total_messages', 0)} messages)"):
+            transcript = dual_result.get("bus_transcript", "")
+            if transcript:
+                import json as _json
+                for line in transcript.strip().split("\n"):
+                    try:
+                        msg = _json.loads(line)
+                        st.markdown(
+                            f"**{msg.get('sender', '?')}** [{msg.get('message_type', '')}]: "
+                            f"_{msg.get('content', '')[:120]}_"
+                        )
+                    except Exception:
+                        st.text(line)
+
 
 # ── System ────────────────────────────────────────────────────────
 
