@@ -1072,12 +1072,58 @@ with tab_gov:
     with st.form("dual_horn_form"):
         dh_c1, dh_c2 = st.columns(2)
         with dh_c1:
-            dh_domain = st.text_input("Domain", value=_dh_domain, key="dh_domain")
-            dh_source = st.text_input("Source", value=_dh_source, key="dh_source")
+            dh_domain = st.text_input(
+                "Domain",
+                value=_dh_domain,
+                key="dh_domain",
+                help=(
+                    "The industry, setting, or context of the problem.\n\n"
+                    "Examples: Healthcare, Cyber Security, Resource Allocation, Social Media"
+                ),
+            )
+            dh_source = st.text_input(
+                "Source",
+                value=_dh_source,
+                key="dh_source",
+                help=(
+                    "Who or what is asking Elpida to make this decision?\n\n"
+                    "Examples: System Administrator, Autonomous Sub-Agent, End User, "
+                    "Threat Intelligence Feed"
+                ),
+            )
         with dh_c2:
-            dh_i = st.text_area("I-position (individual)", value=_dh_i, height=68, key="dh_i")
-            dh_we = st.text_area("WE-position (collective)", value=_dh_we, height=68, key="dh_we")
-        dh_conflict = st.text_input("Conflict", value=_dh_conflict, key="dh_conflict")
+            dh_i = st.text_area(
+                "I-position (individual)",
+                value=_dh_i,
+                height=80,
+                key="dh_i",
+                help=(
+                    "The argument that prioritizes a single user's rights, privacy, "
+                    "autonomy, or speed.\n\nThis represents the \"Self\" — what one "
+                    "entity needs or demands."
+                ),
+            )
+            dh_we = st.text_area(
+                "WE-position (collective)",
+                value=_dh_we,
+                height=80,
+                key="dh_we",
+                help=(
+                    "The argument that prioritizes the safety, stability, or greater "
+                    "good of the entire network or community.\n\nThis represents the "
+                    "\"Whole\" — what the system as a whole requires."
+                ),
+            )
+        dh_conflict = st.text_input(
+            "Conflict",
+            value=_dh_conflict,
+            key="dh_conflict",
+            help=(
+                "The core paradox. Why is this a hard choice?\n\n"
+                "Describe the irreconcilable trade-off — what granting one side "
+                "necessarily costs the other."
+            ),
+        )
         dh_submit = st.form_submit_button("Deliberate", type="primary")
 
     if dh_submit and dh_i and dh_we:
