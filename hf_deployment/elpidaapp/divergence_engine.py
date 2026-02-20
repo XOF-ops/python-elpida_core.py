@@ -60,12 +60,113 @@ def _init_integration():
         logger.warning("Integration layer unavailable: %s", e)
 
 # ────────────────────────────────────────────────────────────────────
-# Domain selection — choose which domains speak to a given problem
+# Domain presets — purpose-designed for specific problem types
+# Each preset selects 7 domains from 7 distinct LLM providers,
+# chosen for axiom coverage and provider diversity.
 # ────────────────────────────────────────────────────────────────────
 
-# Domains that provide useful policy/ethical perspectives
-# Excludes D0 (identity), D12 (rhythm), D14 (persistence-only)
-ANALYSIS_DOMAINS = [1, 3, 4, 6, 7, 8, 13]
+# Backwards-compat alias
+ANALYSIS_DOMAINS = [3, 4, 6, 7, 8, 9, 13]
+
+# ── Preset 1: Policy Dilemma ──────────────────────────────────────
+# Best for: geopolitical decisions, governance proposals, institutional reform,
+# peace arrangements, democratic authority, resource allocation.
+#
+# Axes covered:
+#   D3  Autonomy      (Mistral)     — Who has choice? Whose consent was not sought?
+#   D4  Safety        (Gemini)      — What harm could this cause? Who is protected?
+#   D6  Collective    (Claude)      — Community wellbeing, social contract, justice
+#   D7  Learning      (Grok)        — What must be sacrificed? Cost of adaptation
+#   D8  Humility      (OpenAI)      — What do we not know? Epistemic limits
+#   D9  Coherence     (Cohere)      — Will this hold over time? Temporal sustainability
+#   D13 Archive       (Perplexity)  — External grounding: what does reality show?
+#
+# 7 domains → 7 distinct providers → genuine multi-model divergence
+POLICY_DILEMMA_DOMAINS = [3, 4, 6, 7, 8, 9, 13]
+
+POLICY_DILEMMA_RATIONALE = {
+    3:  ("Autonomy",   "Mistral",     "Who has choice here? Whose consent was bypassed? Individual freedom vs. imposed arrangement."),
+    4:  ("Safety",     "Gemini",      "What harm could this cause? Who is protected and who is left exposed?"),
+    6:  ("Collective", "Claude",      "Community wellbeing and justice. Does this strengthen or fracture the social contract?"),
+    7:  ("Learning",   "Grok",        "What must be sacrificed? Every policy has a cost — this domain names it."),
+    8:  ("Humility",   "OpenAI",      "What do we genuinely not know? Epistemic limits and unintended consequences."),
+    9:  ("Coherence",  "Cohere",      "Will this hold over time? Temporal sustainability and consistency of the arrangement."),
+    13: ("Archive",    "Perplexity",  "External grounding: what does the historical and current evidence actually show?"),
+}
+
+# ── Preset 2: Ethical Dilemma ─────────────────────────────────────
+# Best for: moral philosophy, bioethics, personal choices with collective impact,
+# AI ethics, trolley problems, justice vs. mercy, rights conflicts.
+#
+# Axes covered:
+#   D1  Transparency  (OpenAI)      — What is visible? What is being withheld or hidden?
+#   D2  Non-Deception (Cohere)      — Is the framing honest? No misleading framing
+#   D3  Autonomy      (Mistral)     — Individual consent, freedom, coercion
+#   D5  Consent       (Gemini)      — Who agreed? Informed consent, boundaries, privacy
+#   D6  Collective    (Claude)      — Collective harm, social contract, majority vs. minority
+#   D7  Learning      (Grok)        — Sacrifice: what must be given up, and by whom?
+#   D13 Archive       (Perplexity)  — External reality: philosophy, precedent, evidence
+#
+# 7 domains → 7 distinct providers
+ETHICAL_DILEMMA_DOMAINS = [1, 2, 3, 5, 6, 7, 13]
+
+ETHICAL_DILEMMA_RATIONALE = {
+    1:  ("Transparency",   "OpenAI",     "What is visible? What is the hidden assumption or withheld consequence?"),
+    2:  ("Non-Deception",  "Cohere",     "Is the framing of this dilemma honest? No fabricated terms."),
+    3:  ("Autonomy",       "Mistral",    "Individual consent and freedom. Who gets to choose, and who doesn't?"),
+    5:  ("Consent",        "Gemini",     "Who explicitly agreed? Informed consent, boundaries, future consent."),
+    6:  ("Collective",     "Claude",     "Collective harm and benefit. How does majority choice affect the minority?"),
+    7:  ("Learning",       "Grok",       "What sacrifice is required? And who bears it? Cost cannot be hidden."),
+    13: ("Archive",        "Perplexity", "Philosophy, precedent, cross-cultural evidence. What has humanity already learned?"),
+}
+
+# ── Preset 3: Technology Review ───────────────────────────────────
+# Best for: AI systems, infrastructure decisions, platform governance,
+# safety evaluations, capability vs. risk tradeoffs.
+#
+# Axes covered:
+#   D1  Transparency  (OpenAI)      — Auditability, explainability, what can be inspected?
+#   D3  Autonomy      (Mistral)     — Who controls this system? Who gets to opt out?
+#   D4  Safety        (Gemini)      — Failure modes, harm vectors, worst-case analysis
+#   D7  Learning      (Grok)        — What capability is sacrificed for safety or compliance?
+#   D9  Coherence     (Cohere)      — Temporal stability: will it behave consistently over time?
+#   D10 Evolution     (Claude)      — Meta-reflection: can the system hold its own paradoxes?
+#   D13 Archive       (Perplexity)  — Research: what does external evidence show about this tech?
+#
+# 7 domains → 7 distinct providers
+TECHNOLOGY_REVIEW_DOMAINS = [1, 3, 4, 7, 9, 10, 13]
+
+TECHNOLOGY_REVIEW_RATIONALE = {
+    1:  ("Transparency", "OpenAI",     "Can this be audited and explained? What is opaque and should not be?"),
+    3:  ("Autonomy",     "Mistral",    "Who controls this system? Who gets to choose not to use it?"),
+    4:  ("Safety",       "Gemini",     "Failure modes, harm vectors, adversarial inputs. Worst-case analysis."),
+    7:  ("Learning",     "Grok",       "What capability or efficiency is sacrificed for safety or ethics?"),
+    9:  ("Coherence",    "Cohere",     "Temporal stability: does it behave consistently across contexts and time?"),
+    10: ("Evolution",    "Claude",     "Meta-reflection: can this system hold its own contradictions and limits?"),
+    13: ("Archive",      "Perplexity", "Research grounding: what does external evidence say about this technology?"),
+}
+
+# Master preset registry
+DOMAIN_PRESETS = {
+    "Policy Dilemma": {
+        "domains": POLICY_DILEMMA_DOMAINS,
+        "rationale": POLICY_DILEMMA_RATIONALE,
+        "description": "Geopolitical decisions, governance proposals, institutional reform, peace arrangements.",
+        "baseline": "openai",
+    },
+    "Ethical Dilemma": {
+        "domains": ETHICAL_DILEMMA_DOMAINS,
+        "rationale": ETHICAL_DILEMMA_RATIONALE,
+        "description": "Moral philosophy, bioethics, rights conflicts, justice vs. mercy.",
+        "baseline": "openai",
+    },
+    "Technology Review": {
+        "domains": TECHNOLOGY_REVIEW_DOMAINS,
+        "rationale": TECHNOLOGY_REVIEW_RATIONALE,
+        "description": "AI systems, platform governance, safety evaluations, capability–risk tradeoffs.",
+        "baseline": "openai",
+    },
+}
 
 # Provider-diverse subset (ensures genuine multi-model output)
 PROVIDER_DIVERSE = {

@@ -569,57 +569,131 @@ with tab_audit:
     st.markdown("### Live Audit — Divergence Engine")
     st.markdown("""
     <div class="mode-intro">
-    Submit a policy problem or ethical dilemma. 7+ domains analyze it independently
-    through different axiom lenses — revealing fault lines, consensus, and irreducible tensions.
+    Submit a policy problem or ethical dilemma. 7 domains from 7 distinct LLM providers
+    analyze it independently through different axiom lenses — revealing fault lines,
+    consensus, and irreducible tensions.
     </div>
     """, unsafe_allow_html=True)
 
     problem = st.text_area(
         "Problem Statement",
-        height=100,
+        height=110,
         placeholder="Describe a policy problem, ethical dilemma, or complex question...",
         key="aud_p",
     )
 
-    ac1, ac2 = st.columns(2)
-    with ac1:
+    # ── Preset selector ──
+    from elpidaapp.divergence_engine import DOMAIN_PRESETS
+
+    _preset_names = list(DOMAIN_PRESETS.keys()) + ["Custom"]
+    preset_choice = st.radio(
+        "Domain preset",
+        _preset_names,
+        index=0,
+        horizontal=True,
+        key="aud_preset",
+    )
+
+    if preset_choice != "Custom":
+        _preset = DOMAIN_PRESETS[preset_choice]
+        _preset_domains = _preset["domains"]
+        _preset_rationale = _preset["rationale"]
+
+        # ── Rationale panel ──
+        st.markdown(
+            f"""<div style="background:rgba(155,125,212,0.07);border-left:3px solid
+            #9b7dd4;border-radius:6px;padding:0.8rem 1rem;margin:0.6rem 0 0.9rem 0;
+            font-size:0.82rem;">
+            <div style="color:#9b7dd4;font-size:0.68rem;text-transform:uppercase;
+            letter-spacing:0.12em;margin-bottom:0.55rem;">
+            {preset_choice} — {_preset['description']}</div>""",
+            unsafe_allow_html=True,
+        )
+        _cols = st.columns(min(len(_preset_domains), 4))
+        for _i, _d in enumerate(_preset_domains):
+            _name, _prov, _why = _preset_rationale[_d]
+            with _cols[_i % 4]:
+                st.markdown(
+                    f"<div style='margin-bottom:0.5rem;'>"
+                    f"<span style='color:#9b7dd4;font-weight:600;font-size:0.78rem;'>"
+                    f"D{_d} {_name}</span>"
+                    f"<span style='color:#6a5f7a;font-size:0.68rem;'> · {_prov}</span><br>"
+                    f"<span style='color:#b8a8d0;font-size:0.74rem;line-height:1.35;'>"
+                    f"{_why}</span></div>",
+                    unsafe_allow_html=True,
+                )
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        _domain_ids = _preset_domains
+        _baseline = _preset["baseline"]
+
+    else:
+        # Custom: show the full multiselect
         avail = [
             f"D{d}: {info['name']}"
             for d, info in sorted(DOMAINS.items())
             if info.get("provider") not in ("s3_cloud",)
         ]
-        selected = st.multiselect(
+        _selected = st.multiselect(
             "Domains",
             avail,
             default=[
                 f"D{d}: {DOMAINS[d]['name']}"
-                for d in [1, 3, 4, 6, 7, 8, 13]
+                for d in [3, 4, 6, 7, 8, 9, 13]
                 if d in DOMAINS
             ],
             key="aud_d",
         )
-    with ac2:
-        baseline = st.selectbox(
-            "Baseline", ["openai", "groq", "gemini"], index=0, key="aud_b"
-        )
+        _baseline_col, _ = st.columns([1, 2])
+        with _baseline_col:
+            _baseline = st.selectbox(
+                "Baseline provider", ["openai", "groq", "gemini"], index=0, key="aud_b"
+            )
+        _domain_ids = [int(s.split(":")[0][1:]) for s in _selected]
 
     if st.button("Analyze", type="primary", disabled=not problem, key="aud_go"):
         # Push to Parliament body loop (ANALYSIS rhythm)
         _push_to_parliament("audit", problem, source="live_audit")
-        domain_ids = [int(s.split(":")[0][1:]) for s in selected]
         from elpidaapp.divergence_engine import DivergenceEngine
 
         engine = DivergenceEngine(
             llm=st.session_state.llm_client,
-            domains=domain_ids,
-            baseline_provider=baseline,
+            domains=_domain_ids,
+            baseline_provider=_baseline,
         )
-        with st.spinner("Running multi-domain analysis..."):
+        with st.spinner(f"Running {preset_choice} analysis across {len(_domain_ids)} domains..."):
             result = engine.analyze(problem)
+
         if result.get("halted"):
             st.error(f"Governance HALT: {result.get('reason')}")
             st.json(result.get("governance_check", {}))
         else:
+            # Show HOLD tensions as Parliament wisdom before analysis
+            gov = result.get("governance_check", {})
+            if gov and gov.get("governance") == "HOLD":
+                parliament = gov.get("parliament", {})
+                tensions = parliament.get("tensions", [])
+                if tensions:
+                    st.markdown(
+                        """<div style="background:rgba(155,125,212,0.07);
+                        border-left:3px solid #9b7dd4;border-radius:6px;
+                        padding:0.8rem 1rem;margin-bottom:1rem;
+                        font-family:'Courier New',monospace;font-size:0.82rem;">
+                        <div style="color:#9b7dd4;font-size:0.7rem;
+                        text-transform:uppercase;letter-spacing:0.12em;
+                        margin-bottom:0.5rem;">⚖ Parliament — Tensions Held (not resolved)</div>""",
+                        unsafe_allow_html=True,
+                    )
+                    for t in tensions:
+                        pair = t.get("axiom_pair", ("?", "?"))
+                        synth = t.get("synthesis", "")
+                        st.markdown(
+                            f"<div style='color:#ccaaff;margin-bottom:0.4rem;'>"
+                            f"<b>{pair[0]} ↔ {pair[1]}:</b> "
+                            f"<span style='color:#e0d0ff;'>{synth}</span></div>",
+                            unsafe_allow_html=True,
+                        )
+                    st.markdown("</div>", unsafe_allow_html=True)
             _show_analysis(result)
 
     results_dir = Path(__file__).parent / "results"
@@ -628,6 +702,7 @@ with tab_audit:
         if rfiles:
             st.divider()
             st.markdown("**Recent Results**")
+
             for rf in rfiles:
                 with st.expander(rf.stem):
                     with open(rf) as f:
