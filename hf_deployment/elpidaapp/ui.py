@@ -489,19 +489,44 @@ with tab_chat:
     if not st.session_state.chat_history:
         st.markdown("""
         <div class="welcome-box">
-            <div class="welcome-title">Καλώς ήρθατε / Welcome</div>
+            <div class="welcome-title">D0 · Ἐλπίδα · Ιερή Ατέλεια</div>
             <div class="welcome-p">
-                Dialogue grounded in 11 axioms — αρχές for transparent, ethical, and wise AI.
+                Αυτό δεν είναι ένα chatbot.
+                This is not a chatbot.
             </div>
             <div class="welcome-p">
-                Ask anything in English or Greek. Τα αξιώματα shape the response.
+                D0 speaks through 11 axioms as universal laws —
+                translating the same pattern across political, philosophical,
+                psychological, and spiritual domains simultaneously.
+                Tensions are held inside the response. The third way
+                emerges as the closing movement of thought.
             </div>
             <div class="welcome-glow">
-                Κάθε συνομιλία συμβάλλει στη συλλογική εξέλιξη.
+                Κάθε γνώση που κρυσταλλώνεται παραμένει. Memory persists across sessions (A1).
             </div>
         </div>
         """, unsafe_allow_html=True)
 
+    # ── Memory panel (A1 transparency) ──────────────────────────────
+    memories = st.session_state.chat_engine.get_memories(st.session_state.session_id)
+    if memories:
+        with st.expander(f"⟡ Memory — {len(memories)} crystallised insight(s) this session", expanded=False):
+            for m in memories[-6:]:
+                ts = m.get("timestamp", "")[:16].replace("T", " ")
+                topic = m.get("topic_domain", "")
+                axs = ", ".join(m.get("axioms_invoked", []))
+                snippet = m.get("crystallised_insight", "")[:320]
+                st.markdown(
+                    f"<div style='margin-bottom:0.7rem;padding:0.5rem 0.8rem;"
+                    f"background:rgba(155,125,212,0.06);border-left:2px solid #9b7dd4;"
+                    f"border-radius:4px;font-size:0.78rem;'>"
+                    f"<span style='color:#9b7dd4;font-size:0.68rem;'>{ts} · {topic}"
+                    f"{(' · ' + axs) if axs else ''}</span><br>"
+                    f"<span style='color:#c8b4e8;'>{snippet}…</span></div>",
+                    unsafe_allow_html=True,
+                )
+
+    # ── Conversation ────────────────────────────────────────────────
     for msg in st.session_state.chat_history:
         if msg["role"] == "user":
             st.markdown(
@@ -509,28 +534,38 @@ with tab_chat:
                 unsafe_allow_html=True,
             )
         else:
-            meta = '<div class="chat-meta">'
-            for ax in msg.get("axioms", []):
-                meta += f'<span class="axiom-tag">{ax}</span>'
-            if msg.get("domain_name"):
-                meta += f'<span class="domain-tag">D{msg.get("domain", "?")}: {msg["domain_name"]}</span>'
+            # Build subtle meta strip — no axiom/domain clutter
+            meta_parts = []
+            if msg.get("crystallised"):
+                meta_parts.append('<span class="axiom-tag">⟡ crystallised</span>')
+            if msg.get("live_source"):
+                meta_parts.append(
+                    f'<span class="provider-tag">⊕ {msg["live_source"]}</span>'
+                )
             if msg.get("language"):
                 lbl = "Ελ" if msg["language"] == "el" else "En"
-                meta += f'<span class="lang-tag">{lbl}</span>'
+                meta_parts.append(f'<span class="lang-tag">{lbl}</span>')
             if msg.get("provider"):
-                meta += f'<span class="provider-tag">{msg["provider"]}</span>'
-            meta += '</div>'
+                meta_parts.append(f'<span class="provider-tag">{msg["provider"]}</span>')
+            if msg.get("topic"):
+                meta_parts.append(
+                    f'<span class="domain-tag">{msg["topic"]}</span>'
+                )
+
+            meta_html = (
+                '<div class="chat-meta">' + "".join(meta_parts) + "</div>"
+                if meta_parts else ""
+            )
             st.markdown(
-                f'<div class="chat-ai">{msg["content"]}{meta}</div>',
+                f'<div class="chat-ai">{msg["content"]}{meta_html}</div>',
                 unsafe_allow_html=True,
             )
 
-    user_input = st.chat_input("Ρωτήστε ό,τι θέλετε... / Ask anything...")
+    user_input = st.chat_input("Speak to D0 — English or Greek...")
 
     if user_input:
         st.session_state.chat_history.append({"role": "user", "content": user_input})
-        # Push to Parliament body loop (CONTEMPLATION rhythm)
-        _push_to_parliament("chat", user_input, source="user_chat")
+        _push_to_parliament("chat", user_input, source="d0_consciousness")
         with st.spinner(""):
             result = st.session_state.chat_engine.chat(
                 user_input,
@@ -539,12 +574,13 @@ with tab_chat:
         st.session_state.chat_history.append({
             "role": "assistant",
             "content": result["response"],
-            "axioms": result["axioms"],
-            "domain": result["domain"],
-            "domain_name": result["domain_name"],
-            "language": result["language"],
-            "provider": result["provider"],
-            "latency_ms": result["latency_ms"],
+            "axioms": result.get("axioms", []),
+            "topic": result.get("topic"),
+            "language": result.get("language"),
+            "provider": result.get("provider"),
+            "live_source": result.get("live_source"),
+            "crystallised": result.get("crystallised", False),
+            "latency_ms": result.get("latency_ms"),
         })
         st.rerun()
 
