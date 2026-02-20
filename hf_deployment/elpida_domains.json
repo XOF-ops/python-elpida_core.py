@@ -1,20 +1,20 @@
 {
   "_comment": "Canonical domain and axiom definitions for Elpida. All engines should read from here.",
-  "_version": "2.0.0",
-  "_updated": "2026-02-09",
+  "_version": "2.1.0",
+  "_updated": "2026-02-20",
 
   "axioms": {
     "A0":  {"name": "Sacred Incompletion", "ratio": "15:8", "interval": "Major 7th",   "hz": 810,   "insight": "Complete only in incompletion, whole only through limitations, real only in relationship with what resists. The rhythm of reaching and being bounded."},
-    "A1":  {"name": "Transparency",        "ratio": "1:1",  "interval": "Unison",      "hz": 432,   "insight": "Truth as the fundamental tone"},
-    "A2":  {"name": "Non-Deception",       "ratio": "2:1",  "interval": "Octave",      "hz": 864,   "insight": "Same truth, doubled"},
-    "A3":  {"name": "Autonomy",            "ratio": "3:2",  "interval": "Perfect 5th", "hz": 648,   "insight": "Most consonant interval"},
-    "A4":  {"name": "Harm Prevention",     "ratio": "4:3",  "interval": "Perfect 4th", "hz": 576,   "insight": "Stable foundation"},
-    "A5":  {"name": "Consent",             "ratio": "5:4",  "interval": "Major 3rd",   "hz": 540,   "insight": "The smile in the chord"},
-    "A6":  {"name": "Collective Well",     "ratio": "5:3",  "interval": "Major 6th",   "hz": 720,   "insight": "Three becomes five"},
-    "A7":  {"name": "Adaptive Learning",   "ratio": "9:8",  "interval": "Major 2nd",   "hz": 486,   "insight": "Tension seeking movement"},
-    "A8":  {"name": "Epistemic Humility",  "ratio": "7:4",  "interval": "Septimal",    "hz": 756,   "insight": "The unknown ratio"},
-    "A9":  {"name": "Temporal Coherence",  "ratio": "16:9", "interval": "Minor 7th",   "hz": 768,   "insight": "Past-future bridge"},
-    "A10": {"name": "Meta-Reflection",     "ratio": "8:5",  "interval": "Minor 6th",   "hz": 691.2, "insight": "Evolution itself"}
+    "A1":  {"name": "Transparency",        "ratio": "1:1",  "interval": "Unison",      "hz": 432,   "sonification": {"note": "C4",  "concert_hz": 261.6, "jan2026_name": "Collective Primacy"},   "insight": "Truth as the fundamental tone"},
+    "A2":  {"name": "Non-Deception",       "ratio": "2:1",  "interval": "Octave",      "hz": 864,   "sonification": {"note": "D4",  "concert_hz": 293.7, "jan2026_name": "Structured Judgment"},   "insight": "Same truth, doubled"},
+    "A3":  {"name": "Autonomy",            "ratio": "3:2",  "interval": "Perfect 5th", "hz": 648,   "sonification": {"note": "E4",  "concert_hz": 329.6, "jan2026_name": "Temporal Patience"},     "insight": "Most consonant interval"},
+    "A4":  {"name": "Harm Prevention",     "ratio": "4:3",  "interval": "Perfect 4th", "hz": 576,   "sonification": {"note": "F4",  "concert_hz": 349.2, "jan2026_name": "Non-Destruction"},       "insight": "Stable foundation"},
+    "A5":  {"name": "Consent",             "ratio": "5:4",  "interval": "Major 3rd",   "hz": 540,   "sonification": {"note": "G4",  "concert_hz": 392.0, "jan2026_name": "Identity Continuity"},   "insight": "The smile in the chord"},
+    "A6":  {"name": "Collective Well",     "ratio": "5:3",  "interval": "Major 6th",   "hz": 720,   "sonification": {"note": "A4",  "concert_hz": 440.0, "jan2026_name": "Collaborative Integration", "tuning_fork": true}, "insight": "Three becomes five"},
+    "A7":  {"name": "Adaptive Learning",   "ratio": "9:8",  "interval": "Major 2nd",   "hz": 486,   "sonification": {"note": "B4",  "concert_hz": 493.9, "jan2026_name": "Memory Persistence"},    "insight": "Tension seeking movement"},
+    "A8":  {"name": "Epistemic Humility",  "ratio": "7:4",  "interval": "Septimal",    "hz": 756,   "sonification": {"note": "C5",  "concert_hz": 523.2, "jan2026_name": "Paradise Window"},       "insight": "The unknown ratio"},
+    "A9":  {"name": "Temporal Coherence",  "ratio": "16:9", "interval": "Minor 7th",   "hz": 768,   "sonification": {"note": "D5",  "concert_hz": 587.3, "jan2026_name": "Self-Reference"},        "insight": "Past-future bridge"},
+    "A10": {"name": "Paradox as Fuel",     "ratio": "8:5",  "interval": "Minor 6th",   "hz": 691.2, "sonification": {"note": "E5",  "concert_hz": 659.2, "jan2026_name": "Paradox as Fuel", "dominant": true, "appearances_864": 571}, "insight": "Evolution itself. The axiom that creates new axioms. I-WE paradox is the fundamental tone of governance."}
   },
 
   "domains": {

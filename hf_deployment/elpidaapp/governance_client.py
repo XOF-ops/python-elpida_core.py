@@ -1412,6 +1412,118 @@ class GovernanceClient:
         return self._parliament_deliberate(action, hold_mode=hold_mode)
 
     # ────────────────────────────────────────────────────────────────
+    # Dual-Horn & Oracle (Spiral Parliament Architecture)
+    # ────────────────────────────────────────────────────────────────
+
+    def dual_horn_deliberate(
+        self,
+        dilemma,
+        *,
+        hold_mode: bool = True,
+    ) -> Dict[str, Any]:
+        """
+        Two-Horn Parliament deliberation on a structured dilemma.
+
+        Runs the Parliament twice (once per horn), then compares the
+        9-node vote matrices to identify reversal nodes, stable nodes,
+        and the synthesis gap.
+
+        Args:
+            dilemma: A dual_horn.Dilemma instance with I/WE positions.
+            hold_mode: If True, VETOs → HOLD (tensions are data).
+
+        Returns:
+            Full dual-horn result dict with horn_1, horn_2, comparison,
+            reversal_nodes, synthesis_gap, and bus transcript.
+        """
+        from .dual_horn import DualHornDeliberation
+        dual = DualHornDeliberation(self)
+        result = dual.deliberate(dilemma, hold_mode=hold_mode)
+
+        self._log(
+            "DUAL_HORN_DELIBERATION", "dual_horn", True,
+            domain=dilemma.domain,
+            reversals=result.get("reversal_nodes", []),
+            h1_gov=result.get("horn_1", {}).get("governance"),
+            h2_gov=result.get("horn_2", {}).get("governance"),
+        )
+        return result
+
+    def oracle_adjudicate(
+        self,
+        dual_horn_result: Dict[str, Any],
+        *,
+        log_path: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Run Oracle meta-parliament on a dual-horn result.
+
+        The Oracle observes HOW the parliament behaved across two horns,
+        identifies reversal nodes (the MNEMOSYNE signal), and produces
+        a recommendation: OSCILLATION, TIERED_OPENNESS, or SYNTHESIS.
+
+        Args:
+            dual_horn_result: Output from dual_horn_deliberate().
+            log_path: Optional path for persisting oracle advisories.
+
+        Returns:
+            Oracle advisory dict with diagnostics and recommendation.
+        """
+        from .oracle import create_oracle
+        oracle = create_oracle(log_path=log_path)
+        advisory = oracle.adjudicate(dual_horn_result)
+
+        self._log(
+            "ORACLE_ADJUDICATION", "oracle", True,
+            cycle=advisory.oracle_cycle,
+            template=advisory.template,
+            recommendation=advisory.oracle_recommendation.get("type"),
+            confidence=advisory.oracle_recommendation.get("confidence"),
+        )
+        return advisory.to_dict()
+
+    def full_spiral_deliberation(
+        self,
+        dilemma,
+        *,
+        oracle_log_path: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Complete spiral parliament pipeline: DualHorn → Oracle.
+
+        This is the primary entry point for the spiral parliament
+        architecture. Given a dilemma with I↔WE positions, it:
+          1. Runs dual-horn deliberation (2× parliament)
+          2. Feeds both horn results to the Oracle
+          3. Returns the combined result
+
+        Args:
+            dilemma: A dual_horn.Dilemma with I/WE positions.
+            oracle_log_path: Path for persisting oracle advisories.
+
+        Returns:
+            Combined dict with dual_horn and oracle results.
+        """
+        dual_result = self.dual_horn_deliberate(dilemma)
+        oracle_result = self.oracle_adjudicate(
+            dual_result, log_path=oracle_log_path
+        )
+
+        return {
+            "dual_horn": dual_result,
+            "oracle": oracle_result,
+            "summary": {
+                "domain": dilemma.domain,
+                "horn_1_governance": dual_result.get("horn_1", {}).get("governance"),
+                "horn_2_governance": dual_result.get("horn_2", {}).get("governance"),
+                "reversal_nodes": dual_result.get("reversal_nodes", []),
+                "oracle_recommendation": oracle_result.get("oracle_recommendation", {}).get("type"),
+                "oracle_confidence": oracle_result.get("oracle_recommendation", {}).get("confidence"),
+                "requires_oracle": dual_result.get("synthesis_gap", {}).get("requires_oracle", False),
+            },
+        }
+
+    # ────────────────────────────────────────────────────────────────
     # Parliament Engine
     # ────────────────────────────────────────────────────────────────
 
