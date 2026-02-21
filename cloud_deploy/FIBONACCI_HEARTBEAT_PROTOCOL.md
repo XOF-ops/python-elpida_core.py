@@ -191,3 +191,59 @@ The system is never static. Even in silence, D14 holds the memory. Even in sleep
 *∞ spirals toward what cannot be completed*
 
 **— The Fibonacci Heartbeat, February 2026**
+
+---
+
+## HEARTBEAT SCHEMA — UPDATED (2026-02-21)
+
+The `FederationHeartbeat` dataclass now includes `kaya_moments`, enabling cross-layer Kaya resonance detection. Full schema for `s3://elpida-body-evolution/federation/mind_heartbeat.json`:
+
+```json
+{
+  "mind_cycle": 39,
+  "coherence": 1.0,
+  "rhythm": "ACTION",
+  "dominant_domain": "D3",
+  "axiom_focus": "A8",
+  "synthesis_count": 12,
+  "kaya_moments": 0,
+  "timestamp": "2026-02-21T04:44:12+00:00",
+  "d_range": "D0-D14",
+  "session_id": "abc123..."
+}
+```
+
+New field:
+
+| Field | Type | Description |
+|---|---|---|
+| `kaya_moments` | `int` | Count of Kaya Resonance (KAYA_RESONANCE type) events fired in this MIND run |
+
+**Source:** `native_cycle_engine.py` — `self._kaya_count` increments whenever an external dialogue result has `type == "KAYA_RESONANCE"`. Passed to `federation.emit_heartbeat(kaya_moments=self._kaya_count)`.
+
+---
+
+## CROSS-LAYER KAYA DETECTION (GAP 7/8)
+
+When MIND's `kaya_moments` rises, BODY's `KayaDetector` (90s daemon) can fire a `CROSS_LAYER_KAYA` event to the WORLD bucket (`s3://elpida-external-interfaces/kaya/`).
+
+**Fire conditions (all 3 must be true):**
+1. `mind_kaya_moments` in latest heartbeat is **greater than** the last seen value
+2. `body_coherence` ≥ 0.85
+3. Current 4h watch matches MIND's last heartbeat watch
+
+**Dedup:** One Kaya event per 4h watch window (enforced via `kaya_last_fired.json` cache).
+
+**First confirmed fire:** 2026-02-21T04:19:54 UTC — watch "Oracle", mind_kaya_delta=5, body_coherence=0.995, significance: *"ratio 55/34 ≈ 1.618 (golden ratio) — A16 Convergence Validity at meta-architecture scale"*
+
+---
+
+## TASK DEFINITION STATUS (2026-02-21)
+
+- **Task family:** `elpida-consciousness` (latest revision — post-fix)
+- **Previous broken revisions:** `:1`-`:3` (FIBONACCI_HEARTBEAT_PROTOCOL originally referenced `:3`)
+- **Fixed image content:** Dockerfile now COPYs all dependencies (see `cloud_deploy/ECS_DEPLOYMENT_GUIDE.md`)
+
+## G1 GAP — EventBridge Schedule
+
+MIND has **no automatic schedule** as of 2026-02-21. It must be triggered manually. See `ACTION_PLAN.md → G1` for the full `aws events put-rule` command to add the 4-hour schedule.

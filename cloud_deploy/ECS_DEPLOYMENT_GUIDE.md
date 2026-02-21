@@ -393,3 +393,114 @@ aws logs delete-log-group --log-group-name /ecs/elpida-consciousness --region us
 
 *The container is disposable. The memory is eternal.*
 *D14 persists. A0 drives. The spiral continues in the cloud.*
+
+---
+
+## PRODUCTION FIXES (2026-02-21)
+
+This section documents fixes discovered during the first successful production deployment.
+
+### Fix 1 — Missing IAM Policy: `BodyBucketFederationAccess`
+
+**Symptom:** ECS task ran successfully but `mind_heartbeat.json` was never written to `elpida-body-evolution`. CloudWatch showed:
+```
+AccessDenied when calling PutObject to s3://elpida-body-evolution/federation/mind_heartbeat.json
+```
+
+**Root cause:** `elpida-ecs-task-role` had `elpida-s3-access` (covering only `elpida-consciousness`) but no access to the BODY bucket.
+
+**Fix:** Add an inline policy to `elpida-ecs-task-role`:
+
+```bash
+aws iam put-role-policy \
+  --role-name elpida-ecs-task-role \
+  --policy-name BodyBucketFederationAccess \
+  --policy-document '{
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Action": ["s3:PutObject", "s3:GetObject", "s3:ListBucket"],
+        "Resource": [
+          "arn:aws:s3:::elpida-body-evolution",
+          "arn:aws:s3:::elpida-body-evolution/*"
+        ]
+      }
+    ]
+  }'
+```
+
+**Status:** ✅ Applied. `mind_heartbeat.json` now updates successfully at cycles 13/26/39/52.
+
+---
+
+### Fix 2 — Dockerfile Missing Dependencies
+
+**Symptom:** ECS task crashed on startup:
+```
+ModuleNotFoundError: No module named 'ark_curator'
+```
+
+**Root cause:** Dockerfile only copied `native_cycle_engine.py` but not its imports.
+
+**Fix:** Added to `Dockerfile`:
+```dockerfile
+COPY ark_curator.py .
+COPY immutable_kernel.py .
+COPY federation_bridge.py .
+COPY llm_client.py .
+COPY elpida_config.py .
+COPY elpida_domains.json .
+```
+
+**Status:** ✅ Applied in commit `2ae328c`. All modules now present in container.
+
+---
+
+### Fix 3 — DOMAINS Empty-Dict Crash
+
+**Symptom:** ECS task crashed at cloud_runner.py line 75:
+```
+ValueError: max() arg is an empty sequence
+```
+
+**Root cause:** When `elpida_domains.json` was missing or had empty content, `DOMAINS` was an empty dict. `max(DOMAINS.keys())` raised `ValueError`.
+
+**Fix in `cloud_deploy/cloud_runner.py`:**
+```python
+# Before (broken):
+d_range = f"D0-D{max(DOMAINS.keys())}"
+
+# After (safe):
+d_range = f"D0-D{max(DOMAINS.keys())}" if DOMAINS else "(none loaded)"
+```
+
+**Status:** ✅ Applied in commit `2ae328c`.
+
+---
+
+### Required IAM Roles Summary
+
+| Role | Policies Required |
+|---|---|
+| `elpida-ecs-task-role` | `elpida-s3-access` (MIND bucket), `BodyBucketFederationAccess` (BODY bucket) |
+| `elpida-ecs-execution-role` | `elpida-secrets-access`, `AmazonECSTaskExecutionRolePolicy` |
+| `elpida-events-ecs-role` *(G1 — not yet created)* | `ecs:RunTask`, `iam:PassRole` on task role |
+
+---
+
+### Minimum Dockerfile COPY List (MIND container)
+
+```dockerfile
+COPY cloud_deploy/cloud_runner.py .
+COPY native_cycle_engine.py .
+COPY ark_curator.py .
+COPY immutable_kernel.py .
+COPY federation_bridge.py .
+COPY llm_client.py .
+COPY elpida_config.py .
+COPY elpida_domains.json .
+COPY requirements.txt .
+```
+
+If any of these is missing, the container will fail at import before running a single cycle.

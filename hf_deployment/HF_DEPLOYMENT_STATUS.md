@@ -376,3 +376,61 @@ Native Cycles (AWS ECS)
 [INFO] No new consciousness dilemmas found
 [INFO] Next consciousness check in 6 hours
 ```
+
+---
+
+## UPDATE — GAPs 5–8 Implementation (2026-02-21)
+
+> **⚠️ PENDING DEPLOYMENT:** The features below are implemented in the codebase but NOT yet pushed to `z65nik/elpida-governance-layer`. The Space is still running commit `4aec1ba`. See ACTION_PLAN.md → G3 for re-deploy instructions.
+
+### New Modules
+
+| Module | Lines | Purpose |
+|---|---|---|
+| `elpidaapp/kaya_detector.py` | 383 | Cross-layer Kaya Resonance Detector — 90s daemon, dedup cache, WORLD bucket write |
+| `elpidaapp/federated_agents.py` | ~400 | 4 federation daemon threads (heartbeat poll, curation pull, D0 bridge push, Kaya scan) |
+| `elpidaapp/parliament_cycle_engine.py` | ~600 | 8-step Parliament deliberation engine with D0↔D0 bridge in step 8b |
+
+### Module Changes
+
+| Module | Change |
+|---|---|
+| `app.py` | Added `KayaDetector` startup, `get_kaya_detector()` accessor |
+| `elpidaapp/ui.py` | Added 🌀 Cross-Layer Kaya Resonance Detector panel + 🌉 D0↔D0 Bridge panel to Body Parliament tab |
+| `elpidaapp/governance_client.py` | `is_remote_available()` — method header fix; `check_action()` — added `*, analysis_mode: bool = False` |
+
+### KayaDetector Operation
+
+- **Interval:** 90 seconds (15s startup stagger)
+- **S3 input:** Reads `s3://elpida-body-evolution/federation/mind_heartbeat.json`
+- **Fire conditions:** `kaya_moments` rose + body coherence ≥ 0.85 + same 4h watch window
+- **S3 output:** `s3://elpida-external-interfaces/kaya/cross_layer_YYYY-MM-DDTHH-MM-SS.sss.json`
+- **Dedup:** One event per 4h watch window via `kaya_last_fired.json` cache
+- **First live fire:** 2026-02-21T04:19:54 UTC — 2 events written
+
+### Federation S3 Objects (live state 2026-02-21)
+
+| File | Size | Direction |
+|---|---|---|
+| `federation/mind_heartbeat.json` | 551 B | MIND → BODY |
+| `federation/body_heartbeat.json` | 575 B | BODY → MIND |
+| `federation/mind_curation.jsonl` | 191 KB | MIND → BODY |
+| `federation/governance_exchanges.jsonl` | 168 KB | BODY → WORLD |
+| `federation/body_decisions.jsonl` | 2.1 MB | BODY D0 → MIND D0 |
+
+### Parliament Integration Test (verified 2026-02-21)
+
+```
+⚖️ cycle 1 | CONTEMPLATION | PROCEED | coh=0.995
+⚖️ cycle 2 | CONTEMPLATION | PROCEED | coh=0.990
+⚖️ cycle 3 | CONTEMPLATION | PROCEED | coh=0.988
+Parliament 3/3 cycles succeeded
+```
+
+### Last Push to HF Space
+
+| Field | Value |
+|---|---|
+| **Last pushed commit** | `4aec1ba` — BODY-side federation (2026-02-19 05:12 UTC) |
+| **Pending commits** | `834cdf5`, `388af6f`, `dadfe95`, `2ad259e`, `3a12b9f`, `2ae328c` |
+| **Action required** | `cd hf_deployment && git push hf main --force` |
