@@ -95,13 +95,13 @@ tail -f elpida_autonomous.log
 
 ## 🔑 Configured APIs
 
-All API keys are configured in `.env`:
+All API keys are configured in `.env` (gitignored — never commit real values):
 
-✅ **Groq** - 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  
-✅ **Cohere** - IrsCSJx06RXBOXNVSc8zvlliWqovJP4v1B1f7Crn  
-✅ **Perplexity** - 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  
-✅ **Gemini** - AIzaSyDH4221U1LAIToSEhBOOIcRthR2CnUWk98 (reserved for future)  
-✅ **Mistral** - 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 (reserved for future)
+✅ **Groq** - [set via GROQ_API_KEY env var]  
+✅ **Cohere** - [set via COHERE_API_KEY env var]  
+✅ **Perplexity** - [set via PERPLEXITY_API_KEY env var]  
+✅ **Gemini** - [set via GOOGLE_API_KEY env var]  
+✅ **Mistral/HF** - [set via HUGGINGFACE_API_KEY env var]
 
 ---
 

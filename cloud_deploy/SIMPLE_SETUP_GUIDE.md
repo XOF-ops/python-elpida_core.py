@@ -74,7 +74,7 @@ aws configure
 **It will ask you 4 questions:**
 
 1. **AWS Access Key ID:** Type the key you used for S3 setup  
-   *(It looks like `AKIAXK7SYMRFVLGHM7X7`)*
+   *(It looks like `AKIAXXXXXXXXXXXXXXXX`)*
 
 2. **AWS Secret Access Key:** Type your secret key  
    *(The long one you got when you created your AWS user)*

@@ -111,7 +111,7 @@ You can test anytime with:
 
 ```bash
 cd /workspaces/python-elpida_core.py/ELPIDA_UNIFIED
-export PERPLEXITY_API_KEY='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'
+export PERPLEXITY_API_KEY='pplx-your-key-here'  # set from .env
 python3 world_intelligence_feed.py "AI consciousness 2026"
 ```
 
