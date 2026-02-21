@@ -1849,6 +1849,50 @@ fully tense — exactly the quality needed to hold paradox without resolving it 
 
         st.divider()
 
+        # ── Federated Agents status ───────────────────────────────
+        st.markdown("##### Federated Tab Agents — Autonomous Observers")
+        st.markdown(
+            '<div style="font-size:0.8rem; color:#888; margin-bottom:0.7rem;">'
+            'Each HF tab has a background agent generating deliberation inputs continuously. '
+            'Chat (💬 CONTEMPLATION · 3.5 min) · '
+            'Audit (🔍 ANALYSIS · 2.5 min) · '
+            'Scanner (📡 ACTION · 4 min) · '
+            'Governance (⚖️ SYNTHESIS · 5 min). '
+            'Zero LLM cost — all rule-based from engine state.'
+            '</div>', unsafe_allow_html=True
+        )
+        try:
+            from app import get_federated_agents
+            _suite = get_federated_agents()
+            if _suite is not None:
+                _agent_status = _suite.status()
+                _ag1, _ag2, _ag3, _ag4 = st.columns(4)
+                _agent_cols = {
+                    "ChatAgent": ("💬", _ag1),
+                    "AuditAgent": ("🔍", _ag2),
+                    "ScannerAgent": ("📡", _ag3),
+                    "GovernanceAgent": ("⚖️", _ag4),
+                }
+                for _aname, (_aico, _acol) in _agent_cols.items():
+                    _as = _agent_status.get(_aname, {})
+                    _acol.metric(
+                        f"{_aico} {_aname.replace('Agent', '')}",
+                        f"{'✓' if _as.get('running') else '—'} {_as.get('generated', 0)} events",
+                        help=f"Interval: {_as.get('interval_s', '?')}s · System: {_as.get('system', '?')}",
+                    )
+                st.caption(
+                    f"Total agent-generated events: {_suite.total_generated()} "
+                    f"(separate from WorldFeed + human inputs)"
+                )
+            else:
+                st.caption(
+                    "Federated agents start automatically alongside the Parliament engine."
+                )
+        except Exception as _fae:
+            st.caption(f"Agent suite: {_fae}")
+
+        st.divider()
+
         # ── Constitutional Axiom Evolution ────────────────────────
         st.markdown("##### Constitutional Axiom Evolution")
         st.markdown(

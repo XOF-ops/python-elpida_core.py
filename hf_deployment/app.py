@@ -204,10 +204,22 @@ def run_parliament_loop():
         world_feed = WorldFeed(engine.input_buffer, fetch_interval_s=300)
         world_feed.start()
 
+        # Federated Agents — 4 autonomous tab observers (GAP 7)
+        # Each HF tab has a background agent generating inputs continuously:
+        #   Chat → CONTEMPLATION (philosophical questions from axiom drift)
+        #   Audit → ANALYSIS (coherence alerts, veto patterns, axiom skew)
+        #   Scanner → ACTION (external horizon scans, tension pairs)
+        #   Governance → SYNTHESIS (constitutional reviews, health reports)
+        # Zero LLM cost — all rule-based generation from engine state.
+        from elpidaapp.federated_agents import FederatedAgentSuite
+        federated_agents = FederatedAgentSuite(engine)
+        federated_agents.start_all()
+
         # Store references globally so UI can push events + read state
-        global _parliament_engine, _world_feed
+        global _parliament_engine, _world_feed, _federated_agents
         _parliament_engine = engine
         _world_feed = world_feed
+        _federated_agents = federated_agents
 
         logger.info("Parliament engine + WorldFeed initialized — starting autonomous loop")
         engine.run(duration_minutes=0, cycle_delay_s=30)
@@ -219,6 +231,7 @@ def run_parliament_loop():
 # Global references for UI integration
 _parliament_engine = None
 _world_feed = None
+_federated_agents = None
 
 
 def get_parliament_engine():
@@ -229,6 +242,11 @@ def get_parliament_engine():
 def get_world_feed():
     """Get the running WorldFeed instance (if alive)."""
     return _world_feed
+
+
+def get_federated_agents():
+    """Get the running FederatedAgentSuite instance (if alive)."""
+    return _federated_agents
 
 
 def run_streamlit():

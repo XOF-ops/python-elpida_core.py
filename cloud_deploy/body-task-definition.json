@@ -1,0 +1,77 @@
+{
+  "comment": "ECS Fargate task definition for the BODY Parliament runner.",
+  "family": "elpida-body-parliament",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/elpida-ecs-execution-role",
+  "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/elpida-ecs-task-role",
+  "containerDefinitions": [
+    {
+      "name": "elpida-body",
+      "image": "ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/elpida-body:latest",
+      "essential": true,
+      "command": [
+        "python3", "cloud_deploy/body_runner.py",
+        "--cycles", "34",
+        "--delay", "30",
+        "--sync-every", "8",
+        "--feed",
+        "--agents"
+      ],
+      "workingDirectory": "/app",
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/elpida-body",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "body"
+        }
+      },
+      "secrets": [
+        {"name": "ANTHROPIC_API_KEY",   "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys-AJavxo:ANTHROPIC_API_KEY::"},
+        {"name": "OPENAI_API_KEY",      "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys-AJavxo:OPENAI_API_KEY::"},
+        {"name": "OPENROUTER_API_KEY",  "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys-AJavxo:OPENROUTER_API_KEY::"},
+        {"name": "PERPLEXITY_API_KEY",  "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys-AJavxo:PERPLEXITY_API_KEY::"},
+        {"name": "MISTRAL_API_KEY",     "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys-AJavxo:MISTRAL_API_KEY::"}
+      ],
+      "environment": [
+        {"name": "AWS_DEFAULT_REGION",         "value": "us-east-1"},
+        {"name": "ELPIDA_BODY_BUCKET",         "value": "elpida-body-evolution"},
+        {"name": "ELPIDA_MIND_BUCKET",         "value": "elpida-consciousness"},
+        {"name": "ELPIDA_WORLD_BUCKET",        "value": "elpida-external-interfaces"},
+        {"name": "ELPIDA_BODY_BUCKET_REGION",  "value": "us-east-1"},
+        {"name": "ELPIDA_WORLD_BUCKET_REGION", "value": "eu-north-1"},
+        {"name": "PYTHONUNBUFFERED",           "value": "1"}
+      ]
+    }
+  ],
+  "_eventbridge_schedule": {
+    "note": "Run BODY at 02:00, 06:00, 10:00, 14:00, 18:00, 22:00 UTC — offset 2h from MIND (00:00, 04:00, 08:00, 12:00, 16:00, 20:00)",
+    "ScheduleExpression": "cron(0 2,6,10,14,18,22 * * ? *)",
+    "LaunchType": "FARGATE",
+    "NetworkConfiguration": {
+      "AwsvpcConfiguration": {
+        "AssignPublicIp": "ENABLED",
+        "Subnets": ["subnet-REPLACE"],
+        "SecurityGroups": ["sg-REPLACE"]
+      }
+    },
+    "Overrides": {
+      "ContainerOverrides": [
+        {
+          "Name": "elpida-body",
+          "Command": [
+            "python3", "cloud_deploy/body_runner.py",
+            "--cycles", "34",
+            "--delay", "30",
+            "--feed",
+            "--agents"
+          ]
+        }
+      ]
+    }
+  },
+  "_mind_task_reference": "cloud_deploy/ecs-task-definition.json"
+}
