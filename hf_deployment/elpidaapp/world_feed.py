@@ -597,6 +597,61 @@ class ConstitutionalStore:
             with self._path.open("a") as f:
                 f.write(json.dumps(axiom) + "\n")
 
+    def restore_from_records(self, records: List[Dict]) -> int:
+        """
+        D14 restore — seed living_axioms.jsonl from S3 records on startup.
+
+        Accepts records in either format:
+          - living_axioms.jsonl format: has ``"status": "RATIFIED"``
+          - body_decisions.jsonl BODY_CONSTITUTIONAL format: has ``"type": "BODY_CONSTITUTIONAL"``
+
+        Only writes records whose tension is not already in the ratified set,
+        so running this multiple times is idempotent.
+
+        Returns the number of axioms newly seeded.
+        """
+        restored = 0
+        for rec in records:
+            tension = rec.get("tension", "").strip()
+            axiom_id = rec.get("axiom_id", "").strip()
+            if not tension or not axiom_id:
+                continue
+            if tension in self._ratified:
+                continue  # already present — skip
+
+            if rec.get("status") == "RATIFIED":
+                # Already in living_axioms format — write as-is
+                axiom = rec
+            else:
+                # Reconstruct from BODY_CONSTITUTIONAL peer message format
+                avg_conf = rec.get("parliament_approval", rec.get("average_confidence", 0.0))
+                axiom = {
+                    "axiom_id":             axiom_id,
+                    "tension":              tension,
+                    "status":               "RATIFIED",
+                    "ratified_at":          rec.get("ratified_at", rec.get("timestamp", "")),
+                    "ratification_cycles":  rec.get("ratification_cycles", 1),
+                    "average_confidence":   round(float(avg_conf), 3),
+                    "citations":            [],
+                    "description": (
+                        f"D14-restored constitutional axiom: the tension '{tension}' "
+                        f"was originally ratified at confidence {avg_conf:.1%} and "
+                        f"has been reseeded from the S3 federation bridge."
+                    ),
+                    "_restored_from_s3": True,
+                }
+
+            self._write(axiom)
+            self._ratified.add(tension)
+            restored += 1
+
+        if restored:
+            logger.info(
+                "D14 restore: %d constitutional axiom(s) seeded into living_axioms.jsonl",
+                restored,
+            )
+        return restored
+
     def pending(self) -> Dict[str, int]:
         """Return tensions and their current ratification vote counts."""
         with self._lock:

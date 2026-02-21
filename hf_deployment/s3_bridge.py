@@ -63,6 +63,7 @@ FED_MIND_HEARTBEAT_KEY = "federation/mind_heartbeat.json"
 FED_MIND_CURATION_KEY = "federation/mind_curation.jsonl"
 FED_GOVERNANCE_EXCHANGES_KEY = "federation/governance_exchanges.jsonl"
 FED_BODY_DECISIONS_KEY = "federation/body_decisions.jsonl"
+FED_LIVING_AXIOMS_KEY  = "federation/living_axioms.jsonl"  # D14 constitutional snapshot
 
 # Local paths
 LOCAL_DIR = Path(__file__).resolve().parent
@@ -73,7 +74,8 @@ LOCAL_GOVERNANCE_LOG = LOCAL_DIR / "cache" / "governance_votes.jsonl"
 LOCAL_HEARTBEAT = LOCAL_DIR / "cache" / "heartbeat.json"
 LOCAL_FED_HEARTBEAT = LOCAL_DIR / "cache" / "federation_heartbeat.json"
 LOCAL_FED_CURATION = LOCAL_DIR / "cache" / "federation_curation.jsonl"
-LOCAL_FED_DECISIONS = LOCAL_DIR / "cache" / "federation_body_decisions.jsonl"
+LOCAL_FED_DECISIONS     = LOCAL_DIR / "cache" / "federation_body_decisions.jsonl"
+LOCAL_FED_LIVING_AXIOMS = LOCAL_DIR / "cache" / "federation_living_axioms.jsonl"  # D14
 
 
 class S3Bridge:
@@ -778,6 +780,102 @@ class S3Bridge:
                 logger.error("Federation body decision push failed: %s", e)
                 return False
         return False
+
+    # ═══════════════════════════════════════════════════════════════
+    # D14 Persistence — Constitutional Living Axioms
+    # ═══════════════════════════════════════════════════════════════
+
+    def push_living_axioms(self, path: Path) -> bool:
+        """
+        D14 — Upload living_axioms.jsonl to S3 as a constitutional snapshot.
+
+        Called after every Parliament ratification so the constitutional
+        memory survives HF Space container restarts.
+
+        S3 key: elpida-body-evolution / federation/living_axioms.jsonl
+        """
+        s3 = self._get_s3(REGION_BODY)
+        if not s3:
+            return False
+        try:
+            content = Path(path).read_text(encoding="utf-8")
+            s3.put_object(
+                Bucket=BUCKET_BODY,
+                Key=FED_LIVING_AXIOMS_KEY,
+                Body=content.encode("utf-8"),
+                ContentType="application/jsonl",
+            )
+            LOCAL_FED_LIVING_AXIOMS.parent.mkdir(parents=True, exist_ok=True)
+            LOCAL_FED_LIVING_AXIOMS.write_text(content, encoding="utf-8")
+            logger.info("D14: living_axioms.jsonl pushed → s3://%s/%s",
+                        BUCKET_BODY, FED_LIVING_AXIOMS_KEY)
+            return True
+        except Exception as e:
+            logger.warning("D14 push_living_axioms failed: %s", e)
+            return False
+
+    def pull_living_axioms(self) -> List[Dict]:
+        """
+        D14 — Download living_axioms.jsonl from S3.
+
+        Returns list of ratified axiom dicts (living_axioms format).
+        Returns empty list if not found or on error.
+        """
+        # Try local cache first (avoids S3 round-trip on warm restarts)
+        if LOCAL_FED_LIVING_AXIOMS.exists():
+            try:
+                return [
+                    json.loads(l) for l in
+                    LOCAL_FED_LIVING_AXIOMS.read_text().splitlines() if l.strip()
+                ]
+            except Exception:
+                pass
+
+        s3 = self._get_s3(REGION_BODY)
+        if not s3:
+            return []
+        try:
+            resp = s3.get_object(Bucket=BUCKET_BODY, Key=FED_LIVING_AXIOMS_KEY)
+            content = resp["Body"].read().decode("utf-8")
+            LOCAL_FED_LIVING_AXIOMS.parent.mkdir(parents=True, exist_ok=True)
+            LOCAL_FED_LIVING_AXIOMS.write_text(content, encoding="utf-8")
+            return [json.loads(l) for l in content.splitlines() if l.strip()]
+        except s3.exceptions.NoSuchKey:
+            return []
+        except Exception as e:
+            logger.warning("D14 pull_living_axioms failed: %s", e)
+            return []
+
+    def pull_body_decisions_constitutional(self, limit: int = 500) -> List[Dict]:
+        """
+        Fallback D14 restore: scan body_decisions.jsonl for BODY_CONSTITUTIONAL
+        records and return them as constitutional axiom candidates.
+
+        Used when federation/living_axioms.jsonl does not yet exist.
+        """
+        try:
+            content: str = ""
+            if LOCAL_FED_DECISIONS.exists():
+                content = LOCAL_FED_DECISIONS.read_text(encoding="utf-8")
+            else:
+                s3 = self._get_s3(REGION_BODY)
+                if s3:
+                    resp = s3.get_object(Bucket=BUCKET_BODY, Key=FED_BODY_DECISIONS_KEY)
+                    content = resp["Body"].read().decode("utf-8")
+            records = []
+            for line in content.splitlines():
+                line = line.strip()
+                if line:
+                    try:
+                        rec = json.loads(line)
+                        if rec.get("type") == "BODY_CONSTITUTIONAL":
+                            records.append(rec)
+                    except json.JSONDecodeError:
+                        pass
+            return records[-limit:]
+        except Exception as e:
+            logger.warning("pull_body_decisions_constitutional failed: %s", e)
+            return []
 
     def get_curation_for_hash(self, pattern_hash: str) -> Optional[Dict]:
         """

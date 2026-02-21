@@ -708,6 +708,67 @@ class ParliamentCycleEngine:
     # D0↔D0 Cross-Bucket Peer Message (GAP 5)
     # ------------------------------------------------------------------
 
+    def _push_d14_living_axioms(self) -> None:
+        """
+        D14 Persistence — upload living_axioms.jsonl to S3 after each ratification.
+
+        This ensures Parliament's constitutional memory survives HF Space
+        container restarts.  The file is small (one line per ratified axiom)
+        so the put_object call is cheap (<<1 KB per axiom typically).
+        """
+        s3 = self._get_s3()
+        if s3 is None:
+            return
+        store_path = Path(__file__).resolve().parent.parent / "living_axioms.jsonl"
+        if not store_path.exists():
+            return
+        try:
+            pushed = s3.push_living_axioms(store_path)
+            if pushed:
+                store = self._get_constitutional_store()
+                count = store.ratified_count() if store else "?"
+                logger.info("D14: living_axioms.jsonl pushed (%s axioms)", count)
+        except Exception as e:
+            logger.warning("D14 push_living_axioms error: %s", e)
+
+    def _restore_d14_constitutional_memory(self) -> None:
+        """
+        D14 Persistence — restore Parliament's constitutional memory from S3
+        on startup.
+
+        Priority:
+          1. federation/living_axioms.jsonl  (direct D14 snapshot — fastest)
+          2. federation/body_decisions.jsonl  (BODY_CONSTITUTIONAL filter — fallback)
+
+        Idempotent: tensions already in ConstitutionalStore._ratified are skipped.
+        Each restored axiom is written to living_axioms.jsonl so subsequent
+        cycles see the full constitutional history.
+        """
+        s3 = self._get_s3()
+        if s3 is None:
+            logger.warning("D14 restore skipped — S3 unavailable")
+            return
+        store = self._get_constitutional_store()
+        if store is None:
+            logger.warning("D14 restore skipped — ConstitutionalStore unavailable")
+            return
+
+        # 1. Try direct living_axioms snapshot
+        records = s3.pull_living_axioms()
+        source = "living_axioms.jsonl (D14 direct)"
+
+        # 2. Fallback to body_decisions.jsonl scan
+        if not records:
+            records = s3.pull_body_decisions_constitutional()
+            source = "body_decisions.jsonl (BODY_CONSTITUTIONAL filter)"
+
+        if records:
+            restored = store.restore_from_records(records)
+            print(f"   📚 D14 constitutional memory: {restored} axiom(s) restored "
+                  f"from {source}")
+        else:
+            print("   📚 D14 restore: no prior constitutional axioms in S3 yet")
+
     def _push_d0_peer_message(self, ratified_axiom: Dict, watch: Dict):
         """
         GAP 5: D0↔D0 Cross-Bucket Bridge.
@@ -948,6 +1009,10 @@ class ParliamentCycleEngine:
         print(f"   Axiom genome: A0–A10 (11 axioms)")
         print(f"   Parliament: 9 nodes (HERMES→CHAOS)")
         print(f"   D15 convergence: cooldown={CONVERGENCE_COOLDOWN_CYCLES} cycles\n")
+
+        # D14 Persistence — restore constitutional memory from S3 before first cycle.
+        # Ensures Parliament picks up its ratified axioms after every container restart.
+        self._restore_d14_constitutional_memory()
 
         try:
             while self._running and time.time() < end_time:
