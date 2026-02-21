@@ -1,0 +1,38 @@
+name: Deploy to HF Space
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "hf_deployment/**"
+  workflow_dispatch:   # allow manual trigger from Actions tab
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history needed for subtree
+
+      - name: Configure git
+        run: |
+          git config user.email "elpida-deploy@github-actions"
+          git config user.name "Elpida Deploy Bot"
+
+      - name: Push hf_deployment/ to HF Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          set -e
+
+          # Build an isolated tree containing only hf_deployment/ contents
+          SPLIT_SHA=$(git subtree split --prefix=hf_deployment HEAD)
+          echo "Subtree SHA: $SPLIT_SHA"
+
+          # Push that tree directly to the Space main branch
+          git push \
+            https://z65nik:${HF_TOKEN}@huggingface.co/spaces/z65nik/elpida-governance-layer \
+            ${SPLIT_SHA}:main \
+            --force
