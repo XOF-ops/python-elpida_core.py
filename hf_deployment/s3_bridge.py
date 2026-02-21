@@ -892,8 +892,50 @@ class S3Bridge:
         return None
 
     # ═══════════════════════════════════════════════════════════════
-    # WORLD Bucket Operations (D15)
+    # WORLD Bucket Operations (D15 + Kaya events)
     # ═══════════════════════════════════════════════════════════════
+
+    def list_world_kaya_events(self, since_key: str = "") -> List[Dict]:
+        """
+        G4 — List CROSS_LAYER_KAYA events from the WORLD bucket.
+
+        Returns events newer than ``since_key`` (S3 object key, lexicographic
+        order is chronological because keys are timestamp-named).
+
+        Each returned dict includes the full event payload plus ``_s3_key``.
+        Returns [] on any error so callers can be unconditionally iterated.
+        """
+        s3 = self._get_s3(REGION_WORLD)
+        if not s3:
+            return []
+        try:
+            paginator = s3.get_paginator("list_objects_v2")
+            pages = paginator.paginate(
+                Bucket=BUCKET_WORLD,
+                Prefix="kaya/",
+                PaginationConfig={"MaxItems": 200},
+            )
+            keys = []
+            for page in pages:
+                for obj in page.get("Contents", []):
+                    key = obj["Key"]
+                    if key.endswith(".json") and key > since_key:
+                        keys.append(key)
+            keys.sort()  # chronological (ISO timestamp in name)
+
+            results = []
+            for key in keys:
+                try:
+                    resp = s3.get_object(Bucket=BUCKET_WORLD, Key=key)
+                    event = json.loads(resp["Body"].read().decode("utf-8"))
+                    event["_s3_key"] = key
+                    results.append(event)
+                except Exception as e:
+                    logger.warning("Kaya event download failed [%s]: %s", key, e)
+            return results
+        except Exception as e:
+            logger.warning("list_world_kaya_events failed: %s", e)
+            return []
 
     def pull_d15_broadcasts(self, limit: int = 10) -> List[Dict]:
         """Pull recent D15 broadcasts from WORLD bucket."""

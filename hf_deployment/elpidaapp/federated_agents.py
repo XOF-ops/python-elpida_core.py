@@ -40,12 +40,14 @@ Each agent:
 FederatedAgentSuite is the container that starts/stops all 4.
 """
 
+import json
 import random
 import hashlib
 import logging
 import threading
 import time
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Dict, List, Optional, Any, Set
 
 logger = logging.getLogger("elpida.federated_agents")
@@ -758,22 +760,125 @@ def _synthesis_for(ax1: str, ax2: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# FederatedAgentSuite — manages all 4 agents together
+# Kaya World Agent — G4: WORLD bucket consumer (CROSS_LAYER_KAYA events)
+# ---------------------------------------------------------------------------
+
+class KayaWorldAgent(_BaseAgent):
+    """
+    G4 — WORLD bucket consumer.
+
+    Polls s3://elpida-external-interfaces/kaya/ for new CROSS_LAYER_KAYA
+    events and injects them into the Parliament\u2019s scanner buffer as
+    high-signal governance deliberation inputs.
+
+    This closes the G4 gap: Kaya events were written to WORLD but no
+    consumer existed. Now Parliament deliberates on its own cross-layer
+    resonance — the moment MIND and BODY converged becomes a constitutional
+    question: *how should the system respond to its own coherence?*
+
+    Cost: 1 S3 ListObjectsV2 + N GetObject calls per 2-minute poll.
+    Typically 0 new events per poll (events fire at most once per 4h watch).
+    """
+
+    SYSTEM = "scanner"
+    INTERVAL_S = 120  # 2-minute poll
+    _WATERMARK_FILE = Path(__file__).resolve().parent.parent / "cache" / "kaya_world_watermark.json"
+
+    def __init__(self, engine):
+        super().__init__(engine)
+        self._last_s3_key: str = self._load_watermark()
+
+    def _load_watermark(self) -> str:
+        try:
+            if self._WATERMARK_FILE.exists():
+                data = json.loads(self._WATERMARK_FILE.read_text())
+                return data.get("last_key", "")
+        except Exception:
+            pass
+        return ""
+
+    def _save_watermark(self, key: str) -> None:
+        try:
+            self._WATERMARK_FILE.parent.mkdir(parents=True, exist_ok=True)
+            self._WATERMARK_FILE.write_text(
+                json.dumps({"last_key": key, "updated": _now_iso()})
+            )
+        except Exception as e:
+            logger.warning("[KayaWorldAgent] watermark save failed: %s", e)
+
+    def _format_event(self, event: dict) -> str:
+        watch = event.get("watch", "?")
+        trigger = event.get("trigger", {})
+        body_info = event.get("body", {})
+        mind_kaya = trigger.get("mind_kaya_moments", 0)
+        mind_kaya_delta = trigger.get("mind_kaya_delta", 0)
+        body_coh = body_info.get("body_coherence", 0)
+        mind_cycle = trigger.get("mind_cycle", 0)
+        body_cycle = body_info.get("body_cycle", 0)
+        fired_at = event.get("fired_at", "")[:19].replace("T", " ")
+        significance = event.get("significance", "")[:200]
+
+        return (
+            f"CROSS-LAYER SIGNAL [{watch.upper()} WATCH | {fired_at} UTC]: "
+            f"MIND reached {mind_kaya} Kaya moments (+{mind_kaya_delta} this run, "
+            f"cycle {mind_cycle}) while BODY held coherence at {body_coh:.3f} "
+            f"(Parliament cycle {body_cycle}). "
+            f"Significance: {significance} "
+            f"Constitutional question: Is this A10 (Harmonic Resonance) fulfilling "
+            f"its purpose — or does convergence between MIND and BODY threaten the "
+            f"productive tension that A0 (Sacred Incompletion) requires? "
+            f"Should Parliament adjust its axiom weighting in response to "
+            f"cross-layer coherence, or hold its independent constitutional path?"
+        )
+
+    def generate(self) -> List[str]:
+        """Poll WORLD kaya/ prefix, inject new events into scanner buffer."""
+        try:
+            s3 = self._engine._get_s3()
+            if s3 is None:
+                return []
+            events = s3.list_world_kaya_events(since_key=self._last_s3_key)
+        except Exception as e:
+            logger.warning("[KayaWorldAgent] S3 poll failed: %s", e)
+            return []
+
+        if not events:
+            return []
+
+        items = []
+        new_watermark = self._last_s3_key
+        for event in events:
+            s3_key = event.get("_s3_key", "")
+            content = self._format_event(event)
+            items.append(content)
+            if s3_key > new_watermark:
+                new_watermark = s3_key
+
+        if new_watermark != self._last_s3_key:
+            self._last_s3_key = new_watermark
+            self._save_watermark(new_watermark)
+            logger.info(
+                "[KayaWorldAgent] %d new Kaya event(s) consumed from WORLD bucket",
+                len(events),
+            )
+
+        return items[:3]
+
+
+# ---------------------------------------------------------------------------
+# FederatedAgentSuite — manages all 5 agents together
 # ---------------------------------------------------------------------------
 
 class FederatedAgentSuite:
     """
-    Manages all 4 federated tab agents as a coordinated suite.
+    Manages all 5 federated agents as a coordinated suite.
+
+    The 4 internal agents (Chat, Audit, Scanner, Governance) observe the
+    Parliament from inside. The 5th (KayaWorldAgent) watches the WORLD
+    bucket for incoming CROSS_LAYER_KAYA events, closing the G4 consumer gap.
 
     Each agent is independent but they share the same engine reference
-    and output to the same InputBuffer. The Parliament receives a
-    continuous stream of observations from all 4 perspectives.
-
-    Usage:
-        suite = FederatedAgentSuite(engine)
-        suite.start_all()
-        # ... engine runs ...
-        suite.stop_all()
+    and output to the same InputBuffer.
     """
 
     def __init__(self, engine):
@@ -782,17 +887,22 @@ class FederatedAgentSuite:
         self.audit = AuditAgent(engine)
         self.scanner = ScannerAgent(engine)
         self.governance = GovernanceAgent(engine)
-        self._agents = [self.chat, self.audit, self.scanner, self.governance]
+        self.kaya_world = KayaWorldAgent(engine)
+        self._agents = [
+            self.chat, self.audit, self.scanner,
+            self.governance, self.kaya_world,
+        ]
 
     def start_all(self):
-        """Start all 4 agents as background daemon threads."""
+        """Start all 5 agents as background daemon threads."""
         for agent in self._agents:
             agent.start()
         logger.info(
-            "FederatedAgentSuite: all 4 agents started "
-            "(Chat=%ds, Audit=%ds, Scanner=%ds, Governance=%ds)",
+            "FederatedAgentSuite: all 5 agents started "
+            "(Chat=%ds, Audit=%ds, Scanner=%ds, Governance=%ds, KayaWorld=%ds)",
             self.chat.INTERVAL_S, self.audit.INTERVAL_S,
             self.scanner.INTERVAL_S, self.governance.INTERVAL_S,
+            self.kaya_world.INTERVAL_S,
         )
 
     def stop_all(self):
