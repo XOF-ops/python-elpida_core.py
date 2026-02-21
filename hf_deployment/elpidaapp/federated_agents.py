@@ -1132,9 +1132,65 @@ class LivingParliamentAgent(_BaseAgent):
 
 # ---------------------------------------------------------------------------
 
+class WorldEmitterAgent(_BaseAgent):
+    """
+    The 8th agent — Bucket 3: The World.
+
+    Parliament verdict (Feb 21 2026, 70% LEAN_APPROVE, 0 contradictions):
+      Bucket 3 belongs to the body. Each body emits its own world from the
+      same crystallised pattern. The mind does not coordinate a single Bucket 3.
+
+    This agent polls living_axioms.jsonl every 5 minutes.
+    For each new crystallised tension it finds, it emits outward:
+      - Pushes a Constitutional Discovery event to the HF InputBuffer
+        (the UI surfaces the pattern to humans in real time)
+      - Writes to world_emissions.jsonl (the body's outward record)
+
+    It does NOT interpret what the axiom means.
+    It carries the crystallised pattern outward exactly as written.
+    The world responds. That response IS Bucket 3.
+    """
+
+    SYSTEM     = "governance"
+    INTERVAL_S = 300  # 5-minute poll — same as HumanVoiceAgent
+
+    def __init__(self, engine):
+        super().__init__(engine)
+        from elpidaapp.world_emitter import WorldEmitter
+        self._emitter = WorldEmitter(engine=engine)
+
+    def _generate(self) -> Optional[str]:
+        try:
+            newly = self._emitter.emit_new()
+            if not newly:
+                return None
+            lines = []
+            for e in newly:
+                lines.append(
+                    f"WORLD_EMISSION | {e['axiom_id']} | "
+                    f"{e['nodes'][0] if e['nodes'] else '?'} ↔ "
+                    f"{e['nodes'][-1] if len(e.get('nodes',[])) > 1 else '?'} | "
+                    f"rounds_held={e['rounds_held']}"
+                )
+            return "\n".join(lines)
+        except Exception as e:
+            logger.warning("[WorldEmitterAgent] emit error: %s", e)
+            return None
+
+    def status(self) -> Dict:
+        base = super().status()
+        try:
+            base["emitter"] = self._emitter.status()
+        except Exception:
+            pass
+        return base
+
+
+# ---------------------------------------------------------------------------
+
 class FederatedAgentSuite:
     """
-    Manages all 7 federated agents as a coordinated suite.
+    Manages all 8 federated agents as a coordinated suite.
 
     The 4 internal agents (Chat, Audit, Scanner, Governance) observe the
     Parliament from inside. The 5th (KayaWorldAgent) watches the WORLD
@@ -1145,6 +1201,8 @@ class FederatedAgentSuite:
     The 7th (LivingParliamentAgent) runs autonomous axiom-node dialogues —
     the axioms talk to each other, the Oracle holds tension, and irresolvable
     contradictions crystallise into permanent constitutional memory.
+    The 8th (WorldEmitterAgent) is Bucket 3 — it reads the crystallised
+    pattern and emits it outward into the world. Each body emits its own world.
 
     Each agent is independent but they share the same engine reference
     and output to the same InputBuffer.
@@ -1159,24 +1217,25 @@ class FederatedAgentSuite:
         self.kaya_world = KayaWorldAgent(engine)
         self.human_voice = HumanVoiceAgent(engine)
         self.living_parliament = LivingParliamentAgent(engine)
+        self.world_emitter = WorldEmitterAgent(engine)
         self._agents = [
             self.chat, self.audit, self.scanner,
             self.governance, self.kaya_world, self.human_voice,
-            self.living_parliament,
+            self.living_parliament, self.world_emitter,
         ]
 
     def start_all(self):
-        """Start all 7 agents as background daemon threads."""
+        """Start all 8 agents as background daemon threads."""
         for agent in self._agents:
             agent.start()
         logger.info(
-            "FederatedAgentSuite: all 7 agents started "
+            "FederatedAgentSuite: all 8 agents started "
             "(Chat=%ds, Audit=%ds, Scanner=%ds, Governance=%ds, "
-            "KayaWorld=%ds, HumanVoice=%ds, LivingParliament=%ds)",
+            "KayaWorld=%ds, HumanVoice=%ds, LivingParliament=%ds, WorldEmitter=%ds)",
             self.chat.INTERVAL_S, self.audit.INTERVAL_S,
             self.scanner.INTERVAL_S, self.governance.INTERVAL_S,
             self.kaya_world.INTERVAL_S, self.human_voice.INTERVAL_S,
-            self.living_parliament.INTERVAL_S,
+            self.living_parliament.INTERVAL_S, self.world_emitter.INTERVAL_S,
         )
 
     def stop_all(self):
