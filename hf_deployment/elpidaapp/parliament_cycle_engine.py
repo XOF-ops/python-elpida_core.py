@@ -662,6 +662,7 @@ class ParliamentCycleEngine:
             "HERMES": "A1", "MNEMOSYNE": "A0", "CRITIAS": "A3",
             "TECHNE": "A4", "KAIROS": "A5", "THEMIS": "A6",
             "PROMETHEUS": "A8", "IANUS": "A9", "CHAOS": "A9",
+            "LOGOS": "A2",   # Narrator — Language as Precision Tool
         }
 
         votes = result.get("parliament", {}).get("votes", {})
@@ -1007,7 +1008,7 @@ class ParliamentCycleEngine:
         print(f"   Duration: {duration_minutes}min | Delay: {cycle_delay_s}s/cycle")
         print(f"   Rhythms: {', '.join(RHYTHM_WEIGHTS)}")
         print(f"   Axiom genome: A0–A10 (11 axioms)")
-        print(f"   Parliament: 9 nodes (HERMES→CHAOS)")
+        print(f"   Parliament: 10 nodes (HERMES→LOGOS)")
         print(f"   D15 convergence: cooldown={CONVERGENCE_COOLDOWN_CYCLES} cycles\n")
 
         # D14 Persistence — restore constitutional memory from S3 before first cycle.

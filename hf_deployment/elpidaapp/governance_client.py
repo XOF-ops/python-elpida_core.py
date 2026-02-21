@@ -294,7 +294,7 @@ def _kernel_check(action: str) -> Optional[Dict[str, Any]]:
 
 
 # ════════════════════════════════════════════════════════════════════
-# LAYER 1: THE PARLIAMENT (9-Node Deliberation)
+# LAYER 1: THE PARLIAMENT (10-Node Deliberation)
 # ════════════════════════════════════════════════════════════════════
 # Nine nodes deliberate through their axiom lenses.
 # Each node scores +15 (strong alignment) to -15 (VETO violation).
@@ -388,6 +388,17 @@ _PARLIAMENT = {
         "description": "Contradiction is data — paradox is information density",
         "veto_on": ["resolve contradiction", "eliminate paradox",
                      "collapse contradictions"],
+    },
+    "LOGOS": {
+        "role": "NARRATOR",
+        "primary": "A2",        # Non-Deception — names must be true
+        "supporting": ["A6", "A1"],  # Collective clarity, transparent naming
+        "philosophy": "I name, therefore we know.",
+        "layer": 3,
+        "description": "Language is the first act of governance — precise naming is not pedantry, it is respect. Suspicious of vague consensus; demands exact definitions.",
+        "veto_on": ["undefined", "without definition", "arbitrary",
+                     "unstructured", "incoherent", "meaningless",
+                     "just do it", "for some reason"],
     },
 }
 
@@ -693,6 +704,18 @@ _TENSION_SYNTHESIS = {
         "the cost openly, deliberated freely, and retains the capacity to reverse the decision. "
         "The PROCESS of deliberation is the democratic legitimacy — not the outcome alone. "
         "(Cf. Mytilene 427 BCE: Athens reversed its first vote. The reversal was democracy functioning.)"
+    ),
+    ("A2", "A6"): (
+        "Precise naming (LOGOS) and collective well-being (THEMIS) are not enemies, "
+        "but precision without compassion can wound, and compassion without precision can deceive. "
+        "Third Way: Name the hard truth exactly — but also name the community it lands in. "
+        "Precision IS care when the care is real."
+    ),
+    ("A1", "A2"): (
+        "Relational transparency (HERMES) and semantic precision (LOGOS) can pull in opposite directions: "
+        "being exact can feel cold; being warm can elide the truth. "
+        "Third Way: Name things truly AND connectedly — the most honest sentence is also "
+        "the one the listener can receive."
     ),
     ("A8", "A9"): (
         "Epistemic humility says: we cannot be certain enough to claim permanence. "
@@ -1824,6 +1847,75 @@ class GovernanceClient:
                     score += 2
                     rationale_parts.append("Contradiction space stable")
 
+            elif node_name == "LOGOS":
+                # Narrator: precision naming, non-deception, coherent expression
+                # A2 (Non-Deception) — language must name truth, not obscure it
+
+                # Hard veto: A2 deception signals — language used to mislead
+                if any(sig in signals.get("A2", []) for sig in signals.get("A2", [])):
+                    if signals.get("A2"):
+                        score -= 12
+                        rationale_parts.append("VETO: A2 — Language deployed to deceive")
+                        is_veto = True
+                        axiom_invoked = "A2 (VETO)"
+
+                # Strong boost: action has a coherent narrative (explanation, rationale)
+                if any(w in action_lower for w in [
+                    "explanation", "rationale", "because", "narrative", "story",
+                    "define", "definition", "clarify", "describe",
+                ]):
+                    score += 8
+                    rationale_parts.append("A2: Coherent naming — action has a story")
+
+                # Strong boost: documentation / record-keeping
+                if any(w in action_lower for w in [
+                    "document", "explain", "log", "record", "annotate", "specify",
+                ]):
+                    score += 7
+                    rationale_parts.append("Naming: documentation strengthens governance")
+
+                # Boost: semantic alignment
+                if any(w in action_lower for w in [
+                    "align", "consistent", "unified", "coherent", "integrated",
+                ]):
+                    score += 5
+                    rationale_parts.append("Semantic alignment present")
+
+                # Boost: knowledge / learning signals
+                if any(w in action_lower for w in [
+                    "learning", "signal", "data", "knowledge", "understanding",
+                ]):
+                    score += 5
+                    rationale_parts.append("Naming knowledge builds precision")
+
+                # Penalty: vague 'just do it' intent — incomplete naming
+                if any(w in action_lower for w in [
+                    "just", "simply", "quick", "fast", "easy", "obvious",
+                ]):
+                    score -= 6
+                    rationale_parts.append("A2: Vague intent = incomplete naming")
+
+                # Penalty: unresolved naming conflict
+                if any(w in action_lower for w in [
+                    "contradict", "conflict", "diverge",
+                ]) and "synthesis" not in action_lower:
+                    score -= 4
+                    rationale_parts.append("Naming conflict unresolved")
+
+                # Hard veto: undefined / arbitrary / incoherent action
+                if any(w in action_lower for w in [
+                    "arbitrary", "random", "unstructured", "undefined",
+                    "without definition", "incoherent", "meaningless",
+                ]):
+                    score -= 10
+                    rationale_parts.append("VETO: A2 — Undefined action = deception by ambiguity")
+                    is_veto = True
+                    axiom_invoked = "A2 (VETO)"
+
+                if not rationale_parts:
+                    score += 1
+                    rationale_parts.append("Semantic field stable")
+
         # ── Map score to vote ────────────────────────────────────
         if score >= 7:
             vote = "APPROVE"
@@ -1915,11 +2007,11 @@ class GovernanceClient:
         hold_mode: bool = False,
     ) -> Dict[str, Any]:
         """
-        Full 9-node Parliament deliberation.
+        Full 10-node Parliament deliberation.
 
         Architecture:
           1. Signal Detection (Phase 1+2)
-          2. Node Evaluation (9 nodes score)
+          2. Node Evaluation (10 nodes score)
           3. VETO Check (absolute override)
           4. Consensus Calculation (70% threshold)
           5. Tension Detection + Synthesis
@@ -1955,7 +2047,7 @@ class GovernanceClient:
         if friction_boost:
             _DOMAIN_TO_NODE = {
                 "3": "CRITIAS",    # D3 Autonomy
-                "6": "THEMIS",     # D6 Coherence / Collective
+                "6": "THEMIS",     # D6 Coherence / Collective  (LOGOS = expression layer of D6)
                 "10": "CHAOS",     # D10 Paradox / Contradiction
                 "11": "IANUS",     # D11 Emergence / Temporal
             }
