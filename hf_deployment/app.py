@@ -193,29 +193,42 @@ def run_parliament_loop():
 
     try:
         from elpidaapp.parliament_cycle_engine import ParliamentCycleEngine
+        from elpidaapp.world_feed import WorldFeed
         from s3_bridge import S3Bridge
 
         s3b = S3Bridge()
         engine = ParliamentCycleEngine(s3_bridge=s3b)
 
-        # Store reference globally so UI can push events + read state
-        global _parliament_engine
-        _parliament_engine = engine
+        # World Feed — pipes live external data into the Parliament InputBuffer
+        # Sources: arXiv, Hacker News, GDELT, Wikipedia, CrossRef (all free, no API keys)
+        world_feed = WorldFeed(engine.input_buffer, fetch_interval_s=300)
+        world_feed.start()
 
-        logger.info("Parliament engine initialized — starting autonomous loop")
+        # Store references globally so UI can push events + read state
+        global _parliament_engine, _world_feed
+        _parliament_engine = engine
+        _world_feed = world_feed
+
+        logger.info("Parliament engine + WorldFeed initialized — starting autonomous loop")
         engine.run(duration_minutes=0, cycle_delay_s=30)
 
     except Exception as e:
         logger.error("Parliament loop fatal error: %s", e, exc_info=True)
 
 
-# Global reference for UI integration
+# Global references for UI integration
 _parliament_engine = None
+_world_feed = None
 
 
 def get_parliament_engine():
     """Get the running ParliamentCycleEngine instance (if alive)."""
     return _parliament_engine
+
+
+def get_world_feed():
+    """Get the running WorldFeed instance (if alive)."""
+    return _world_feed
 
 
 def run_streamlit():

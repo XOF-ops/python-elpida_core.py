@@ -1324,7 +1324,8 @@ with tab_system:
     st.divider()
 
     stabs = st.tabs([
-        "Origin", "11 Axioms", "15 Domains", "Parliament", "ARK Memory", "5 Rhythms", "Providers", "Stats"
+        "Origin", "11 Axioms", "15 Domains", "Parliament",
+        "ARK Memory", "5 Rhythms", "Providers", "Stats", "Body Parliament"
     ])
 
     # ── ORIGIN ──────────────────────────────────────────────────
@@ -1693,6 +1694,193 @@ fully tense — exactly the quality needed to hold paradox without resolving it 
             st.json(cs)
         except Exception:
             pass
+
+    # ── BODY PARLIAMENT — LIVE ───────────────────────────────────
+    with stabs[8]:
+        st.markdown("#### Body Parliament — Autonomous Live Loop")
+        st.markdown(
+            '<div class="mode-intro" style="font-size:0.85rem; color:#aaa; margin-bottom:1rem;">'
+            'The BODY runs 34 deliberation cycles per 4-hour watch (Fibonacci offset from '
+            'the MIND 55-cycle rhythm). It feeds on live world data \u2014 arXiv, Hacker News, '
+            'GDELT, Wikipedia, CrossRef \u2014 and converts every incoming tension into an '
+            'I\u2194WE governance dilemma deliberated by all 9 Parliament nodes. '
+            'Accumulated Oracle rulings ratify new constitutional axioms autonomously.'
+            '</div>', unsafe_allow_html=True
+        )
+
+        # ── Engine state ─────────────────────────────────────────
+        _engine = None
+        _feed = None
+        try:
+            import sys as _sys, os as _os
+            _parent = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+            if _parent not in _sys.path:
+                _sys.path.insert(0, _parent)
+            from app import get_parliament_engine, get_world_feed
+            _engine = get_parliament_engine()
+            _feed = get_world_feed()
+        except Exception as _bp_err:
+            st.caption(f"Engine lookup: {_bp_err}")
+
+        if _engine is None:
+            st.info(
+                "Parliament engine is not yet running in this session. "
+                "It starts automatically when launched via app.py (the full deployment). "
+                "In the Hugging Face Space, it runs autonomously as a background thread."
+            )
+        else:
+            # Live state from engine
+            try:
+                _state = _engine.state()
+                _c1, _c2, _c3, _c4, _c5 = st.columns(5)
+                _c1.metric("Cycle", _state.get("cycle_count", 0))
+                _c2.metric("Rhythm", _state.get("current_rhythm", "—"))
+                _c3.metric("Dominant Axiom", _state.get("dominant_axiom", "—"))
+                _coh = _state.get("coherence_score", 0)
+                _c4.metric("Coherence", f"{_coh:.2f}" if isinstance(_coh, float) else _coh)
+                _buf = _state.get("buffer_total", 0)
+                _c5.metric("Buffer Depth", _buf)
+
+                st.divider()
+
+                # Last verdicts
+                _verdicts = _state.get("last_verdicts", [])
+                if _verdicts:
+                    st.markdown("**Last Parliament Verdicts:**")
+                    for _v in _verdicts[-3:]:
+                        _vt = _v.get("timestamp", "")[:19].replace("T", " ")
+                        _vdom = _v.get("dominant_axiom", "?")
+                        _vsyn = _v.get("synthesis", "")[:200]
+                        st.markdown(
+                            f'<div style="background:rgba(255,255,255,0.04); '
+                            f'border-left:3px solid #6644cc; border-radius:0 6px 6px 0; '
+                            f'padding:0.6rem 0.9rem; margin-bottom:0.5rem; font-size:0.82rem;">'
+                            f'<span style="color:#888;">{_vt}</span> &nbsp;'
+                            f'<span style="color:#aa88ff;">[{_vdom}]</span><br>'
+                            f'<span style="color:#ccc;">{_vsyn}</span>'
+                            f'</div>', unsafe_allow_html=True
+                        )
+                else:
+                    st.caption("No verdicts yet this session. Parliament is warming up.")
+
+            except Exception as _se:
+                st.warning(f"Engine state unavailable: {_se}")
+
+        st.divider()
+
+        # ── World Feed status ─────────────────────────────────────
+        st.markdown("##### World Feed — External Reality Ingestion")
+        st.markdown(
+            '<div style="font-size:0.8rem; color:#888; margin-bottom:0.7rem;">'
+            'Free APIs · No authentication required · Auto-refreshes every 5 minutes'
+            '</div>', unsafe_allow_html=True
+        )
+
+        _feed_sources = [
+            ("arXiv", "Academic papers: ethics, AI governance, resource allocation, paradox"),
+            ("Hacker News", "Tech policy, AI governance, societal tensions (score ≥ 50)"),
+            ("GDELT", "Real-world geopolitical events as governance dilemma seeds"),
+            ("Wikipedia", "Recent significant article changes as contextual events"),
+            ("CrossRef", "Open-access governance/ethics research from CrossRef"),
+        ]
+        _fc1, _fc2 = st.columns(2)
+        for _i, (_sname, _sdesc) in enumerate(_feed_sources):
+            _col = _fc1 if _i % 2 == 0 else _fc2
+            _col.markdown(
+                f'<div style="background:rgba(0,160,80,0.08); border:1px solid rgba(0,200,100,0.2); '
+                f'border-radius:6px; padding:0.5rem 0.8rem; margin-bottom:0.5rem; font-size:0.8rem;">'
+                f'<div style="color:#44cc88; font-weight:700;">{_sname}</div>'
+                f'<div style="color:#999;">{_sdesc}</div>'
+                f'</div>', unsafe_allow_html=True
+            )
+
+        if _feed is not None:
+            _fs = _feed.status()
+            st.markdown("**Live Feed Stats:**")
+            _fs_c1, _fs_c2, _fs_c3, _fs_c4 = st.columns(4)
+            _fs_c1.metric("Events Pushed", _fs.get("total_events_pushed", 0))
+            _fs_c2.metric("Fetch Cycles", _fs.get("fetch_cycles", 0))
+            _fs_c3.metric("Ratified Axioms", _fs.get("ratified_axioms", 0))
+            _fs_c4.metric("Feed Running", "✓" if _fs.get("running") else "—")
+
+            _ebs = _fs.get("events_per_source", {})
+            if _ebs:
+                st.markdown("Events by source:")
+                import pandas as pd
+                st.dataframe(
+                    pd.DataFrame([
+                        {"Source": k, "Events Ingested": v}
+                        for k, v in sorted(_ebs.items(), key=lambda x: -x[1])
+                    ]),
+                    use_container_width=True, hide_index=True
+                )
+
+            _buf_counts = _fs.get("buffer_counts", {})
+            if _buf_counts:
+                st.markdown("InputBuffer depth per system:")
+                _bc1, _bc2, _bc3, _bc4 = st.columns(4)
+                _bc1.metric("chat", _buf_counts.get("chat", 0))
+                _bc2.metric("audit", _buf_counts.get("audit", 0))
+                _bc3.metric("scanner", _buf_counts.get("scanner", 0))
+                _bc4.metric("governance", _buf_counts.get("governance", 0))
+
+        st.divider()
+
+        # ── Constitutional Axiom Evolution ────────────────────────
+        st.markdown("##### Constitutional Axiom Evolution")
+        st.markdown(
+            '<div style="font-size:0.8rem; color:#888; margin-bottom:0.7rem;">'
+            'When the Oracle recommends preserving the same contradiction in ≥3 cycles '
+            'with ≥75% confidence, that tension is ratified as a constitutional law. '
+            'The parliament cannot resolve it — therefore it becomes axiom.'
+            '</div>', unsafe_allow_html=True
+        )
+
+        try:
+            from elpidaapp.world_feed import ConstitutionalStore
+            from pathlib import Path as _Path
+
+            _cs = ConstitutionalStore(
+                _Path(__file__).parent.parent.parent / "living_axioms.jsonl"
+            )
+            _ratified = _cs.load_ratified_axioms()
+            _pending = _cs.pending()
+
+            if _ratified:
+                st.markdown(f"**{len(_ratified)} Ratified Constitutional Axiom(s):**")
+                for _ax in _ratified[-5:]:
+                    _ax_conf = _ax.get("average_confidence", 0)
+                    _ax_t = _ax.get("tension", "")[:120]
+                    _ax_id = _ax.get("axiom_id", "?")
+                    _ax_rat = _ax.get("ratified_at", "")[:10]
+                    st.markdown(
+                        f'<div style="background:rgba(255,180,0,0.08); '
+                        f'border-left:3px solid #cc8800; border-radius:0 6px 6px 0; '
+                        f'padding:0.6rem 0.9rem; margin-bottom:0.5rem; font-size:0.8rem;">'
+                        f'<span style="color:#ffaa33; font-weight:700;">{_ax_id}</span> '
+                        f'<span style="color:#888;">· {_ax_rat} · {_ax_conf:.0%} confidence</span><br>'
+                        f'<span style="color:#ddd;">{_ax_t}</span>'
+                        f'</div>', unsafe_allow_html=True
+                    )
+            else:
+                st.caption(
+                    "No constitutional axioms ratified yet. "
+                    "Parliament is accumulating Oracle advisories."
+                )
+
+            if _pending:
+                st.markdown("**Pending Ratifications (votes needed: 3):**")
+                for _t, _n in list(_pending.items())[:5]:
+                    _pct = min(_n / 3.0, 1.0)
+                    st.markdown(
+                        f'<div style="font-size:0.78rem; color:#aaa; margin-bottom:0.3rem;">'
+                        f'[{_n}/3] {_t[:120]}</div>'
+                        f'<div style="background:#333; border-radius:4px; height:5px; margin-bottom:0.6rem;">'
+                        f'<div style="background:#6644cc; width:{_pct*100:.0f}%; height:5px; border-radius:4px;"></div>'
+                        f'</div>', unsafe_allow_html=True
+                    )
+        except Exception as _cae:
+            st.caption(f"Constitutional store: {_cae}")
 
 
 # ═══════════════════════════════════════════════════════════════════
