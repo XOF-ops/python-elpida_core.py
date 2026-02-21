@@ -1,12 +1,10 @@
 name: Deploy to HuggingFace Space
 
+# LEGACY WORKFLOW — disabled from auto-trigger to prevent race condition with
+# deploy-hf-space.yml (which uses the correct rsync --delete strategy).
+# Use workflow_dispatch for manual one-off deployments via this script only.
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'hf_deployment/**'
-  workflow_dispatch:  # allows manual trigger from GitHub Actions UI
+  workflow_dispatch:  # manual trigger only
 
 jobs:
   deploy:

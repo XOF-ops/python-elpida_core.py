@@ -647,6 +647,9 @@ class ParliamentCycleEngine:
                         # constitutional ratification so D0 (Origin) can integrate
                         # BODY constitutional wisdom into its next cycle prompt.
                         self._push_d0_peer_message(new_axiom, watch)
+                        # D14 Persistence — snapshot living_axioms.jsonl to S3
+                        # so constitutional memory survives container restarts.
+                        self._push_d14_living_axioms()
 
         # 9. Emit body heartbeat every cycle
         self._emit_heartbeat(rhythm, dominant_axiom, result)

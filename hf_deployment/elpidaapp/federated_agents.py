@@ -1177,6 +1177,11 @@ class WorldEmitterAgent(_BaseAgent):
             logger.warning("[WorldEmitterAgent] emit error: %s", e)
             return None
 
+    def generate(self) -> List[str]:
+        """Wrap _generate() result into the List[str] the base loop expects."""
+        result = self._generate()
+        return [result] if result else []
+
     def status(self) -> Dict:
         base = super().status()
         try:
