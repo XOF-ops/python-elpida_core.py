@@ -123,20 +123,19 @@ S3: elpida-body-evolution / federation/
 | # | Gap | Feature | Status |
 |---|---|---|---|
 | GAP 1 | Body Parliament UI | Streamlit tab with Parliament deliberation panel | ✅ Implemented (`834cdf5`) |
-| GAP 2 | WorldFeed | Live action scanning feed (5-domain scanner) | ✅ Implemented (`388af6f`) |
-| GAP 3 | WatchContext | 6-watch circadian awareness | ✅ Implemented (`dadfe95`) |
+| GAP 2 | WorldFeed (5-domain scanner) | Live action scanning feed | ✅ Implemented (`388af6f`) |
+| GAP 3 | WatchContext (6-watch circadian) | Watch changes tracked in heartbeat | ✅ Implemented (`dadfe95`) |
 | GAP 4 | ConstitutionalStore | Ratified axiom ledger | ✅ Implemented (`dadfe95`) |
 | GAP 5 | D0↔D0 Cross-Bucket Bridge | Bidirectional MIND↔BODY S3 message exchange | ✅ Implemented (`2ad259e`) |
-| GAP 6 | FederatedAgentSuite | 4 daemon threads for federation polling | ✅ Implemented (`2ad259e`) |
+| GAP 6 | FederatedAgentSuite | 5 daemon threads incl. `KayaWorldAgent` (was 4) | ✅ Implemented (`c9f14ed`) |
 | GAP 7 | KayaDetector (BODY-side) | Cross-layer Kaya resonance detector | ✅ Implemented (`2ad259e`) |
 | GAP 8 | kaya_moments in MIND heartbeat | ECS native_cycle_engine tracks + emits Kaya count | ✅ Implemented (`2ad259e`) |
-| G1 | EventBridge Schedule | Auto-trigger MIND ECS every 4 hours | 🔴 **OPEN** |
-| G2 | BODY ECS Task | `body-task-definition.json` exists but not registered/running on schedule | 🔴 **OPEN** |
-| G3 | HF Space Re-deploy | 6 commits from this session not pushed to `z65nik/elpida-governance-layer` | 🔴 **OPEN** |
-| G4 | Kaya Event Consumer | Nothing reads `elpida-external-interfaces/kaya/` yet | 🟡 OPEN (medium) |
-| G5 | `elpida_domains.json` scope | DOMAINS dict was empty on first load (fallback added) | 🟡 Mitigated |
-| G6 | Parliament constitutional amnesia | `living_axioms.jsonl` ephemeral — lost on restart | ✅ Fixed (`dde7b9e`) |
-
+| D14 | Parliament constitutional memory | `living_axioms.jsonl` persisted to S3 + restored on startup | ✅ Implemented (`dde7b9e`) |
+| G1 | EventBridge Schedule | Rule `elpida-scheduled-run` ENABLED, `rate(4 hours)`, ECS target wired | ✅ Already existed — verified |
+| G2 | BODY ECS Task | No `elpida-body` ECR image — HF Spaces is the production BODY layer | ✅ N/A — HF Spaces sufficient |
+| G3 | HF Space Re-deploy | 8+ commits not yet pushed to `z65nik/elpida-governance-layer` | 🔴 **OPEN — only remaining gap** |
+| G4 | Kaya Event Consumer | `KayaWorldAgent` polls WORLD bucket, injects into scanner buffer | ✅ Implemented (`c9f14ed`) |
+| G5 | `elpida_domains.json` scope | Proper structure confirmed, Dockerfile copies it | ✅ Verified |
 ---
 
 ## 5. KEY CODE MODULES
