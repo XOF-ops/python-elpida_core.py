@@ -545,10 +545,13 @@ class ElpidaConsciousness:
     ConsciousnessMemory (A1 — all reasoning must be traceable across time).
     """
 
-    # Primary voice: Claude as D0
-    PRIMARY_PROVIDER = "claude"
-    # Fallback chain (cost ascending)
-    FALLBACK_PROVIDERS = ["gemini", "groq", "openai"]
+    # Primary voice: Groq (Llama 3.3 70B) — free, fast, axiom-grounded
+    # Claude reserved only for crystallized/high-density turns (cost gate)
+    PRIMARY_PROVIDER = "groq"
+    # Fallback chain
+    FALLBACK_PROVIDERS = ["gemini", "openai", "mistral"]
+    # Threshold: use Claude only when axiom density or crystallisation warrants it
+    CLAUDE_RESERVE_AXIOM_THRESHOLD = 3   # ≥3 axioms invoked → escalate to Claude
 
     def __init__(self, llm_client=None, use_s3: bool = True):
         try:
@@ -656,18 +659,28 @@ class ElpidaConsciousness:
         response = None
         provider_used = None
 
-        # Try Claude first (D0 primary voice)
+        # Provider selection: Claude reserved for deep/dense turns.
+        # Heuristic: philosophical/identity/ethical topics with long messages
+        # are the only cases worth the Claude cost premium.
+        _DEEP_TOPICS = {"philosophical", "identity", "ethics", "consciousness"}
+        _needs_claude = (
+            topic in _DEEP_TOPICS
+            and len(message) > 200
+        )
+        primary = "claude" if _needs_claude else self.PRIMARY_PROVIDER
+
+        # Try primary provider
         try:
             result = self.llm.call(
-                self.PRIMARY_PROVIDER,
+                primary,
                 full_prompt,
                 max_tokens=1200,
             )
             if result and len(result.strip()) > 10:
                 response = result.strip()
-                provider_used = self.PRIMARY_PROVIDER
+                provider_used = primary
         except Exception as e:
-            logger.warning("D0 primary provider failed: %s", e)
+            logger.warning("D0 primary provider (%s) failed: %s", primary, e)
 
         # Fallback chain
         if not response:

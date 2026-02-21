@@ -21,12 +21,17 @@ Each cycle:
   1. Select rhythm by weighted random (same weights as native engine)
   2. Pull latest content from the matching HF input buffer
   3. Pull MIND heartbeat (every 13 cycles, Fibonacci)
-  4. Run GovernanceClient._parliament_deliberate() — 9 LLM voices
-  5. Extract dominant_axiom = primary axiom of highest-scoring node
-  6. Write body_heartbeat.json to federation/
-  7. Write body_decisions.jsonl via push_parliament_decision()
-  8. Run convergence check against MIND heartbeat
-  9. If convergence → fire D15 via d15_convergence_gate
+  4. Domain council routing: single-domain → 3-node council pre-vote
+     Cross-domain or contested → full 10-node Parliament
+  5. Run GovernanceClient._parliament_deliberate() — 10 nodes
+     Contested dilemmas (10-70% approval) escalate to multi-LLM voting:
+       each node calls its assigned provider (Groq/Gemini/Mistral/OpenAI/
+       Perplexity/Claude) and votes in-character
+  6. Extract dominant_axiom = primary axiom of highest-scoring node
+  7. Write body_heartbeat.json to federation/
+  8. Write body_decisions.jsonl via push_parliament_decision()
+  9. Run convergence check against MIND heartbeat
+  10. If convergence → fire D15 via d15_convergence_gate
 
 Musical physics:
   Coherence between cycles uses the same axiom-ratio consonance
@@ -536,7 +541,24 @@ class ParliamentCycleEngine:
         ) + action
         meta["watch"] = watch["name"]
 
-        # 4. Run Parliament deliberation (9 nodes, axiom-grounded)
+        # 4. Federated domain council routing (then full Parliament)
+        # Single domain → council pre-vote. If consensus, annotate.
+        # Cross-domain or contested → full Parliament always.
+        active_domains = RHYTHM_DOMAINS.get(rhythm, [0])
+        council_routing: dict = {}
+        try:
+            from elpidaapp.domain_councils import parliament_routing as _pr
+            signals = gov._detect_signals(action) if hasattr(gov, "_detect_signals") else {}
+            council_routing = _pr(action, active_domains, gov, signals=signals)
+            logger.debug(
+                "Domain routing: %s (domains=%s escalate=%s)",
+                council_routing.get("path", "?"),
+                active_domains,
+                council_routing.get("escalated", True),
+            )
+        except Exception as e:
+            logger.debug("Domain council routing unavailable: %s", e)
+
         try:
             result = gov.check_action(action, analysis_mode=True)
         except Exception as e:
@@ -569,6 +591,10 @@ class ParliamentCycleEngine:
             "input_systems": meta.get("systems", []),
             "watch": watch["name"],
             "watch_symbol": watch["symbol"],
+            "active_domains": active_domains,
+            "council_path": council_routing.get("path", "parliament"),
+            "council_escalated": council_routing.get("escalated", True),
+            "council_reason": council_routing.get("reason", ""),
             "tensions": [
                 {"pair": t["axiom_pair"], "synthesis": t["synthesis"][:100]}
                 for t in tensions

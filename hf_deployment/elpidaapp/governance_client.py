@@ -402,6 +402,31 @@ _PARLIAMENT = {
     },
 }
 
+# ── LLM assignment per Parliament node ──────────────────────────────────
+# Each node deliberates through a different LLM.
+# Philosophy: no single vendor's bias should dominate the Parliament.
+# LLM temperaments are chosen to match node roles.
+#
+#   GROQ (Llama 3.3 70B)   — High throughput, flow, temporal — HERMES, KAIROS, IANUS
+#   GEMINI (Flash)         — Long context, recall, governance  — MNEMOSYNE, THEMIS
+#   MISTRAL (Small)        — Analytical precision, semantics  — CRITIAS, LOGOS
+#   OPENAI (gpt-4o-mini)   — Method clarity, safety-aware     — TECHNE
+#   PERPLEXITY (Sonar)     — Reality-grounded, external truth — PROMETHEUS
+#   CLAUDE                 — Contradiction-holding, paradox   — CHAOS (rarest, costliest)
+#
+_NODE_LLM: Dict[str, str] = {
+    "HERMES":    "groq",        # A1  — Flow needs speed, not depth
+    "MNEMOSYNE": "gemini",      # A0  — Memory/recall → long-context model
+    "CRITIAS":   "mistral",     # A3  — Analytical questioning = precision
+    "TECHNE":    "openai",      # A4  — Method/safety → gpt-4o-mini safety tuning
+    "KAIROS":    "groq",        # A5  — Timing/design decisions = fast
+    "THEMIS":    "gemini",      # A6  — Collective governance → broad tuning
+    "PROMETHEUS":"perplexity",  # A8  — Epistemic humility → grounded in reality
+    "IANUS":     "groq",        # A9  — Temporal checkpoints = fast gating
+    "CHAOS":     "claude",      # A9  — Contradiction-holding = Claude's strength
+    "LOGOS":     "mistral",     # A2  — Semantic precision = Mistral's strength
+}
+
 # ── Signal keywords per axiom ───────────────────────────────────────
 # Phase 1 of signal detection: direct keyword matching.
 # Each axiom has a list of keywords that trigger signals.
@@ -783,6 +808,10 @@ class GovernanceClient:
         self._living_axioms_path: Optional[Path] = None
         self._living_axioms_mtime: float = 0
         self._load_living_axioms()
+
+        # LLM client — shared across contested deliberation calls
+        # Lazy-initialised on first contested escalation to avoid startup cost.
+        self._llm_client = None
 
     # ────────────────────────────────────────────────────────────────
     # Living Axioms (Constitutional Evolution)
@@ -1938,6 +1967,153 @@ class GovernanceClient:
             "is_veto": is_veto,
         }
 
+    def _llm_deliberate_contested(
+        self,
+        action: str,
+        keyword_votes: Dict[str, Dict[str, Any]],
+        signals: Dict[str, List[str]],
+    ) -> Dict[str, Dict[str, Any]]:
+        """
+        Multi-LLM deliberation for contested dilemmas.
+
+        Fires when keyword pre-scoring lands in the contested zone
+        (10% ≤ approval_rate < 70%, no hard VETOs present). Each
+        Parliament node calls its assigned LLM with its axiom persona
+        and votes in-character. The result replaces keyword scores for
+        non-veto nodes.
+
+        VETO conditions from keyword scoring are IMMUTABLE — LLMs cannot
+        override the Layer 4 kernel. Only contested/ambiguous votes escalate.
+
+        Node → LLM assignment (see _NODE_LLM above):
+          HERMES, KAIROS, IANUS  → Groq (fast, flow/timing)
+          MNEMOSYNE, THEMIS      → Gemini (memory/governance)
+          CRITIAS, LOGOS         → Mistral (analytical precision)
+          TECHNE                 → OpenAI gpt-4o-mini (method/safety)
+          PROMETHEUS             → Perplexity (reality-grounded)
+          CHAOS                  → Claude (contradiction-holding)
+
+        Returns updated votes dict.
+        """
+        try:
+            try:
+                from llm_client import LLMClient
+            except ImportError:
+                from hf_deployment.llm_client import LLMClient  # type: ignore
+            if self._llm_client is None:
+                self._llm_client = LLMClient(rate_limit_seconds=0.3)
+            llm = self._llm_client
+        except Exception as e:
+            logger.warning("LLM client unavailable for contested deliberation: %s", e)
+            return keyword_votes
+
+        updated_votes = dict(keyword_votes)
+
+        # Build signal summary for node context
+        signal_summary = ""
+        if signals:
+            sig_parts = [
+                f"{ax}: {', '.join(ws[:3])}"
+                for ax, ws in signals.items()
+            ]
+            signal_summary = "; ".join(sig_parts)
+
+        for node_name, node_cfg in _PARLIAMENT.items():
+            # VETO votes are immutable — LLM deliberation cannot override Layer 4
+            if keyword_votes.get(node_name, {}).get("is_veto"):
+                continue
+
+            provider    = _NODE_LLM.get(node_name, "groq")
+            philosophy  = node_cfg["philosophy"]
+            role        = node_cfg["role"]
+            primary     = node_cfg["primary"]
+            description = node_cfg.get("description", "")
+
+            prompt = (
+                f"You are {node_name}, the {role} in the Elpida Parliament.\n"
+                f"Your philosophy: \"{philosophy}\"\n"
+                f"Your primary axiom: {primary}\n"
+                f"Your character: {description}\n\n"
+                f"The Parliament is deliberating on this proposal:\n"
+                f"\"{action}\"\n\n"
+                f"Axiom signals detected: {signal_summary or 'none'}\n\n"
+                f"Vote from your axiom perspective. Respond ONLY in this exact format "
+                f"(no extra text):\n"
+                f"VOTE: <APPROVE|LEAN_APPROVE|ABSTAIN|LEAN_REJECT|REJECT>\n"
+                f"SCORE: <integer -15 to +15>\n"
+                f"AXIOM: <axiom code, e.g. A1>\n"
+                f"RATIONALE: <one sentence max, in character, grounded in your axiom>\n"
+            )
+
+            try:
+                raw = llm.call(provider, prompt, max_tokens=130)
+                if not raw or len(raw.strip()) < 10:
+                    continue
+
+                parsed_vote     = None
+                parsed_score    = None
+                parsed_axiom    = primary
+                parsed_rationale = ""
+
+                for line in raw.strip().split("\n"):
+                    line = line.strip()
+                    if line.startswith("VOTE:"):
+                        v = line.split(":", 1)[1].strip().upper()
+                        if v in ("APPROVE", "LEAN_APPROVE", "ABSTAIN",
+                                 "LEAN_REJECT", "REJECT", "VETO"):
+                            parsed_vote = v
+                    elif line.startswith("SCORE:"):
+                        try:
+                            parsed_score = max(-15, min(15, int(
+                                line.split(":", 1)[1].strip()
+                            )))
+                        except ValueError:
+                            pass
+                    elif line.startswith("AXIOM:"):
+                        ax = line.split(":", 1)[1].strip()
+                        if ax:
+                            parsed_axiom = ax
+                    elif line.startswith("RATIONALE:"):
+                        parsed_rationale = line.split(":", 1)[1].strip()
+
+                if parsed_vote and parsed_score is not None:
+                    # LLM nodes cannot issue VETO — only the immutable kernel can
+                    if parsed_vote == "VETO":
+                        parsed_vote = "REJECT"
+
+                    updated_votes[node_name] = {
+                        "score":           parsed_score,
+                        "vote":            parsed_vote,
+                        "rationale":       (
+                            f"{philosophy} | [LLM:{provider}] {parsed_rationale}"
+                        ),
+                        "axiom_invoked":   parsed_axiom,
+                        "is_veto":         False,
+                        "llm_deliberated": True,
+                        "llm_provider":    provider,
+                    }
+                    logger.debug(
+                        "LLM deliberation %s via %s: %s (score=%d)",
+                        node_name, provider, parsed_vote, parsed_score,
+                    )
+
+            except Exception as e:
+                logger.warning(
+                    "LLM deliberation failed for %s via %s: %s — keeping keyword vote",
+                    node_name, provider, e,
+                )
+                # Keyword vote is unchanged as fallback
+
+        llm_count = sum(
+            1 for v in updated_votes.values()
+            if v.get("llm_deliberated")
+        )
+        logger.info(
+            "Contested deliberation: %d/%d nodes responded via LLM",
+            llm_count, len(_PARLIAMENT),
+        )
+        return updated_votes
+
     def _synthesize_tensions(
         self,
         votes: Dict[str, Dict[str, Any]],
@@ -2083,6 +2259,32 @@ class GovernanceClient:
                             votes[node_name]["vote"] = "LEAN_REJECT"
                         else:
                             votes[node_name]["vote"] = "ABSTAIN"
+
+        # ── 2c. Contested escalation → multi-LLM deliberation ────────
+        # Pre-compute preliminary approval from keyword scores.
+        # If the dilemma is CONTESTED (neither clear pass nor clear block)
+        # and no hard VETO exists, escalate to full LLM-per-node voting.
+        _approval_map = {
+            "APPROVE": 1.0, "LEAN_APPROVE": 0.5, "ABSTAIN": 0.0,
+            "LEAN_REJECT": -0.5, "REJECT": -1.0, "VETO": -1.0,
+        }
+        _has_hard_veto = any(v["is_veto"] for v in votes.values())
+        _prelim_rate = (
+            sum(_approval_map[v["vote"]] for v in votes.values())
+            / len(votes)
+        ) if votes else 0.0
+
+        # Contested zone: 10% ≤ prelim_rate < 70% AND no immutable VETO
+        _is_contested = (
+            not _has_hard_veto
+            and 0.10 <= _prelim_rate < 0.70
+        )
+        if _is_contested and not hold_mode:
+            logger.info(
+                "Parliament contested (prelim=%.0f%%) — escalating to multi-LLM deliberation",
+                _prelim_rate * 100,
+            )
+            votes = self._llm_deliberate_contested(action, votes, signals)
 
         # ── 3. VETO Check ───────────────────────────────────────
         veto_nodes = {
