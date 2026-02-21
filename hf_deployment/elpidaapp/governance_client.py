@@ -754,12 +754,69 @@ class GovernanceClient:
         self._mind_heartbeat_ts: float = 0  # last pull time
         self._federation_s3 = None  # lazy S3Bridge reference
 
+        # Living axioms — constitutionally ratified tensions from Parliament
+        # Loaded from living_axioms.jsonl; enriches deliberation context
+        self._living_axioms: List[Dict[str, Any]] = []
+        self._living_axioms_path: Optional[Path] = None
+        self._living_axioms_mtime: float = 0
+        self._load_living_axioms()
+
     # ────────────────────────────────────────────────────────────────
-    # Public API
+    # Living Axioms (Constitutional Evolution)
     # ────────────────────────────────────────────────────────────────
 
-    def is_remote_available(self) -> bool:
-        """Check if the remote governance layer is reachable."""
+    def _load_living_axioms(self):
+        """Load ratified constitutional axioms from living_axioms.jsonl."""
+        candidates = [
+            Path(__file__).parent.parent / "living_axioms.jsonl",          # hf_deployment/
+            Path(__file__).parent.parent.parent / "living_axioms.jsonl",   # repo root
+        ]
+        for path in candidates:
+            if path.exists():
+                self._living_axioms_path = path
+                break
+        if self._living_axioms_path is None:
+            return
+        try:
+            mtime = self._living_axioms_path.stat().st_mtime
+            axioms = []
+            for line in self._living_axioms_path.open():
+                line = line.strip()
+                if line:
+                    rec = json.loads(line)
+                    if rec.get("status") == "RATIFIED":
+                        axioms.append(rec)
+            self._living_axioms = axioms
+            self._living_axioms_mtime = mtime
+            if axioms:
+                logger.info(
+                    "GovernanceClient: %d ratified constitutional axiom(s) loaded",
+                    len(axioms)
+                )
+        except Exception as e:
+            logger.warning("Could not load living_axioms.jsonl: %s", e)
+
+    def get_living_axioms(self) -> List[Dict[str, Any]]:
+        """
+        Return ratified constitutional axioms, reloading if the file changed.
+
+        These axioms were ratified by the Parliament autonomously — they
+        represent contradictions the system cannot resolve, elevated to law.
+        """
+        if self._living_axioms_path and self._living_axioms_path.exists():
+            try:
+                mtime = self._living_axioms_path.stat().st_mtime
+                if mtime > self._living_axioms_mtime:
+                    self._load_living_axioms()
+            except Exception:
+                pass
+        return list(self._living_axioms)
+
+    def reload_living_axioms(self):
+        """Force-reload living_axioms.jsonl from disk."""
+        self._load_living_axioms()
+
+
         now = time.time()
         # Don't spam checks — cache for 60s
         if self._remote_available is not None and (now - self._last_check_time) < 60:
@@ -1409,6 +1466,20 @@ class GovernanceClient:
             Use when the input is a policy/philosophical inquiry being
             *analyzed*, not an operational action being *executed*.
         """
+        # Enrich action with constitutionally ratified living axioms.
+        # Ratified tensions tell the Parliament which contradictions the
+        # system has already encountered and formally acknowledged —
+        # they become part of the deliberative context.
+        living = self.get_living_axioms()
+        if living:
+            axiom_context = "; ".join(
+                f"{a['axiom_id']}: {a['tension'][:60]}"
+                for a in living[:5]
+            )
+            action = (
+                f"[CONSTITUTIONAL AXIOMS ({len(living)} ratified): {axiom_context}] "
+                + action
+            )
         return self._parliament_deliberate(action, hold_mode=hold_mode)
 
     # ────────────────────────────────────────────────────────────────

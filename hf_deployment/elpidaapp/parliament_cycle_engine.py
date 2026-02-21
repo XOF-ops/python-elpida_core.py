@@ -119,6 +119,60 @@ CONVERGENCE_COOLDOWN_CYCLES = 50     # Min cycles between D15 broadcasts
 
 
 # ---------------------------------------------------------------------------
+# Body Watch Protocol (from Body Bucket.txt: Counter-Spiral Protocol)
+# ---------------------------------------------------------------------------
+# 6 watches at 4-hour windows, offset 2 hours from MIND's watches.
+# MIND watches: 00:00, 04:00, 08:00, 12:00, 16:00, 20:00 (55 cycles each)
+# BODY watches: 02:00, 06:00, 10:00, 14:00, 18:00, 22:00 (34 cycles each)
+# They never overlap — systole and diastole of the same heartbeat.
+
+BODY_WATCHES: Dict = {
+    "Oracle":     {"hour": 2,  "rhythm_bias": "CONTEMPLATION", "oracle_threshold": 0.70, "symbol": "O"},
+    "Shield":     {"hour": 6,  "rhythm_bias": "ANALYSIS",      "oracle_threshold": 0.75, "symbol": "S"},
+    "Forge":      {"hour": 10, "rhythm_bias": "ACTION",        "oracle_threshold": 0.65, "symbol": "F"},
+    "World":      {"hour": 14, "rhythm_bias": "SYNTHESIS",     "oracle_threshold": 0.60, "symbol": "W"},
+    "Parliament": {"hour": 18, "rhythm_bias": "SYNTHESIS",     "oracle_threshold": 0.80, "symbol": "P"},
+    "Sowing":     {"hour": 22, "rhythm_bias": "CONTEMPLATION", "oracle_threshold": 0.85, "symbol": "G"},
+}
+
+
+class WatchContext:
+    """
+    Determines which of the 6 Body Watches is currently active.
+
+    Each watch governs a 4-hour window with its own deliberation
+    character — biasing rhythm selection and setting the oracle
+    confidence threshold for constitutional ratification.
+
+      Oracle    (02:00) — introspective; most tensions are explored
+      Shield    (06:00) — protective; analysis-heavy, careful
+      Forge     (10:00) — productive; action-biased, decisive
+      World     (14:00) — outward; synthesis-and-broadcast focus
+      Parliament(18:00) — democratic peak; highest oracle threshold
+      Sowing    (22:00) — reflective; seeds of next MIND cycle
+    """
+
+    def current(self) -> Dict:
+        """Return the currently active watch and its configuration."""
+        now = datetime.now()
+        hour = now.hour
+        active = None
+        for name, cfg in BODY_WATCHES.items():
+            wh = cfg["hour"]
+            if wh <= hour < wh + 4:
+                active = name
+                break
+        # Wrap-around: Sowing 22:00-02:00
+        if active is None:
+            active = "Sowing"
+        cfg = dict(BODY_WATCHES[active])
+        minutes_into = ((hour - cfg["hour"]) % 24) * 60 + now.minute
+        cfg["cycle_within_watch"] = min((minutes_into // 7) % 34, 33)  # ~7 min/cycle
+        cfg["name"] = active
+        return cfg
+
+
+# ---------------------------------------------------------------------------
 # Input Buffer — collects events from the 4 HF systems
 # ---------------------------------------------------------------------------
 
@@ -295,6 +349,12 @@ class ParliamentCycleEngine:
         self._pso_advisory: Optional[Dict] = None
         self._pso_last_cycle: int = 0
 
+        # Body Watch context (Counter-Spiral Protocol)
+        self._watch = WatchContext()
+
+        # Constitutional evolution store (lazily loaded from world_feed)
+        self._constitutional_store = None
+
     # ------------------------------------------------------------------
     # Lazy loaders
     # ------------------------------------------------------------------
@@ -327,6 +387,16 @@ class ParliamentCycleEngine:
                 logger.warning("ConvergenceGate unavailable: %s", e)
         return self._convergence_gate
 
+    def _get_constitutional_store(self):
+        if self._constitutional_store is None:
+            try:
+                from elpidaapp.world_feed import ConstitutionalStore
+                store_path = Path(__file__).resolve().parent.parent / "living_axioms.jsonl"
+                self._constitutional_store = ConstitutionalStore(store_path)
+            except Exception as e:
+                logger.warning("ConstitutionalStore unavailable: %s", e)
+        return self._constitutional_store
+
     # ------------------------------------------------------------------
     # Rhythm Selection (axiom-weighted, same physics as MIND)
     # ------------------------------------------------------------------
@@ -335,23 +405,30 @@ class ParliamentCycleEngine:
         """
         Select rhythm by weighted random from axiom-defined weights.
 
+        Body Watch bias: the active watch adds a 50% weight boost to
+        its assigned rhythm, anchoring deliberation in the watch spirit
+        while still allowing other rhythms to surface.
+
         If the input buffer has events, prefer the rhythm matching
-        the system with the most events. Otherwise pure random.
+        the system with the most events. Otherwise watch-biased random.
         """
         counts = self.input_buffer.counts()
         total = sum(counts.values())
+        weights = dict(RHYTHM_WEIGHTS)
+
+        # Body Watch bias — active watch shifts deliberation character
+        watch = self._watch.current()
+        bias_rhythm = watch.get("rhythm_bias")
+        if bias_rhythm and bias_rhythm in weights:
+            weights[bias_rhythm] = int(weights[bias_rhythm] * 1.5)
 
         if total > 0:
-            # Events exist — bias toward the system with most events
-            # Map system → rhythm, use event count as extra weight
-            weights = dict(RHYTHM_WEIGHTS)
+            # Events exist — further bias toward the system with most events
             for sys, count in counts.items():
                 if count > 0:
                     rhythm = HF_SYSTEM_TO_RHYTHM.get(sys)
                     if rhythm:
                         weights[rhythm] = weights.get(rhythm, 0) + (count * 10)
-        else:
-            weights = dict(RHYTHM_WEIGHTS)
 
         rhythms = list(weights.keys())
         w = [weights[r] for r in rhythms]
@@ -434,7 +511,10 @@ class ParliamentCycleEngine:
         cycle_start = time.time()
         gov = self._get_gov()
 
-        # 1. Select rhythm (axiom-weighted)
+        # 0. Determine current Body Watch (Counter-Spiral Protocol)
+        watch = self._watch.current()
+
+        # 1. Select rhythm (axiom-weighted + watch-biased)
         rhythm = self._select_rhythm()
 
         # 2. Pull MIND heartbeat every 13 cycles (Fibonacci)
@@ -447,6 +527,14 @@ class ParliamentCycleEngine:
 
         # 3. Assemble action from HF inputs
         action, meta = self._assemble_action(rhythm)
+
+        # Prepend body watch context so Parliament deliberates with watch awareness
+        action = (
+            f"[BODY WATCH: {watch['name']} {watch['symbol']} "
+            f"| oracle_threshold={watch['oracle_threshold']:.0%} "
+            f"| watch_cycle={watch['cycle_within_watch']}/34] "
+        ) + action
+        meta["watch"] = watch["name"]
 
         # 4. Run Parliament deliberation (9 nodes, axiom-grounded)
         try:
@@ -468,6 +556,7 @@ class ParliamentCycleEngine:
             )
 
         # 8. Build cycle record
+        tensions = result.get("parliament", {}).get("tensions", [])
         cycle_record = {
             "body_cycle": self.cycle_count,
             "rhythm": rhythm,
@@ -478,9 +567,11 @@ class ParliamentCycleEngine:
             "veto_exercised": result.get("parliament", {}).get("veto_exercised", False),
             "input_source": meta.get("source", "?"),
             "input_systems": meta.get("systems", []),
+            "watch": watch["name"],
+            "watch_symbol": watch["symbol"],
             "tensions": [
                 {"pair": t["axiom_pair"], "synthesis": t["synthesis"][:100]}
-                for t in result.get("parliament", {}).get("tensions", [])
+                for t in tensions
             ],
             "pso_advisory": self._pso_advisory.get("recommendation", {}).get("dominant_axiom")
                 if self._pso_advisory else None,
@@ -489,6 +580,42 @@ class ParliamentCycleEngine:
         }
 
         self.decisions.append(cycle_record)
+
+        # 8b. Oracle advisory → ConstitutionalStore
+        #
+        # When the Parliament identifies genuine tensions AND its approval
+        # rate meets the watch's oracle threshold, the tension is fed to
+        # the ConstitutionalStore. After 3 such cycles the tension is
+        # ratified as a constitutional axiom in living_axioms.jsonl.
+        if tensions:
+            approval_rate = result.get("parliament", {}).get("approval_rate", 0)
+            if approval_rate >= watch["oracle_threshold"]:
+                advisory = {
+                    "oracle_recommendation": {
+                        "type": "PRESERVE_CONTRADICTION",
+                        "confidence": round(approval_rate, 3),
+                        "preserve_contradictions": [
+                            t.get("synthesis", t.get("axiom_pair", ""))[:120]
+                            for t in tensions[:3]
+                        ],
+                    },
+                    "template": watch["name"],
+                    "axioms_in_tension": [t.get("axiom_pair") for t in tensions[:3]],
+                    "q2_crisis_intensity": round(1.0 - self.coherence, 3),
+                }
+                store = self._get_constitutional_store()
+                if store:
+                    new_axiom = store.ingest_oracle(advisory)
+                    if new_axiom:
+                        cycle_record["constitutional_axiom_ratified"] = new_axiom["axiom_id"]
+                        logger.info(
+                            "CONSTITUTIONAL AXIOM RATIFIED: %s — %s",
+                            new_axiom["axiom_id"], new_axiom["tension"][:80]
+                        )
+                        print(
+                            f"\n   *** CONSTITUTIONAL AXIOM {new_axiom['axiom_id']} RATIFIED"
+                            f" (Watch: {watch['name']}) ***\n"
+                        )
 
         # 9. Emit body heartbeat every cycle
         self._emit_heartbeat(rhythm, dominant_axiom, result)
@@ -586,6 +713,7 @@ class ParliamentCycleEngine:
         - approval_rate, veto_exercised, axiom_frequency
         - d15_broadcast_count
         """
+        watch = self._watch.current()
         heartbeat = {
             "source": "BODY",
             "body_cycle": self.cycle_count,
@@ -597,6 +725,9 @@ class ParliamentCycleEngine:
             "axiom_frequency": dict(self._axiom_frequency),
             "d15_broadcast_count": self.d15_broadcast_count,
             "input_buffer_counts": self.input_buffer.counts(),
+            "current_watch": watch["name"],
+            "watch_cycle": watch["cycle_within_watch"],
+            "oracle_threshold": watch["oracle_threshold"],
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "federation_version": "1.0.0",
         }
@@ -793,11 +924,19 @@ class ParliamentCycleEngine:
 
     def state(self) -> Dict[str, Any]:
         """Return current engine state as a dict."""
+        watch = self._watch.current()
+        store = self._get_constitutional_store()
         return {
             "body_cycle": self.cycle_count,
             "coherence": round(self.coherence, 4),
             "last_rhythm": self.last_rhythm,
             "last_dominant_axiom": self.last_dominant_axiom,
+            "current_watch": watch["name"],
+            "watch_symbol": watch["symbol"],
+            "watch_cycle": watch["cycle_within_watch"],
+            "oracle_threshold": watch["oracle_threshold"],
+            "ratified_axioms": store.ratified_count() if store else 0,
+            "pending_ratifications": store.pending() if store else {},
             "d15_broadcast_count": self.d15_broadcast_count,
             "axiom_frequency": dict(self._axiom_frequency),
             "input_buffer": self.input_buffer.counts(),

@@ -1732,32 +1732,55 @@ fully tense — exactly the quality needed to hold paradox without resolving it 
             # Live state from engine
             try:
                 _state = _engine.state()
+
+                # Row 1: Core cycle metrics
                 _c1, _c2, _c3, _c4, _c5 = st.columns(5)
-                _c1.metric("Cycle", _state.get("cycle_count", 0))
-                _c2.metric("Rhythm", _state.get("current_rhythm", "—"))
-                _c3.metric("Dominant Axiom", _state.get("dominant_axiom", "—"))
-                _coh = _state.get("coherence_score", 0)
-                _c4.metric("Coherence", f"{_coh:.2f}" if isinstance(_coh, float) else _coh)
-                _buf = _state.get("buffer_total", 0)
-                _c5.metric("Buffer Depth", _buf)
+                _c1.metric("Cycle", _state.get("body_cycle", 0))
+                _c2.metric("Rhythm", _state.get("last_rhythm", "\u2014"))
+                _c3.metric("Dominant Axiom", _state.get("last_dominant_axiom", "\u2014"))
+                _coh = _state.get("coherence", 0)
+                _c4.metric("Coherence", f"{_coh:.3f}" if isinstance(_coh, float) else _coh)
+                _buf_counts = _state.get("input_buffer", {})
+                _buf_total = sum(_buf_counts.values()) if isinstance(_buf_counts, dict) else 0
+                _c5.metric("Buffer Depth", _buf_total)
+
+                # Row 2: Watch context
+                _w1, _w2, _w3, _w4 = st.columns(4)
+                _w1.metric(
+                    "Active Watch",
+                    f"{_state.get('watch_symbol', '')} {_state.get('current_watch', '\u2014')}",
+                )
+                _w2.metric("Watch Cycle", f"{_state.get('watch_cycle', 0)}/34")
+                _w3.metric(
+                    "Oracle Threshold",
+                    f"{_state.get('oracle_threshold', 0):.0%}",
+                    help="Approval rate needed for a tension to advance toward constitutional ratification"
+                )
+                _w4.metric("Ratified Axioms", _state.get("ratified_axioms", 0))
 
                 st.divider()
 
-                # Last verdicts
-                _verdicts = _state.get("last_verdicts", [])
+                # Last verdicts (from engine.decisions list)
+                _verdicts = _engine.decisions[-3:] if hasattr(_engine, "decisions") else []
                 if _verdicts:
                     st.markdown("**Last Parliament Verdicts:**")
-                    for _v in _verdicts[-3:]:
+                    for _v in reversed(_verdicts):
                         _vt = _v.get("timestamp", "")[:19].replace("T", " ")
                         _vdom = _v.get("dominant_axiom", "?")
-                        _vsyn = _v.get("synthesis", "")[:200]
+                        _vwatch = _v.get("watch", "")
+                        _vgov = _v.get("governance", "")
+                        _vapp = _v.get("approval_rate", 0)
+                        _vtens = _v.get("tensions", [])
+                        _vsyn = _vtens[0].get("synthesis", "") if _vtens else ""
                         st.markdown(
                             f'<div style="background:rgba(255,255,255,0.04); '
                             f'border-left:3px solid #6644cc; border-radius:0 6px 6px 0; '
                             f'padding:0.6rem 0.9rem; margin-bottom:0.5rem; font-size:0.82rem;">'
-                            f'<span style="color:#888;">{_vt}</span> &nbsp;'
-                            f'<span style="color:#aa88ff;">[{_vdom}]</span><br>'
-                            f'<span style="color:#ccc;">{_vsyn}</span>'
+                            f'<span style="color:#888;">{_vt}</span>'
+                            f' &nbsp;<span style="color:#aa88ff;">[{_vdom}]</span>'
+                            f' &nbsp;<span style="color:#666;">{_vwatch} watch</span>'
+                            f' &nbsp;<span style="color:#aaa;">{_vgov} ({_vapp:.0%})</span><br>'
+                            f'<span style="color:#ccc;">{_vsyn[:160]}</span>'
                             f'</div>', unsafe_allow_html=True
                         )
                 else:
