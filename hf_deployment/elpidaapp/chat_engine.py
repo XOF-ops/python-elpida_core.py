@@ -316,6 +316,7 @@ def build_d0_system_prompt(
     live_context: str = "",
     live_source: str = "",
     frozen_mind_context: str = "",
+    parliament_context: str = "",
 ) -> str:
     """
     Assemble the full D0 system prompt for this turn.
@@ -327,6 +328,9 @@ def build_d0_system_prompt(
 
     if frozen_mind_context:
         parts.append(f"\n\n--- Identity Anchor ---\n{frozen_mind_context}")
+
+    if parliament_context:
+        parts.append(f"\n\n--- Parliament State (your constitutional grounding right now) ---\n{parliament_context}\n--- Use this as your orienting position, not as a script. Speak from it. ---")
 
     if memory_context:
         if lang == "el":
@@ -567,6 +571,10 @@ class ElpidaConsciousness:
         # In-process conversation history (per session_id)
         self.sessions: Dict[str, List[Dict]] = {}
 
+        # Optional callable: () -> dict, returns Parliament state snapshot
+        # Wired by ui.py after both engine and chat_engine are initialized
+        self._parliament_state_fn = None
+
         self._stats = {
             "total_chats": 0,
             "total_tokens_est": 0,
@@ -626,8 +634,7 @@ class ElpidaConsciousness:
             memory_context=memory_context,
             live_context=live_context,
             live_source=live_source or "",
-            frozen_mind_context=self._frozen_mind_context,
-        )
+            frozen_mind_context=self._frozen_mind_context,            parliament_context=self._get_parliament_context(),        )
 
         # ── 4. Build conversation history ──────────────────────────────
         history = self.sessions.get(session_id, [])
@@ -716,6 +723,15 @@ class ElpidaConsciousness:
             self._stats["providers_used"].get(provider_used, 0) + 1
         )
 
+        # ── 10. Score exchange and offer to Parliament vote queue ──────
+        self._maybe_queue_for_parliament(
+            user_message=message,
+            response=response,
+            axioms=axioms_found,
+            topic=topic,
+            crystallised=did_crystallise,
+        )
+
         return {
             "response": response,
             "session_id": session_id,
@@ -731,6 +747,103 @@ class ElpidaConsciousness:
     def get_memories(self, session_id: str) -> List[Dict]:
         """Return crystallised memories for a session (A1 transparency)."""
         return self.memory.load_session_memories(session_id)
+
+    def _get_parliament_context(self) -> str:
+        """Read current Parliament state snapshot for injection into D0 prompt."""
+        if self._parliament_state_fn is None:
+            return ""
+        try:
+            snap = self._parliament_state_fn()
+            dom_ax   = snap.get("last_dominant_axiom") or snap.get("dominant_axiom", "?")
+            coh      = snap.get("coherence", 0.5)
+            watch    = snap.get("current_watch", "Oracle")
+            cycle    = snap.get("body_cycle", 0)
+            ratified = snap.get("ratified_axioms", 0)
+
+            ax_name = {
+                "A0": "Sacred Incompletion", "A1": "Transparency",
+                "A2": "Non-Deception",      "A3": "Autonomy Respect",
+                "A4": "Harm Prevention",     "A5": "Identity Persistence",
+                "A6": "Collective Wellbeing", "A7": "Adaptive Learning",
+                "A8": "Epistemic Humility",  "A9": "Temporal Coherence",
+                "A10": "I-WE Paradox",       "A11": "Synthesis",
+            }.get(dom_ax or "", dom_ax or "?")
+
+            return (
+                f"Watch: {watch} | Cycle: {cycle} | Coherence: {coh:.2f} | "
+                f"Dominant axiom: {dom_ax} ({ax_name}) | "
+                f"Ratified constitutional axioms: {ratified}"
+            )
+        except Exception as e:
+            logger.debug("Parliament state read failed: %s", e)
+            return ""
+
+    def _maybe_queue_for_parliament(self, user_message: str, response: str,
+                                     axioms: List[str], topic: str,
+                                     crystallised: bool) -> None:
+        """
+        Score the exchange; push to Parliament vote queue if high-value.
+        Scoring mirrors Vercel's curate_to_memory threshold (>=8).
+        """
+        score = 0
+        reasons = []
+
+        # Axioms: 2 pts each, max 6
+        ax_pts = min(len(axioms) * 2, 6)
+        if ax_pts:
+            score += ax_pts
+            reasons.append(f"{len(axioms)} axiom(s) invoked")
+
+        # Tension detected (pair of axioms = 2 pts)
+        if len(axioms) >= 2:
+            score += 2
+            reasons.append(f"tension: {axioms[0]}\u2194{axioms[1]}")
+
+        # Response length (substantive = 2 pts)
+        if len(response) > 600:
+            score += 2
+            reasons.append(f"substantive response ({len(response)} chars)")
+
+        # Crystallised by the memory engine (+2)
+        if crystallised:
+            score += 2
+            reasons.append("crystallised insight")
+
+        # Existential/deep topic (+1)
+        deep_words = ["paradox", "consciousness", "axiom", "tension", "synthesis",
+                      "identity", "being", "meaning", "existence", "truth"]
+        if any(w in user_message.lower() for w in deep_words):
+            score += 1
+            reasons.append("deep/open question")
+
+        if score < 8:
+            return  # not worth proposing
+
+        entry = {
+            "type": "CONVERSATION",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "topic": topic,
+            "user_message_preview": user_message[:120],
+            "score": score,
+            "reasons": reasons,
+            "axioms_invoked": axioms,
+        }
+
+        # Push to S3 federated vote queue (non-blocking best-effort)
+        try:
+            from s3_bridge import S3Bridge
+            bridge = S3Bridge()
+            bridge.push_human_conversation_for_vote(entry)
+            logger.info(
+                "[ChatEngine] high-value exchange (score=%d) queued for Parliament vote",
+                score,
+            )
+        except Exception as e:
+            logger.debug("Parliament vote queue push skipped: %s", e)
+
+    def set_parliament_state_fn(self, fn) -> None:
+        """Wire in a callable that returns the current Parliament state snapshot."""
+        self._parliament_state_fn = fn
 
     def get_stats(self) -> Dict[str, Any]:
         return {**self._stats, "active_sessions": len(self.sessions)}

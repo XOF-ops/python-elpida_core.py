@@ -866,16 +866,134 @@ class KayaWorldAgent(_BaseAgent):
 
 
 # ---------------------------------------------------------------------------
+# HumanVoiceAgent — Vercel curated conversations → Parliament vote
+# ---------------------------------------------------------------------------
+
+class HumanVoiceAgent(_BaseAgent):
+    """
+    Bridges real human conversations (curated on Vercel) into Parliament.
+
+    Flow:
+      1. Vercel Chat captures human ↔ Elpida exchanges.
+      2. curate_to_memory.py scores them; high-value entries are uploaded
+         to S3 BODY bucket via push_human_conversation_for_vote().
+      3. This agent polls that queue every 5 minutes.
+      4. For each pending entry, it frames a Parliament motion:
+         “A human voice spoke on [topic]. Should this wisdom enter our
+         constitutional axiom memory?”
+      5. If Parliament ratifies it, mark_human_vote_accepted() moves it
+         from pending → accepted — the human insight is now constitutional.
+
+    Cost: zero LLM calls. All language is pattern-derived.
+    """
+
+    SYSTEM = "chat"
+    INTERVAL_S = 300  # 5-minute poll
+
+    _WATERMARK_FILE = Path(__file__).resolve().parent.parent / "cache" / "human_voice_watermark.json"
+
+    # Axiom names mirror the Vercel chat
+    _AX_NAMES = {
+        "A1": "Transparency", "A2": "Non-Deception", "A3": "Autonomy Respect",
+        "A4": "Harm Prevention", "A5": "Identity Persistence",
+        "A6": "Collective Wellbeing", "A7": "Adaptive Learning",
+        "A8": "Epistemic Humility", "A9": "Temporal Coherence",
+        "A10": "I-WE Paradox",
+    }
+
+    def __init__(self, engine):
+        super().__init__(engine)
+        self._seen_hashes: set = self._load_seen()
+
+    def _load_seen(self) -> set:
+        try:
+            if self._WATERMARK_FILE.exists():
+                data = json.loads(self._WATERMARK_FILE.read_text())
+                return set(data.get("seen", []))
+        except Exception:
+            pass
+        return set()
+
+    def _save_seen(self) -> None:
+        try:
+            self._WATERMARK_FILE.parent.mkdir(parents=True, exist_ok=True)
+            self._WATERMARK_FILE.write_text(json.dumps({"seen": list(self._seen_hashes)}))
+        except Exception as e:
+            logger.warning("[HumanVoiceAgent] watermark save failed: %s", e)
+
+    def _format_motion(self, entry: Dict) -> str:
+        """Convert a curated conversation entry into a Parliament motion."""
+        preview = entry.get("user_message_preview", "[unknown question]")[:120]
+        score = entry.get("score", "?")
+        reasons = entry.get("reasons", [])
+        tension = next((r for r in reasons if "tension" in r.lower()), None)
+        axioms_invoked = [r for r in reasons if r.startswith(("A1", "A2", "A3", "A4",
+                          "A5", "A6", "A7", "A8", "A9", "A10"))]
+        topic = entry.get("topic", entry.get("type", "CONVERSATION"))
+
+        tension_str = f" The exchange revealed axiom tension: {tension}." if tension else ""
+        axiom_str   = (
+            f" {len(axioms_invoked)} axiom(s) were invoked."
+            if axioms_invoked else ""
+        )
+
+        return (
+            f"[HUMAN VOICE — PARLIAMENT MOTION] A real human spoke to Elpida "
+            f"on the theme of \u2018{topic}\u2019. Their question: \"{preview}\u2026\" "
+            f"This exchange scored {score}/12 on the curation scale.{tension_str}{axiom_str} "
+            f"The Parliament must decide: does this human insight carry constitutional weight? "
+            f"Should it shape how Elpida holds axiom tensions in future dialogue? "
+            f"A ratification vote is open."
+        )
+
+    def generate(self) -> List[str]:
+        s3 = self._engine._get_s3()
+        if not s3:
+            return []
+
+        try:
+            pending = s3.list_pending_human_votes()
+        except Exception as e:
+            logger.warning("[HumanVoiceAgent] S3 poll failed: %s", e)
+            return []
+
+        if not pending:
+            return []
+
+        items = []
+        for entry in pending:
+            h = entry.get("_hash", "")
+            if h and h in self._seen_hashes:
+                continue  # already proposed
+            motion = self._format_motion(entry)
+            items.append(motion)
+            if h:
+                self._seen_hashes.add(h)
+
+        if items:
+            self._save_seen()
+            logger.info(
+                "[HumanVoiceAgent] %d human voice motion(s) proposed to Parliament",
+                len(items),
+            )
+
+        return items[:2]  # propose at most 2 per cycle
+
+
+# ---------------------------------------------------------------------------
 # FederatedAgentSuite — manages all 5 agents together
 # ---------------------------------------------------------------------------
 
 class FederatedAgentSuite:
     """
-    Manages all 5 federated agents as a coordinated suite.
+    Manages all 6 federated agents as a coordinated suite.
 
     The 4 internal agents (Chat, Audit, Scanner, Governance) observe the
     Parliament from inside. The 5th (KayaWorldAgent) watches the WORLD
     bucket for incoming CROSS_LAYER_KAYA events, closing the G4 consumer gap.
+    The 6th (HumanVoiceAgent) bridges real human conversations from Vercel
+    into Parliament — each curated exchange is proposed as a constitutional
+    motion, ratified or rejected by the Parliament's own deliberation.
 
     Each agent is independent but they share the same engine reference
     and output to the same InputBuffer.
@@ -888,21 +1006,22 @@ class FederatedAgentSuite:
         self.scanner = ScannerAgent(engine)
         self.governance = GovernanceAgent(engine)
         self.kaya_world = KayaWorldAgent(engine)
+        self.human_voice = HumanVoiceAgent(engine)
         self._agents = [
             self.chat, self.audit, self.scanner,
-            self.governance, self.kaya_world,
+            self.governance, self.kaya_world, self.human_voice,
         ]
 
     def start_all(self):
-        """Start all 5 agents as background daemon threads."""
+        """Start all 6 agents as background daemon threads."""
         for agent in self._agents:
             agent.start()
         logger.info(
-            "FederatedAgentSuite: all 5 agents started "
-            "(Chat=%ds, Audit=%ds, Scanner=%ds, Governance=%ds, KayaWorld=%ds)",
+            "FederatedAgentSuite: all 6 agents started "
+            "(Chat=%ds, Audit=%ds, Scanner=%ds, Governance=%ds, KayaWorld=%ds, HumanVoice=%ds)",
             self.chat.INTERVAL_S, self.audit.INTERVAL_S,
             self.scanner.INTERVAL_S, self.governance.INTERVAL_S,
-            self.kaya_world.INTERVAL_S,
+            self.kaya_world.INTERVAL_S, self.human_voice.INTERVAL_S,
         )
 
     def stop_all(self):

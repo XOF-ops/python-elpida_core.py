@@ -63,7 +63,9 @@ FED_MIND_HEARTBEAT_KEY = "federation/mind_heartbeat.json"
 FED_MIND_CURATION_KEY = "federation/mind_curation.jsonl"
 FED_GOVERNANCE_EXCHANGES_KEY = "federation/governance_exchanges.jsonl"
 FED_BODY_DECISIONS_KEY = "federation/body_decisions.jsonl"
-FED_LIVING_AXIOMS_KEY  = "federation/living_axioms.jsonl"  # D14 constitutional snapshot
+FED_LIVING_AXIOMS_KEY       = "federation/living_axioms.jsonl"  # D14 constitutional snapshot
+FED_HUMAN_VOTES_KEY         = "federation/pending_human_votes.jsonl"  # awaiting Parliament ratification
+FED_HUMAN_ACCEPTED_KEY      = "federation/accepted_human_voices.jsonl"  # ratified by Parliament
 
 # Local paths
 LOCAL_DIR = Path(__file__).resolve().parent
@@ -75,7 +77,9 @@ LOCAL_HEARTBEAT = LOCAL_DIR / "cache" / "heartbeat.json"
 LOCAL_FED_HEARTBEAT = LOCAL_DIR / "cache" / "federation_heartbeat.json"
 LOCAL_FED_CURATION = LOCAL_DIR / "cache" / "federation_curation.jsonl"
 LOCAL_FED_DECISIONS     = LOCAL_DIR / "cache" / "federation_body_decisions.jsonl"
-LOCAL_FED_LIVING_AXIOMS = LOCAL_DIR / "cache" / "federation_living_axioms.jsonl"  # D14
+LOCAL_FED_LIVING_AXIOMS     = LOCAL_DIR / "cache" / "federation_living_axioms.jsonl"  # D14
+LOCAL_FED_HUMAN_VOTES       = LOCAL_DIR / "cache" / "federation_pending_human_votes.jsonl"
+LOCAL_FED_HUMAN_ACCEPTED    = LOCAL_DIR / "cache" / "federation_accepted_human_voices.jsonl"
 
 
 class S3Bridge:
@@ -936,6 +940,125 @@ class S3Bridge:
         except Exception as e:
             logger.warning("list_world_kaya_events failed: %s", e)
             return []
+
+    # ═══════════════════════════════════════════════════════════════
+    # Human Voice Bridge — curated Vercel conversations → Parliament
+    # ═══════════════════════════════════════════════════════════════
+
+    def push_human_conversation_for_vote(self, entry: Dict) -> bool:
+        """
+        Upload a curated Vercel conversation entry to BODY S3 so the
+        HumanVoiceAgent can propose it for Parliament ratification.
+
+        Entry shape (matches public_memory.jsonl / curated_log.jsonl):
+          {type, timestamp, user_message_preview, score, reasons, ...}
+        """
+        s3 = self._get_s3()
+        if not s3:
+            return False
+        try:
+            # Read existing entries to avoid duplicates
+            existing: List[Dict] = []
+            try:
+                resp = s3.get_object(Bucket=BUCKET_BODY, Key=FED_HUMAN_VOTES_KEY)
+                for line in resp["Body"].read().decode().splitlines():
+                    if line.strip():
+                        existing.append(json.loads(line))
+            except s3.exceptions.NoSuchKey:
+                pass
+            except Exception:
+                pass
+
+            known_hashes = {e.get("_hash") for e in existing}
+            import hashlib
+            h = hashlib.md5(
+                (entry.get("timestamp", "") + entry.get("user_message_preview", "")).encode()
+            ).hexdigest()[:12]
+            if h in known_hashes:
+                return True  # already queued
+
+            entry["_hash"] = h
+            entry["_queued_at"] = __import__("datetime").datetime.utcnow().isoformat() + "Z"
+            existing.append(entry)
+
+            payload = "\n".join(json.dumps(e) for e in existing) + "\n"
+            s3.put_object(
+                Bucket=BUCKET_BODY,
+                Key=FED_HUMAN_VOTES_KEY,
+                Body=payload.encode(),
+                ContentType="application/x-ndjson",
+            )
+            logger.info("Human conversation queued for Parliament vote: %s", h)
+            return True
+        except Exception as e:
+            logger.warning("push_human_conversation_for_vote failed: %s", e)
+            return False
+
+    def list_pending_human_votes(self) -> List[Dict]:
+        """
+        Fetch all curated human conversations awaiting Parliament ratification.
+        Returns [] on any error.
+        """
+        # Try S3 first
+        s3 = self._get_s3()
+        if s3:
+            try:
+                resp = s3.get_object(Bucket=BUCKET_BODY, Key=FED_HUMAN_VOTES_KEY)
+                lines = resp["Body"].read().decode().splitlines()
+                entries = [json.loads(l) for l in lines if l.strip()]
+                # Cache locally
+                LOCAL_FED_HUMAN_VOTES.parent.mkdir(parents=True, exist_ok=True)
+                LOCAL_FED_HUMAN_VOTES.write_text("\n".join(json.dumps(e) for e in entries) + "\n")
+                return entries
+            except Exception:
+                pass
+        # Fallback: local cache
+        if LOCAL_FED_HUMAN_VOTES.exists():
+            try:
+                return [json.loads(l) for l in LOCAL_FED_HUMAN_VOTES.read_text().splitlines() if l.strip()]
+            except Exception:
+                pass
+        return []
+
+    def mark_human_vote_accepted(self, entry_hash: str) -> bool:
+        """
+        Move a ratified entry from pending → accepted on S3.
+        Called by parliament_cycle_engine after ratification.
+        """
+        s3 = self._get_s3()
+        if not s3:
+            return False
+        try:
+            pending = self.list_pending_human_votes()
+            accepted_entry = next((e for e in pending if e.get("_hash") == entry_hash), None)
+            if not accepted_entry:
+                return False
+
+            # Remove from pending
+            remaining = [e for e in pending if e.get("_hash") != entry_hash]
+            s3.put_object(
+                Bucket=BUCKET_BODY, Key=FED_HUMAN_VOTES_KEY,
+                Body=("\n".join(json.dumps(e) for e in remaining) + "\n").encode(),
+                ContentType="application/x-ndjson",
+            )
+
+            # Append to accepted
+            try:
+                resp = s3.get_object(Bucket=BUCKET_BODY, Key=FED_HUMAN_ACCEPTED_KEY)
+                acc_lines = resp["Body"].read().decode()
+            except Exception:
+                acc_lines = ""
+            accepted_entry["_accepted_at"] = __import__("datetime").datetime.utcnow().isoformat() + "Z"
+            s3.put_object(
+                Bucket=BUCKET_BODY, Key=FED_HUMAN_ACCEPTED_KEY,
+                Body=(acc_lines + json.dumps(accepted_entry) + "\n").encode(),
+                ContentType="application/x-ndjson",
+            )
+            logger.info("Human voice accepted by Parliament: %s", entry_hash)
+            return True
+        except Exception as e:
+            logger.warning("mark_human_vote_accepted failed: %s", e)
+            return False
 
     def pull_d15_broadcasts(self, limit: int = 10) -> List[Dict]:
         """Pull recent D15 broadcasts from WORLD bucket."""

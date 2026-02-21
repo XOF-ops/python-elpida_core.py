@@ -357,6 +357,14 @@ st.markdown("""
 if "chat_engine" not in st.session_state:
     from elpidaapp.chat_engine import ChatEngine
     st.session_state.chat_engine = ChatEngine()
+    # Wire Parliament state into ChatEngine so D0 speaks from constitutional position
+    try:
+        from app import get_parliament_engine as _get_pe
+        _pe = _get_pe()
+        if _pe is not None:
+            st.session_state.chat_engine.set_parliament_state_fn(_pe.state)
+    except Exception:
+        pass  # Parliament not yet running — chat still works without it
 
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
