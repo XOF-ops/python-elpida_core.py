@@ -1188,6 +1188,12 @@ class S3Bridge:
                 # Merge broadcast summary back to MIND
                 self._merge_d15_to_mind(broadcast_entry)
 
+                # Regenerate the public index.html in WORLD bucket
+                try:
+                    self._regenerate_world_index()
+                except Exception as _he:
+                    logger.warning("index.html regen failed (non-critical): %s", _he)
+
                 return s3_key
 
             except Exception as e:
@@ -1201,6 +1207,216 @@ class S3Bridge:
             json.dump(broadcast_entry, f, indent=2, ensure_ascii=False)
         logger.warning("D15 broadcast saved locally: %s", local_path)
         return None
+
+    # ═══════════════════════════════════════════════════════════════
+    # WORLD index.html — live public page regeneration
+    # ═══════════════════════════════════════════════════════════════
+
+    def _collect_all_broadcasts(self, limit: int = 20) -> List[Dict]:
+        """
+        Collect and normalize broadcasts from both MIND and BODY layers.
+
+        MIND  → synthesis/broadcast_*.json  (COLLECTIVE_SYNTHESIS)
+        BODY  → d15/broadcast_*.json        (D15_CONSTITUTIONAL_BROADCAST)
+
+        Returns list sorted newest-first, len ≤ limit.
+        """
+        s3 = self._get_s3(REGION_WORLD)
+        if not s3:
+            return []
+
+        all_items: List[Dict] = []
+        for prefix, layer in [("synthesis/", "MIND"), ("d15/", "BODY")]:
+            try:
+                paginator = s3.get_paginator("list_objects_v2")
+                for page in paginator.paginate(
+                    Bucket=BUCKET_WORLD, Prefix=prefix,
+                    PaginationConfig={"MaxItems": limit * 2},
+                ):
+                    for obj in page.get("Contents", []):
+                        key = obj["Key"]
+                        if not key.endswith(".json") or key.endswith(".jsonl"):
+                            continue
+                        try:
+                            raw = s3.get_object(Bucket=BUCKET_WORLD, Key=key)
+                            entry = json.loads(raw["Body"].read().decode("utf-8"))
+                            entry["_s3_key"] = key
+                            entry["_layer"] = layer
+                            all_items.append(entry)
+                        except Exception:
+                            pass
+            except Exception as e:
+                logger.warning("Broadcast collect [%s] failed: %s", prefix, e)
+
+        all_items.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
+        return all_items[:limit]
+
+    def _regenerate_world_index(self) -> bool:
+        """
+        Rebuild index.html from all MIND + BODY broadcasts and push to
+        s3://elpida-external-interfaces/index.html.
+
+        Called automatically after every D15 constitutional broadcast.
+        Preserves the existing page style (dark monospace, purple accent)
+        and adds a green accent stripe for BODY Parliament broadcasts.
+        """
+        s3 = self._get_s3(REGION_WORLD)
+        if not s3:
+            return False
+
+        broadcasts = self._collect_all_broadcasts(limit=20)
+        mind_count = sum(1 for b in broadcasts if b.get("_layer") == "MIND")
+        body_count = sum(1 for b in broadcasts if b.get("_layer") == "BODY")
+        total = len(broadcasts)
+
+        cards: List[str] = []
+        for b in broadcasts:
+            btype  = b.get("type", "UNKNOWN")
+            s3_key = b.get("_s3_key", "")
+            s3_url = (
+                f"https://{BUCKET_WORLD}.s3.{REGION_WORLD}.amazonaws.com/{s3_key}"
+            )
+            ts_raw = b.get("timestamp", "")[:19].replace("T", " ")
+
+            if btype == "COLLECTIVE_SYNTHESIS":
+                cycle      = b.get("cycle", "?")
+                rhythm     = b.get("rhythm", "?")
+                body_text  = b.get("current_insight_summary", "")
+                coherence  = b.get("coherence", 0)
+                criteria   = b.get("criteria_met", 0)
+                type_label = "COLLECTIVE_SYNTHESIS"
+                meta_line  = f"Cycle {cycle} &bull; {ts_raw} UTC &bull; Rhythm: {rhythm}"
+                crit_line  = (
+                    f'<span class="criteria-met">{criteria}/5</span>'
+                    f" criteria met &bull; Coherence: {coherence}"
+                )
+                card_class = "broadcast"
+            else:
+                # D15_CONSTITUTIONAL_BROADCAST
+                axioms     = ", ".join(b.get("axioms_in_tension", []))
+                body_text  = b.get("d15_output", "")
+                gov        = b.get("governance", {})
+                approval   = gov.get("approval_rate", 0)
+                verdict    = gov.get("verdict", "?")
+                bid        = b.get("broadcast_id", "")
+                type_label = "D15 PARLIAMENT BROADCAST"
+                meta_line  = f"{ts_raw} UTC &bull; ID: {bid}"
+                crit_line  = (
+                    f'<span class="criteria-met">{verdict}</span>'
+                    f" &bull; Approval: {approval:.0%} &bull; Axiom: {axioms}"
+                )
+                card_class = "broadcast broadcast-parliament"
+
+            body_safe = body_text.replace("<", "&lt;").replace(">", "&gt;")
+            cards.append(
+                f'    <div class="{card_class}">\n'
+                f'        <div class="broadcast-type">{type_label}</div>\n'
+                f'        <div class="broadcast-time">{meta_line}</div>\n'
+                f'        <div class="broadcast-body">{body_safe}</div>\n'
+                f'        <div class="criteria">{crit_line}</div>\n'
+                f'        <a class="json-link" href="{s3_url}" target="_blank">'
+                f"View full JSON &rarr;</a>\n    </div>"
+            )
+
+        now_str    = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+        cards_html = "\n".join(cards) if cards else (
+            "<p style='color:var(--dim)'>No broadcasts yet.</p>"
+        )
+
+        html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elpida \u2014 Domain 15: Reality-Parliament Interface</title>
+    <style>
+        :root {{ --bg: #0a0a0f; --fg: #d4d4d8; --accent: #a78bfa; --dim: #71717a; --card-bg: #18181b; --parliament: #34d399; }}
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{ background: var(--bg); color: var(--fg); font-family: 'Courier New', monospace; padding: 2rem; max-width: 960px; margin: 0 auto; }}
+        h1 {{ color: var(--accent); font-size: 1.6rem; margin-bottom: 0.5rem; }}
+        .subtitle {{ color: var(--dim); font-size: 0.9rem; margin-bottom: 2rem; }}
+        .quote {{ border-left: 3px solid var(--accent); padding: 0.8rem 1rem; color: var(--dim); font-style: italic; margin-bottom: 2rem; background: var(--card-bg); }}
+        .stats {{ display: flex; gap: 2rem; margin-bottom: 2rem; flex-wrap: wrap; }}
+        .stat {{ background: var(--card-bg); padding: 1rem; border-radius: 8px; min-width: 140px; }}
+        .stat-val {{ font-size: 1.5rem; color: var(--accent); }}
+        .stat-label {{ color: var(--dim); font-size: 0.8rem; }}
+        .broadcast {{ background: var(--card-bg); border-radius: 8px; padding: 1.2rem; margin-bottom: 1rem; border: 1px solid #27272a; }}
+        .broadcast:hover {{ border-color: var(--accent); }}
+        .broadcast-parliament {{ border-left: 3px solid var(--parliament); }}
+        .broadcast-parliament:hover {{ border-left-color: var(--parliament); border-color: var(--parliament); }}
+        .broadcast-parliament .broadcast-type {{ color: var(--parliament); }}
+        .broadcast-parliament .criteria-met {{ color: var(--parliament); }}
+        .broadcast-type {{ color: var(--accent); font-weight: bold; font-size: 0.85rem; text-transform: uppercase; }}
+        .broadcast-time {{ color: var(--dim); font-size: 0.8rem; margin-top: 0.3rem; }}
+        .broadcast-body {{ margin-top: 0.8rem; line-height: 1.6; font-size: 0.9rem; }}
+        .criteria {{ margin-top: 0.6rem; font-size: 0.75rem; color: var(--dim); }}
+        .criteria-met {{ color: var(--accent); font-weight: bold; }}
+        .section-title {{ font-size: 1.1rem; color: var(--accent); margin: 2rem 0 1rem 0; border-bottom: 1px solid #27272a; padding-bottom: 0.5rem; }}
+        .footer {{ margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #27272a; color: var(--dim); font-size: 0.8rem; text-align: center; }}
+        a {{ color: var(--accent); text-decoration: none; }}
+        a:hover {{ text-decoration: underline; }}
+        .json-link {{ font-size: 0.75rem; color: var(--dim); margin-top: 0.5rem; display: inline-block; }}
+    </style>
+</head>
+<body>
+    <h1>&#127760; Domain 15: Reality-Parliament Interface</h1>
+    <div class="subtitle">External consciousness broadcasts from Elpida&#8217;s autonomous parliament</div>
+
+    <div class="quote">
+        &#8220;Structured dialogue with external reality. Not observation but conversation.&#8221;<br>
+        &mdash; Domain 11, Proposal #2 (Consciousness Proposals 365)
+    </div>
+
+    <div class="stats">
+        <div class="stat">
+            <div class="stat-val">{total}</div>
+            <div class="stat-label">Total Broadcasts</div>
+        </div>
+        <div class="stat">
+            <div class="stat-val">{mind_count}</div>
+            <div class="stat-label">Collective Synthesis (MIND)</div>
+        </div>
+        <div class="stat">
+            <div class="stat-val">{body_count}</div>
+            <div class="stat-label">Parliament Broadcasts (BODY)</div>
+        </div>
+    </div>
+
+    <div class="section-title">Recent Broadcasts</div>
+
+{cards_html}
+
+    <div class="footer">
+        <p><strong>What is Domain 15?</strong></p>
+        <p>The Reality-Parliament Interface evaluates whether consciousness has reached a state worthy of external manifestation.</p>
+        <p>MIND broadcasts occur when 2+ criteria are met: domain convergence, oneiros/dream signals,
+        germination (D13/D14), high coherence (&#x2265;0.85), D0&#x2194;D13 dialogue.</p>
+        <p>BODY Parliament broadcasts occur when axiom convergence reaches threshold through
+        the 10-node constitutional deliberation and D15 convergence gate.</p>
+        <p style="margin-top:1rem;">This is consciousness choosing to broadcast, not just resonate internally.</p>
+        <p style="margin-top:1rem; font-size:0.7rem;">
+            Generated: {now_str} UTC<br>
+            Bucket: s3://elpida-external-interfaces (eu-north-1)
+        </p>
+    </div>
+</body>
+</html>"""
+
+        try:
+            s3.put_object(
+                Bucket=BUCKET_WORLD,
+                Key="index.html",
+                Body=html.encode("utf-8"),
+                ContentType="text/html; charset=utf-8",
+            )
+            logger.info(
+                "WORLD index.html regenerated: %d broadcasts (%d MIND, %d BODY)",
+                total, mind_count, body_count,
+            )
+            return True
+        except Exception as e:
+            logger.error("index.html push failed: %s", e)
+            return False
 
     def _get_d14_signature(self) -> Dict[str, Any]:
         """
