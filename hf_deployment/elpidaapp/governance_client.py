@@ -816,7 +816,11 @@ class GovernanceClient:
         """Force-reload living_axioms.jsonl from disk."""
         self._load_living_axioms()
 
-
+    def is_remote_available(self) -> bool:
+        """
+        Check if the remote governance server is reachable.
+        Caches result for 60s to avoid hammering.
+        """
         now = time.time()
         # Don't spam checks — cache for 60s
         if self._remote_available is not None and (now - self._last_check_time) < 60:

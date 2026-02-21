@@ -158,9 +158,17 @@ class GovernanceClient:
         self,
         action_description: str,
         context: Optional[Dict[str, Any]] = None,
+        *,
+        analysis_mode: bool = False,
     ) -> Dict[str, Any]:
         """
         Submit an action to the governance layer for axiom compliance.
+
+        Args:
+            analysis_mode: When True, the caller is analyzing policy content
+                rather than performing a governance-evasion action — skip any
+                hard-pattern kernel blocks in shells that implement them.
+                This implementation routes directly to the semantic layer.
 
         Returns:
             {
