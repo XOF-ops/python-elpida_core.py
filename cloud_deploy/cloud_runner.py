@@ -72,8 +72,10 @@ def run():
     from native_cycle_engine import NativeCycleEngine, DOMAINS, AXIOMS
 
     engine = NativeCycleEngine()
-    logger.info(f"  Domains: {len(DOMAINS)} (D0-D{max(DOMAINS.keys())})")
-    logger.info(f"  Axioms: {len(AXIOMS)} (A0-A{max(int(k[1:]) for k in AXIOMS.keys())})")
+    d_range = f"D0-D{max(DOMAINS.keys())}" if DOMAINS else "(none loaded)"
+    a_range = f"A0-A{max(int(k[1:]) for k in AXIOMS.keys())}" if AXIOMS else "(none loaded)"
+    logger.info(f"  Domains: {len(DOMAINS)} {d_range}")
+    logger.info(f"  Axioms:  {len(AXIOMS)} {a_range}")
     logger.info(f"  Evolution: {len(engine.evolution_memory)} patterns loaded")
 
     # ── PHASE 3: Attach S3 sync ──

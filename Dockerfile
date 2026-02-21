@@ -23,8 +23,14 @@ WORKDIR /app
 COPY cloud_deploy/requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy engine code (minimal set)
+# Copy engine code and all local dependencies
 COPY native_cycle_engine.py /app/native_cycle_engine.py
+COPY ark_curator.py /app/ark_curator.py
+COPY immutable_kernel.py /app/immutable_kernel.py
+COPY federation_bridge.py /app/federation_bridge.py
+COPY llm_client.py /app/llm_client.py
+COPY elpida_config.py /app/elpida_config.py
+COPY elpida_domains.json /app/elpida_domains.json
 COPY ElpidaS3Cloud/ /app/ElpidaS3Cloud/
 COPY cloud_deploy/cloud_runner.py /app/cloud_deploy/cloud_runner.py
 COPY ELPIDA_ARK.md /app/ELPIDA_ARK.md
