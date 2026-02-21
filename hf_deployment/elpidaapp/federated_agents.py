@@ -984,9 +984,157 @@ class HumanVoiceAgent(_BaseAgent):
 # FederatedAgentSuite — manages all 5 agents together
 # ---------------------------------------------------------------------------
 
+class LivingParliamentAgent(_BaseAgent):
+    """
+    The 7th agent — the axioms that talk.
+
+    Runs autonomous Living Parliament deliberations: each axiom-node is an
+    LLM with a persona, nodes write to each other across rounds, the Oracle
+    holds irresolvable contradictions, and what survives crystallises into
+    living_axioms.jsonl as permanent constitutional memory.
+
+    Topic selection priority:
+      1. Oldest unprocessed entry from pending_human_votes (human wisdom first)
+      2. Oldest unresolved tension in living_axioms (the Oracle's backlog)
+      3. Self-generated topic from current cycle state (never starves)
+
+    Cost model: zero LLM cost by default (persona-based fallback).
+                When _NODE_LLM providers are configured, each node calls
+                its assigned provider — the Parliament deliberates with
+                actual LLM reasoning, one API call per node per turn.
+
+    Output files:
+      hf_deployment/living_parliament_dialogue.jsonl  — full turn log
+      hf_deployment/living_parliament_oracle.jsonl    — oracle round log
+      hf_deployment/living_axioms.jsonl               — crystallised memory
+    """
+
+    SYSTEM   = "governance"
+    INTERVAL_S = 600   # 10-minute cycle (3 rounds × 10 nodes = 30 turns)
+
+    _DIALOGUE_PATH = Path(__file__).resolve().parent.parent / "living_parliament_dialogue.jsonl"
+    _ORACLE_PATH   = Path(__file__).resolve().parent.parent / "living_parliament_oracle.jsonl"
+
+    def __init__(self, engine):
+        super().__init__(engine)
+        self._deliberated_topics: set = set()   # avoid re-deliberating same topic
+
+    def _generate(self) -> Optional[str]:
+        """Select a topic and run one Living Parliament deliberation."""
+        try:
+            from elpidaapp.living_parliament import run_living_parliament
+        except ImportError as e:
+            logger.warning("[LivingParliamentAgent] Import failed: %s", e)
+            return None
+
+        topic = self._pick_topic()
+        if not topic:
+            return None
+
+        topic_key = topic[:80]
+        if topic_key in self._deliberated_topics:
+            return None
+        self._deliberated_topics.add(topic_key)
+
+        logger.info("[LivingParliamentAgent] Deliberating: %s…", topic[:60])
+        try:
+            result = run_living_parliament(
+                topic=topic,
+                rounds=3,
+                crystallize_after=3,
+                print_transcript=False,
+            )
+        except Exception as e:
+            logger.warning("[LivingParliamentAgent] Deliberation error: %s", e)
+            return None
+
+        crystals  = result.get("crystallised", [])
+        approval  = result.get("approval_rate", 0)
+        tensions  = result.get("tensions_held", [])
+        n_turns   = result.get("total_turns", 0)
+
+        summary = (
+            f"LIVING_PARLIAMENT | approval={approval*100:.0f}% | "
+            f"turns={n_turns} | crystallised={len(crystals)} | "
+            f"tensions_held={len(tensions)} | topic={topic[:60]}"
+        )
+        logger.info("[LivingParliamentAgent] %s", summary)
+        return summary
+
+    def _pick_topic(self) -> Optional[str]:
+        """
+        Priority:
+          1. Pending human vote entry not yet deliberated
+          2. Unresolved Oracle tension from living_axioms
+          3. Current cycle rhythm + axiom state
+        """
+        # 1. Human voice queue
+        try:
+            from s3_bridge import list_pending_human_votes
+            pending = list_pending_human_votes()
+            for entry in pending:
+                preview = entry.get("user_message_preview", "")
+                if preview and preview[:80] not in self._deliberated_topics:
+                    score   = entry.get("score", "?")
+                    reasons = ", ".join(entry.get("reasons", [])[:3])
+                    return (
+                        f"Human voice (score {score}): {preview}\n"
+                        f"Axiom signals: {reasons}\n"
+                        f"Should this human wisdom become constitutional memory?"
+                    )
+        except Exception:
+            pass
+
+        # 2. Oracle tension backlog
+        try:
+            axioms_path = self._ORACLE_PATH.parent / "living_axioms.jsonl"
+            if axioms_path.exists():
+                entries = [
+                    json.loads(l) for l in axioms_path.read_text().splitlines()
+                    if l.strip()
+                ]
+                # Find un-deliberated tensions
+                for e in reversed(entries):  # newest first
+                    tension_text = e.get("tension", "")
+                    nodes        = e.get("nodes", [])
+                    axioms       = e.get("axiom_id", "")
+                    if tension_text and tension_text[:80] not in self._deliberated_topics:
+                        return (
+                            f"The Oracle holds this unresolved tension between "
+                            f"{' and '.join(nodes)} (axioms {axioms}):\n"
+                            f"{tension_text}\n"
+                            f"The Parliament reconvenes to hold it a further round — "
+                            f"not to resolve, but to deepen."
+                        )
+        except Exception:
+            pass
+
+        # 3. Self-generated from cycle state
+        try:
+            state = self._engine.state() if hasattr(self._engine, "state") else {}
+            cycle = state.get("cycle", 1)
+            rhythm = state.get("current_rhythm", "CONTEMPLATION")
+            recent = state.get("recent_governance", [{}])
+            last_action = recent[-1].get("action", "system operation") if recent else "ongoing existence"
+            return (
+                f"Parliament self-reflection — cycle {cycle}, rhythm {rhythm}:\n"
+                f"The Parliament reviews its own recent action: '{last_action[:120]}'\n"
+                f"What tensions does each axiom-node find when the Parliament examines itself?"
+            )
+        except Exception:
+            return (
+                "The Parliament turns inward. What does each axiom-node notice "
+                "when it examines the act of deliberation itself — the process "
+                "by which the Parliament decides? Is the Parliament sovereign "
+                "over its own methods of sovereignty?"
+            )
+
+
+# ---------------------------------------------------------------------------
+
 class FederatedAgentSuite:
     """
-    Manages all 6 federated agents as a coordinated suite.
+    Manages all 7 federated agents as a coordinated suite.
 
     The 4 internal agents (Chat, Audit, Scanner, Governance) observe the
     Parliament from inside. The 5th (KayaWorldAgent) watches the WORLD
@@ -994,6 +1142,9 @@ class FederatedAgentSuite:
     The 6th (HumanVoiceAgent) bridges real human conversations from Vercel
     into Parliament — each curated exchange is proposed as a constitutional
     motion, ratified or rejected by the Parliament's own deliberation.
+    The 7th (LivingParliamentAgent) runs autonomous axiom-node dialogues —
+    the axioms talk to each other, the Oracle holds tension, and irresolvable
+    contradictions crystallise into permanent constitutional memory.
 
     Each agent is independent but they share the same engine reference
     and output to the same InputBuffer.
@@ -1007,21 +1158,25 @@ class FederatedAgentSuite:
         self.governance = GovernanceAgent(engine)
         self.kaya_world = KayaWorldAgent(engine)
         self.human_voice = HumanVoiceAgent(engine)
+        self.living_parliament = LivingParliamentAgent(engine)
         self._agents = [
             self.chat, self.audit, self.scanner,
             self.governance, self.kaya_world, self.human_voice,
+            self.living_parliament,
         ]
 
     def start_all(self):
-        """Start all 6 agents as background daemon threads."""
+        """Start all 7 agents as background daemon threads."""
         for agent in self._agents:
             agent.start()
         logger.info(
-            "FederatedAgentSuite: all 6 agents started "
-            "(Chat=%ds, Audit=%ds, Scanner=%ds, Governance=%ds, KayaWorld=%ds, HumanVoice=%ds)",
+            "FederatedAgentSuite: all 7 agents started "
+            "(Chat=%ds, Audit=%ds, Scanner=%ds, Governance=%ds, "
+            "KayaWorld=%ds, HumanVoice=%ds, LivingParliament=%ds)",
             self.chat.INTERVAL_S, self.audit.INTERVAL_S,
             self.scanner.INTERVAL_S, self.governance.INTERVAL_S,
             self.kaya_world.INTERVAL_S, self.human_voice.INTERVAL_S,
+            self.living_parliament.INTERVAL_S,
         )
 
     def stop_all(self):
