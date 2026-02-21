@@ -28,23 +28,20 @@ jobs:
           set -e
           HF_URL="https://z65nik:${HF_TOKEN}@huggingface.co/spaces/z65nik/elpida-governance-layer"
 
-          # Shallow clone just to get the remote configured
-          git clone --depth=1 "$HF_URL" /tmp/hf_space
+          # Full clone (no --depth) so we can push normally without history conflicts
+          git clone "$HF_URL" /tmp/hf_space
 
-          # Switch to an orphan branch (no history — avoids shallow push rejection)
-          git -C /tmp/hf_space checkout --orphan deploy_fresh
-
-          # Clear the staging area (orphan starts with same working tree)
+          # Remove all tracked files (so rsync --delete is the single source of truth)
           git -C /tmp/hf_space rm -rf . 2>/dev/null || true
 
           # Sync hf_deployment/ content into the Space root
-          rsync -av --delete \
+          rsync -av \
             --exclude='.git' \
             --exclude='cache/' \
             ${{ github.workspace }}/hf_deployment/ \
             /tmp/hf_space/
 
-          # Stage and commit
+          # Stage everything
           git -C /tmp/hf_space add -A
 
           if git -C /tmp/hf_space diff --cached --quiet; then
@@ -52,7 +49,6 @@ jobs:
           else
             git -C /tmp/hf_space commit \
               -m "deploy: $(git -C ${{ github.workspace }} log -1 --format='%h %s')"
-            # Force push the orphan over HF main (clean rewrite, no shallow ancestry issues)
-            git -C /tmp/hf_space push origin deploy_fresh:main --force
+            git -C /tmp/hf_space push origin main
             echo "✓ HF Space updated"
           fi
