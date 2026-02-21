@@ -135,6 +135,7 @@ S3: elpida-body-evolution / federation/
 | G3 | HF Space Re-deploy | 6 commits from this session not pushed to `z65nik/elpida-governance-layer` | 🔴 **OPEN** |
 | G4 | Kaya Event Consumer | Nothing reads `elpida-external-interfaces/kaya/` yet | 🟡 OPEN (medium) |
 | G5 | `elpida_domains.json` scope | DOMAINS dict was empty on first load (fallback added) | 🟡 Mitigated |
+| G6 | Parliament constitutional amnesia | `living_axioms.jsonl` ephemeral — lost on restart | ✅ Fixed (`dde7b9e`) |
 
 ---
 
