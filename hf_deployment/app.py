@@ -215,11 +215,26 @@ def run_parliament_loop():
         federated_agents = FederatedAgentSuite(engine)
         federated_agents.start_all()
 
+        # Kaya Cross-Layer Detector (GAP 8)
+        # Watches for simultaneous MIND kaya_moments rise + BODY coherence ≥ 0.85
+        # within the same 4-hour Watch window — the Fibonacci 55/34 resonance.
+        # When detected: pushes to WORLD bucket + injects scanner InputEvent.
+        from elpidaapp.kaya_detector import KayaDetector
+        s3_for_kaya = None
+        try:
+            from s3_bridge import S3Bridge as _S3Bridge
+            s3_for_kaya = _S3Bridge()
+        except Exception:
+            pass
+        kaya_detector = KayaDetector(engine, s3_bridge=s3_for_kaya)
+        kaya_detector.start()
+
         # Store references globally so UI can push events + read state
-        global _parliament_engine, _world_feed, _federated_agents
+        global _parliament_engine, _world_feed, _federated_agents, _kaya_detector
         _parliament_engine = engine
         _world_feed = world_feed
         _federated_agents = federated_agents
+        _kaya_detector = kaya_detector
 
         logger.info("Parliament engine + WorldFeed initialized — starting autonomous loop")
         engine.run(duration_minutes=0, cycle_delay_s=30)
@@ -232,6 +247,7 @@ def run_parliament_loop():
 _parliament_engine = None
 _world_feed = None
 _federated_agents = None
+_kaya_detector = None
 
 
 def get_parliament_engine():
@@ -247,6 +263,11 @@ def get_world_feed():
 def get_federated_agents():
     """Get the running FederatedAgentSuite instance (if alive)."""
     return _federated_agents
+
+
+def get_kaya_detector():
+    """Get the running KayaDetector instance (if alive)."""
+    return _kaya_detector
 
 
 def run_streamlit():

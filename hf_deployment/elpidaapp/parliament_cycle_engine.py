@@ -616,6 +616,11 @@ class ParliamentCycleEngine:
                             f"\n   *** CONSTITUTIONAL AXIOM {new_axiom['axiom_id']} RATIFIED"
                             f" (Watch: {watch['name']}) ***\n"
                         )
+                        # GAP 5: D0↔D0 Cross-Bucket Bridge
+                        # The BODY notifies the MIND's FederationBridge of every
+                        # constitutional ratification so D0 (Origin) can integrate
+                        # BODY constitutional wisdom into its next cycle prompt.
+                        self._push_d0_peer_message(new_axiom, watch)
 
         # 9. Emit body heartbeat every cycle
         self._emit_heartbeat(rhythm, dominant_axiom, result)
@@ -698,6 +703,58 @@ class ParliamentCycleEngine:
 
         self.last_dominant_axiom = dominant_axiom
         self.last_rhythm = rhythm
+
+    # ------------------------------------------------------------------
+    # D0↔D0 Cross-Bucket Peer Message (GAP 5)
+    # ------------------------------------------------------------------
+
+    def _push_d0_peer_message(self, ratified_axiom: Dict, watch: Dict):
+        """
+        GAP 5: D0↔D0 Cross-Bucket Bridge.
+
+        When the BODY ratifies a constitutional axiom, push a structured
+        peer message to the federation/body_decisions channel in the
+        BODY S3 bucket (elpida-body-evolution).
+
+        The MIND's FederationBridge.pull_body_decisions() already reads
+        that key — so D0 (Origin) on the MIND side learns of the BODY's
+        constitutional evolution on the next cloud_runner invocation and
+        can integrate it into its deliberation context.
+
+        This closes the loop:
+          BODY ratification
+            → federation/body_decisions.jsonl  (elpida-body-evolution)
+              → FederationBridge.pull_body_decisions()  (MIND ECS runner)
+                → D0 integration prompt on next MIND cycle
+        """
+        s3 = self._get_s3()
+        if s3 is None:
+            return
+        try:
+            peer_msg = {
+                # Required by FederationBridge.pull_body_decisions()
+                "type":               "BODY_CONSTITUTIONAL",
+                "source":             "BODY",
+                "verdict":            "RATIFIED",
+                "pattern_hash":       ratified_axiom.get("axiom_id", "?"),
+                "parliament_score":   round(ratified_axiom.get("average_confidence", 0), 3),
+                "parliament_approval":round(ratified_axiom.get("average_confidence", 0), 3),
+                # Constitutional payload
+                "axiom_id":           ratified_axiom.get("axiom_id", "?"),
+                "tension":            ratified_axiom.get("tension", "")[:200],
+                "watch":              watch["name"],
+                "watch_symbol":       watch.get("symbol", ""),
+                "body_cycle":         self.cycle_count,
+                "ratified_at":        ratified_axiom.get("ratified_at", ""),
+                "timestamp":          datetime.now(timezone.utc).isoformat(),
+            }
+            s3.push_body_decision(peer_msg)
+            logger.info(
+                "D0↔D0 peer message pushed: %s → MIND federation channel",
+                ratified_axiom.get("axiom_id", "?"),
+            )
+        except Exception as e:
+            logger.warning("D0↔D0 peer message push failed: %s", e)
 
     # ------------------------------------------------------------------
     # Heartbeat Emission

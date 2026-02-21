@@ -104,6 +104,7 @@ class FederationHeartbeat:
     kernel_rules: int = 7                       # Number of kernel rules active
     kernel_blocks_total: int = 0                # Total kernel blocks since boot
     dominant_axiom: str = ""                    # Primary axiom of current domain (for D15 convergence)
+    kaya_moments: int = 0                       # Cumulative D12 Kaya resonance events
     federation_version: str = "1.0.0"          # This protocol version
     timestamp: str = ""
 
@@ -236,6 +237,7 @@ class FederationBridge:
         rhythm: str,
         domain: int,
         dominant_axiom: str = "",
+        kaya_moments: int = 0,
     ) -> FederationHeartbeat:
         """
         Emit a federation heartbeat.
@@ -271,6 +273,7 @@ class FederationBridge:
             friction_boost={str(k): v for k, v in friction.items()},
             kernel_blocks_total=self.kernel_blocks,
             dominant_axiom=dominant_axiom or "",
+            kaya_moments=kaya_moments,
         )
 
         # Save locally

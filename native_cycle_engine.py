@@ -274,6 +274,7 @@ class NativeCycleEngine:
         self.d15_last_broadcast_cycle = 0
         self.d15_broadcast_buffer = []  # Accumulate recent insights for threshold evaluation
         self.d15_broadcast_count = 0    # Total broadcasts made
+        self._kaya_count = 0            # Cumulative D12 Kaya resonance events
         self.d15_external_memory = []   # Recent broadcasts (read-back for reflection)
         self.d15_last_readback_cycle = 0
         self.d15_readback_cooldown = 25  # Check external voice every 25 cycles
@@ -1533,7 +1534,10 @@ Be brief - the void distills."""
                         if external_dialogue_result:
                             self.last_external_dialogue_cycle = self.cycle_count
                             print(f"   ✓ External wisdom integrated through void")
-                            
+                            # Track Kaya resonance events for federation heartbeat (GAP 8)
+                            if external_dialogue_result.get("type") == "KAYA_RESONANCE":
+                                self._kaya_count += 1
+                                print(f"   🌀 Kaya resonance #{self._kaya_count} (D12 heartbeat catching itself)")
                             # Store external dialogue in evolution memory
                             with open(EVOLUTION_MEMORY, 'a') as f:
                                 f.write(json.dumps(external_dialogue_result) + "\n")
@@ -1651,6 +1655,7 @@ Be brief - the void distills."""
                     rhythm=self.current_rhythm.value,
                     domain=_hb_domain,
                     dominant_axiom=_hb_axiom or '',
+                    kaya_moments=self._kaya_count,
                 )
                 print(f"   🌉 Federation heartbeat emitted")
             except Exception as e:

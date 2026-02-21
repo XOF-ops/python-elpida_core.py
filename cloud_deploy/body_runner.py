@@ -116,10 +116,36 @@ def run():
             mind_hb = s3b.pull_mind_heartbeat()
             if mind_hb:
                 logger.info(
-                    "  MIND heartbeat: cycle=%s rhythm=%s coherence=%s",
+                    "  MIND heartbeat: cycle=%s rhythm=%s coherence=%s kaya_moments=%s",
                     mind_hb.get("mind_cycle"), mind_hb.get("current_rhythm"),
-                    mind_hb.get("coherence"),
+                    mind_hb.get("coherence"), mind_hb.get("kaya_moments"),
                 )
+
+            # GAP 5: Pull MIND→BODY governance exchanges
+            # The MIND's FederationBridge writes curation entries / CANONICAL
+            # patterns here. The BODY logs them at startup so the GovernanceClient
+            # can integrate them via the living_axioms hot-reload path.
+            # The reverse path (BODY→MIND) uses _push_d0_peer_message() inside
+            # ParliamentCycleEngine every time a constitutional axiom is ratified.
+            try:
+                exchanges = s3b.pull_mind_curation(limit=20)
+                mind_canonical = [
+                    e for e in exchanges
+                    if e.get("type") == "BODY_CONSTITUTIONAL"
+                    or e.get("tier") == "CANONICAL"
+                ]
+                logger.info(
+                    "  MIND federation: %d exchange(s) pulled (%d canonical)",
+                    len(exchanges), len(mind_canonical),
+                )
+                for entry in mind_canonical[:3]:
+                    logger.info(
+                        "    [%s] %s",
+                        entry.get("tier", entry.get("type", "?")),
+                        str(entry.get("pattern_hash") or entry.get("axiom_id", "?"))[:40],
+                    )
+            except Exception as _gex:
+                logger.debug("  Federation exchange pull: %s", _gex)
         except Exception as e:
             logger.warning("  S3 bridge unavailable: %s — running locally", e)
             s3b = None

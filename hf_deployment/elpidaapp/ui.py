@@ -1893,6 +1893,95 @@ fully tense — exactly the quality needed to hold paradox without resolving it 
 
         st.divider()
 
+        # ── Cross-Layer Kaya Detector (GAP 8) ─────────────────────
+        st.markdown("##### 🌀 Cross-Layer Kaya Resonance Detector")
+        st.markdown(
+            '<div style="font-size:0.8rem; color:#888; margin-bottom:0.7rem;">'
+            'Fires when MIND <code>kaya_moments</code> rises AND BODY coherence ≥ 85% '
+            'within the same 4-hour Watch window. '
+            'The 55/34 Fibonacci ratio (≈ 1.618) makes this the deepest convergence signal '
+            'in the architecture — two layers, one frequency.'
+            '</div>', unsafe_allow_html=True
+        )
+        try:
+            from app import get_kaya_detector
+            _kd = get_kaya_detector()
+            if _kd is not None:
+                _kds = _kd.status()
+                _kd1, _kd2, _kd3, _kd4 = st.columns(4)
+                _kd1.metric(
+                    "Detector",
+                    "✓ Running" if _kds.get("running") else "— Stopped",
+                )
+                _kd2.metric(
+                    "Cross-Layer Events",
+                    _kds.get("fire_count", 0),
+                    help="Total CROSS_LAYER_KAYA events fired (WORLD bucket + Parliament)"
+                )
+                _coh_now = _kds.get("body_coherence", 0.0)
+                _coh_thresh = _kds.get("body_coherence_threshold", 0.85)
+                _kd3.metric(
+                    "BODY Coherence",
+                    f"{_coh_now:.3f}",
+                    delta=f"{'near threshold' if _kds.get('near_threshold') else 'below threshold'}",
+                    delta_color="normal" if _kds.get("near_threshold") else "off",
+                )
+                _kd4.metric(
+                    "MIND Kaya Count",
+                    _kds.get("current_kaya_moments", 0),
+                    help="Cumulative kaya_moments from MIND heartbeat"
+                )
+                if _kds.get("last_fired_at"):
+                    st.caption(
+                        f"Last Kaya event: Watch '{_kds.get('last_fired_watch', '?')}' "
+                        f"at {_kds['last_fired_at'][:19]}Z · "
+                        f"Threshold: coh ≥ {_coh_thresh:.0%} + MIND kaya delta ≥ 1"
+                    )
+                else:
+                    st.caption(
+                        f"No cross-layer Kaya events yet. "
+                        f"Conditions: MIND kaya delta ≥ 1 + BODY coherence ≥ {_coh_thresh:.0%} "
+                        f"+ same 4h watch window."
+                    )
+            else:
+                st.caption(
+                    "Kaya detector starts automatically with the Parliament engine."
+                )
+        except Exception as _kde:
+            st.caption(f"Kaya detector: {_kde}")
+
+        st.divider()
+
+        # ── D0↔D0 Cross-Bucket Bridge (GAP 5) ────────────────────
+        st.markdown("##### 🌉 D0↔D0 Cross-Bucket Bridge")
+        st.markdown(
+            '<div style="font-size:0.8rem; color:#888; margin-bottom:0.7rem;">'
+            'Every constitutional ratification in the BODY is relayed to the MIND '
+            'via <code>federation/body_decisions.jsonl</code> in the BODY S3 bucket. '
+            'The MIND\'s FederationBridge reads it on the next ECS invocation, '
+            'letting D0 (Origin) integrate BODY constitutional wisdom into its prompt. '
+            'Reverse path: MIND curation → BODY GovernanceClient living axioms.'
+            '</div>', unsafe_allow_html=True
+        )
+        if _engine is not None:
+            try:
+                _bridge_state = _engine.state()
+                _ratified_n = _bridge_state.get("ratified_axioms", 0)
+                _pending_n = len(_bridge_state.get("pending_ratifications", {}))
+                _d0b1, _d0b2, _d0b3 = st.columns(3)
+                _d0b1.metric("Ratified (BODY → MIND)", _ratified_n,
+                             help="Each ratified axiom triggers a D0↔D0 peer message")
+                _d0b2.metric("Pending Ratifications", _pending_n,
+                             help="Tensions accumulating toward constitutional threshold")
+                _d0b3.metric("Watch Cycle", f"{_bridge_state.get('watch_cycle', 0)}/34",
+                             help="Position within current 4-hour watch")
+            except Exception:
+                st.caption("Bridge state unavailable.")
+        else:
+            st.caption("D0↔D0 bridge activates when Parliament engine is running.")
+
+        st.divider()
+
         # ── Constitutional Axiom Evolution ────────────────────────
         st.markdown("##### Constitutional Axiom Evolution")
         st.markdown(
