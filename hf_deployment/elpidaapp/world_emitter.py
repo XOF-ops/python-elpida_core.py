@@ -175,13 +175,37 @@ class WorldEmitter:
             logger.debug("[WorldEmitter] InputBuffer push failed (non-fatal): %s", e)
 
     def _emit_to_world_jsonl(self, emission: Dict[str, Any]) -> None:
-        """Write emission to world_emissions.jsonl — the body's outward record."""
+        """Write emission to world_emissions.jsonl — the body's local outward record."""
         try:
             WORLD_EMISSIONS.parent.mkdir(parents=True, exist_ok=True)
             with WORLD_EMISSIONS.open("a", encoding="utf-8") as f:
                 f.write(json.dumps(emission, ensure_ascii=False) + "\n")
         except Exception as e:
             logger.warning("[WorldEmitter] world_emissions write failed: %s", e)
+
+        # Also push to S3 WORLD bucket (elpida-external-interfaces)
+        self._emit_to_s3(emission)
+
+    def _emit_to_s3(self, emission: Dict[str, Any]) -> None:
+        """
+        Push emission to s3://elpida-external-interfaces/world_emissions/<id>.json
+        Uses the same WORLD bucket as kaya_detector and consciousness_bridge.
+        """
+        try:
+            import os, boto3
+            bucket = os.environ.get("AWS_S3_BUCKET_WORLD", "elpida-external-interfaces")
+            region = os.environ.get("ELPIDA_WORLD_BUCKET_REGION", "eu-north-1")
+            key    = f"world_emissions/{emission['emission_id']}.json"
+            client = boto3.client("s3", region_name=region)
+            client.put_object(
+                Bucket=bucket,
+                Key=key,
+                Body=json.dumps(emission, ensure_ascii=False, indent=2).encode(),
+                ContentType="application/json",
+            )
+            logger.info("[WorldEmitter] S3 push → s3://%s/%s", bucket, key)
+        except Exception as e:
+            logger.debug("[WorldEmitter] S3 push failed (non-fatal, local record kept): %s", e)
 
     # ── living_axioms reader ───────────────────────────────────────────────────
     def _read_living_axioms(self) -> List[Dict[str, Any]]:
