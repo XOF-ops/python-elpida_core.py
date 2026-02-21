@@ -658,7 +658,19 @@ class ParliamentCycleEngine:
         if self.cycle_count > CONVERGENCE_COOLDOWN_CYCLES:
             self._check_convergence(dominant_axiom, result)
 
-        # 11. Log
+        # 11. D0↔D11 arc persistence — update after every SYNTHESIS cycle
+        if rhythm == "SYNTHESIS":
+            try:
+                from elpidaapp.domain_0_11_connector_body import get_body_connector
+                get_body_connector().persist_connection_state(
+                    d0_cycle=self.cycle_count,
+                    last_axiom=dominant_axiom or "A6",
+                    coherence=self.coherence,
+                )
+            except Exception as _e:
+                logger.warning("D0↔D11 persist failed: %s", _e)
+
+        # 12. Log
         governance = result.get("governance", "?")
         approval = result.get("parliament", {}).get("approval_rate", 0)
         logger.info(
@@ -1043,6 +1055,14 @@ class ParliamentCycleEngine:
         # D14 Persistence — restore constitutional memory from S3 before first cycle.
         # Ensures Parliament picks up its ratified axioms after every container restart.
         self._restore_d14_constitutional_memory()
+
+        # D0↔D11 Body Bridge — restore arc coherence state from cache before first cycle.
+        try:
+            from elpidaapp.domain_0_11_connector_body import get_body_connector
+            _d0d11 = get_body_connector()
+            print(f"   🔗 {_d0d11.synthesis_summary()}")
+        except Exception as _e:
+            logger.warning("D0↔D11 body connector unavailable at startup: %s", _e)
 
         try:
             while self._running and time.time() < end_time:

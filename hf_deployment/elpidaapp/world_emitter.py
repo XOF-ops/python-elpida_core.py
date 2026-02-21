@@ -194,7 +194,7 @@ class WorldEmitter:
         try:
             import os, boto3
             bucket = os.environ.get("AWS_S3_BUCKET_WORLD", "elpida-external-interfaces")
-            region = os.environ.get("ELPIDA_WORLD_BUCKET_REGION", "eu-north-1")
+            region = os.environ.get("AWS_S3_REGION_WORLD", "eu-north-1")
             key    = f"world_emissions/{emission['emission_id']}.json"
             client = boto3.client("s3", region_name=region)
             client.put_object(
