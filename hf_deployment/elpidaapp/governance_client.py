@@ -2231,20 +2231,33 @@ class GovernanceClient:
                 node_name = _DOMAIN_TO_NODE.get(str(domain_id))
                 if node_name and node_name in votes:
                     old_score = votes[node_name]["score"]
-                    # Boost magnitude, preserving sign
-                    # Friction boost amplifies the node's voice (both positive and negative)
-                    new_score = int(old_score * multiplier)
+                    # Asymmetric friction: resist approvals, amplify rejections.
+                    # Symmetric multiplication fed the monoculture — louder "yes"
+                    # votes only deepened the A6 convergence trap.
+                    # Asymmetric resistor breaks the loop:
+                    #   positive score → dampen (divide by multiplier)
+                    #   negative score → amplify (multiply by multiplier)
+                    #   zero           → unchanged
+                    if old_score > 0:
+                        new_score = int(old_score / multiplier)   # dampen approval
+                        friction_label = f"÷{multiplier} (dampen)"
+                    elif old_score < 0:
+                        new_score = int(old_score * multiplier)   # amplify rejection
+                        friction_label = f"×{multiplier} (amplify)"
+                    else:
+                        new_score = 0
+                        friction_label = "±0 (neutral)"
                     # Clamp to [-15, +15]
                     new_score = max(-15, min(15, new_score))
                     if old_score != new_score:
                         votes[node_name]["score"] = new_score
                         votes[node_name]["rationale"] += (
-                            f" | FRICTION BOOST ×{multiplier}: "
+                            f" | ASYMMETRIC FRICTION {friction_label}: "
                             f"score {old_score}→{new_score} (MIND recursion guard)"
                         )
                         logger.info(
-                            "Friction boost: %s score %d→%d (×%.1f)",
-                            node_name, old_score, new_score, multiplier,
+                            "Asymmetric friction: %s score %d→%d (%s)",
+                            node_name, old_score, new_score, friction_label,
                         )
                         # Re-evaluate vote category after score change
                         if new_score >= 7:
