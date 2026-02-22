@@ -736,9 +736,9 @@ class ParliamentCycleEngine:
             delta = 0.03 + (consonance * 0.05)  # Range: 0.03–0.08 per cycle
             if consonance > 0.7:
                 self.coherence = min(1.0, self.coherence + delta * 0.3)
-            elif consonance < 0.4:
-                self.coherence = max(0.0, self.coherence - delta * 0.3)
-            # Neutral range: coherence stays stable
+            elif consonance < 0.35:   # was 0.4 — A9→A9 is 0.383 (mild dissonance, not collapse)
+                self.coherence = max(0.05, self.coherence - delta * 0.3)  # floor at 0.05
+            # Neutral range [0.35–0.7]: coherence stays stable
         else:
             # First cycle or no axiom — slight decay toward 0.5
             self.coherence = self.coherence * 0.99 + 0.5 * 0.01

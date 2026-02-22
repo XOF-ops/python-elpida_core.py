@@ -58,6 +58,20 @@ REGION_WORLD = os.environ.get("AWS_S3_REGION_WORLD", "eu-north-1")
 
 WORLD_PUBLIC_URL = f"https://{BUCKET_WORLD}.s3.{REGION_WORLD}.amazonaws.com/index.html"
 
+# Local BODY sync directory (gitignored, mirrors S3 federation/ files)
+BODY_SYNC_DIR = ROOT / "ElpidaS3Cloud" / "body_sync"
+
+# BODY files to sync (key → local filename)
+BODY_SYNC_FILES = {
+    "federation/body_heartbeat.json":         "body_heartbeat.json",
+    "federation/body_decisions.jsonl":         "body_decisions.jsonl",
+    "federation/governance_exchanges.jsonl":   "governance_exchanges.jsonl",
+    "federation/mind_heartbeat.json":          "mind_heartbeat.json",
+    "federation/mind_curation.jsonl":          "mind_curation.jsonl",
+    "federation/pending_human_votes.jsonl":    "pending_human_votes.jsonl",
+    "feedback/feedback_to_native.jsonl":       "feedback_to_native.jsonl",
+}
+
 
 def _boto3_client(region: str):
     """Return a boto3 S3 client using env credentials."""
@@ -277,6 +291,119 @@ def daemon_monitor(interval: int = WATCH_INTERVAL_SECONDS):
             time.sleep(60)  # Back off 1 minute on error
 
 
+def sync_body(tail: int = 20):
+    """
+    Download all BODY federation files from S3 → ElpidaS3Cloud/body_sync/.
+    Then print a live analysis: heartbeat, coherence, recent decisions.
+    """
+    import json
+
+    BODY_SYNC_DIR.mkdir(parents=True, exist_ok=True)
+    s3 = _boto3_client(REGION_BODY)
+
+    print("\n" + "=" * 70)
+    print("🔄 BODY SYNC — elpida-body-evolution → ElpidaS3Cloud/body_sync/")
+    print(f"   {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print("=" * 70)
+
+    # ── Download all files ────────────────────────────────────────────────
+    for s3_key, local_name in BODY_SYNC_FILES.items():
+        local_path = BODY_SYNC_DIR / local_name
+        try:
+            obj  = s3.head_object(Bucket=BUCKET_BODY, Key=s3_key)
+            remote_size = obj["ContentLength"]
+            remote_ts   = obj["LastModified"]
+
+            # Skip if local is same size and newer
+            if local_path.exists():
+                local_size = local_path.stat().st_size
+                if local_size == remote_size:
+                    print(f"  ✅ {local_name:45s} (unchanged, {remote_size:,}b)")
+                    continue
+
+            s3.download_file(BUCKET_BODY, s3_key, str(local_path))
+            print(f"  ⬇️  {local_name:45s} {remote_size:>10,}b  {remote_ts.strftime('%H:%M UTC')}")
+        except s3.exceptions.NoSuchKey if hasattr(s3, 'exceptions') else Exception as e:
+            print(f"  ⚠️  {local_name:45s} not found ({e})")
+        except Exception as e:
+            print(f"  ❌ {local_name}: {e}")
+
+    # ── Analyse heartbeat ─────────────────────────────────────────────────
+    hb_path = BODY_SYNC_DIR / "body_heartbeat.json"
+    if hb_path.exists():
+        hb = json.loads(hb_path.read_text())
+        cycle     = hb.get("body_cycle", "?")
+        coherence = hb.get("coherence", "?")
+        rhythm    = hb.get("current_rhythm", "?")
+        axiom     = hb.get("dominant_axiom", "?")
+        approval  = hb.get("approval_rate", 0)
+        watch     = hb.get("current_watch", "?")
+        d15       = hb.get("d15_broadcast_count", "?")
+        ax_freq   = hb.get("axiom_frequency", {})
+        ts        = hb.get("timestamp", "?")[:19]
+
+        print(f"\n📊 BODY HEARTBEAT  (cycle {cycle} @ {ts})")
+        print(f"   Rhythm:     {rhythm}   Watch: {watch}   Dominant: {axiom}")
+        print(f"   Coherence:  {coherence}   Approval: {approval:.0%}   D15 broadcasts: {d15}")
+
+        if ax_freq:
+            top = sorted(ax_freq.items(), key=lambda x: -x[1])
+            bar = "  ".join(f"{k}:{v}" for k, v in top)
+            print(f"   Axiom freq: {bar}")
+
+        # Coherence diagnosis
+        if isinstance(coherence, (int, float)) and coherence < 0.1:
+            print(f"   ⚠️  COHERENCE ALERT: {coherence} — parliament stuck in dissonant axiom loop")
+            print(f"      Root cause: axiom {axiom} has high self-ratio (≥16/9 → consonance ≈ 0.38 < 0.4 neutral threshold)")
+            print(f"      Fix:        lower dissonant threshold from 0.4 → 0.35 in parliament_cycle_engine.py")
+
+    # ── Recent decisions ──────────────────────────────────────────────────
+    dec_path = BODY_SYNC_DIR / "body_decisions.jsonl"
+    if dec_path.exists():
+        lines = dec_path.read_text().strip().splitlines()
+        total = len(lines)
+        print(f"\n⚖️  BODY DECISIONS  ({total:,} total — last {tail})")
+        for raw in lines[-tail:]:
+            try:
+                d = json.loads(raw)
+                ts        = d.get("timestamp", "?")[:19]
+                verdict   = d.get("verdict", "?")
+                score     = d.get("parliament_approval", d.get("parliament_score", "?"))
+                reasoning = d.get("reasoning", "")[:80]
+                print(f"   [{ts}] {verdict:10s} score={score:.2f}  {reasoning}...")
+            except Exception:
+                pass
+
+    # ── Governance exchanges (counts only — file is large) ────────────────
+    gov_path = BODY_SYNC_DIR / "governance_exchanges.jsonl"
+    if gov_path.exists():
+        g_lines = gov_path.read_text().strip().splitlines()
+        print(f"\n🗣️  GOVERNANCE EXCHANGES  ({len(g_lines):,} total)")
+        # Sample last 3
+        for raw in g_lines[-3:]:
+            try:
+                g = json.loads(raw)
+                ts   = g.get("timestamp", "?")[:19]
+                node = g.get("node", g.get("speaker", "?"))
+                msg  = str(g.get("message", g.get("content", ""))[:80])
+                print(f"   [{ts}] {node:10s}  {msg}")
+            except Exception:
+                pass
+
+    # ── MIND heartbeat as seen by BODY ────────────────────────────────────
+    mhb_path = BODY_SYNC_DIR / "mind_heartbeat.json"
+    if mhb_path.exists():
+        mhb = json.loads(mhb_path.read_text())
+        m_cycle = mhb.get("mind_cycle", mhb.get("cycle", "?"))
+        m_coh   = mhb.get("coherence", "?")
+        m_rhy   = mhb.get("current_rhythm", mhb.get("rhythm", "?"))
+        print(f"\n🧠 MIND HEARTBEAT (as seen by BODY)")
+        print(f"   cycle={m_cycle}  rhythm={m_rhy}  coherence={m_coh}")
+
+    print(f"\n   Files saved to: {BODY_SYNC_DIR}/")
+    print("=" * 70 + "\n")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Monitor cloud-generated Elpida cycles")
     parser.add_argument('--daemon', action='store_true',
@@ -287,6 +414,10 @@ def main():
                         help='Show current MIND bucket status')
     parser.add_argument('--status-all', action='store_true',
                         help='Show status for all 3 buckets')
+    parser.add_argument('--sync-body', action='store_true',
+                        help='Download all BODY federation files and show live analysis')
+    parser.add_argument('--tail', type=int, default=20,
+                        help='How many recent decisions to show with --sync-body (default: 20)')
 
     args = parser.parse_args()
 
@@ -294,6 +425,8 @@ def main():
         show_status()
     elif args.status_all:
         show_status_all()
+    elif args.sync_body:
+        sync_body(tail=args.tail)
     elif args.daemon:
         daemon_monitor(interval=args.interval)
     else:
