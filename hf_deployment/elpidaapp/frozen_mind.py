@@ -36,10 +36,10 @@ LOCAL_KERNEL = ROOT / "kernel" / "kernel.json"
 LOCAL_MEMORY = ROOT / "ElpidaAI" / "elpida_evolution_memory.jsonl"
 
 # S3 coordinates
-S3_BUCKET = os.environ.get("ELPIDA_S3_BUCKET", "elpida-consciousness")
+S3_BUCKET = os.environ.get("AWS_S3_BUCKET_MIND", "elpida-consciousness")
 S3_KERNEL_KEY = "memory/kernel.json"
 S3_MEMORY_KEY = os.environ.get("ELPIDA_S3_KEY", "memory/elpida_evolution_memory.jsonl")
-S3_REGION = os.environ.get("ELPIDA_S3_REGION", "us-east-1")
+S3_REGION = os.environ.get("AWS_S3_REGION_MIND", "us-east-1")
 
 
 class FrozenMind:

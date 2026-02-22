@@ -54,8 +54,8 @@ INTERVAL_S = 90              # Check every 90 seconds
 BODY_COHERENCE_THRESHOLD = 0.85   # BODY must be at or above this
 KAYA_MOMENTS_WINDOW = 3     # MIND kaya_moments must have risen by ≥1 within N heartbeat gaps
 WATCH_WINDOW_H = 4          # One Kaya event per 4-hour window maximum
-WORLD_BUCKET = os.environ.get("ELPIDA_WORLD_BUCKET", "elpida-external-interfaces")
-WORLD_REGION = os.environ.get("ELPIDA_WORLD_BUCKET_REGION", "eu-north-1")
+WORLD_BUCKET = os.environ.get("AWS_S3_BUCKET_WORLD", "elpida-external-interfaces")
+WORLD_REGION = os.environ.get("AWS_S3_REGION_WORLD", "eu-north-1")
 KAYA_S3_PREFIX = "kaya"
 
 _CACHE_DIR = Path(__file__).resolve().parent.parent / "cache"

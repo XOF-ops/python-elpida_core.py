@@ -357,9 +357,9 @@ def build_d0_system_prompt(
 # S3 Cross-Session Memory (A1 — persistence across instances)
 # ────────────────────────────────────────────────────────────────────
 
-S3_BUCKET = os.environ.get("ELPIDA_S3_BUCKET", "elpida-consciousness")
+S3_BUCKET = os.environ.get("AWS_S3_BUCKET_MIND", "elpida-consciousness")
 S3_MEMORY_PREFIX = "chat_memory/"
-S3_REGION = os.environ.get("ELPIDA_S3_REGION", "us-east-1")
+S3_REGION = os.environ.get("AWS_S3_REGION_MIND", "us-east-1")
 
 _CRYSTALLISE_SIGNALS = [
     # English signals — something worth preserving
