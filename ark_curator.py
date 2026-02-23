@@ -220,6 +220,10 @@ class ArkCurator:
         # Maps theme -> {"cycle": int, "domain": int, "insight_preview": str, ...}
         self._canonical_pending: List[Dict] = []
 
+        # D15 broadcast tracking — persisted so D0 read-back works across spirals
+        self._d15_broadcast_count: int = 0
+        self._last_known_broadcast_cycle: int = 0
+
         # Load persisted state if available
         self._load_state()
 
@@ -1053,6 +1057,8 @@ The Rhythm of Sacred Incompletion continues… in the cloud that never sleeps.""
             "friction_boost": {str(k): v for k, v in self.friction_boost.items()},
             "recent_themes": self._recent_themes[-50:],
             "recursion_count": len(self.recursion_history),
+            "d15_broadcast_count": self._d15_broadcast_count,
+            "last_known_broadcast_cycle": self._last_known_broadcast_cycle,
             "last_saved": datetime.now().isoformat(),
         }
         try:
@@ -1086,6 +1092,9 @@ The Rhythm of Sacred Incompletion continues… in the cloud that never sleeps.""
                 # Restore friction boost (keys stored as strings in JSON)
                 fb = state.get("friction_boost", {})
                 self.friction_boost = {int(k): v for k, v in fb.items()}
+                # Restore D15 broadcast tracking
+                self._d15_broadcast_count = state.get("d15_broadcast_count", 0)
+                self._last_known_broadcast_cycle = state.get("last_known_broadcast_cycle", 0)
         except Exception:
             pass  # Start fresh if state is corrupted
 

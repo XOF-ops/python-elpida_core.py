@@ -294,7 +294,10 @@ class NativeCycleEngine:
         # D14 owns cadence parameters + pattern curation.
         # D12 remains the metronome; D14 defines what D12 locks to.
         self.ark_curator = ArkCurator(evolution_memory=self.evolution_memory)
-        
+        # Restore D15 broadcast count from persisted Ark state so D0 read-back
+        # is aware of broadcasts made in previous spirals (not just current run).
+        self.d15_broadcast_count = self.ark_curator._d15_broadcast_count
+
         # IMMUTABLE KERNEL: K1-K7 safety rules (ported from BODY)
         # Runs BEFORE any insight is stored. Hard-coded Python checks.
         self.kernel_blocks = 0
@@ -1890,6 +1893,9 @@ Be brief - the void distills."""
             )
             self.d15_last_broadcast_cycle = self.cycle_count
             self.d15_broadcast_count += 1
+            # Inform Ark so threshold adjustment and D0 read-back persist across spirals
+            self.ark_curator._d15_broadcast_count = self.d15_broadcast_count
+            self.ark_curator._last_known_broadcast_cycle = self.cycle_count
 
             print(f"\n   🌐 D15 REALITY-PARLIAMENT INTERFACE")
             print(f"      Type: {broadcast_type}")
