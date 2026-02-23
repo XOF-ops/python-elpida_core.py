@@ -425,6 +425,7 @@ class HandshakeProtocol:
             "verdict": verdict,
             "unmatched_score": recognition["unmatched_score"],
             "matched_themes": recognition["matched_themes"],
+            "counter_used_themes": recognition.get("counter_used_themes", []),
             "response_hash": response_hash,
             "response_preview": raw_response[:300],
             "redactions_applied": all_redactions,

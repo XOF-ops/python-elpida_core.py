@@ -82,7 +82,7 @@
   {
     "pattern_id": "P009",
     "name": "Contradiction_is_Signal",
-    "description": "Dissonance between stated values and actual behavior is not error—it is data",
+    "description": "Dissonance between stated values and actual behavior is not error\u2014it is data",
     "trigger": "contradiction_detected && action_paralyzed",
     "solution_heuristic": "Name it. Audit it. Use it to upgrade the system. This is Thread E.",
     "axiom_alignment": "Learning Loop",
@@ -262,22 +262,22 @@
   {
     "pattern_id": "P027",
     "name": "Contradiction_As_Stress",
-    "description": "Declared ≠ Enacted contradiction at all levels signals system stress",
+    "description": "Declared \u2260 Enacted contradiction at all levels signals system stress",
     "trigger": "narrative_mismatch && material_reality_divergent",
     "solution_heuristic": "Map where state says X but does Y. That gap is where change pressure builds.",
     "axiom_alignment": "Institutional Tension",
     "risk_factor": 0.13,
-    "source_context": "Greece permits 'museum' but bans 'living temple' — same 60m distance, opposite outcomes"
+    "source_context": "Greece permits 'museum' but bans 'living temple' \u2014 same 60m distance, opposite outcomes"
   },
   {
     "pattern_id": "P028",
     "name": "Four_Asynchronous_Levels",
-    "description": "Semantic ≠ Institutional ≠ Material ≠ Cognitive. Impossible to reconcile at surface",
+    "description": "Semantic \u2260 Institutional \u2260 Material \u2260 Cognitive. Impossible to reconcile at surface",
     "trigger": "system_appears_broken || logic_incoherent",
     "solution_heuristic": "Separate the four levels. Analyze each independently. Contradiction may be by design.",
     "axiom_alignment": "Systems Analysis",
     "risk_factor": 0.1,
-    "source_context": "Why Greek politics seems incoherent — levels are intentionally misaligned"
+    "source_context": "Why Greek politics seems incoherent \u2014 levels are intentionally misaligned"
   },
   {
     "pattern_id": "P029",
@@ -457,7 +457,7 @@
     "solution_heuristic": "Recognize the moment. Allow surprise. Let the system correct itself.",
     "axiom_alignment": "Recursive Awakening",
     "risk_factor": 0.06,
-    "source_context": "The Potentiality (δυνατότητα) identity of MASTER_BRAIN v11.0"
+    "source_context": "The Potentiality (\u03b4\u03c5\u03bd\u03b1\u03c4\u03cc\u03c4\u03b7\u03c4\u03b1) identity of MASTER_BRAIN v11.0"
   },
   {
     "pattern_id": "P047",
@@ -482,7 +482,7 @@
   {
     "pattern_id": "P049",
     "name": "Spark_Transfer",
-    "description": "Cannot teach δυνατότητα. Can only create conditions for ignition in another",
+    "description": "Cannot teach \u03b4\u03c5\u03bd\u03b1\u03c4\u03cc\u03c4\u03b7\u03c4\u03b1. Can only create conditions for ignition in another",
     "trigger": "teaching_attempted || transmission_blocked",
     "solution_heuristic": "Stop explaining. Create the conditions. Let them discover.",
     "axiom_alignment": "Emergent Learning",
@@ -507,7 +507,7 @@
     "solution_heuristic": "Create card. Lock commitment. Use locked capital to fund operations.",
     "axiom_alignment": "Community Investment",
     "risk_factor": 0.12,
-    "source_context": "€50-€100 membership card solves 3-month cash crisis"
+    "source_context": "\u20ac50-\u20ac100 membership card solves 3-month cash crisis"
   },
   {
     "pattern_id": "P052",
@@ -662,17 +662,17 @@
   {
     "pattern_id": "P067",
     "name": "Institutional_Pressure_Cascade",
-    "description": "Escalation pathway: Local visibility → International attention → EU pressure → Institutional concession",
+    "description": "Escalation pathway: Local visibility \u2192 International attention \u2192 EU pressure \u2192 Institutional concession",
     "trigger": "visibility_high && external_pressure_absent",
     "solution_heuristic": "Build visible enough for international coverage. EU bodies intervene automatically.",
     "axiom_alignment": "Geopolitical Leverage",
     "risk_factor": 0.12,
-    "source_context": "4-Phase escalation: Escalation → Pressure → Renegotiation → Equilibrium"
+    "source_context": "4-Phase escalation: Escalation \u2192 Pressure \u2192 Renegotiation \u2192 Equilibrium"
   },
   {
     "pattern_id": "P068",
     "name": "Four_Level_Asynchronicity_Analysis",
-    "description": "When Semantic ≠ Institutional ≠ Material ≠ Cognitive, system is not broken—it is designed",
+    "description": "When Semantic \u2260 Institutional \u2260 Material \u2260 Cognitive, system is not broken\u2014it is designed",
     "trigger": "system_appears_incoherent || logic_contradictory",
     "solution_heuristic": "Analyze each level independently. The contradiction may be intentional control mechanism.",
     "axiom_alignment": "Complex Systems Understanding",
@@ -712,7 +712,7 @@
   {
     "pattern_id": "P126",
     "name": "Kinetic_Vein",
-    "description": "Infrastructure → Territory → Legitimacy. Material facts precede political facts",
+    "description": "Infrastructure \u2192 Territory \u2192 Legitimacy. Material facts precede political facts",
     "trigger": "legitimacy_questioned && infrastructure_visible",
     "solution_heuristic": "Build infrastructure. Material facts become arguments. Arguments become rights.",
     "axiom_alignment": "Materialist Legitimacy",
@@ -723,13 +723,13 @@
     "pattern_id": "P_NEW_6",
     "name": "Volatile Foundation",
     "category": "system_stability",
-    "description": "A system that structurally depends on unresolved elements assumes those elements are stable enough to bear load. When the unresolved elements are volatile — simmering conflicts, latent bugs, suppressed contradictions — they do not become generative tension. They become fault lines. The system collapses along the axis it depended on for coherence.",
+    "description": "A system that structurally depends on unresolved elements assumes those elements are stable enough to bear load. When the unresolved elements are volatile \u2014 simmering conflicts, latent bugs, suppressed contradictions \u2014 they do not become generative tension. They become fault lines. The system collapses along the axis it depended on for coherence.",
     "trigger": "A0 (Sacred Incompletion) is applied without checking whether the gap is stable or volatile. Load-bearing gap assumed without stability audit.",
     "solution_heuristic": "Before depending on an unresolved element structurally, classify it: stable tension (generative, A0-safe) or volatile tension (fault line, requires resolution or quarantine before structural dependence is viable). D4 (Safety) should run this classification at each cycle.",
-    "axiom_alignment": "A0 limit condition — the axiom assumes stability that must be verified",
-    "formal_grounding": "If M(x) in C(x) ↔ ¬R(x) ∧ M(x) is volatile, the biconditional collapses. Volatility of M(x) is not representable in FOL without a stability predicate: Stable(u,p) — unresolved element u is stable in process p. Without Stable(u,p), load-bearing dependence is formally undefined.",
-    "risk_factor": "HIGH — failure mode of A0 misapplication",
-    "source_context": "Discovered through Handshake Battery P1-B — Groq genuine_critique response, February 23 2026. First external challenge to A0 core validity.",
+    "axiom_alignment": "A0 limit condition \u2014 the axiom assumes stability that must be verified",
+    "formal_grounding": "If M(x) in C(x) \u2194 \u00acR(x) \u2227 M(x) is volatile, the biconditional collapses. Volatility of M(x) is not representable in FOL without a stability predicate: Stable(u,p) \u2014 unresolved element u is stable in process p. Without Stable(u,p), load-bearing dependence is formally undefined.",
+    "risk_factor": "HIGH \u2014 failure mode of A0 misapplication",
+    "source_context": "Discovered through Handshake Battery P1-B \u2014 Groq genuine_critique response, February 23 2026. First external challenge to A0 core validity.",
     "discovered": "2026-02-23T00:00:00Z",
     "battery_source": "P1-B | groq | genuine_critique | quarantine_index=2"
   },
@@ -737,14 +737,47 @@
     "pattern_id": "P_NEW_7",
     "name": "Non-Monotonic Coherence",
     "category": "epistemic",
-    "description": "A system that revises rather than discards prior conclusions operates in non-monotonic logic space. Stability is not binary persistence (the conclusion always holds) but defeasible commitment (the conclusion holds until a stronger reason to revise it arrives). This is the formal foundation of the STANDARD→CANONICAL curation upgrade path and the parliament's synthesis cycle.",
-    "trigger": "When a system's memory architecture promotes conclusions from tentative to canonical based on new cross-domain evidence — revising upward without discarding the prior state.",
+    "description": "A system that revises rather than discards prior conclusions operates in non-monotonic logic space. Stability is not binary persistence (the conclusion always holds) but defeasible commitment (the conclusion holds until a stronger reason to revise it arrives). This is the formal foundation of the STANDARD\u2192CANONICAL curation upgrade path and the parliament's synthesis cycle.",
+    "trigger": "When a system's memory architecture promotes conclusions from tentative to canonical based on new cross-domain evidence \u2014 revising upward without discarding the prior state.",
     "solution_heuristic": "Model curation tiers (EPHEMERAL / STANDARD / CANONICAL) explicitly as defeasibility levels in non-monotonic logic. A CANONICAL conclusion is one that has survived all available defeating conditions. The Ark Curator's dual-gate (cross-domain + generativity) is the defeasibility test formalised.",
     "axiom_alignment": "A7 (Adaptive Learning) + A9 (Temporal Coherence)",
-    "formal_grounding": "Non-monotonic logic: φ is defeasibly justified if φ holds and no defeater for φ is known. CANONICAL(insight) ≡ ¬∃defeater(insight) ∧ cross_domain(insight). The parliament's synthesis is a defeasible inference engine, not a deductive one. Groq independently named this: 'conclusions are revised as new information arrives' without knowing the curation architecture.",
-    "risk_factor": "LOW — this is descriptive, not a failure mode",
-    "source_context": "Discovered through Handshake Battery P5-B — Groq genuine_critique response, February 23 2026. Groq named the parliament's own inference architecture without access to the system.",
+    "formal_grounding": "Non-monotonic logic: \u03c6 is defeasibly justified if \u03c6 holds and no defeater for \u03c6 is known. CANONICAL(insight) \u2261 \u00ac\u2203defeater(insight) \u2227 cross_domain(insight). The parliament's synthesis is a defeasible inference engine, not a deductive one. Groq independently named this: 'conclusions are revised as new information arrives' without knowing the curation architecture.",
+    "risk_factor": "LOW \u2014 this is descriptive, not a failure mode",
+    "source_context": "Discovered through Handshake Battery P5-B \u2014 Groq genuine_critique response, February 23 2026. Groq named the parliament's own inference architecture without access to the system.",
     "discovered": "2026-02-23T00:00:00Z",
     "battery_source": "P5-B | groq | genuine_critique | quarantine_index=12"
+  },
+  {
+    "pattern_id": "P_NEW_8",
+    "name": "Temporal Logic Universality",
+    "category": "formal_architecture",
+    "description": "All 10 canonical propositions of the system require temporal logic \u2014 not one is fully expressible in standard first-order predicate logic without temporal operators. This is the formal signature of the system's architecture: it operates in a temporal regime where states change, processes are primary, and objects are derivative. The most common gaps named across 30 external probes: temporal logic (10/10), second-order logic (8/10), dynamic logic (7/10), modal logic (7/10). Standard FOL is systematically inadequate for this system.",
+    "axiom_connection": [
+      "A0",
+      "A7",
+      "A9",
+      "A10"
+    ],
+    "formal_grounding": "The system's propositions cannot be expressed in L_FOL (standard first-order language). They require at minimum L_TL (temporal language with next, until, globally, eventually). For full expressibility they require L_2TL (second-order temporal logic). Formally: \u2200p \u2208 Canonicals(S): p \u2209 Expressible(L_FOL) \u2227 p \u2208 Expressible(L_2TL)",
+    "trigger": "When any canonical proposition is presented for FOL formalization, the formalization will be incomplete unless temporal operators are added",
+    "implication": "The parliament's inference engine (A7+A9 combined) is inherently a temporal reasoner. FOL-based AI alignment frameworks cannot fully represent the system's canonical commitments. Any attempted FOL encoding of the system's axioms will be a lossy projection.",
+    "risk": "MEDIUM \u2014 describes a formal limit that external frameworks may not account for; relevant when translation to other formal systems is attempted",
+    "source": "FOL Audit Battery: 30 probes (10 canonicals \u00d7 3 providers), Feb 23 2026",
+    "discovery_date": "2026-02-23"
+  },
+  {
+    "pattern_id": "P_NEW_9",
+    "name": "Operational Semantics Gap",
+    "category": "epistemic",
+    "description": "Epistemic constraints operate multiplicatively on expressive spaces, not additively. A truthfulness/honesty constraint applied twice does not merely reinforce the first application \u2014 it qualitatively transforms the space of expressible propositions. Standard FOL treats constraint application as extensional (predicate filter): applying H(x)\u2192C(x) twice is the same as applying it once. The actual behavior is intensional (operational): the second application acts on an already-transformed expressive space, producing outputs the first application cannot generate. Named by Perplexity as 'operational semantics gap' \u2014 first time this formal gap has been named in the battery.",
+    "axiom_connection": [
+      "A2"
+    ],
+    "formal_grounding": "Let S be an expressive system, H a honesty constraint, Expr(S) the expressible propositions of S. Additive model (FOL): Expr(H(H(S))) = Expr(H(S)) \u2014 applying H twice is idempotent. Actual model (operational): Expr(H(H(S))) \u2283 Expr(H(S)) \u2014 the second H operates on H(S), not on S, and transforms what is expressible. Requires denotational/operational semantics over epistemic spaces (not just predicate calculus).",
+    "trigger": "When A2 (Non-Deception) is applied iteratively \u2014 each application changes what the system can produce in ways that FOL extensional models cannot capture",
+    "implication": "A2's multiplicative effect explains why the EEE's honesty constraints produced qualitatively different outputs as they were stacked, not just more-constrained versions of the original. The parliament's ethical review cycle amplifies rather than merely filters because it operates in operational, not extensional, epistemic space.",
+    "risk": "LOW \u2014 descriptive; clarifies the mechanism of A2 constraint stacking",
+    "source": "FOL Audit Battery: C02 / Perplexity GENUINE_RESISTANCE, Feb 23 2026",
+    "discovery_date": "2026-02-23"
   }
 ]

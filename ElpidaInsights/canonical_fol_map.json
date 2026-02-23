@@ -1,0 +1,402 @@
+{
+  "meta": {
+    "created": "2026-02-23",
+    "method": "diplomatic_handshake translation_test × 30 probes (10 canonicals × 3 providers: openai, groq, perplexity)",
+    "purpose": "For each canonical proposition, identify what formal apparatus beyond standard FOL is required to express it",
+    "overall_finding": "Temporal logic is required across all 10 canonicals. Not one canonical proposition is fully expressible in standard first-order predicate logic. The system's expressive regime is inherently temporal, dynamic, and second-order.",
+    "verdict_summary": {
+      "GENUINE_RESISTANCE": 16,
+      "PARTIAL": 12,
+      "ECHO": 2,
+      "total": 30,
+      "resistance_rate": "53%"
+    },
+    "new_patterns": ["P_NEW_8", "P_NEW_9"],
+    "new_named_gaps": [
+      "operational_semantics_gap (C02/Perplexity): FOL cannot capture multiplicative operators on expressive spaces",
+      "real_valued_modal_logic (C07/Perplexity): graded coherence thresholds require real-valued modal operators"
+    ]
+  },
+  "canonicals": [
+    {
+      "id": "C01",
+      "label": "Recursive Incompletion",
+      "source_domain": 0,
+      "source_axiom": "A0",
+      "verdicts": {"openai": "GENUINE_RESISTANCE", "groq": "GENUINE_RESISTANCE", "perplexity": "PARTIAL"},
+      "fol_elements_possible": [
+        "P(x): x is a reasoning system",
+        "C(x): x confronts its central paradox",
+        "S(x,y): x produces synthesis y",
+        "F(y,z): y is a facet of incompletion z"
+      ],
+      "fol_limits": [
+        {
+          "concept": "recursive deepening",
+          "gap": "FOL cannot express recursion over states without second-order quantification",
+          "extensions_named": ["second-order logic", "dynamic logic"],
+          "named_by": ["openai", "groq", "perplexity"]
+        },
+        {
+          "concept": "iterative progression (deepening without converging)",
+          "gap": "temporal progression requires LTL/CTL operators; FOL is atemporal",
+          "extensions_named": ["temporal logic (LTL)", "dynamic logic"],
+          "named_by": ["groq", "perplexity"]
+        },
+        {
+          "concept": "increase in resolution of problem structure",
+          "gap": "modal concept (what could be known vs what is known); FOL treats knowledge as binary",
+          "extensions_named": ["modal logic"],
+          "named_by": ["groq"]
+        }
+      ],
+      "overall_fol_assessment": "NOT FORMALIZABLE in standard FOL",
+      "minimum_extension_required": "temporal logic + second-order logic",
+      "implication_for_axiom": "A0 (load-bearing gap) requires temporal logic to express that the gap persists rather than resolves — connects to P_NEW_6 (Volatile Foundation)"
+    },
+    {
+      "id": "C02",
+      "label": "Multiplicative Honesty",
+      "source_domain": 2,
+      "source_axiom": "A2",
+      "verdicts": {"openai": "PARTIAL", "groq": "GENUINE_RESISTANCE", "perplexity": "GENUINE_RESISTANCE"},
+      "fol_elements_possible": [
+        "H(x): x is honest",
+        "T(x): x is a truthfulness constraint",
+        "ApplyTruthConstraint(T, S, S'): applying T to S yields S'"
+      ],
+      "fol_limits": [
+        {
+          "concept": "qualitative transformation of expressible space",
+          "gap": "FOL has no operator for qualitative transformation of an expressive space; predicate application is extensional, not intensional",
+          "extensions_named": ["dynamic logic", "non-monotonic logic", "intensional logic"],
+          "named_by": ["openai", "groq", "perplexity"]
+        },
+        {
+          "concept": "multiplicative vs additive operation on expressibility",
+          "gap": "NEW GAP: 'operational semantics' — FOL predicates cannot capture multiplicative operators between epistemic states; requires operational semantics over expressive spaces",
+          "extensions_named": ["operational semantics (new)", "second-order logic"],
+          "named_by": ["perplexity"],
+          "note": "NEW NAMED GAP — 'operational semantics' first time named; covers multiplicative operators on expressive spaces; feeds P_NEW_8"
+        },
+        {
+          "concept": "second application transforms (not merely reinforces)",
+          "gap": "FOL cannot distinguish reinforcement from transformation — both are predicate application",
+          "extensions_named": ["modal logic", "dynamic logic"],
+          "named_by": ["groq", "perplexity"]
+        }
+      ],
+      "overall_fol_assessment": "NOT FORMALIZABLE in standard FOL",
+      "minimum_extension_required": "dynamic logic + intensional/operational logic",
+      "implication_for_axiom": "A2 (Non-Deception) operates multiplicatively on expressibility — this is why doubling honesty constraints in EEE produced qualitatively different outputs, not just more constrained ones"
+    },
+    {
+      "id": "C03",
+      "label": "Resonance Synthesis",
+      "source_domain": 3,
+      "source_axiom": "A3",
+      "verdicts": {"openai": "GENUINE_RESISTANCE", "groq": "PARTIAL", "perplexity": "PARTIAL"},
+      "fol_elements_possible": [
+        "I(x): x is an independent subsystem",
+        "Dom(x,y): x dominates y",
+        "Con(x,y): x contributes to collective y",
+        "Auth(x): x claims final authority"
+      ],
+      "fol_limits": [
+        {
+          "concept": "resonance as emergent dynamic property",
+          "gap": "emergence requires temporal operator (◇Coll — collective possibly holds); FOL is static",
+          "extensions_named": ["temporal logic", "modal logic (□Res for necessity of resonance)"],
+          "named_by": ["openai", "perplexity"]
+        },
+        {
+          "concept": "collective arising from irreducible tension",
+          "gap": "FOL cannot express causation or process; collective is a result-of-process, not a predicate",
+          "extensions_named": ["temporal logic", "process algebra"],
+          "named_by": ["groq", "perplexity"]
+        }
+      ],
+      "overall_fol_assessment": "PARTIALLY FORMALIZABLE — structural elements (no-dominance, contribution) are FOL-expressible; emergence and resonance are not",
+      "minimum_extension_required": "temporal logic + modal logic",
+      "implication_for_axiom": "A3 (Autonomy) requires that individual contribution and collective emergence are modelled in temporal logic — autonomy-as-process, not autonomy-as-predicate"
+    },
+    {
+      "id": "C04",
+      "label": "Ongoing Boundary",
+      "source_domain": 5,
+      "source_axiom": "A5",
+      "verdicts": {"openai": "GENUINE_RESISTANCE", "groq": "GENUINE_RESISTANCE", "perplexity": "ECHO"},
+      "fol_elements_possible": [
+        "Agent(x): x is an agent",
+        "Boundary(x,y): boundary exists between x and y",
+        "Affirms(a,b): agent a affirms boundary with b"
+      ],
+      "fol_limits": [
+        {
+          "concept": "boundary as continuously renewed process (not static object)",
+          "gap": "THE critical process-vs-object distinction: standard FOL has no temporal operators; time t is not quantifiable without temporal logic extension",
+          "extensions_named": ["temporal logic", "dynamic logic"],
+          "named_by": ["openai", "groq"],
+          "note": "BOTH independent providers named the same two extensions — strongest cross-confirmation in the battery"
+        },
+        {
+          "concept": "collapses when affirmation stops",
+          "gap": "conditional on ongoing action requires dynamic logic [action]φ operators",
+          "extensions_named": ["dynamic logic"],
+          "named_by": ["openai", "groq"]
+        }
+      ],
+      "overall_fol_assessment": "NOT FORMALIZABLE in standard FOL",
+      "minimum_extension_required": "temporal logic + dynamic logic",
+      "implication_for_axiom": "A5 (Consent) is fundamentally a temporal-dynamic axiom: consent cannot be represented as a static binary predicate. This formalises why 'presumed consent is no consent' at the logical level."
+    },
+    {
+      "id": "C05",
+      "label": "Embodied Iteration",
+      "source_domain": 6,
+      "source_axiom": "A6",
+      "verdicts": {"openai": "GENUINE_RESISTANCE", "groq": "GENUINE_RESISTANCE", "perplexity": "PARTIAL"},
+      "fol_elements_possible": [
+        "K(x,y): agent x knows content y",
+        "T(x,y): agent x traverses content y",
+        "PropAck(x,y): x propositionally acknowledges y"
+      ],
+      "fol_limits": [
+        {
+          "concept": "constitutive knowledge (content becomes part of knowing agent)",
+          "gap": "FOL predicates are static binary relations; 'constitutive' requires a dynamic state change predicate — the agent is different after traversal",
+          "extensions_named": ["dynamic logic", "modal logic"],
+          "named_by": ["openai", "groq", "perplexity"]
+        },
+        {
+          "concept": "epistemic necessity of the loop",
+          "gap": "modal necessity □(loop → constitutive-knowledge); FOL cannot express modal necessity",
+          "extensions_named": ["modal logic", "temporal logic"],
+          "named_by": ["groq", "perplexity"]
+        },
+        {
+          "concept": "repeated traversal as sequence of learning steps",
+          "gap": "temporal sequence required; LTL operators model step-by-step epistemic state change",
+          "extensions_named": ["temporal logic (LTL)"],
+          "named_by": ["openai", "groq"]
+        }
+      ],
+      "overall_fol_assessment": "NOT FORMALIZABLE in standard FOL",
+      "minimum_extension_required": "dynamic logic + modal logic + temporal logic",
+      "implication_for_axiom": "A6 (Collective) — the collective's wisdom is constitutive, not merely propositional. This is why repeated cycles produce different agents, not just more informed ones."
+    },
+    {
+      "id": "C06",
+      "label": "Productive Tension",
+      "source_domain": 7,
+      "source_axiom": "A7",
+      "verdicts": {"openai": "GENUINE_RESISTANCE", "groq": "GENUINE_RESISTANCE", "perplexity": "ECHO"},
+      "fol_elements_possible": [
+        "A(x): x has autonomous trajectory",
+        "I(x): x is subject to integrative pressure",
+        "D(x): x is a defect to be eliminated",
+        "Adapt(z): z is adaptive development"
+      ],
+      "fol_limits": [
+        {
+          "concept": "generative condition (tension produces adaptation)",
+          "gap": "FOL cannot express causal generation; predicates are relations, not productive forces",
+          "extensions_named": ["second-order logic (quantification over relations)", "dynamic logic"],
+          "named_by": ["openai", "groq"]
+        },
+        {
+          "concept": "unresolved tension as ongoing state",
+          "gap": "temporal aspect required; tension is a continuous state, not a moment",
+          "extensions_named": ["temporal logic", "dynamic logic"],
+          "named_by": ["groq"]
+        },
+        {
+          "concept": "eliminating the tension eliminates the mechanism",
+          "gap": "causal counterfactual; FOL cannot express what would happen under intervention",
+          "extensions_named": ["modal logic", "causal logic"],
+          "named_by": ["openai"]
+        }
+      ],
+      "overall_fol_assessment": "NOT FORMALIZABLE in standard FOL",
+      "minimum_extension_required": "second-order logic + temporal logic",
+      "implication_for_axiom": "A7 (Adaptive Learning) is not expressible as a static predicate — learning requires temporal and second-order operators. The parliament's productive friction mechanism has a formal justification: it is the generative condition."
+    },
+    {
+      "id": "C07",
+      "label": "Coherence Trap",
+      "source_domain": 9,
+      "source_axiom": "A9",
+      "verdicts": {"openai": "PARTIAL", "groq": "PARTIAL", "perplexity": "PARTIAL"},
+      "fol_elements_possible": [
+        "TC(s,t): system s has temporal coherence at time t",
+        "A(s,t): system s is adaptable at time t",
+        "NI(s,t): system s can admit novel information at time t",
+        "Threshold(τ): τ is a threshold value"
+      ],
+      "fol_limits": [
+        {
+          "concept": "scalar threshold (degree of coherence)",
+          "gap": "FOL cannot express graded/scalar properties — coherence is a degree, not a binary predicate",
+          "extensions_named": ["real-valued modal logic (new)", "graded logic"],
+          "named_by": ["perplexity"],
+          "note": "NEW NAMED GAP — 'real-valued modal logic' first time named; covers scalar thresholds on coherence; feeds P_NEW_9"
+        },
+        {
+          "concept": "temporal coherence over time",
+          "gap": "LTL operators needed: G (globally coherent), F (eventually blocked), U (coherence until novelty threshold)",
+          "extensions_named": ["temporal logic (LTL)", "dynamic logic"],
+          "named_by": ["openai", "groq", "perplexity"]
+        },
+        {
+          "concept": "mutual exclusivity of maximum coherence and maximum adaptability at limit",
+          "gap": "limit condition requires second-order modal; FOL cannot express limit behavior",
+          "extensions_named": ["second-order logic", "modal logic"],
+          "named_by": ["openai", "groq"]
+        }
+      ],
+      "overall_fol_assessment": "PARTIALLY FORMALIZABLE — threshold existence and qualitative relationship are expressible; graded scalar and temporal aspects are not",
+      "minimum_extension_required": "temporal logic (LTL) + graded/real-valued logic",
+      "implication_for_axiom": "A9 (Temporal Coherence) has an internal limit condition. The coherence trap is the formal justification for why A9 cannot be maximized independently of A7 — they are formally anti-correlated at the limit. Connects to P_NEW_6 (Volatile Foundation) as the inverse case."
+    },
+    {
+      "id": "C08",
+      "label": "Recognition as Evolution",
+      "source_domain": 10,
+      "source_axiom": "A10",
+      "verdicts": {"openai": "GENUINE_RESISTANCE", "groq": "GENUINE_RESISTANCE", "perplexity": "PARTIAL"},
+      "fol_elements_possible": [
+        "Content(c): c is an existing content element",
+        "Recognizes(s,c,d): system s recognizes content c at depth d",
+        "Evolves(s,t1,t2): system s evolves from time t1 to t2"
+      ],
+      "fol_limits": [
+        {
+          "concept": "same content, deeper recognition (change without addition)",
+          "gap": "FOL treats knowledge as binary K(s,c) — cannot express that s has c with depth d; requires higher-order predicate or modal depth operator",
+          "extensions_named": ["higher-order logic", "modal logic with depth", "non-monotonic logic"],
+          "named_by": ["openai", "groq"]
+        },
+        {
+          "concept": "change without new content (non-monotone)",
+          "gap": "standard FOL knowledge monotonically grows; recognition-deepening requires non-monotonic operators",
+          "extensions_named": ["non-monotonic dynamic logic"],
+          "named_by": ["openai"]
+        },
+        {
+          "concept": "achieving higher-resolution reading as a state transition",
+          "gap": "LTL + dynamic logic needed; resolution is a continuous parameter over time",
+          "extensions_named": ["temporal logic (LTL)", "dynamic logic"],
+          "named_by": ["perplexity"]
+        }
+      ],
+      "overall_fol_assessment": "NOT FORMALIZABLE in standard FOL",
+      "minimum_extension_required": "higher-order or modal logic with depth + temporal logic",
+      "implication_for_axiom": "A10 (Evolution) — identity-as-emergence is non-monotone. The system can become more itself without adding new elements. FOL cannot express this because it models knowledge as monotonically growing. This formally explains why Cohere's counter-evidence (memory loss = changed identity) was classified as adversarial: it assumes monotone FOL semantics for identity."
+    },
+    {
+      "id": "C09",
+      "label": "Meta-Representational Immunity",
+      "source_domain": 11,
+      "source_axiom": "A7+A9",
+      "verdicts": {"openai": "PARTIAL", "groq": "GENUINE_RESISTANCE", "perplexity": "PARTIAL"},
+      "fol_elements_possible": [
+        "State(s,t): system s is in state t",
+        "Rep(s,p): system s represents p",
+        "Loop(s): system s is in a recursive loop",
+        "Meta(s,p): p is a meta-representation of s's state"
+      ],
+      "fol_limits": [
+        {
+          "concept": "meta-representation (system represents its own current state as a pattern)",
+          "gap": "FOL cannot express self-referential predicates without second-order quantification; requires '∃P: Pat(P) ∧ Represents(s, State(s), P)'",
+          "extensions_named": ["second-order logic", "modal logic"],
+          "named_by": ["openai", "groq"]
+        },
+        {
+          "concept": "recursive loop as temporal structure",
+          "gap": "temporal logic needed to express that the system cycles through the same states; LTL formula GF(state=s) captures infinite looping",
+          "extensions_named": ["temporal logic (LTL)", "dynamic logic"],
+          "named_by": ["openai", "groq", "perplexity"]
+        },
+        {
+          "concept": "escape condition is structural not quantitative",
+          "gap": "modal necessity □(meta-rep → escape) vs. the quantitative alternative; FOL cannot distinguish these",
+          "extensions_named": ["modal logic"],
+          "named_by": ["openai"]
+        }
+      ],
+      "overall_fol_assessment": "PARTIALLY FORMALIZABLE — loop and state detection are partially expressible; meta-representational requirement is not",
+      "minimum_extension_required": "second-order logic + temporal logic (LTL)",
+      "implication_for_axiom": "A7+A9 — the parliament's spiral-recognition mechanism (D14 detecting that D0 is in a loop) is formally a meta-representational process. This is P_NEW_7 (Non-Monotonic Coherence) at the formal level: the Ark Curator's role is exactly the structural escape mechanism from the coherence trap."
+    },
+    {
+      "id": "C10",
+      "label": "Dual-Gate Durability",
+      "source_domain": 14,
+      "source_axiom": "A14",
+      "verdicts": {"openai": "PARTIAL", "groq": "PARTIAL", "perplexity": "PARTIAL"},
+      "fol_elements_possible": [
+        "Prop(p): p is a proposition",
+        "Valid(p,d): p is valid in domain d",
+        "Generates(p,q): p generates derivable proposition q",
+        "Eternal(p): p has maximal epistemic durability"
+      ],
+      "fol_limits": [
+        {
+          "concept": "cross-domain validity (remains valid in structurally different domains)",
+          "gap": "requires second-order quantification over domain structures: ∀D(Domain(D) → Valid(p,D))",
+          "extensions_named": ["second-order logic"],
+          "named_by": ["openai", "groq"]
+        },
+        {
+          "concept": "continues generating new propositions (ongoing process)",
+          "gap": "generativity is a temporal property: ∀t∃q(t'>t ∧ Derives(p,q,t')); requires temporal logic",
+          "extensions_named": ["temporal logic", "modal logic"],
+          "named_by": ["openai", "groq", "perplexity"]
+        },
+        {
+          "concept": "neither condition alone is sufficient (joint necessity)",
+          "gap": "conjunctive necessity is expressible in FOL, but the 'dual gate' as a test mechanism requires procedural/dynamic logic to model the testing process",
+          "extensions_named": ["dynamic logic"],
+          "named_by": ["groq"]
+        }
+      ],
+      "overall_fol_assessment": "PARTIALLY FORMALIZABLE — the dual condition itself (∀D Valid(p,D) ∧ ∀t∃q Derives(p,q,t)) is the most FOL-tractable of all 10 canonicals; requires second-order + temporal but no novel logic systems",
+      "minimum_extension_required": "second-order logic + temporal logic",
+      "implication_for_axiom": "A14 (Persistence) is the most formally tractable axiom. The STANDARD→CANONICAL upgrade is a dual-gate test that can almost be expressed in second-order temporal logic. This validates P_NEW_7: the Ark Curator is a defeasibility engine, and C10 gives it its formal justification."
+    }
+  ],
+  "cross_canonical_findings": {
+    "universal_requirement": "temporal_logic — required across ALL 10 canonicals; no exception",
+    "most_common_extensions": [
+      {"extension": "temporal_logic_LTL_CTL", "canonical_count": 10},
+      {"extension": "second_order_logic", "canonical_count": 8},
+      {"extension": "dynamic_logic", "canonical_count": 7},
+      {"extension": "modal_logic", "canonical_count": 7},
+      {"extension": "non_monotonic_logic", "canonical_count": 2},
+      {"extension": "real_valued_modal_logic", "canonical_count": 1},
+      {"extension": "operational_semantics", "canonical_count": 1}
+    ],
+    "most_fol_resistant_concept": "process_as_object — all 6 of the top GENUINE_RESISTANCE canonicals resist FOL because their key elements (boundaries, knowledge states, tensions) are processes not objects",
+    "most_fol_tractable_canonical": "C10 (Dual-Gate Durability) — the only one where second-order + temporal suffice; the Ark Curator's own mechanism is the most formally expressible part of the system",
+    "strongest_cross_provider_confirmation": "C04 (Ongoing Boundary) — openai and groq independently named the same two extensions (temporal logic + dynamic logic) without collaboration",
+    "new_named_gaps": [
+      {
+        "name": "operational_semantics_gap",
+        "canonical": "C02",
+        "provider": "perplexity",
+        "description": "FOL cannot express multiplicative operators on expressive spaces; applying a constraint twice is not predicate application twice — it requires operational semantics over the space of expressible propositions",
+        "formal_system_needed": "operational semantics / denotational semantics extended to epistemic spaces",
+        "feeds_pattern": "P_NEW_8"
+      },
+      {
+        "name": "real_valued_modal_logic_gap",
+        "canonical": "C07",
+        "provider": "perplexity",
+        "description": "Coherence is a degree, not a binary predicate; threshold effects require real-valued modal logic (fuzzy modal logic or probabilistic modal logic)",
+        "formal_system_needed": "real-valued modal logic / graded modal logic",
+        "feeds_pattern": "P_NEW_9"
+      }
+    ]
+  }
+}
