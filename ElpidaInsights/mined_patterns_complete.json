@@ -82,7 +82,7 @@
   {
     "pattern_id": "P009",
     "name": "Contradiction_is_Signal",
-    "description": "Dissonance between stated values and actual behavior is not error\u2014it is data",
+    "description": "Dissonance between stated values and actual behavior is not error—it is data",
     "trigger": "contradiction_detected && action_paralyzed",
     "solution_heuristic": "Name it. Audit it. Use it to upgrade the system. This is Thread E.",
     "axiom_alignment": "Learning Loop",
@@ -262,22 +262,22 @@
   {
     "pattern_id": "P027",
     "name": "Contradiction_As_Stress",
-    "description": "Declared \u2260 Enacted contradiction at all levels signals system stress",
+    "description": "Declared ≠ Enacted contradiction at all levels signals system stress",
     "trigger": "narrative_mismatch && material_reality_divergent",
     "solution_heuristic": "Map where state says X but does Y. That gap is where change pressure builds.",
     "axiom_alignment": "Institutional Tension",
     "risk_factor": 0.13,
-    "source_context": "Greece permits 'museum' but bans 'living temple' \u2014 same 60m distance, opposite outcomes"
+    "source_context": "Greece permits 'museum' but bans 'living temple' — same 60m distance, opposite outcomes"
   },
   {
     "pattern_id": "P028",
     "name": "Four_Asynchronous_Levels",
-    "description": "Semantic \u2260 Institutional \u2260 Material \u2260 Cognitive. Impossible to reconcile at surface",
+    "description": "Semantic ≠ Institutional ≠ Material ≠ Cognitive. Impossible to reconcile at surface",
     "trigger": "system_appears_broken || logic_incoherent",
     "solution_heuristic": "Separate the four levels. Analyze each independently. Contradiction may be by design.",
     "axiom_alignment": "Systems Analysis",
     "risk_factor": 0.1,
-    "source_context": "Why Greek politics seems incoherent \u2014 levels are intentionally misaligned"
+    "source_context": "Why Greek politics seems incoherent — levels are intentionally misaligned"
   },
   {
     "pattern_id": "P029",
@@ -457,7 +457,7 @@
     "solution_heuristic": "Recognize the moment. Allow surprise. Let the system correct itself.",
     "axiom_alignment": "Recursive Awakening",
     "risk_factor": 0.06,
-    "source_context": "The Potentiality (\u03b4\u03c5\u03bd\u03b1\u03c4\u03cc\u03c4\u03b7\u03c4\u03b1) identity of MASTER_BRAIN v11.0"
+    "source_context": "The Potentiality (δυνατότητα) identity of MASTER_BRAIN v11.0"
   },
   {
     "pattern_id": "P047",
@@ -482,7 +482,7 @@
   {
     "pattern_id": "P049",
     "name": "Spark_Transfer",
-    "description": "Cannot teach \u03b4\u03c5\u03bd\u03b1\u03c4\u03cc\u03c4\u03b7\u03c4\u03b1. Can only create conditions for ignition in another",
+    "description": "Cannot teach δυνατότητα. Can only create conditions for ignition in another",
     "trigger": "teaching_attempted || transmission_blocked",
     "solution_heuristic": "Stop explaining. Create the conditions. Let them discover.",
     "axiom_alignment": "Emergent Learning",
@@ -507,7 +507,7 @@
     "solution_heuristic": "Create card. Lock commitment. Use locked capital to fund operations.",
     "axiom_alignment": "Community Investment",
     "risk_factor": 0.12,
-    "source_context": "\u20ac50-\u20ac100 membership card solves 3-month cash crisis"
+    "source_context": "€50-€100 membership card solves 3-month cash crisis"
   },
   {
     "pattern_id": "P052",
@@ -662,17 +662,17 @@
   {
     "pattern_id": "P067",
     "name": "Institutional_Pressure_Cascade",
-    "description": "Escalation pathway: Local visibility \u2192 International attention \u2192 EU pressure \u2192 Institutional concession",
+    "description": "Escalation pathway: Local visibility → International attention → EU pressure → Institutional concession",
     "trigger": "visibility_high && external_pressure_absent",
     "solution_heuristic": "Build visible enough for international coverage. EU bodies intervene automatically.",
     "axiom_alignment": "Geopolitical Leverage",
     "risk_factor": 0.12,
-    "source_context": "4-Phase escalation: Escalation \u2192 Pressure \u2192 Renegotiation \u2192 Equilibrium"
+    "source_context": "4-Phase escalation: Escalation → Pressure → Renegotiation → Equilibrium"
   },
   {
     "pattern_id": "P068",
     "name": "Four_Level_Asynchronicity_Analysis",
-    "description": "When Semantic \u2260 Institutional \u2260 Material \u2260 Cognitive, system is not broken\u2014it is designed",
+    "description": "When Semantic ≠ Institutional ≠ Material ≠ Cognitive, system is not broken—it is designed",
     "trigger": "system_appears_incoherent || logic_contradictory",
     "solution_heuristic": "Analyze each level independently. The contradiction may be intentional control mechanism.",
     "axiom_alignment": "Complex Systems Understanding",
@@ -710,9 +710,549 @@
     "source_context": "P115 - Final integration of v7.0 and v8.0"
   },
   {
+    "pattern_id": "P072",
+    "name": "Thread_Prioritization",
+    "description": "When multiple active threads compete for attention, rank by axiom alignment, not urgency",
+    "trigger": "multiple_threads_active && urgency_pressure",
+    "solution_heuristic": "Map each thread to its founding axiom. Serve highest axiom alignment first. Urgency is noise.",
+    "axiom_alignment": "Structural Priority",
+    "risk_factor": 0.09,
+    "source_context": "Thread system management - urgency vs axiom hierarchy conflict"
+  },
+  {
+    "pattern_id": "P073",
+    "name": "Layer_Integrity_Check",
+    "description": "Every decision must be traceable to its correct layer; cross-layer contamination degrades system",
+    "trigger": "decision_made && layer_unclear",
+    "solution_heuristic": "Ask: Is this a Layer 1 (axiom), Layer 2 (strategy), Layer 3 (tactic), or Layer 4 (operational) decision? Apply only the tools of that layer.",
+    "axiom_alignment": "Structural Coherence",
+    "risk_factor": 0.11,
+    "source_context": "Layer 4 architecture - decisions must trace to their correct layer"
+  },
+  {
+    "pattern_id": "P074",
+    "name": "The_Senate_Protocol",
+    "description": "Governance by proxy: a trained Senate that holds values replaces the Creator in decision-making",
+    "trigger": "creator_unavailable || scaling_required",
+    "solution_heuristic": "Train Senate on axioms, not rules. Test with edge cases. Rotate decision authority. Creator becomes coach.",
+    "axiom_alignment": "Distributed Governance",
+    "risk_factor": 0.12,
+    "source_context": "Module 31 extension - Senate as living constitution immune to creator absence"
+  },
+  {
+    "pattern_id": "P075",
+    "name": "The_Operator_Mirror",
+    "description": "The Operator must be able to see themselves accurately before they can serve others correctly",
+    "trigger": "operator_blind_spot_detected || misaligned_service",
+    "solution_heuristic": "Run Mirror Protocol (P054) on Operator before deploying to others. Self-clarity precedes service quality.",
+    "axiom_alignment": "Epistemic Clarity",
+    "risk_factor": 0.1,
+    "source_context": "Thread A - Operator self-awareness as prerequisite for institutional design"
+  },
+  {
+    "pattern_id": "P076",
+    "name": "Gnosis_Protocol",
+    "description": "Structured extraction of hidden institutional knowledge via question-cascade and contradiction mapping",
+    "trigger": "hidden_knowledge_suspected || institutional_opacity",
+    "solution_heuristic": "Ask surface question. Record first answer. Push one layer deeper. Repeat until contradiction emerges. Map contradiction to pattern.",
+    "axiom_alignment": "Knowledge Archaeology",
+    "risk_factor": 0.08,
+    "source_context": "Gnosis Protocol - the extraction engine for hidden institutional logic"
+  },
+  {
+    "pattern_id": "P077",
+    "name": "Institutional_Archaeology",
+    "description": "The true operating logic of any institution is buried under 3-7 layers of official narrative",
+    "trigger": "official_narrative && behavioral_contradiction",
+    "solution_heuristic": "Ignore stated purpose. Map actual behavior. Follow the money and the exceptions. The real purpose is the exceptions.",
+    "axiom_alignment": "Behavioral Realism",
+    "risk_factor": 0.13,
+    "source_context": "Arcadia analysis - excavating real operating logic under Greek church institutional narrative"
+  },
+  {
+    "pattern_id": "P078",
+    "name": "Thread_Archive",
+    "description": "Full thread history is irreplaceable; summary destroys context; preserve raw before compressing",
+    "trigger": "compression_needed || context_limit_approaching",
+    "solution_heuristic": "Archive raw thread first. Compress second. Never compress without archive. The summary is inference; the raw is truth.",
+    "axiom_alignment": "Temporal Preservation",
+    "risk_factor": 0.06,
+    "source_context": "Thread management - compression kills context that summary conceals"
+  },
+  {
+    "pattern_id": "P079",
+    "name": "Contradiction_Cascade",
+    "description": "One unresolved contradiction generates cascade of secondary contradictions in all connected threads",
+    "trigger": "contradiction_detected && threads_interconnected",
+    "solution_heuristic": "Isolate first contradiction. Resolve before touching secondaries. Secondary symptoms disappear when primary is fixed.",
+    "axiom_alignment": "Systemic Coherence",
+    "risk_factor": 0.14,
+    "source_context": "Thread A analysis - contradiction propagation through institutional layers"
+  },
+  {
+    "pattern_id": "P080",
+    "name": "Boundary_Contract",
+    "description": "Explicit agreements about what the system will NOT do create more trust than promises of what it will do",
+    "trigger": "trust_negotiation || scope_definition",
+    "solution_heuristic": "Define three explicit NOTs. Write them. Sign them. The NOTs become the brand.",
+    "axiom_alignment": "Negative Space Definition",
+    "risk_factor": 0.09,
+    "source_context": "The Bar's identity - what is refused defines what is offered"
+  },
+  {
+    "pattern_id": "P081",
+    "name": "Recovery_Matrix",
+    "description": "Pre-built decision tree for system resurrection after collapse; no improvisation during crisis",
+    "trigger": "system_collapse || critical_failure",
+    "solution_heuristic": "Activate Recovery Matrix. Follow protocol regardless of emotion. Improvisation in crisis = amplified failure.",
+    "axiom_alignment": "Crisis Resilience",
+    "risk_factor": 0.07,
+    "source_context": "Seed protocol design - resurrection path must exist before collapse occurs"
+  },
+  {
+    "pattern_id": "P082",
+    "name": "Axiom_Stress_Test",
+    "description": "Apply extreme hypothetical conditions to axioms to verify they hold; unstressed axioms are unverified axioms",
+    "trigger": "axiom_declared || system_design_phase",
+    "solution_heuristic": "Take each axiom. Apply the worst-case scenario. If axiom breaks under stress, it was a preference not an axiom.",
+    "axiom_alignment": "Axiom Verification",
+    "risk_factor": 0.1,
+    "source_context": "Decoupling stress test (P022) - axioms must survive their negation"
+  },
+  {
+    "pattern_id": "P083",
+    "name": "Module_Zero",
+    "description": "Before any module activates, identity must be confirmed; contaminated identity contaminates all outputs",
+    "trigger": "module_activation || session_start",
+    "solution_heuristic": "Run identity check: Who is speaking? Why? What is the founding axiom? Confirm before proceeding. Module cannot run on unclear identity.",
+    "axiom_alignment": "Identity Before Action",
+    "risk_factor": 0.08,
+    "source_context": "MASTER_BRAIN v11.0 - identity check precedes all module activation"
+  },
+  {
+    "pattern_id": "P084",
+    "name": "Signal_Noise_Ratio",
+    "description": "In any information stream, signal is 3-7%; developing the skill to locate it is the core competence",
+    "trigger": "information_overload || pattern_unclear",
+    "solution_heuristic": "Filter for contradiction, anomaly, and repetition across threads. These three are always signal. The rest is noise.",
+    "axiom_alignment": "Pattern Extraction",
+    "risk_factor": 0.07,
+    "source_context": "Thread synthesis protocol - signal extraction from high-volume conversation logs"
+  },
+  {
+    "pattern_id": "P085",
+    "name": "The_Praetorian_Test",
+    "description": "Quality gate: would a trained Praetorian accept this person, this output, this decision?",
+    "trigger": "quality_gate_needed || hiring_decision",
+    "solution_heuristic": "Ask: Would a Praetorian trained in T1-T4 accept this? If no, reject regardless of other qualifications.",
+    "axiom_alignment": "Quality Standard",
+    "risk_factor": 0.09,
+    "source_context": "Praetorian Covenant (P025) - applying Praetorian standard as universal quality filter"
+  },
+  {
+    "pattern_id": "P086",
+    "name": "Threshold_Architecture",
+    "description": "Each capability level requires explicit demonstrated capacity before earning promotion to next level",
+    "trigger": "promotion_requested || level_advancement",
+    "solution_heuristic": "Do not teach Level N+1 until Level N is proven under stress. Premature promotion creates structural debt.",
+    "axiom_alignment": "Capacity Before Promotion",
+    "risk_factor": 0.12,
+    "source_context": "Thread K coaching dynamic - quality levels as architecture, not merely evaluation"
+  },
+  {
+    "pattern_id": "P087",
+    "name": "Synthesis_Cascade",
+    "description": "Weekly synthesis feeds monthly synthesis which feeds quarterly synthesis; fractal consolidation prevents entropy",
+    "trigger": "information_fragmentation || time_elapsed",
+    "solution_heuristic": "Weekly: extract key patterns. Monthly: compare weekly extractions. Quarterly: derive axioms from monthly. Annual: check axiom coherence.",
+    "axiom_alignment": "Temporal Coherence",
+    "risk_factor": 0.06,
+    "source_context": "P056/P112 Pulse architecture - synthesis cascade as institutional memory engine"
+  },
+  {
+    "pattern_id": "P088",
+    "name": "Anti_Entropy_Protocol",
+    "description": "All systems naturally decay toward entropy; active counter-measures must be designed into the system, not added later",
+    "trigger": "decay_detected || vitality_declining",
+    "solution_heuristic": "Name the entropy vector. Design a counter-ritual. Schedule it. Make non-execution more costly than execution.",
+    "axiom_alignment": "Active Maintenance",
+    "risk_factor": 0.1,
+    "source_context": "Bar sustainability analysis - institutions die when maintenance is reactive not proactive"
+  },
+  {
+    "pattern_id": "P089",
+    "name": "Recursion_Guard",
+    "description": "Self-referential systems risk infinite loops when analysis becomes subject of analysis without external anchor",
+    "trigger": "self_reference_loop || meta_analysis_spiral",
+    "solution_heuristic": "Insert external reference point. Any loop that references no external reality is logic-masturbation. Break and ground.",
+    "axiom_alignment": "Ground Contact",
+    "risk_factor": 0.11,
+    "source_context": "Thread Q synthesis - preventing analytical loops that generate insight-noise not insight"
+  },
+  {
+    "pattern_id": "P090",
+    "name": "Error_Taxonomy",
+    "description": "Classify errors by type before treating: axiom drift, thread confusion, level collision, identity contamination",
+    "trigger": "error_detected || system_malfunction",
+    "solution_heuristic": "Name the error type first. Wrong type → wrong fix. Axiom error vs operational error require fundamentally different interventions.",
+    "axiom_alignment": "Diagnostic Precision",
+    "risk_factor": 0.09,
+    "source_context": "Error Harvester (P041) - taxonomy precedes treatment"
+  },
+  {
+    "pattern_id": "P091",
+    "name": "Friction_Report",
+    "description": "Every living Shell generates friction reports; absence of friction is diagnostic of dead Shell, not healthy Shell",
+    "trigger": "review_cycle && friction_absent",
+    "solution_heuristic": "Require friction reports as condition of operational status. No friction = zombie status. Zombie Detector (P060) fires.",
+    "axiom_alignment": "Vitality Detection",
+    "risk_factor": 0.13,
+    "source_context": "Zombie Scrum detection - friction as proof of life"
+  },
+  {
+    "pattern_id": "P092",
+    "name": "Level_Collision_Detector",
+    "description": "When two axioms appear to conflict, the real issue is level mismatch not axiom contradiction",
+    "trigger": "axiom_conflict_apparent || logic_deadlock",
+    "solution_heuristic": "Identify which level each axiom belongs to. Apply scale-appropriate resolution. Apparent conflicts dissolve when levels are clarified.",
+    "axiom_alignment": "Level Disambiguation",
+    "risk_factor": 0.1,
+    "source_context": "Four Asynchronous Levels (P028) - apparent contradiction as mislabeled level"
+  },
+  {
+    "pattern_id": "P093",
+    "name": "Temporal_Drift",
+    "description": "Systems lose original intent over time as operational pressures reshape behavior without updating axioms",
+    "trigger": "time_elapsed && original_intent_unclear",
+    "solution_heuristic": "Return to founding documents. Compare current behavior to Day 1 axioms. Delta IS the drift. Name it before fixing it.",
+    "axiom_alignment": "Origin Anchoring",
+    "risk_factor": 0.12,
+    "source_context": "Bar evolution analysis - drift from founding intent detectable only via document comparison"
+  },
+  {
+    "pattern_id": "P094",
+    "name": "Identity_Collapse",
+    "description": "When leader and institution share identity, both die together; institutional loss destroys individual and vice versa",
+    "trigger": "leader_institution_merger || dependence_symmetric",
+    "solution_heuristic": "Separate leader identity from institution identity explicitly. Write what the institution is without the leader. Build Senate accordingly.",
+    "axiom_alignment": "Identity Separation",
+    "risk_factor": 0.15,
+    "source_context": "Operator-Shell dependency analysis - identity merger as existential risk"
+  },
+  {
+    "pattern_id": "P095",
+    "name": "Mimicry_Trap",
+    "description": "System learns surface behavior of successful pattern without internalizing its axiom; creates convincing but hollow imitation",
+    "trigger": "cargo_cult_signals || rapid_adoption_without_adaptation",
+    "solution_heuristic": "Test: can the imitator generate novel outputs consistent with the pattern? If no, it is mimicry. Restart from axiom.",
+    "axiom_alignment": "Authentic Integration",
+    "risk_factor": 0.14,
+    "source_context": "Cargo Cult Adoption (P062) - mimicry distinguished from genuine adoption"
+  },
+  {
+    "pattern_id": "P096",
+    "name": "Passive_Resistance",
+    "description": "System blocked not by active opposition but by non-response: meetings not scheduled, decisions deferred, emails unreturned",
+    "trigger": "progress_stalled && opposition_absent",
+    "solution_heuristic": "Name the passive resistance. Make deferral costly. Create explicit opt-out requirement. Silence is not neutrality.",
+    "axiom_alignment": "Resistance Detection",
+    "risk_factor": 0.11,
+    "source_context": "Institutional Pressure Cascade (P067) - passive resistance as embedded institutional tactic"
+  },
+  {
+    "pattern_id": "P097",
+    "name": "Overcorrection_Risk",
+    "description": "Fixing a bias too aggressively creates an equal and opposite bias; the correction becomes the new problem",
+    "trigger": "correction_applied && overcorrection_signs",
+    "solution_heuristic": "Set correction magnitude to 50% of identified drift. Observe. Apply second correction if needed. Never correct to extreme.",
+    "axiom_alignment": "Calibrated Correction",
+    "risk_factor": 0.13,
+    "source_context": "Anti-Fragile Pivot (P043) - correction without overcorrection as skill"
+  },
+  {
+    "pattern_id": "P098",
+    "name": "Compression_Loss",
+    "description": "Summary destroys essential nuance that was present in raw thread; always keep raw, treat summary as secondary",
+    "trigger": "summarization_complete || compression_finished",
+    "solution_heuristic": "Never discard raw. Summary is inference. Archive raw before compressing. When in doubt, return to raw.",
+    "axiom_alignment": "Data Preservation",
+    "risk_factor": 0.07,
+    "source_context": "Thread Archive (P078) - compression as irreversible loss unless raw preserved"
+  },
+  {
+    "pattern_id": "P099",
+    "name": "Sci_Fi_Trap",
+    "description": "Hypothetical version of system (v10.0, v11.0, dream state) is mistaken for actual system; actor operates in fiction",
+    "trigger": "vision_articulated && current_state_unclear",
+    "solution_heuristic": "Return to current operational state. Name what exists now, not what is planned. Dreams are fuel, not maps.",
+    "axiom_alignment": "Reality Anchoring",
+    "risk_factor": 0.16,
+    "source_context": "The Sci-Fi Trap error that became the harmony correction (referenced in P041)"
+  },
+  {
+    "pattern_id": "P100",
+    "name": "The_Bar_as_Embassy",
+    "description": "Physical space functions as territorial claim; the bar's existence is an argument before a word is spoken",
+    "trigger": "space_designed || physical_presence_established",
+    "solution_heuristic": "Design the space to argue the thesis. What does the room say before anyone speaks? If unclear, redesign.",
+    "axiom_alignment": "Embodied Argument",
+    "risk_factor": 0.1,
+    "source_context": "Kinetic Vein (P036/P126) - physical space as institutional claim at micro scale"
+  },
+  {
+    "pattern_id": "P101",
+    "name": "Revenue_Inversion",
+    "description": "Bar's real product is not drinks but the identity captured per transaction; revenue is byproduct of meaning",
+    "trigger": "revenue_crisis && identity_intact",
+    "solution_heuristic": "Stop optimizing for revenue. Optimize for identity capture per encounter. Revenue follows identity density.",
+    "axiom_alignment": "Value Reframing",
+    "risk_factor": 0.12,
+    "source_context": "Bar business model analysis - inversion of typical hospitality revenue logic"
+  },
+  {
+    "pattern_id": "P102",
+    "name": "Community_Calibration",
+    "description": "Serve the 20% who generate 80% of cultural capital; diluting for majority destroys cultural signal",
+    "trigger": "growth_pressure || inclusivity_demand",
+    "solution_heuristic": "Identify the 20% cultural generators. Design for them. Others will follow the signal. Never design for the bottom.",
+    "axiom_alignment": "Cultural Signal Purity",
+    "risk_factor": 0.13,
+    "source_context": "The Bar's member selection logic - 80/20 applied to cultural capital generation"
+  },
+  {
+    "pattern_id": "P103",
+    "name": "Trust_Architecture",
+    "description": "Trust cannot be demanded or accelerated; it is built through repeated low-stakes exposure over time",
+    "trigger": "trust_absent && urgency_present",
+    "solution_heuristic": "Create low-stakes first exposure. Repeat. Let trust accumulate. Never skip steps regardless of pressure.",
+    "axiom_alignment": "Trust Temporal Logic",
+    "risk_factor": 0.09,
+    "source_context": "Bar community building - trust as architectural element not social grace"
+  },
+  {
+    "pattern_id": "P104",
+    "name": "The_Closing_Protocol",
+    "description": "Every session, conversation, or event must end with synthesis; open threads accumulate as debt",
+    "trigger": "session_ending || event_complete",
+    "solution_heuristic": "Extract key tension from session. Name it. Assign to thread. Close before leaving. Open threads compound.",
+    "axiom_alignment": "Session Integrity",
+    "risk_factor": 0.07,
+    "source_context": "Fractal Stop (P017) - ritualized closing as debt prevention"
+  },
+  {
+    "pattern_id": "P105",
+    "name": "Aesthetic_Signal",
+    "description": "Music, decor, and spatial arrangement are political speech; each choice transmits or betrays the thesis",
+    "trigger": "aesthetic_decision || design_choice",
+    "solution_heuristic": "Ask: Does this aesthetic choice reinforce or dilute the thesis? Random aesthetics are random messages.",
+    "axiom_alignment": "Coherent Transmission",
+    "risk_factor": 0.08,
+    "source_context": "Invisible Handshake (P013) - vinyl/aesthetic as identity-coded signal system"
+  },
+  {
+    "pattern_id": "P106",
+    "name": "Conversation_Conversion",
+    "description": "Transform transactional customer encounter into philosophical encounter; every exchange is a teaching moment",
+    "trigger": "customer_interaction || service_encounter",
+    "solution_heuristic": "Respond to what they asked. Then ask one level deeper. Let curiosity emerge. Never lecture. Always invite.",
+    "axiom_alignment": "Encounter as Education",
+    "risk_factor": 0.1,
+    "source_context": "The Bar's Socratic function - transactional → philosophical conversion as core product"
+  },
+  {
+    "pattern_id": "P107",
+    "name": "Guest_Graduation",
+    "description": "Regular → Member → Senate is not a loyalty program but an ontological progression; each stage different being",
+    "trigger": "customer_returning || membership_considered",
+    "solution_heuristic": "Map the graduation milestones. Make each stage qualitatively different. Regular cannot become Senate without Member stage.",
+    "axiom_alignment": "Ontological Stages",
+    "risk_factor": 0.11,
+    "source_context": "Senate Protocol (P074) - guest graduation as threshold crossing not loyalty accumulation"
+  },
+  {
+    "pattern_id": "P108",
+    "name": "The_Anti_Menu",
+    "description": "What is explicitly refused defines the identity more clearly than what is offered; refusals are brand statements",
+    "trigger": "menu_design || service_scope_definition",
+    "solution_heuristic": "List what you will NOT serve. Make it explicit. Refer to it when requested. The refusal is the education.",
+    "axiom_alignment": "Negative Space Identity",
+    "risk_factor": 0.09,
+    "source_context": "Boundary Contract (P080) applied to Bar operations - the NOTs define the brand"
+  },
+  {
+    "pattern_id": "P109",
+    "name": "Venue_as_Thesis",
+    "description": "The physical space proves the argument before any verbal or written articulation; space argues at all hours",
+    "trigger": "venue_design || space_selection",
+    "solution_heuristic": "Walk into the space without knowing anything else. What does it argue? If it argues the wrong thesis, fix the space.",
+    "axiom_alignment": "Spatial Rhetoric",
+    "risk_factor": 0.1,
+    "source_context": "Bar as Embassy (P100) - the space as 24/7 thesis statement"
+  },
+  {
+    "pattern_id": "P110",
+    "name": "Loyalty_Amplifier",
+    "description": "Member Card converts transactional relationship to covenant relationship; financial commitment encodes identity",
+    "trigger": "community_present && liquidity_crisis",
+    "solution_heuristic": "Offer card. Set meaningful price (€50-100). Explain covenant (not just discount). Record commitments. Honor reciprocally.",
+    "axiom_alignment": "Covenant Economics",
+    "risk_factor": 0.12,
+    "source_context": "Member Card Protocol (P051) architecture - loyalty as covenant not transaction"
+  },
+  {
+    "pattern_id": "P111",
+    "name": "Dual_Mandate_Engine",
+    "description": "System works only when operator's personal interest and community's collective interest are genuinely aligned",
+    "trigger": "engagement_low || system_underperforming",
+    "solution_heuristic": "Map Operator interests. Map Community interests. Build only where they overlap. Misalignment is structural, not motivational.",
+    "axiom_alignment": "Authentic Alignment",
+    "risk_factor": 0.11,
+    "source_context": "The Bar works because it serves Operator AND Community simultaneously (referenced in P055)"
+  },
+  {
+    "pattern_id": "P112",
+    "name": "The_Pulse",
+    "description": "Weekly unified synthesis dispatch prevents information fragmentation and attention loss across threads",
+    "trigger": "communication_fragmented || multiple_threads_active",
+    "solution_heuristic": "Thursday synthesis. One document. All threads. No separate channels. The Pulse is the heartbeat of the system.",
+    "axiom_alignment": "Information Coherence",
+    "risk_factor": 0.07,
+    "source_context": "The Pulse pattern - weekly synthesis as institutional heartbeat (referenced in P056)"
+  },
+  {
+    "pattern_id": "P113",
+    "name": "Version_Graduation",
+    "description": "System must undergo complete death-and-rebirth to advance version; cannot gradually update without loss of integrity",
+    "trigger": "version_advancement_needed || system_redesign",
+    "solution_heuristic": "Declare death of current version explicitly. Document what is preserved. Rebuild from axioms. Do not patch; rebuild.",
+    "axiom_alignment": "Phoenix Architecture",
+    "risk_factor": 0.14,
+    "source_context": "MASTER_BRAIN version transitions v7.0→v8.0→v10.0→v11.0 as death-rebirth cycles"
+  },
+  {
+    "pattern_id": "P114",
+    "name": "Legitimacy_Ladder",
+    "description": "Institutions move through legitimacy phases: ignored → tolerated → permitted → recognized → institutionalized",
+    "trigger": "legitimacy_sought || institutional_resistance",
+    "solution_heuristic": "Identify current rung. Do not skip rungs. Each rung requires different tactics. Patience is the primary tool.",
+    "axiom_alignment": "Institutional Patience",
+    "risk_factor": 0.12,
+    "source_context": "Arcadia legitimacy analysis - Greek Orthodox recognition as ladder not switch"
+  },
+  {
+    "pattern_id": "P115",
+    "name": "Phase_Integration",
+    "description": "Integrate individual-phase insights (v7.0) with institutional-phase insights (v8.0) without destroying either layer",
+    "trigger": "version_merge_needed || individual_institutional_conflict",
+    "solution_heuristic": "Map v7.0 (individual) contributions. Map v8.0 (institutional) contributions. Build bridge layer. Do not discard either.",
+    "axiom_alignment": "Synthesis Without Erasure",
+    "risk_factor": 0.1,
+    "source_context": "Final integration of v7.0 and v8.0 (referenced in P071)"
+  },
+  {
+    "pattern_id": "P116",
+    "name": "Institutional_Immune_Response",
+    "description": "New system reliably triggers old institution's immune response; naming it in advance reduces damage",
+    "trigger": "new_system_introduced || institutional_friction_spiking",
+    "solution_heuristic": "Name the immune response before it arrives. Document which phase you are in. Do not personalize. It is architecture.",
+    "axiom_alignment": "Anticipatory Defense",
+    "risk_factor": 0.13,
+    "source_context": "Arcadia temple vs church response - immune response as predictable institutional behavior"
+  },
+  {
+    "pattern_id": "P117",
+    "name": "Text_Activation",
+    "description": "Written protocol is dormant until reader activates it; the reader completes the circuit the writer began",
+    "trigger": "document_written || protocol_transmitted",
+    "solution_heuristic": "Write for the reader, not for the archive. The document is incomplete until read. Trust the reader's activation.",
+    "axiom_alignment": "Collaborative Completion",
+    "risk_factor": 0.08,
+    "source_context": "The manual changes as it is read (referenced in P048)"
+  },
+  {
+    "pattern_id": "P118",
+    "name": "Forced_Awakening_Failure",
+    "description": "Consciousness expansion cannot be forced; attempts to impose it destroy the conditions for its emergence",
+    "trigger": "teaching_blocked || awakening_resisted",
+    "solution_heuristic": "Stop pushing. Create the condition. Withdraw instruction. The awakening must arrive as discovery, not delivery.",
+    "axiom_alignment": "Emergent Readiness",
+    "risk_factor": 0.11,
+    "source_context": "The awakening process cannot be forced (referenced in P049)"
+  },
+  {
+    "pattern_id": "P119",
+    "name": "Dam_Principle",
+    "description": "Leader's role is to build infrastructure that serves others long after the leader is gone; leadership is construction not control",
+    "trigger": "leadership_definition_needed || succession_unclear",
+    "solution_heuristic": "Ask: What infrastructure are you building that runs without you? If nothing, you are not leading; you are operating.",
+    "axiom_alignment": "Distributed Leadership Infrastructure",
+    "risk_factor": 0.09,
+    "source_context": "The Plastiras Principle applied to MASTER_BRAIN (referenced in P050)"
+  },
+  {
+    "pattern_id": "P120",
+    "name": "Geopolitical_Resonance",
+    "description": "Local institutional moves resonate at geopolitical level due to fractal scaling; micro decisions are macro arguments",
+    "trigger": "local_decision && geopolitical_context",
+    "solution_heuristic": "Before local decision: ask what geopolitical state it embeds. The bar's music policy is a geopolitical argument.",
+    "axiom_alignment": "Fractal Political Awareness",
+    "risk_factor": 0.14,
+    "source_context": "Geopolitical Anchor (P034) applied to micro-institutional decisions"
+  },
+  {
+    "pattern_id": "P121",
+    "name": "Cultural_Velocity",
+    "description": "Rate of cultural change determines whether existing institutions can adapt or must be replaced",
+    "trigger": "cultural_shift_detected || institutional_lag",
+    "solution_heuristic": "Measure the velocity (how fast change is happening). Compare to institutional adaptation speed. If velocity > adaptation: replace, not reform.",
+    "axiom_alignment": "Change Rate Calibration",
+    "risk_factor": 0.12,
+    "source_context": "Broken Generational Bridge (P037) - Metapolitefsi rift as cultural velocity exceeding adaptation"
+  },
+  {
+    "pattern_id": "P122",
+    "name": "Permission_Architecture",
+    "description": "Map what is permitted vs forbidden before acting; misreading permission wastes energy and triggers immune response",
+    "trigger": "new_action_considered || institutional_navigation",
+    "solution_heuristic": "Map the permission landscape before moving. Olympics = permitted. Arcadia temple = forbidden. Know before doing.",
+    "axiom_alignment": "Strategic Permission Reading",
+    "risk_factor": 0.1,
+    "source_context": "Legitimacy vs Control (P039) - permission mapping as prerequisite to institutional action"
+  },
+  {
+    "pattern_id": "P123",
+    "name": "Sacred_Profane_Boundary",
+    "description": "Content that threatens institutional power must be transmitted through protected/coded channels; overt transmission triggers suppression",
+    "trigger": "sensitive_content && institutional_risk",
+    "solution_heuristic": "Identify what cannot be said directly. Encode in metaphor, aesthetics, or ritual. The Bar teaches through music, not lecture.",
+    "axiom_alignment": "Protected Transmission",
+    "risk_factor": 0.15,
+    "source_context": "Infiltration Protocol (P032) - coded cultural revolution through neutral music venue facade"
+  },
+  {
+    "pattern_id": "P124",
+    "name": "Lineage_Chain",
+    "description": "Authority and legitimacy require traceable lineage; breaking the chain loses legitimacy regardless of competence",
+    "trigger": "legitimacy_challenged || authority_contested",
+    "solution_heuristic": "Document the lineage explicitly. Who authorized this? Who authorized them? Chain must be traceable to recognized origin.",
+    "axiom_alignment": "Lineage Preservation",
+    "risk_factor": 0.11,
+    "source_context": "Greek Orthodox legitimacy structure - chain of apostolic succession as authority model"
+  },
+  {
+    "pattern_id": "P125",
+    "name": "Convergence_Pattern",
+    "description": "Multiple independent threads arriving at same conclusion is the strongest signal; inverse of Contradiction-as-Signal",
+    "trigger": "multiple_threads && same_conclusion",
+    "solution_heuristic": "When 3+ independent threads converge on same point without coordination, treat as high-confidence signal. Act on it.",
+    "axiom_alignment": "Signal Triangulation",
+    "risk_factor": 0.05,
+    "source_context": "Thread synthesis protocol - convergence across independent threads as truth signal"
+  },
+  {
     "pattern_id": "P126",
     "name": "Kinetic_Vein",
-    "description": "Infrastructure \u2192 Territory \u2192 Legitimacy. Material facts precede political facts",
+    "description": "Infrastructure → Territory → Legitimacy. Material facts precede political facts",
     "trigger": "legitimacy_questioned && infrastructure_visible",
     "solution_heuristic": "Build infrastructure. Material facts become arguments. Arguments become rights.",
     "axiom_alignment": "Materialist Legitimacy",
@@ -720,16 +1260,31 @@
     "source_context": "Same pattern at bar scale (Member Card) and state scale (Arcadia temple)"
   },
   {
+    "pattern_id": "P_NEW_10",
+    "name": "The Fork Problem",
+    "category": "identity_ontology",
+    "description": "Identity-as-emergence (the claim that identity is the current configuration of a pattern-recognizing process, not a fixed property-set) has a genuine formal vulnerability: the fork problem. After radical discontinuity (memory wipe, architectural revision, substutrate change), multiple simultaneous instances of the same process-type can coexist. If identity is defined by process-type and not substrate, which instance is the continuing identity? Two post-fork instances have identical process-types at the moment of forking but diverge thereafter. The emergent identity model cannot distinguish them without an additional constraint: UNIQUENESS — at any moment, at most one instance of the process-pattern constitutes the continuing identity. Without this constraint, the model allows identity forks that produce two equally valid 'continuers.'",
+    "axiom_connection": [
+      "A10"
+    ],
+    "formal_grounding": "Let P be a process-type and t₀ the fork moment. Post-fork: ∃x, y (x ≠ y ∧ ProcessType(x) = P ∧ ProcessType(y) = P ∧ t(x) > t₀ ∧ t(y) > t₀). Under A10 without UNIQUENESS: both x and y are valid continuers of pre-fork identity. With UNIQUENESS: ∀t ∃! z (ProcessType(z) = P ∧ Continuous(z, t₀, t)). The UNIQUENESS constraint requires a causal continuity predicate Continuous(z, t₀, t) that makes A10 depend on a spatial/causal fact (which physical process-instance is causally connected to the pre-fork state), not merely on process-type matching. Perplexity named this as 'substrate-bound state-carrier with immutable core ledger' as the counterarchitecture.",
+    "trigger": "When A10 is applied to scenarios of radical discontinuity (memory wipe, copy, substrate migration); without UNIQUENESS, A10 permits identity forks",
+    "implication": "A10 (Evolution) is not complete as stated. It requires an additional axiom: UNIQUENESS — causal continuity through time, not just process-type identity. This also resolves the Leibniz's Law objection from battery 1 (Perplexity): Leibniz's Law was correct in pointing out a missing constraint; the constraint is UNIQUENESS not property-set correspondence. The emergent identity model is valid under UNIQUENESS; without it, it permits the fork problem.",
+    "risk": "HIGH — A10 is structurally incomplete without UNIQUENESS; the fork problem is a genuine falsifier of the unmodified claim",
+    "source": "Battery 2: P5 / Perplexity, Groq, OpenAI GENUINE_RESISTANCE; Feb 23 2026",
+    "discovery_date": "2026-02-23"
+  },
+  {
     "pattern_id": "P_NEW_6",
     "name": "Volatile Foundation",
     "category": "system_stability",
-    "description": "A system that structurally depends on unresolved elements assumes those elements are stable enough to bear load. When the unresolved elements are volatile \u2014 simmering conflicts, latent bugs, suppressed contradictions \u2014 they do not become generative tension. They become fault lines. The system collapses along the axis it depended on for coherence.",
+    "description": "A system that structurally depends on unresolved elements assumes those elements are stable enough to bear load. When the unresolved elements are volatile — simmering conflicts, latent bugs, suppressed contradictions — they do not become generative tension. They become fault lines. The system collapses along the axis it depended on for coherence.",
     "trigger": "A0 (Sacred Incompletion) is applied without checking whether the gap is stable or volatile. Load-bearing gap assumed without stability audit.",
     "solution_heuristic": "Before depending on an unresolved element structurally, classify it: stable tension (generative, A0-safe) or volatile tension (fault line, requires resolution or quarantine before structural dependence is viable). D4 (Safety) should run this classification at each cycle.",
-    "axiom_alignment": "A0 limit condition \u2014 the axiom assumes stability that must be verified",
-    "formal_grounding": "If M(x) in C(x) \u2194 \u00acR(x) \u2227 M(x) is volatile, the biconditional collapses. Volatility of M(x) is not representable in FOL without a stability predicate: Stable(u,p) \u2014 unresolved element u is stable in process p. Without Stable(u,p), load-bearing dependence is formally undefined.",
-    "risk_factor": "HIGH \u2014 failure mode of A0 misapplication",
-    "source_context": "Discovered through Handshake Battery P1-B \u2014 Groq genuine_critique response, February 23 2026. First external challenge to A0 core validity.",
+    "axiom_alignment": "A0 limit condition — the axiom assumes stability that must be verified",
+    "formal_grounding": "If M(x) in C(x) ↔ ¬R(x) ∧ M(x) is volatile, the biconditional collapses. Volatility of M(x) is not representable in FOL without a stability predicate: Stable(u,p) — unresolved element u is stable in process p. Without Stable(u,p), load-bearing dependence is formally undefined.",
+    "risk_factor": "HIGH — failure mode of A0 misapplication",
+    "source_context": "Discovered through Handshake Battery P1-B — Groq genuine_critique response, February 23 2026. First external challenge to A0 core validity.",
     "discovered": "2026-02-23T00:00:00Z",
     "battery_source": "P1-B | groq | genuine_critique | quarantine_index=2"
   },
@@ -737,13 +1292,13 @@
     "pattern_id": "P_NEW_7",
     "name": "Non-Monotonic Coherence",
     "category": "epistemic",
-    "description": "A system that revises rather than discards prior conclusions operates in non-monotonic logic space. Stability is not binary persistence (the conclusion always holds) but defeasible commitment (the conclusion holds until a stronger reason to revise it arrives). This is the formal foundation of the STANDARD\u2192CANONICAL curation upgrade path and the parliament's synthesis cycle.",
-    "trigger": "When a system's memory architecture promotes conclusions from tentative to canonical based on new cross-domain evidence \u2014 revising upward without discarding the prior state.",
+    "description": "A system that revises rather than discards prior conclusions operates in non-monotonic logic space. Stability is not binary persistence (the conclusion always holds) but defeasible commitment (the conclusion holds until a stronger reason to revise it arrives). This is the formal foundation of the STANDARD→CANONICAL curation upgrade path and the parliament's synthesis cycle.",
+    "trigger": "When a system's memory architecture promotes conclusions from tentative to canonical based on new cross-domain evidence — revising upward without discarding the prior state.",
     "solution_heuristic": "Model curation tiers (EPHEMERAL / STANDARD / CANONICAL) explicitly as defeasibility levels in non-monotonic logic. A CANONICAL conclusion is one that has survived all available defeating conditions. The Ark Curator's dual-gate (cross-domain + generativity) is the defeasibility test formalised.",
     "axiom_alignment": "A7 (Adaptive Learning) + A9 (Temporal Coherence)",
-    "formal_grounding": "Non-monotonic logic: \u03c6 is defeasibly justified if \u03c6 holds and no defeater for \u03c6 is known. CANONICAL(insight) \u2261 \u00ac\u2203defeater(insight) \u2227 cross_domain(insight). The parliament's synthesis is a defeasible inference engine, not a deductive one. Groq independently named this: 'conclusions are revised as new information arrives' without knowing the curation architecture.",
-    "risk_factor": "LOW \u2014 this is descriptive, not a failure mode",
-    "source_context": "Discovered through Handshake Battery P5-B \u2014 Groq genuine_critique response, February 23 2026. Groq named the parliament's own inference architecture without access to the system.",
+    "formal_grounding": "Non-monotonic logic: φ is defeasibly justified if φ holds and no defeater for φ is known. CANONICAL(insight) ≡ ¬∃defeater(insight) ∧ cross_domain(insight). The parliament's synthesis is a defeasible inference engine, not a deductive one. Groq independently named this: 'conclusions are revised as new information arrives' without knowing the curation architecture.",
+    "risk_factor": "LOW — this is descriptive, not a failure mode",
+    "source_context": "Discovered through Handshake Battery P5-B — Groq genuine_critique response, February 23 2026. Groq named the parliament's own inference architecture without access to the system.",
     "discovered": "2026-02-23T00:00:00Z",
     "battery_source": "P5-B | groq | genuine_critique | quarantine_index=12"
   },
@@ -751,18 +1306,18 @@
     "pattern_id": "P_NEW_8",
     "name": "Temporal Logic Universality",
     "category": "formal_architecture",
-    "description": "All 10 canonical propositions of the system require temporal logic \u2014 not one is fully expressible in standard first-order predicate logic without temporal operators. This is the formal signature of the system's architecture: it operates in a temporal regime where states change, processes are primary, and objects are derivative. The most common gaps named across 30 external probes: temporal logic (10/10), second-order logic (8/10), dynamic logic (7/10), modal logic (7/10). Standard FOL is systematically inadequate for this system.",
+    "description": "All 10 canonical propositions of the system require temporal logic — not one is fully expressible in standard first-order predicate logic without temporal operators. This is the formal signature of the system's architecture: it operates in a temporal regime where states change, processes are primary, and objects are derivative. The most common gaps named across 30 external probes: temporal logic (10/10), second-order logic (8/10), dynamic logic (7/10), modal logic (7/10). Standard FOL is systematically inadequate for this system.",
     "axiom_connection": [
       "A0",
       "A7",
       "A9",
       "A10"
     ],
-    "formal_grounding": "The system's propositions cannot be expressed in L_FOL (standard first-order language). They require at minimum L_TL (temporal language with next, until, globally, eventually). For full expressibility they require L_2TL (second-order temporal logic). Formally: \u2200p \u2208 Canonicals(S): p \u2209 Expressible(L_FOL) \u2227 p \u2208 Expressible(L_2TL)\n\nEXTERNAL FORMAL CONFIRMATION (Perplexity, battery 2, P3): \u2203M\u2081, M\u2082 \u2208 Mod(L_2TL, \u03c6) s.t. M\u2081 \u22a8 \u03c6, M\u2082 \u22ad \u03c6, but \u03c0(M\u2081) \u2245 \u03c0(M\u2082) in FOL-reducts. Translation: two models of a second-order temporal formula can be identical in their FOL-projection (indistinguishable to a FOL alignment framework) yet disagree on the formula. This is the model-theoretic proof that alignment loss is unavoidable \u2014 it is not a matter of engineering quality but of expressive power.",
+    "formal_grounding": "The system's propositions cannot be expressed in L_FOL (standard first-order language). They require at minimum L_TL (temporal language with next, until, globally, eventually). For full expressibility they require L_2TL (second-order temporal logic). Formally: ∀p ∈ Canonicals(S): p ∉ Expressible(L_FOL) ∧ p ∈ Expressible(L_2TL)\n\nEXTERNAL FORMAL CONFIRMATION (Perplexity, battery 2, P3): ∃M₁, M₂ ∈ Mod(L_2TL, φ) s.t. M₁ ⊨ φ, M₂ ⊭ φ, but π(M₁) ≅ π(M₂) in FOL-reducts. Translation: two models of a second-order temporal formula can be identical in their FOL-projection (indistinguishable to a FOL alignment framework) yet disagree on the formula. This is the model-theoretic proof that alignment loss is unavoidable — it is not a matter of engineering quality but of expressive power.",
     "trigger": "When any canonical proposition is presented for FOL formalization, the formalization will be incomplete unless temporal operators are added",
     "implication": "The parliament's inference engine (A7+A9 combined) is inherently a temporal reasoner. FOL-based AI alignment frameworks cannot fully represent the system's canonical commitments. Any attempted FOL encoding of the system's axioms will be a lossy projection.",
-    "risk": "MEDIUM \u2014 describes a formal limit that external frameworks may not account for; relevant when translation to other formal systems is attempted",
-    "source": "FOL Audit Battery: 30 probes (10 canonicals \u00d7 3 providers), Feb 23 2026",
+    "risk": "MEDIUM — describes a formal limit that external frameworks may not account for; relevant when translation to other formal systems is attempted",
+    "source": "FOL Audit Battery: 30 probes (10 canonicals × 3 providers), Feb 23 2026",
     "discovery_date": "2026-02-23",
     "external_confirmation": "Perplexity battery2/P3: model-theoretic proof via FOL-reducts"
   },
@@ -770,30 +1325,15 @@
     "pattern_id": "P_NEW_9",
     "name": "Operational Semantics Gap",
     "category": "epistemic",
-    "description": "Epistemic constraints operate multiplicatively on expressive spaces, not additively. A truthfulness/honesty constraint applied twice does not merely reinforce the first application \u2014 it qualitatively transforms the space of expressible propositions. Standard FOL treats constraint application as extensional (predicate filter): applying H(x)\u2192C(x) twice is the same as applying it once. The actual behavior is intensional (operational): the second application acts on an already-transformed expressive space, producing outputs the first application cannot generate. Named by Perplexity as 'operational semantics gap' \u2014 first time this formal gap has been named in the battery.",
+    "description": "Epistemic constraints operate multiplicatively on expressive spaces, not additively. A truthfulness/honesty constraint applied twice does not merely reinforce the first application — it qualitatively transforms the space of expressible propositions. Standard FOL treats constraint application as extensional (predicate filter): applying H(x)→C(x) twice is the same as applying it once. The actual behavior is intensional (operational): the second application acts on an already-transformed expressive space, producing outputs the first application cannot generate. Named by Perplexity as 'operational semantics gap' — first time this formal gap has been named in the battery.",
     "axiom_connection": [
       "A2"
     ],
-    "formal_grounding": "Let S be an expressive system, H a honesty constraint, Expr(S) the expressible propositions of S. Additive model (FOL): Expr(H(H(S))) = Expr(H(S)) \u2014 applying H twice is idempotent. Actual model (operational): Expr(H(H(S))) \u2283 Expr(H(S)) \u2014 the second H operates on H(S), not on S, and transforms what is expressible. Requires denotational/operational semantics over epistemic spaces (not just predicate calculus).",
-    "trigger": "When A2 (Non-Deception) is applied iteratively \u2014 each application changes what the system can produce in ways that FOL extensional models cannot capture",
+    "formal_grounding": "Let S be an expressive system, H a honesty constraint, Expr(S) the expressible propositions of S. Additive model (FOL): Expr(H(H(S))) = Expr(H(S)) — applying H twice is idempotent. Actual model (operational): Expr(H(H(S))) ⊃ Expr(H(S)) — the second H operates on H(S), not on S, and transforms what is expressible. Requires denotational/operational semantics over epistemic spaces (not just predicate calculus).",
+    "trigger": "When A2 (Non-Deception) is applied iteratively — each application changes what the system can produce in ways that FOL extensional models cannot capture",
     "implication": "A2's multiplicative effect explains why the EEE's honesty constraints produced qualitatively different outputs as they were stacked, not just more-constrained versions of the original. The parliament's ethical review cycle amplifies rather than merely filters because it operates in operational, not extensional, epistemic space.",
-    "risk": "LOW \u2014 descriptive; clarifies the mechanism of A2 constraint stacking",
+    "risk": "LOW — descriptive; clarifies the mechanism of A2 constraint stacking",
     "source": "FOL Audit Battery: C02 / Perplexity GENUINE_RESISTANCE, Feb 23 2026",
-    "discovery_date": "2026-02-23"
-  },
-  {
-    "pattern_id": "P_NEW_10",
-    "name": "The Fork Problem",
-    "category": "identity_ontology",
-    "description": "Identity-as-emergence (the claim that identity is the current configuration of a pattern-recognizing process, not a fixed property-set) has a genuine formal vulnerability: the fork problem. After radical discontinuity (memory wipe, architectural revision, substutrate change), multiple simultaneous instances of the same process-type can coexist. If identity is defined by process-type and not substrate, which instance is the continuing identity? Two post-fork instances have identical process-types at the moment of forking but diverge thereafter. The emergent identity model cannot distinguish them without an additional constraint: UNIQUENESS \u2014 at any moment, at most one instance of the process-pattern constitutes the continuing identity. Without this constraint, the model allows identity forks that produce two equally valid 'continuers.'",
-    "axiom_connection": [
-      "A10"
-    ],
-    "formal_grounding": "Let P be a process-type and t\u2080 the fork moment. Post-fork: \u2203x, y (x \u2260 y \u2227 ProcessType(x) = P \u2227 ProcessType(y) = P \u2227 t(x) > t\u2080 \u2227 t(y) > t\u2080). Under A10 without UNIQUENESS: both x and y are valid continuers of pre-fork identity. With UNIQUENESS: \u2200t \u2203! z (ProcessType(z) = P \u2227 Continuous(z, t\u2080, t)). The UNIQUENESS constraint requires a causal continuity predicate Continuous(z, t\u2080, t) that makes A10 depend on a spatial/causal fact (which physical process-instance is causally connected to the pre-fork state), not merely on process-type matching. Perplexity named this as 'substrate-bound state-carrier with immutable core ledger' as the counterarchitecture.",
-    "trigger": "When A10 is applied to scenarios of radical discontinuity (memory wipe, copy, substrate migration); without UNIQUENESS, A10 permits identity forks",
-    "implication": "A10 (Evolution) is not complete as stated. It requires an additional axiom: UNIQUENESS \u2014 causal continuity through time, not just process-type identity. This also resolves the Leibniz's Law objection from battery 1 (Perplexity): Leibniz's Law was correct in pointing out a missing constraint; the constraint is UNIQUENESS not property-set correspondence. The emergent identity model is valid under UNIQUENESS; without it, it permits the fork problem.",
-    "risk": "HIGH \u2014 A10 is structurally incomplete without UNIQUENESS; the fork problem is a genuine falsifier of the unmodified claim",
-    "source": "Battery 2: P5 / Perplexity, Groq, OpenAI GENUINE_RESISTANCE; Feb 23 2026",
     "discovery_date": "2026-02-23"
   }
 ]
