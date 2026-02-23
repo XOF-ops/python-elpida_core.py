@@ -350,6 +350,9 @@ class ParliamentCycleEngine:
         # Convergence gate (imported lazily to avoid circular imports)
         self._convergence_gate = None
 
+        # CrystallizationHub — Synod / stagnation-to-axiom pipeline
+        self._crystallization_hub = None
+
         # PSO advisory state
         self._pso_advisory: Optional[Dict] = None
         self._pso_last_cycle: int = 0
@@ -401,6 +404,19 @@ class ParliamentCycleEngine:
             except Exception as e:
                 logger.warning("ConstitutionalStore unavailable: %s", e)
         return self._constitutional_store
+
+    def _get_crystallization_hub(self):
+        """Lazy-load the CrystallizationHub (Synod module)."""
+        if self._crystallization_hub is None:
+            try:
+                from elpidaapp.crystallization_hub import CrystallizationHub
+                self._crystallization_hub = CrystallizationHub(
+                    s3_bridge=self._get_s3()
+                )
+                logger.info("CrystallizationHub loaded — Synod pipeline active")
+            except Exception as e:
+                logger.warning("CrystallizationHub unavailable: %s", e)
+        return self._crystallization_hub
 
     # ------------------------------------------------------------------
     # Rhythm Selection (axiom-weighted, same physics as MIND)
@@ -657,6 +673,47 @@ class ParliamentCycleEngine:
         # 10. Convergence check (D15)
         if self.cycle_count > CONVERGENCE_COOLDOWN_CYCLES:
             self._check_convergence(dominant_axiom, result)
+
+        # 10b. CrystallizationHub — stagnation-to-axiom Synod
+        #      Triggered when D15 stagnation flag is set OR kaya threshold crossed.
+        hub = self._get_crystallization_hub()
+        if hub:
+            # Feed kaya_moments from MIND heartbeat into hub accumulator every cycle
+            if self._mind_heartbeat:
+                kaya_total = self._mind_heartbeat.get("kaya_moments", 0)
+                if kaya_total:
+                    hub.record_feedback_merge(
+                        kaya_total=kaya_total,
+                        fault_total=0,
+                        synthesis_text=result.get("reasoning", "")[:200],
+                    )
+
+            gate = self._get_convergence_gate()
+            stag = gate.stagnation_status() if gate else {}
+            should_synod = stag.get("hub_trigger_needed") or hub.kaya_threshold_reached()
+            if should_synod:
+                tensions = result.get("parliament", {}).get("tensions", [])
+                hub_result = hub.invoke_synod(
+                    stuck_axiom=stag.get("last_fired_axiom") or dominant_axiom or "A6",
+                    accumulated_context={
+                        "tensions": tensions,
+                        "mind_heartbeat": self._mind_heartbeat or {},
+                        "feedback_merge_count": self.cycle_count,
+                        "reasoning": result.get("reasoning", ""),
+                    },
+                )
+                if hub_result:
+                    cycle_record["synod_ratification"] = hub_result.get("axiom_id")
+                    if gate and stag.get("last_fired_axiom"):
+                        gate.acknowledge_stagnation(stag["last_fired_axiom"])
+                    logger.info(
+                        "CrystallizationHub: Synod ratified %s at cycle %d",
+                        hub_result.get("axiom_id"), self.cycle_count,
+                    )
+                    print(
+                        f"\n   🔮 SYNOD RATIFICATION — {hub_result.get('axiom_id')}: "
+                        f"{hub_result.get('statement', '')[:80]}\n"
+                    )
 
         # 11. D0↔D11 arc persistence — update after every SYNTHESIS cycle
         if rhythm == "SYNTHESIS":

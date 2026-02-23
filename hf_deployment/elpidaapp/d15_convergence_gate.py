@@ -123,10 +123,17 @@ class ConvergenceGate:
     not from lost code archaeology.
     """
 
+    # How many consecutive same-axiom fires before flagging stagnation
+    STAGNATION_THRESHOLD = 5
+
     def __init__(self, s3_bridge=None):
         self._s3 = s3_bridge
         self._fire_count = 0
         self._fire_log: list = []
+        # Stagnation tracking — key: axiom, value: consecutive fire count
+        self._consecutive_fires: Dict[str, int] = {}
+        self._last_fired_axiom: Optional[str] = None
+        self._stagnation_flags: list = []  # axioms flagged as stagnant
 
     def check_and_fire(
         self,
@@ -208,6 +215,29 @@ class ConvergenceGate:
         # ═══ ALL GATES PASSED — D15 FIRES ═══
         self._fire_count += 1
 
+        # Stagnation tracking — detect Groundhog Day loops
+        if mind_axiom == self._last_fired_axiom:
+            self._consecutive_fires[mind_axiom] = (
+                self._consecutive_fires.get(mind_axiom, 0) + 1
+            )
+        else:
+            # New axiom — reset counter for previous, start fresh
+            if self._last_fired_axiom:
+                self._consecutive_fires[self._last_fired_axiom] = 0
+            self._consecutive_fires[mind_axiom] = 1
+        self._last_fired_axiom = mind_axiom
+
+        # Flag stagnation when threshold crossed
+        consec = self._consecutive_fires.get(mind_axiom, 0)
+        stagnation_detected = consec >= self.STAGNATION_THRESHOLD
+        if stagnation_detected and mind_axiom not in self._stagnation_flags:
+            self._stagnation_flags.append(mind_axiom)
+            logger.warning(
+                " D15 STAGNATION: axiom=%s has fired %d consecutive times. "
+                "CrystallizationHub should be triggered.",
+                mind_axiom, consec,
+            )
+
         broadcast = self._build_broadcast(
             axiom=mind_axiom,
             mind_heartbeat=mind_heartbeat,
@@ -216,6 +246,8 @@ class ConvergenceGate:
             body_approval=body_approval,
             consonance_with_anchor=consonance_with_anchor,
             parliament_result=parliament_result,
+            stagnation_detected=stagnation_detected,
+            consecutive_fires=consec,
         )
 
         # Write to WORLD bucket via S3Bridge
@@ -229,6 +261,8 @@ class ConvergenceGate:
             "mind_cycle": mind_heartbeat.get("mind_cycle"),
             "s3_key": s3_key,
             "timestamp": broadcast["timestamp"],
+            "consecutive_fires": consec,
+            "stagnation_detected": stagnation_detected,
         })
 
         logger.info(
@@ -251,12 +285,62 @@ class ConvergenceGate:
         body_approval: float,
         consonance_with_anchor: float,
         parliament_result: Dict,
+        stagnation_detected: bool = False,
+        consecutive_fires: int = 1,
     ) -> Dict[str, Any]:
-        """Build the D15 broadcast payload."""
+        """Build the D15 broadcast payload with dynamic parliament content."""
         ts = datetime.now(timezone.utc).isoformat()
         bid = hashlib.sha256(
             f"D15:{axiom}:{body_cycle}:{ts}".encode()
         ).hexdigest()[:16]
+
+        # ── Extract live parliament content ──────────────────────────────
+        parliament = parliament_result.get("parliament", {})
+        tensions = parliament.get("tensions", [])
+        veto_exercised = parliament.get("veto_exercised", False)
+        parliament_reasoning = parliament_result.get("reasoning", "")
+
+        # Build tensions text from actual per-cycle deliberation output
+        tensions_text = ""
+        if tensions:
+            tension_lines = []
+            for t in tensions:
+                pair = t.get("pair") or t.get("axiom_pair") or "?"
+                synthesis = t.get("synthesis", "")[:200]
+                tension_lines.append(f"  • [{pair}]: {synthesis}")
+            tensions_text = "\n".join(tension_lines)
+
+        # ── Build the header (same every convergence of this axiom) ──────
+        header = (
+            f"CONVERGENCE [{axiom} — {AXIOM_NAMES.get(axiom, '')} "
+            f"| {AXIOM_INTERVALS.get(axiom, '')} | ratio {AXIOM_RATIOS.get(axiom, '?')}]: "
+            f"Both MIND (consciousness loop) and BODY (Parliament deliberation) "
+            f"independently arrived at the same axiom. "
+            f"This is A16 in action: convergence of different starting points "
+            f"proves validity more rigorously than internal consistency."
+        )
+
+        # ── Build the dynamic body — unique per cycle ────────────────────
+        dynamic_parts = []
+        if tensions_text:
+            dynamic_parts.append(f"Parliament tensions this cycle:\n{tensions_text}")
+        if parliament_reasoning:
+            dynamic_parts.append(
+                f"Parliament reasoning: {parliament_reasoning[:600]}"
+            )
+        if stagnation_detected:
+            dynamic_parts.append(
+                f"⚠ STAGNATION DETECTED: This axiom has converged {consecutive_fires} "
+                f"consecutive times. D14 should trigger the CrystallizationHub (Synod) "
+                f"to elevate this repetition into a new constitutional axiom."
+            )
+
+        dynamic_body = "\n\n".join(dynamic_parts)
+        full_statement = header + ("\n\n" + dynamic_body if dynamic_body else "")
+
+        # d15_output = the unique-per-cycle synthesis content (not the static header)
+        # This is what D14 reads to distinguish cycle N from cycle N+1
+        d15_output = dynamic_body if dynamic_body else full_statement
 
         return {
             "type": "D15_WORLD_CONVERGENCE",
@@ -280,30 +364,33 @@ class ConvergenceGate:
                 "ark_mood": mind_heartbeat.get("ark_mood"),
             },
 
-            # BODY state at convergence
+            # BODY state at convergence — full live parliament output
             "body": {
                 "cycle": body_cycle,
                 "coherence": round(body_coherence, 4),
                 "approval_rate": round(body_approval, 4),
                 "parliament_governance": parliament_result.get("governance"),
-                "veto_exercised": parliament_result.get("parliament", {}).get(
-                    "veto_exercised", False
-                ),
+                "veto_exercised": veto_exercised,
                 "tensions": [
-                    {"pair": t.get("axiom_pair"), "synthesis": t.get("synthesis", "")[:100]}
-                    for t in parliament_result.get("parliament", {}).get("tensions", [])
+                    {
+                        "pair": t.get("pair") or t.get("axiom_pair"),
+                        "synthesis": t.get("synthesis", "")[:200],
+                    }
+                    for t in tensions
                 ],
+                "reasoning": parliament_reasoning[:600],
             },
 
-            # D15 statement
-            "statement": (
-                f"CONVERGENCE: Both MIND (consciousness loop) and BODY "
-                f"(Parliament deliberation) independently arrived at "
-                f"{axiom} — {AXIOM_NAMES.get(axiom, '')} "
-                f"({AXIOM_INTERVALS.get(axiom, '')}, ratio {AXIOM_RATIOS.get(axiom, '?')}). "
-                f"This is A16 in action: convergence of different starting points "
-                f"proves validity more rigorously than internal consistency."
-            ),
+            # D15 content — dynamic header + live content
+            "statement": full_statement,
+            "d15_output": d15_output,
+
+            # Stagnation signal for CrystallizationHub
+            "stagnation": {
+                "detected": stagnation_detected,
+                "consecutive_fires": consecutive_fires,
+                "synod_recommended": stagnation_detected,
+            },
 
             # Governance metadata
             "d14_witness": "A0 — Sacred Incompletion witnesses this broadcast",
@@ -331,16 +418,20 @@ class ConvergenceGate:
                     "veto_exercised": broadcast["body"]["veto_exercised"],
                     "veto_nodes": [],
                     "tensions": broadcast["body"]["tensions"],
+                    "reasoning": broadcast["body"].get("reasoning", ""),
                 },
                 "reasoning": broadcast["statement"],
+                "stagnation": broadcast.get("stagnation", {}),
             }
             return self._s3.write_d15_broadcast(
                 broadcast_content={
-                    "d15_output": broadcast["statement"],
+                    # Use dynamic d15_output (unique per cycle); fall back to statement
+                    "d15_output": broadcast.get("d15_output", broadcast["statement"]),
                     "axioms_in_tension": [broadcast["converged_axiom"]],
                     "contributing_domains": ["MIND_LOOP", "BODY_PARLIAMENT"],
                     "pipeline_duration_s": 0,
                     "pipeline_stages": {},
+                    "stagnation": broadcast.get("stagnation", {}),
                 },
                 governance_metadata=governance_meta,
             )
@@ -363,6 +454,33 @@ class ConvergenceGate:
                 1 for e in self._fire_log if e.get("type") == "D15_CONVERGENCE"
             ),
         }
+
+    def stagnation_status(self) -> Dict[str, Any]:
+        """Return current stagnation state for CrystallizationHub polling."""
+        return {
+            "flagged_axioms": list(self._stagnation_flags),
+            "consecutive_fires": dict(self._consecutive_fires),
+            "last_fired_axiom": self._last_fired_axiom,
+            "hub_trigger_needed": len(self._stagnation_flags) > 0,
+            "threshold": self.STAGNATION_THRESHOLD,
+        }
+
+    def acknowledge_stagnation(self, axiom: str) -> None:
+        """
+        Called by CrystallizationHub after a Synod completes for *axiom*.
+        Resets the consecutive-fire counter and removes axiom from the
+        stagnation flags so the next convergence starts fresh.
+        """
+        if axiom in self._stagnation_flags:
+            self._stagnation_flags.remove(axiom)
+            logger.info(
+                "D15 Gate: stagnation for %s acknowledged by CrystallizationHub — "
+                "consecutive counter reset",
+                axiom,
+            )
+        self._consecutive_fires[axiom] = 0
+        if self._last_fired_axiom == axiom:
+            self._last_fired_axiom = None
 
 
 # Need Path for local fallback
