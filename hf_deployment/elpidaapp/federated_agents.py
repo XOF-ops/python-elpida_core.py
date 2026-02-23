@@ -579,6 +579,9 @@ class ScannerAgent(_BaseAgent):
                 for t in tensions:
                     pair = t.get("pair", "")
                     if pair:
+                        # Normalize: lists → tuple (lists are unhashable for freq dict)
+                        if isinstance(pair, list):
+                            pair = tuple(str(x).strip() for x in pair)
                         tension_pairs.append(pair)
 
             if tension_pairs:
@@ -588,9 +591,14 @@ class ScannerAgent(_BaseAgent):
                 top_pair = max(pair_freq, key=pair_freq.get)
                 top_count = pair_freq[top_pair]
                 if top_count >= 2:
-                    parts = top_pair.replace("vs", "|").split("|")
-                    ax1 = parts[0].strip()[:4] if len(parts) > 0 else "A0"
-                    ax2 = parts[1].strip()[:4] if len(parts) > 1 else "A6"
+                    # top_pair may be a tuple ("A3","A6"), list, or string "A3 vs A6"
+                    if isinstance(top_pair, (list, tuple)):
+                        ax1 = str(top_pair[0]).strip()[:4] if top_pair else "A0"
+                        ax2 = str(top_pair[1]).strip()[:4] if len(top_pair) > 1 else "A6"
+                    else:
+                        parts = str(top_pair).replace("vs", "|").split("|")
+                        ax1 = parts[0].strip()[:4] if parts else "A0"
+                        ax2 = parts[1].strip()[:4] if len(parts) > 1 else "A6"
                     name1 = AXIOM_NAMES.get(ax1, ax1)
                     name2 = AXIOM_NAMES.get(ax2, ax2)
                     try:
@@ -1060,6 +1068,11 @@ class LivingParliamentAgent(_BaseAgent):
         )
         logger.info("[LivingParliamentAgent] %s", summary)
         return summary
+
+    def generate(self) -> List[str]:
+        """Wrap _generate() into List[str] so the base _loop() can call it."""
+        result = self._generate()
+        return [result] if result else []
 
     def _pick_topic(self) -> Optional[str]:
         """
