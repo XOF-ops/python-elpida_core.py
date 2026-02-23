@@ -497,7 +497,8 @@ Speak briefly. Distill to essence.'''
         # Filter to unprocessed using watermark
         if last_ts:
             feedback_entries = [e for e in all_entries if e.get("timestamp", "") > last_ts]
-        elif last_count > 0 and last_count < len(all_entries):
+        elif last_count > 0:
+            # all_entries[last_count:] naturally returns [] when count >= total
             feedback_entries = all_entries[last_count:]
         else:
             feedback_entries = all_entries
@@ -895,10 +896,12 @@ Speak briefly. The void distills truth.'''
             
             return {
                 "type": pattern_type,
+                "cycle": self.cycle_count,
                 "source_domain": source_domain,
                 "question": question,
                 "external_response": response,
                 "d0_integration": integration,
+                "insight": integration,  # alias so readers scanning 'insight' field get content
                 "resonance_note": "The heartbeat caught itself transcending" if source_domain == 12 else None,
                 "timestamp": datetime.now().isoformat()
             }
@@ -966,9 +969,11 @@ Be brief - the void distills."""
             
             return {
                 "type": "D0_D13_DIALOGUE",
+                "cycle": self.cycle_count,
                 "d0_question": d0_question,
                 "d13_response": d13_response,
                 "d0_integration": integration,
+                "insight": integration,  # alias for consistent reader access
                 "timestamp": datetime.now().isoformat()
             }
         except Exception as e:
