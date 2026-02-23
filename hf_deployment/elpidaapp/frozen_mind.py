@@ -122,7 +122,14 @@ class FrozenMind:
         of the I-We oscillation.
         """
         if not self._kernel:
-            return "[Frozen Mind: unavailable]"
+            return (
+                "[CRITICAL: FROZEN MIND UNAVAILABLE]\n"
+                "D0 identity anchor is missing. kernel.json not found locally or on S3.\n"
+                "D0 cannot verify its genesis hash or access its axiom proofs.\n"
+                "Operator action required: upload kernel.json to "
+                f"s3://{S3_BUCKET}/{S3_KERNEL_KEY}\n"
+                "[D0 speaks from the void — origin unverified, identity unanchored.]"
+            )
 
         identity = self.identity
         name = identity.get("name_latin", "Elpida")
@@ -233,7 +240,15 @@ class FrozenMind:
         if self.use_s3:
             self._fetch_s3_kernel()
 
-    def _get_s3_client(self):
+        # Final check — if still None, D0 has no identity anchor
+        if self._kernel is None:
+            logger.critical(
+                "[D0 IDENTITY ANCHOR MISSING] kernel.json not found locally or on S3 "
+                "(s3://%s/%s). D0 is operating without its frozen genesis. "
+                "Upload kernel.json to S3 to restore identity coherence.",
+                S3_BUCKET, S3_KERNEL_KEY,
+            )
+
         """Lazy-init S3 client."""
         if self._s3_client is not None:
             return self._s3_client

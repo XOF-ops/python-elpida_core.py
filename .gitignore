@@ -121,3 +121,9 @@ ElpidaInsights/*.pdf
 
 # Scratch text notes
 ElpidaInsights/New Text Document*.txt
+
+# Frozen D0 genesis kernel — private, lives on S3 elpida-consciousness/memory/kernel.json
+# Never commit to public repo — contains identity hash, axiom proofs, synthesis history
+kernel/kernel.json
+hf_deployment/kernel/kernel.json
+hf_deployment/kernel/
