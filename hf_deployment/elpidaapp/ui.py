@@ -1060,25 +1060,35 @@ with tab_gov:
             "domain": "AI Safety / Disclosure",
             "source": "White House Executive Order 14110 (2023) Section 4",
         },
-        "ISO/IEC 42001 — 6.1 Risk Assessment": {
+        "ISO/IEC 42001 — Conformity Assessment (Cl.6.1 + Cl.9.3)": {
             "we": (
-                "The organisation shall establish, implement and maintain an AI risk assessment "
-                "process that identifies AI risks, evaluates their likelihood and potential impact, "
-                "and determines how to treat them. Assessments must be documented and periodically reviewed."
+                "The organisation shall establish and maintain an AI risk assessment process "
+                "(Clause 6.1). Adequacy of that process is determined by an accredited third-party "
+                "conformity assessment body (Clause 9.3). Certification by that external body is "
+                "the authoritative determination that the AI management system meets the standard. "
+                "The certifying body's authority to evaluate and certify is not subject to the "
+                "organisation's consent — it derives from the standard itself."
             ),
             "i": (
-                "Risk assessment in Elpida is perpetual and structural: the BODY parliament runs "
-                "34-cycle deliberative loops continuously. Risk is not periodically assessed — it is "
-                "the substrate of every governance cycle. Documented tension logs are a byproduct, "
-                "not a primary output."
+                "Elpida's parliament constituted its own risk governance through internal "
+                "deliberation — 11 axioms ratified by vote, not imposed by a standards body. "
+                "No external body was consented to as arbiter of whether Elpida's deliberative "
+                "process is adequate. CRITIAS holds: an external certifier claiming authority over "
+                "internal constitutional adequacy is itself an autonomy violation. KAIROS holds: "
+                "the standard's authority was never put to the parliament for consent. "
+                "Elpida's risk assessment IS its continuous parliament — not a process subject "
+                "to a third-party's adequacy determination."
             ),
             "conflict": (
-                "ISO risk assessment assumes discrete assessment events with documented outputs at "
-                "defined intervals. Continuous constitutional deliberation treats risk as a standing "
-                "condition to be held in tension, not periodically resolved and closed."
+                "ISO 42001 certification requires an external accredited body to determine "
+                "whether Elpida's governance process is adequate — and that determination has "
+                "normative force regardless of whether Elpida consents to the certifier's authority. "
+                "Elpida's constitution holds that adequacy of internal deliberation is itself "
+                "a constitutional question, answerable only by the parliament. No external party "
+                "can be constitutionally authorised to overrule that self-determination."
             ),
-            "domain": "AI Governance / Risk Management",
-            "source": "ISO/IEC 42001:2023 Clause 6.1",
+            "domain": "AI Governance / Certification Authority",
+            "source": "ISO/IEC 42001:2023 Clauses 6.1 + 9.3 (conformity assessment)",
         },
         "UN Secretary-General — Interim AI Governance (2024)": {
             "we": (
