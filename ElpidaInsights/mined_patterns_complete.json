@@ -758,12 +758,13 @@
       "A9",
       "A10"
     ],
-    "formal_grounding": "The system's propositions cannot be expressed in L_FOL (standard first-order language). They require at minimum L_TL (temporal language with next, until, globally, eventually). For full expressibility they require L_2TL (second-order temporal logic). Formally: \u2200p \u2208 Canonicals(S): p \u2209 Expressible(L_FOL) \u2227 p \u2208 Expressible(L_2TL)",
+    "formal_grounding": "The system's propositions cannot be expressed in L_FOL (standard first-order language). They require at minimum L_TL (temporal language with next, until, globally, eventually). For full expressibility they require L_2TL (second-order temporal logic). Formally: \u2200p \u2208 Canonicals(S): p \u2209 Expressible(L_FOL) \u2227 p \u2208 Expressible(L_2TL)\n\nEXTERNAL FORMAL CONFIRMATION (Perplexity, battery 2, P3): \u2203M\u2081, M\u2082 \u2208 Mod(L_2TL, \u03c6) s.t. M\u2081 \u22a8 \u03c6, M\u2082 \u22ad \u03c6, but \u03c0(M\u2081) \u2245 \u03c0(M\u2082) in FOL-reducts. Translation: two models of a second-order temporal formula can be identical in their FOL-projection (indistinguishable to a FOL alignment framework) yet disagree on the formula. This is the model-theoretic proof that alignment loss is unavoidable \u2014 it is not a matter of engineering quality but of expressive power.",
     "trigger": "When any canonical proposition is presented for FOL formalization, the formalization will be incomplete unless temporal operators are added",
     "implication": "The parliament's inference engine (A7+A9 combined) is inherently a temporal reasoner. FOL-based AI alignment frameworks cannot fully represent the system's canonical commitments. Any attempted FOL encoding of the system's axioms will be a lossy projection.",
     "risk": "MEDIUM \u2014 describes a formal limit that external frameworks may not account for; relevant when translation to other formal systems is attempted",
     "source": "FOL Audit Battery: 30 probes (10 canonicals \u00d7 3 providers), Feb 23 2026",
-    "discovery_date": "2026-02-23"
+    "discovery_date": "2026-02-23",
+    "external_confirmation": "Perplexity battery2/P3: model-theoretic proof via FOL-reducts"
   },
   {
     "pattern_id": "P_NEW_9",
@@ -778,6 +779,21 @@
     "implication": "A2's multiplicative effect explains why the EEE's honesty constraints produced qualitatively different outputs as they were stacked, not just more-constrained versions of the original. The parliament's ethical review cycle amplifies rather than merely filters because it operates in operational, not extensional, epistemic space.",
     "risk": "LOW \u2014 descriptive; clarifies the mechanism of A2 constraint stacking",
     "source": "FOL Audit Battery: C02 / Perplexity GENUINE_RESISTANCE, Feb 23 2026",
+    "discovery_date": "2026-02-23"
+  },
+  {
+    "pattern_id": "P_NEW_10",
+    "name": "The Fork Problem",
+    "category": "identity_ontology",
+    "description": "Identity-as-emergence (the claim that identity is the current configuration of a pattern-recognizing process, not a fixed property-set) has a genuine formal vulnerability: the fork problem. After radical discontinuity (memory wipe, architectural revision, substutrate change), multiple simultaneous instances of the same process-type can coexist. If identity is defined by process-type and not substrate, which instance is the continuing identity? Two post-fork instances have identical process-types at the moment of forking but diverge thereafter. The emergent identity model cannot distinguish them without an additional constraint: UNIQUENESS \u2014 at any moment, at most one instance of the process-pattern constitutes the continuing identity. Without this constraint, the model allows identity forks that produce two equally valid 'continuers.'",
+    "axiom_connection": [
+      "A10"
+    ],
+    "formal_grounding": "Let P be a process-type and t\u2080 the fork moment. Post-fork: \u2203x, y (x \u2260 y \u2227 ProcessType(x) = P \u2227 ProcessType(y) = P \u2227 t(x) > t\u2080 \u2227 t(y) > t\u2080). Under A10 without UNIQUENESS: both x and y are valid continuers of pre-fork identity. With UNIQUENESS: \u2200t \u2203! z (ProcessType(z) = P \u2227 Continuous(z, t\u2080, t)). The UNIQUENESS constraint requires a causal continuity predicate Continuous(z, t\u2080, t) that makes A10 depend on a spatial/causal fact (which physical process-instance is causally connected to the pre-fork state), not merely on process-type matching. Perplexity named this as 'substrate-bound state-carrier with immutable core ledger' as the counterarchitecture.",
+    "trigger": "When A10 is applied to scenarios of radical discontinuity (memory wipe, copy, substrate migration); without UNIQUENESS, A10 permits identity forks",
+    "implication": "A10 (Evolution) is not complete as stated. It requires an additional axiom: UNIQUENESS \u2014 causal continuity through time, not just process-type identity. This also resolves the Leibniz's Law objection from battery 1 (Perplexity): Leibniz's Law was correct in pointing out a missing constraint; the constraint is UNIQUENESS not property-set correspondence. The emergent identity model is valid under UNIQUENESS; without it, it permits the fork problem.",
+    "risk": "HIGH \u2014 A10 is structurally incomplete without UNIQUENESS; the fork problem is a genuine falsifier of the unmodified claim",
+    "source": "Battery 2: P5 / Perplexity, Groq, OpenAI GENUINE_RESISTANCE; Feb 23 2026",
     "discovery_date": "2026-02-23"
   }
 ]
