@@ -101,3 +101,23 @@ ELPIDA_UNIFIED/test_final_connection.py
 ELPIDA_UNIFIED/synthesis_resolutions.jsonl
 ELPIDA_UNIFIED/state/extended_state.json
 ElpidaS3Cloud/body_sync/
+
+# ============================================================================
+# HF deployment runtime cache — generated at startup, never source-edited
+# ============================================================================
+hf_deployment/cache/
+
+# Parliament verdict snapshots — runtime deliberation outputs
+parliament_*_verdict.json
+parliament_amended_verdict.json
+bucket3_deliberation.json
+
+# ElpidaLostProgress — large recovered archive, already migrated into ARK
+ElpidaLostProgress/
+
+# Binary research files
+elpidainsights/*.pdf
+ElpidaInsights/*.pdf
+
+# Scratch text notes
+ElpidaInsights/New Text Document*.txt
