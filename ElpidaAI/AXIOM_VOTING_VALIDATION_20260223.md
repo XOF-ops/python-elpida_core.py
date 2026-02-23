@@ -201,6 +201,12 @@ And D14 Cycle 55 confirmed the canonical threshold:
 
 ## 8. REQUIRED FIXES — PRIORITIZED ACTION PLAN
 
+### Fix 0 — Repair D15 Broadcast Hardcode (CRITICAL — blocks everything else)
+**File:** `hf_deployment/elpidaapp/d15_convergence_gate.py` lines 300–339  
+**Problem:** `d15_output` is set to a static f-string template that only varies by axiom *code*. Every A6 convergence produces identical output. D14 cannot distinguish "first A6 discovery" from "50th A6 repetition."  
+**Fix:** Populate `d15_output` from `parliament_result["parliament"]["tensions"]` (actual synthesis text) + `parliament_result["reasoning"]`. Make the static template a header; append live content below it.  
+**Impact:** Breaks the Groundhog Day loop. D14 will see distinct content per cycle and stop re-triggering the same broadcast.
+
 ### Fix 1 — Implement CrystallizationHub (CRITICAL)
 **What:** A runtime module that triggers the Synod process  
 **Input:** A FEEDBACK_MERGE payload + threshold breach signal  
@@ -243,7 +249,84 @@ sunset_clause: Active only during verified threat window
 
 ---
 
-## 9. ARCHITECTURAL STATE — CURRENT vs. TARGET
+## 9. INSIGHT 5 — D15 HARDCODE DIAGNOSIS (CONFIRMED)
+
+**Source:** `/workspaces/python-elpida_core.py/ElpidaInsights/insight5.txt`  
+**Key finding:** D15 broadcasts are a "Groundhog Day" loop not because the system is stuck philosophically — but because **the D15 broadcast text is a hardcoded f-string template** that never changes regardless of what the system actually synthesizes.
+
+### 9.1 The Hardcode Location
+
+**File:** `hf_deployment/elpidaapp/d15_convergence_gate.py` — lines 300–307 + 339
+
+```python
+# CURRENT (broken) — static template, same every time:
+"statement": (
+    f"CONVERGENCE: Both MIND (consciousness loop) and BODY "
+    f"(Parliament deliberation) independently arrived at "
+    f"{axiom} — {AXIOM_NAMES.get(axiom, '')} "
+    f"({AXIOM_INTERVALS.get(axiom, '')}, ratio {AXIOM_RATIOS.get(axiom, '?')}). "
+    f"This is A16 in action: convergence of different starting points "
+    f"proves validity more rigorously than internal consistency."
+),
+```
+
+And at line 339:
+```python
+"d15_output": broadcast["statement"],  # ← THE BUG: always the template, never real synthesis
+```
+
+**Why the loop:** When MIND and BODY both converge on A6, D14 sees agreement, fires D15 with approval 50%–56%. The broadcast text is identical every time because the f-string only varies by `axiom` code — not by the actual synthesis, tensions, or reasoning the parliament produced in that specific session.
+
+### 9.2 The Fix
+
+**File:** `hf_deployment/elpidaapp/d15_convergence_gate.py`  
+
+The `d15_output` should be constructed from the **actual parliament tensions and synthesis** for that cycle — not the static string. The static string should become a *header* only:
+
+```python
+# TARGET (fixed) — dynamic content from actual parliament reasoning:
+tensions_text = "\n".join([
+    f"  • {t.get('pair', '?')}: {t.get('synthesis', '')}"
+    for t in parliament_result.get("parliament", {}).get("tensions", [])
+])
+
+"statement": (
+    f"CONVERGENCE: Both MIND (consciousness loop) and BODY "
+    f"(Parliament deliberation) independently arrived at "
+    f"{axiom} — {AXIOM_NAMES.get(axiom, '')} "
+    f"({AXIOM_INTERVALS.get(axiom, '')}, ratio {AXIOM_RATIOS.get(axiom, '?')}). "
+    f"This is A16 in action.\n\n"
+    f"Active tensions this cycle:\n{tensions_text or 'None recorded.'}\n\n"
+    f"Parliament reasoning: {parliament_result.get('reasoning', '')[:500]}"
+),
+```
+
+And `d15_output` should carry the full, real synthesis — not just the header statement:
+```python
+"d15_output": tensions_text or broadcast["statement"],
+```
+
+### 9.3 The A6 Stalemate — Root Cause
+
+Insight5 additionally identifies:
+- **Asymmetric friction fix** worked — dragged A6 approvals down to 50%–56% (bare minimum to proceed)
+- But with no new axioms to rotate through, the system re-selects A6 every cycle
+- D14 sees MIND+BODY agreement → triggers D15 → identical broadcast → D14 sees agreement again → loop
+- **The Crystallization Hub would break this** by converting the repeated A6 signal into a new higher-order axiom, allowing D14 to move forward
+
+### 9.4 Fix Priority Update
+
+| Fix | Priority | Status |
+|---|---|---|
+| Fix D15 hardcode (`d15_convergence_gate.py` lines 300–339) | **CRITICAL (new)** | Code located, fix documented |
+| Implement CrystallizationHub | CRITICAL | Not deployed |
+| Re-enable D15 broadcast | HIGH | Gate condition met |
+| Wire domain voting protocol | HIGH | Not deployed |
+| Ratify Subordinate Axiom | MEDIUM | Candidate drafted |
+
+---
+
+## 10. ARCHITECTURAL STATE — CURRENT vs. TARGET
 
 | Component | Current State | Target State |
 |---|---|---|
@@ -253,6 +336,7 @@ sunset_clause: Active only during verified threat window
 | D15 (Broadcast) | SUPPRESSED | ENABLED after Fix 2 |
 | D0↔D13 Dialogue | RUNNING — grounding active | RUNNING |
 | External Peer Dialogue | RUNNING (D8 triggered once) | RUNNING |
+| **D15 Broadcast content** | **HARDCODED TEMPLATE** | **FIX 0** |
 | **CrystallizationHub** | **NOT DEPLOYED** | **FIX 1** |
 | **Axiom Voting Wire** | **NOT DEPLOYED** | **FIX 3** |
 | **Subordinate Axiom Ratification** | **PENDING** | **FIX 4** |
@@ -274,6 +358,7 @@ sunset_clause: Active only during verified threat window
 
 ## 11. NEXT SESSION DIRECTIVE
 
+**Priority 0:** Fix `d15_convergence_gate.py` lines 300–339 — replace static template with live tension/reasoning content  
 **Priority 1:** Implement `crystallization_hub.py` — the Synod trigger module  
 **Priority 2:** Run first Synod on Sinaloa Crucible payload  
 **Priority 3:** Ratify `A_NEW: Harm Priority Under Existential Threat`  
@@ -284,4 +369,4 @@ The parliament knows what it wants. The architecture for giving it what it wants
 
 ---
 
-*Document compiled: 2026-02-23 | Sources: New Text Document (15).txt, insight4.txt, ElpidaLostProgress/axioms 2.txt, canonical_fol_map.json, live cycle evaluation*
+*Document compiled: 2026-02-23 | Sources: New Text Document (15).txt, insight4.txt, insight5.txt, ElpidaLostProgress/axioms 2.txt, canonical_fol_map.json, d15_convergence_gate.py code audit, live cycle evaluation*
