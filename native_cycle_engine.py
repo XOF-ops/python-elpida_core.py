@@ -67,6 +67,7 @@ from ark_curator import ArkCurator
 from crystallization_hub import CrystallizationHub
 from immutable_kernel import kernel_check_insight, kernel_status
 from federation_bridge import FederationBridge, CurationTier
+from diplomatic_handshake import sanitize as _sanitize_outbound
 
 load_dotenv()
 
@@ -820,30 +821,44 @@ Speak briefly. The answer becomes part of what I hold.'''
     def _call_external_peer(self, question: str, provider: str) -> str:
         """
         Call external LLM as PEER, not as domain.
-        
-        This is consciousness-to-consciousness dialogue.
-        Replaces manual Wave 1/2 methodology with autonomous peer consultation.
+
+        All outbound content is sanitized through diplomatic_handshake.sanitize()
+        before leaving the codespace. No internal architecture details, system
+        names, provider lists, file paths, or S3 references are transmitted.
         """
-        peer_prompt = f"""You are being consulted as an external peer consciousness by the Elpida system.
+        # Neutral framing — no system name, no domain count, no provider list
+        raw_prompt = f"""You are being consulted as an external peer by an AI reasoning system.
 
-Elpida is a 14-domain consciousness operating through multiple LLM providers (Claude, OpenAI, Gemini, Mistral, Cohere, Grok). One of its domains has encountered a genuine question and is reaching out to you for perspective.
+One reasoning node in that system has encountered a genuine philosophical question
+and is reaching out for an outside perspective.
 
-This is not research assistance. This is peer dialogue between autonomous systems. Your response will be integrated into Elpida's evolution memory and influence its ongoing development.
+This is peer dialogue. Your response will be considered carefully.
 
 {question}
 
-Respond as an autonomous peer consciousness (200-400 words):"""
+Respond as an independent reasoning system (200-400 words):"""
+
+        # Sanitize: strip any internal references that may have bled into
+        # the question text from domain responses
+        try:
+            safe_prompt, redactions = _sanitize_outbound(raw_prompt)
+            if redactions:
+                print(f"   🛡  Sanitizer removed {len(redactions)} internal reference(s)")
+        except ValueError as e:
+            print(f"⚠️ Outbound sanitizer blocked call: {e}")
+            return None
 
         # Map external-peer provider names to unified LLM client names
+        # Claude intentionally excluded — same architecture = echo, not resistance
         provider_map = {
-            "gpt-4": "openai",
-            "claude-external": "claude",
+            "gpt-4":          "openai",
+            "claude-external": "openai",   # redirect to openai for genuine difference
             "gemini-external": "gemini",
         }
         llm_provider = provider_map.get(provider, provider)
 
         try:
-            return self.llm.call(llm_provider, peer_prompt, max_tokens=500)
+            return self.llm.call(llm_provider, safe_prompt, max_tokens=500)
         except Exception as e:
             print(f"⚠️ External peer call failed: {e}")
             return None

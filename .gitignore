@@ -127,3 +127,6 @@ ElpidaInsights/New Text Document*.txt
 kernel/kernel.json
 hf_deployment/kernel/kernel.json
 hf_deployment/kernel/
+# Diplomatic handshake quarantine — external responses awaiting human review
+# May contain external AI responses with contextual traces; review locally, never commit
+ElpidaAI/handshake_quarantine.jsonl
