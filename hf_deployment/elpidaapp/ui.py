@@ -1747,7 +1747,14 @@ fully tense — exactly the quality needed to hold paradox without resolving it 
                 _c2.metric("Rhythm", _state.get("last_rhythm", "\u2014"))
                 _c3.metric("Dominant Axiom", _state.get("last_dominant_axiom", "\u2014"))
                 _coh = _state.get("coherence", 0)
-                _c4.metric("Coherence", f"{_coh:.3f}" if isinstance(_coh, float) else _coh)
+                _coh_delta = round(_coh - 0.85, 3) if isinstance(_coh, float) else None
+                _c4.metric(
+                    "Coherence",
+                    f"{_coh:.3f}" if isinstance(_coh, float) else _coh,
+                    delta=f"{_coh_delta:+.3f} vs D15 threshold" if _coh_delta is not None else None,
+                    delta_color="normal" if _coh_delta is not None and _coh_delta >= 0 else "inverse",
+                    help="BODY consonance coherence. D15 convergence fires when ≥ 0.85",
+                )
                 _buf_counts = _state.get("input_buffer", {})
                 _buf_total = sum(_buf_counts.values()) if isinstance(_buf_counts, dict) else 0
                 _c5.metric("Buffer Depth", _buf_total)
@@ -1765,6 +1772,30 @@ fully tense — exactly the quality needed to hold paradox without resolving it 
                     help="Approval rate needed for a tension to advance toward constitutional ratification"
                 )
                 _w4.metric("Ratified Axioms", _state.get("ratified_axioms", 0))
+
+                # Row 3: Cross-layer MIND↔BODY visibility
+                _m1, _m2, _m3, _m4 = st.columns(4)
+                _m1.metric(
+                    "D15 Broadcasts",
+                    _state.get("d15_broadcast_count", 0),
+                    help="Cumulative MIND→BODY convergence broadcasts — persists across ECS restarts",
+                )
+                _m2.metric(
+                    "MIND Cycle",
+                    _state.get("mind_heartbeat_cycle") or "—",
+                    help="Last MIND spiral cycle seen via S3 heartbeat",
+                )
+                _mind_coh = _state.get("mind_coherence")
+                _m3.metric(
+                    "MIND Coherence",
+                    f"{_mind_coh:.3f}" if isinstance(_mind_coh, float) else ("—" if _mind_coh is None else _mind_coh),
+                    help="MIND cadence coherence score from latest heartbeat",
+                )
+                _m4.metric(
+                    "MIND Rhythm",
+                    _state.get("mind_rhythm") or "—",
+                    help="MIND active rhythm from latest heartbeat",
+                )
 
                 st.divider()
 
@@ -1981,8 +2012,11 @@ fully tense — exactly the quality needed to hold paradox without resolving it 
                              help="Each ratified axiom triggers a D0↔D0 peer message")
                 _d0b2.metric("Pending Ratifications", _pending_n,
                              help="Tensions accumulating toward constitutional threshold")
-                _d0b3.metric("Watch Cycle", f"{_bridge_state.get('watch_cycle', 0)}/34",
-                             help="Position within current 4-hour watch")
+                _d0b3.metric(
+                    "D15 Broadcasts",
+                    _bridge_state.get("d15_broadcast_count", 0),
+                    help="MIND→BODY spiral broadcasts — now persists cumulatively across ECS restarts",
+                )
             except Exception:
                 st.caption("Bridge state unavailable.")
         else:
