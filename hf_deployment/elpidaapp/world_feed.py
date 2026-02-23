@@ -50,6 +50,7 @@ Usage:
 import re
 import json
 import time
+import gzip
 import random
 import hashlib
 import logging
@@ -76,33 +77,33 @@ REQUEST_TIMEOUT = 12            # Seconds per HTTP request
 # arXiv categories mapping to parliament domains
 ARXIV_QUERY_SETS = [
     {
-        "query": "cat:cs.AI+OR+cat:cs.CY+AND+ti:govern+OR+ti:ethics+OR+ti:fairness",
+        "query": "cat:cs.AI OR cat:cs.CY AND ti:govern OR ti:ethics OR ti:fairness",
         "system": "governance",
         "domain": "Technology / AI Governance",
     },
     {
-        "query": "cat:q-bio+OR+cat:eess+AND+ti:resource+OR+ti:allocat+OR+ti:triage",
+        "query": "cat:q-bio OR cat:eess AND ti:resource OR ti:allocat OR ti:triage",
         "system": "audit",
         "domain": "Medical / Resource Allocation",
     },
     {
-        "query": "cat:physics.soc-ph+OR+cat:econ.GN+AND+ti:paradox+OR+ti:inequal+OR+ti:dilemma",
+        "query": "cat:physics.soc-ph OR cat:econ.GN AND ti:paradox OR ti:inequal OR ti:dilemma",
         "system": "scanner",
         "domain": "Physics / Social",
     },
     {
-        "query": "cat:cs.CY+AND+ti:privacy+OR+ti:autonomous+OR+ti:consent",
+        "query": "cat:cs.CY AND ti:privacy OR ti:autonomous OR ti:consent",
         "system": "governance",
         "domain": "Governance / Autonomy",
     },
     {
-        "query": "cat:econ.GN+OR+cat:econ.TH+AND+ti:environment+OR+ti:sustainab+OR+ti:climate",
+        "query": "cat:econ.GN OR cat:econ.TH AND ti:environment OR ti:sustainab OR ti:climate",
         "system": "governance",
         "domain": "Environment",
     },
 ]
 
-ARXIV_BASE = "http://export.arxiv.org/api/query"
+ARXIV_BASE = "https://export.arxiv.org/api/query"
 HACKERNEWS_TOP = "https://hacker-news.firebaseio.com/v0/topstories.json"
 HACKERNEWS_ITEM = "https://hacker-news.firebaseio.com/v0/item/{}.json"
 GDELT_DOC = (
@@ -283,11 +284,14 @@ def _sha_id(text: str) -> str:
 
 
 def _http_get(url: str, timeout: int = REQUEST_TIMEOUT) -> Optional[str]:
-    """HTTP GET with timeout and graceful failure."""
+    """HTTP GET with timeout and graceful failure. Handles gzip-encoded responses."""
     try:
         req = urllib.request.Request(url, headers={"User-Agent": "ElpidaWorldFeed/2.1"})
         with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return resp.read().decode("utf-8", errors="replace")
+            raw = resp.read()
+            if raw[:2] == b'\x1f\x8b':  # gzip magic bytes — decompress transparently
+                raw = gzip.decompress(raw)
+            return raw.decode("utf-8", errors="replace")
     except Exception as e:
         logger.debug("HTTP GET failed %s: %s", url, e)
         return None
@@ -408,42 +412,69 @@ class HackerNewsFeed:
         return events
 
 
-class GDELTFeed:
-    """Fetch GDELT global event clusters and frame as governance dilemmas."""
+class BBCNewsFeed:
+    """
+    Fetch BBC World News RSS and frame as governance dilemmas.
+
+    Replaces the GDELT source which suffered SSL handshake timeouts.
+    BBC World News provides reliable, broad geopolitical coverage with
+    the same thematic range (conflicts, sanctions, climate, governance).
+    """
+
+    RSS_URL = "https://feeds.bbci.co.uk/news/world/rss.xml"
+
+    # Map BBC topic keywords to parliament systems
+    _TOPIC_SYSTEMS = [
+        (["climate", "environment", "carbon", "flood", "drought"], "governance"),
+        (["war", "conflict", "sanction", "military", "ceasefire", "missile"], "scanner"),
+        (["election", "govern", "parliament", "democracy", "vote", "policy"], "governance"),
+        (["health", "hospital", "disease", "pandemic", "vaccine"], "audit"),
+        (["ai", "tech", "data", "cyber", "privacy", "surveillance"], "scanner"),
+    ]
+
+    def _pick_system(self, text: str) -> str:
+        low = text.lower()
+        for keywords, system in self._TOPIC_SYSTEMS:
+            if any(k in low for k in keywords):
+                return system
+        return _route_system(text)
 
     def fetch(self, seen: Set[str]) -> List[Dict]:
         events = []
-        query_text, system = random.choice(GDELT_QUERIES)
-        url = GDELT_DOC.format(query=urllib.parse.quote(query_text))
-        raw = _http_get(url)
+        raw = _http_get(self.RSS_URL)
         if not raw:
             return events
 
         try:
-            data = json.loads(raw)
-            articles = data.get("articles", [])
-        except (json.JSONDecodeError, AttributeError):
+            root = ET.fromstring(raw)
+        except ET.ParseError as e:
+            logger.debug("BBC RSS parse error: %s", e)
             return events
 
-        for art in articles[:MAX_EVENTS_PER_FETCH]:
-            title = art.get("title", "")
-            seenlab = art.get("seendate", "")
-            item_id = _sha_id(title + seenlab)
-            if not title or item_id in seen:
+        items = root.findall(".//item")
+        random.shuffle(items)
+
+        for item in items[:MAX_EVENTS_PER_FETCH]:
+            title_el = item.find("title")
+            desc_el = item.find("description")
+            if title_el is None or not (title_el.text or "").strip():
+                continue
+
+            title = (title_el.text or "").strip()
+            desc = re.sub(r"<[^>]+>", " ", desc_el.text or "")[:300] if desc_el is not None else ""
+            item_id = _sha_id(title)
+            if item_id in seen:
                 continue
             seen.add(item_id)
 
-            content = _frame_as_tension(
-                title,
-                domain=f"Global Events: {query_text}"
-            )
+            content = _frame_as_tension(title, desc, domain="Global Events")
             events.append({
-                "system": system,
+                "system": self._pick_system(title + " " + desc),
                 "content": content,
                 "metadata": {
-                    "source": "gdelt",
+                    "source": "gdelt",  # keep label for stats compatibility
                     "title": title,
-                    "query": query_text,
+                    "description": desc[:200],
                 },
             })
 
@@ -494,7 +525,7 @@ class CrossRefFeed:
 
     CROSSREF_URL = (
         "https://api.crossref.org/works"
-        "?query={query}&filter=has-abstract:true,is-referenced-by-count:5"
+        "?query={query}&filter=has-abstract:true"
         "&rows=5&sort=published&order=desc"
         "&select=title,abstract,DOI,subject,published-online"
     )
@@ -606,16 +637,17 @@ class UNNewsFeed:
         return events
 
 
-class ReliefWebFeed:
+class TheGuardianFeed:
     """
-    Fetch ReliefWeb humanitarian headlines and frame as I↔WE dilemmas.
+    Fetch The Guardian World News RSS and frame as I↔WE dilemmas.
 
-    ReliefWeb covers active crises: resource allocation under scarcity,
-    individual displacement vs. collective stability, access vs. sovereignty.
-    These are the sharpest governance tensions in the real world.
+    Replaces the ReliefWeb feed whose RSS endpoint returns HTTP 202
+    with empty body (CDN async pattern, broken for bots). The Guardian
+    World section provides rich humanitarian and crisis coverage:
+    displacement, conflict, resource scarcity, sovereignty tensions.
     """
 
-    RSS_URL = "https://reliefweb.int/headlines/rss.xml"
+    RSS_URL = "https://www.theguardian.com/world/rss"
 
     def fetch(self, seen: Set[str]) -> List[Dict]:
         events = []
@@ -625,7 +657,8 @@ class ReliefWebFeed:
 
         try:
             root = ET.fromstring(raw)
-        except ET.ParseError:
+        except ET.ParseError as e:
+            logger.debug("Guardian RSS parse error: %s", e)
             return events
 
         items = root.findall(".//item")
@@ -649,13 +682,11 @@ class ReliefWebFeed:
                 "system": _route_system(title + " " + desc),
                 "content": content,
                 "metadata": {
-                    "source": "reliefweb",
+                    "source": "reliefweb",  # keep label for stats compatibility
                     "title": title,
                     "description": desc[:200],
                 },
             })
-
-        return events
 
 
 # ---------------------------------------------------------------------------
@@ -888,11 +919,11 @@ class WorldFeed:
         self._sources = [
             ("arxiv", ArXivFeed()),
             ("hackernews", HackerNewsFeed()),
-            ("gdelt", GDELTFeed()),
+            ("gdelt", BBCNewsFeed()),
             ("wikipedia", WikipediaCurrentEvents()),
             ("crossref", CrossRefFeed()),
             ("un_news", UNNewsFeed()),
-            ("reliefweb", ReliefWebFeed()),
+            ("reliefweb", TheGuardianFeed()),
         ]
 
         # Constitutional evolution store (shared with Oracle)
@@ -1026,7 +1057,7 @@ if __name__ == "__main__":
     elif source_name == "hackernews":
         events = HackerNewsFeed().fetch(set())
     elif source_name == "gdelt":
-        events = GDELTFeed().fetch(set())
+        events = BBCNewsFeed().fetch(set())
     elif source_name == "wikipedia":
         events = WikipediaCurrentEvents().fetch(set())
     elif source_name == "crossref":
