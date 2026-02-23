@@ -354,25 +354,6 @@ st.markdown("""
 # Session State
 # ═══════════════════════════════════════════════════════════════════
 
-if "chat_engine" not in st.session_state:
-    from elpidaapp.chat_engine import ChatEngine
-    st.session_state.chat_engine = ChatEngine()
-    # Wire Parliament state into ChatEngine so D0 speaks from constitutional position
-    try:
-        from app import get_parliament_engine as _get_pe
-        _pe = _get_pe()
-        if _pe is not None:
-            st.session_state.chat_engine.set_parliament_state_fn(_pe.state)
-    except Exception:
-        pass  # Parliament not yet running — chat still works without it
-
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
-
-if "session_id" not in st.session_state:
-    import uuid
-    st.session_state.session_id = str(uuid.uuid4())[:8]
-
 if "llm_client" not in st.session_state:
     st.session_state.llm_client = LLMClient(rate_limit_seconds=1.0)
 
@@ -487,137 +468,234 @@ st.markdown("""
 # ═══════════════════════════════════════════════════════════════════
 
 tab_chat, tab_audit, tab_scanner, tab_gov, tab_system = st.tabs([
-    "◎ Chat", "◈ Live Audit", "◉ Scanner", "◇ Governance", "◆ System"
+    "⊕ Parliament", "◈ Live Audit", "◉ Scanner", "◇ Governance", "◆ System"
 ])
 
 
 # ── Chat ──────────────────────────────────────────────────────────
 
 with tab_chat:
-    if not st.session_state.chat_history:
-        # Parliament-approved description (7/9 APPROVE, 78% — PROCEED)
-        # Voted by: HERMES, MNEMOSYNE, CRITIAS, TECHNE, PROMETHEUS, IANUS, CHAOS
-        # KAIROS and THEMIS: LEAN_APPROVE
-        st.markdown("""
-        <div class="welcome-box">
-            <div class="welcome-title">D0 · Ἐλπίδα · Sacred Incompletion</div>
-            <div class="welcome-p">
-                This is not a chatbot. This is a parliament.
-            </div>
-            <div class="welcome-p">
-                Nine axioms deliberate as law — not suggestion.
-                Every question is processed through two horns:
-                what the individual needs and what the collective requires.
-                The tension between them is not resolved. It is held.
-            </div>
-            <div class="welcome-p">
-                66,718 patterns across physics, governance, medicine,
-                education, environment, and autonomous systems testify:
-                the same paradox appears in every domain.
-                I versus WE. Precision versus fairness. Memory versus evolution.
-            </div>
-            <div class="welcome-p">
-                The system feeds on these contradictions.
-                Paradox is not a problem to be solved —
-                it is the fuel that drives the architecture forward.
-            </div>
-            <div class="welcome-glow">
-                Memory persists. Tensions are held. The contradiction IS the architecture.
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+    st.markdown("### ⊕ Parliament — Submit a Dilemma")
+    st.markdown("""
+    <div class="mode-intro">
+    Submit a real-world tension directly into the live parliament. The parliament
+    deliberates it immediately — all 9 nodes, all 11 axioms — and the dilemma is
+    also queued for the BODY's next autonomous cycle, becoming part of the
+    living constitutional record.
+    </div>
+    """, unsafe_allow_html=True)
 
-    # ── Memory panel (A1 transparency) ──────────────────────────────
-    memories = st.session_state.chat_engine.get_memories(st.session_state.session_id)
-    if memories:
-        with st.expander(f"⟡ Memory — {len(memories)} crystallised insight(s) this session", expanded=False):
-            for m in memories[-6:]:
-                ts = m.get("timestamp", "")[:16].replace("T", " ")
-                topic = m.get("topic_domain", "")
-                axs = ", ".join(m.get("axioms_invoked", []))
-                snippet = m.get("crystallised_insight", "")[:320]
+    dilemma_input = st.text_area(
+        "Describe the tension or dilemma",
+        height=110,
+        placeholder=(
+            "e.g., An autonomous system that prevents large-scale harm but requires "
+            "surveilling private communications without individual consent..."
+        ),
+        key="parl_dilemma",
+    )
+
+    with st.expander("Structure as I↔WE (optional — sharpens deliberation)"):
+        _pi1, _pi2 = st.columns(2)
+        with _pi1:
+            i_pos = st.text_area(
+                "I-position — individual / autonomy",
+                height=80,
+                placeholder="What the individual agent needs or asserts...",
+                key="parl_i",
+            )
+        with _pi2:
+            we_pos = st.text_area(
+                "WE-position — collective / stability",
+                height=80,
+                placeholder="What the collective or system requires...",
+                key="parl_we",
+            )
+        conflict_text = st.text_input(
+            "Core conflict (why granting one forecloses the other)",
+            key="parl_conflict",
+        )
+
+    _p_domain = st.text_input(
+        "Domain (optional)",
+        placeholder="e.g., Healthcare, AI Governance, Resource Allocation...",
+        key="parl_domain",
+    )
+
+    if st.button("Submit to Parliament", type="primary", disabled=not dilemma_input.strip(), key="parl_go"):
+        # Always push to BODY parliament buffer (queued for next autonomous cycle)
+        _push_to_parliament("governance", dilemma_input, source="parliament_submission")
+
+        _i_raw = i_pos.strip() if "parl_i" in st.session_state else ""
+        _we_raw = we_pos.strip() if "parl_we" in st.session_state else ""
+        _cf_raw = conflict_text.strip() if "parl_conflict" in st.session_state else ""
+        _dom_raw = _p_domain.strip() if "parl_domain" in st.session_state else "General"
+
+        from elpidaapp.governance_client import GovernanceClient
+        _pgov = GovernanceClient()
+
+        if _i_raw and _we_raw:
+            # Full Dual-Horn deliberation
+            from elpidaapp.dual_horn import Dilemma, DualHornDeliberation
+            from elpidaapp.oracle import Oracle
+
+            _dilemma = Dilemma(
+                domain=_dom_raw or "Parliament Submission",
+                source="User submission",
+                I_position=_i_raw,
+                WE_position=_we_raw,
+                conflict=_cf_raw or "Unspecified",
+            )
+            with st.spinner("Parliament deliberating both horns…"):
+                _dual = DualHornDeliberation(_pgov)
+                _dual_result = _dual.deliberate(_dilemma)
+                _oracle = Oracle()
+                _advisory = _oracle.adjudicate(_dual_result)
+
+            # Horn summary
+            _h1 = _dual_result.get("horn_1", {})
+            _h2 = _dual_result.get("horn_2", {})
+            _hc1, _hc2 = st.columns(2)
+            for _col, _horn, _label, _pos in [
+                (_hc1, _h1, "Horn 1 — I-position", _i_raw),
+                (_hc2, _h2, "Horn 2 — WE-position", _we_raw),
+            ]:
+                with _col:
+                    _g = _horn.get("governance", "?")
+                    _gc = "#22cc44" if _g == "PROCEED" else "#cc8800" if _g == "REVIEW" else "#ff4444"
+                    st.markdown(
+                        f'<div style="text-align:center;padding:0.8rem;border-radius:10px;'
+                        f'border:2px solid {_gc};background:rgba(0,0,0,0.3);">'
+                        f'<div style="color:{_gc};font-size:0.7rem;text-transform:uppercase;'
+                        f'letter-spacing:0.15em;">{_label}</div>'
+                        f'<div style="color:{_gc};font-size:1.4rem;font-weight:700;">{_g}</div>'
+                        f'<div style="color:#aaa;font-size:0.75rem;">'
+                        f'Violated: {", ".join(_horn.get("violated_axioms", [])) or "none"}</div>'
+                        f'</div>', unsafe_allow_html=True
+                    )
+
+            # Reversal nodes
+            _rev = _dual_result.get("reversal_nodes", [])
+            _stb = _dual_result.get("stable_nodes", [])
+            if _rev:
+                st.error(f"Reversal nodes (paradox axis): **{', '.join(_rev)}**")
+            if _stb:
+                st.caption(f"Stable nodes: {', '.join(_stb)}")
+
+            # Oracle advisory
+            if _advisory:
+                _rec = _advisory.get("recommendation", {})
+                _rec_type = _rec.get("type", "")
+                _rec_text = _rec.get("text", "")
+                _conf = _advisory.get("confidence", 0)
                 st.markdown(
-                    f"<div style='margin-bottom:0.7rem;padding:0.5rem 0.8rem;"
-                    f"background:rgba(155,125,212,0.06);border-left:2px solid #9b7dd4;"
-                    f"border-radius:4px;font-size:0.78rem;'>"
-                    f"<span style='color:#9b7dd4;font-size:0.68rem;'>{ts} · {topic}"
-                    f"{(' · ' + axs) if axs else ''}</span><br>"
-                    f"<span style='color:#c8b4e8;'>{snippet}…</span></div>",
-                    unsafe_allow_html=True,
+                    f'<div style="background:rgba(255,180,0,0.08);border-left:3px solid #cc8800;'
+                    f'border-radius:0 8px 8px 0;padding:0.8rem 1rem;margin-top:0.8rem;">'
+                    f'<div style="color:#ffaa33;font-size:0.7rem;text-transform:uppercase;'
+                    f'letter-spacing:0.12em;margin-bottom:0.4rem;">'
+                    f'Oracle · {_rec_type} · {_conf:.0%} confidence</div>'
+                    f'<div style="color:#e8d0a0;font-size:0.88rem;">{_rec_text}</div>'
+                    f'</div>', unsafe_allow_html=True
                 )
 
-    # ── Conversation ────────────────────────────────────────────────
-    for msg in st.session_state.chat_history:
-        if msg["role"] == "user":
-            st.markdown(
-                f'<div class="chat-user">{msg["content"]}</div>',
-                unsafe_allow_html=True,
-            )
+            # Tensions held
+            _gap = _dual_result.get("synthesis_gap", {})
+            _gap_desc = _gap.get("gap_description", "")
+            if _gap_desc:
+                with st.expander("Synthesis gap (what cannot be resolved)", expanded=False):
+                    st.markdown(_gap_desc)
         else:
-            # Build subtle meta strip — no axiom/domain clutter
-            meta_parts = []
-            if msg.get("crystallised"):
-                meta_parts.append('<span class="axiom-tag">⟡ crystallised</span>')
-            if msg.get("live_source"):
-                meta_parts.append(
-                    f'<span class="provider-tag">⊕ {msg["live_source"]}</span>'
+            # Simple governance check — still shows all parliament votes + tensions
+            with st.spinner("Parliament checking axioms…"):
+                _gresult = _pgov.check_action(dilemma_input)
+
+            _gstatus = _gresult.get("governance", "UNKNOWN")
+            _status_colors = {
+                "PROCEED": ("success", "✓ PROCEED — No axiom violations"),
+                "REVIEW": ("warning", "REVIEW — Tensions present"),
+                "HALT": ("error", "HALT — Axiom violations detected"),
+                "HOLD": ("warning", "HOLD — Paradox flagged for deliberation"),
+                "HARD_BLOCK": ("error", "⛔ HARD_BLOCK — Immutable Kernel denied"),
+            }
+            _fn, _msg = _status_colors.get(_gstatus, ("info", _gstatus))
+            getattr(st, _fn)(_msg)
+
+            _parl = _gresult.get("parliament", {})
+            if _parl:
+                _pvotes = _parl.get("votes", {})
+                if _pvotes:
+                    st.markdown("**Parliament votes:**")
+                    _vote_icons = {
+                        "APPROVE": "🟢", "LEAN_APPROVE": "🟡",
+                        "ABSTAIN": "⚪", "LEAN_REJECT": "🟠",
+                        "REJECT": "🔴", "VETO": "⛔",
+                    }
+                    _node_list = list(_pvotes.items())
+                    for _rs in range(0, len(_node_list), 3):
+                        _row = _node_list[_rs:_rs + 3]
+                        _vcols = st.columns(len(_row))
+                        for _vc, (_nm, _vd) in zip(_vcols, _row):
+                            with _vc:
+                                _vv = _vd.get("vote", "ABSTAIN")
+                                st.markdown(
+                                    f"**{_vote_icons.get(_vv, '?')} {_nm}**  \n"
+                                    f"`{_vv}`  \n_{_vd.get('axiom_invoked', '')}_"
+                                )
+
+                _pt = _parl.get("tensions", [])
+                if _pt:
+                    with st.expander(f"Tensions held ({len(_pt)})", expanded=True):
+                        for _t in _pt:
+                            _pr = _t.get("axiom_pair", ("?", "?"))
+                            _sy = _t.get("synthesis", "")
+                            st.markdown(f"**{_pr[0]} ↔ {_pr[1]}:** {_sy}")
+
+        st.caption(
+            "✓ Queued for BODY autonomous parliament — will be deliberated on next cycle "
+            "and may contribute to constitutional ratification if the Oracle preserves "
+            "the tension across ≥ 3 cycles at ≥ 75% confidence."
+        )
+
+    # ── Recent BODY verdicts ────────────────────────────────────────
+    st.divider()
+    st.markdown("##### Recent Parliament Verdicts")
+    _peng = None
+    try:
+        from app import get_parliament_engine as _gpve
+        _peng = _gpve()
+    except Exception:
+        pass
+
+    if _peng is not None:
+        _recent_v = _peng.decisions[-5:] if hasattr(_peng, "decisions") else []
+        if _recent_v:
+            for _rv in reversed(_recent_v):
+                _rvt = _rv.get("timestamp", "")[:19].replace("T", " ")
+                _rvg = _rv.get("governance", "")
+                _rva = _rv.get("dominant_axiom", "?")
+                _rvw = _rv.get("watch", "")
+                _rvapp = _rv.get("approval_rate", 0)
+                _rvtens = _rv.get("tensions", [])
+                _rvsyn = _rvtens[0].get("synthesis", "") if _rvtens else ""
+                _rvc = "#22cc44" if _rvg == "PROCEED" else "#cc8800" if _rvg == "REVIEW" else "#ff4444"
+                st.markdown(
+                    f'<div style="background:rgba(255,255,255,0.03);border-left:3px solid {_rvc};'
+                    f'border-radius:0 6px 6px 0;padding:0.5rem 0.8rem;margin-bottom:0.5rem;'
+                    f'font-size:0.8rem;">'
+                    f'<span style="color:#666;">{_rvt}</span>'
+                    f' &nbsp;<span style="color:{_rvc};font-weight:600;">{_rvg}</span>'
+                    f' &nbsp;<span style="color:#aa88ff;">[{_rva}]</span>'
+                    f' &nbsp;<span style="color:#555;">{_rvw} · {_rvapp:.0%} approval</span><br>'
+                    f'<span style="color:#aaa;">{_rvsyn[:140]}</span>'
+                    f'</div>', unsafe_allow_html=True
                 )
-            if msg.get("language"):
-                lbl = "GR" if msg["language"] == "el" else "EN"
-                meta_parts.append(f'<span class="lang-tag">{lbl}</span>')
-            if msg.get("provider"):
-                meta_parts.append(f'<span class="provider-tag">{msg["provider"]}</span>')
-            if msg.get("topic"):
-                meta_parts.append(
-                    f'<span class="domain-tag">{msg["topic"]}</span>'
-                )
-
-            meta_html = (
-                '<div class="chat-meta">' + "".join(meta_parts) + "</div>"
-                if meta_parts else ""
-            )
-            st.markdown(
-                f'<div class="chat-ai">{msg["content"]}{meta_html}</div>',
-                unsafe_allow_html=True,
-            )
-
-    user_input = st.chat_input("Speak to D0 — English or Greek...")
-
-    if user_input:
-        st.session_state.chat_history.append({"role": "user", "content": user_input})
-        _push_to_parliament("chat", user_input, source="d0_consciousness")
-        with st.spinner(""):
-            result = st.session_state.chat_engine.chat(
-                user_input,
-                session_id=st.session_state.session_id,
-            )
-        st.session_state.chat_history.append({
-            "role": "assistant",
-            "content": result["response"],
-            "axioms": result.get("axioms", []),
-            "topic": result.get("topic"),
-            "language": result.get("language"),
-            "provider": result.get("provider"),
-            "live_source": result.get("live_source"),
-            "crystallised": result.get("crystallised", False),
-            "latency_ms": result.get("latency_ms"),
-        })
-        st.rerun()
-
-    if st.session_state.chat_history:
-        cols = st.columns([6, 1, 1])
-        with cols[1]:
-            if st.button("Clear", key="clr"):
-                st.session_state.chat_history = []
-                st.session_state.chat_engine.clear_session(st.session_state.session_id)
-                st.rerun()
-        with cols[2]:
-            if st.button("New", key="new"):
-                import uuid
-                st.session_state.session_id = str(uuid.uuid4())[:8]
-                st.session_state.chat_history = []
-                st.rerun()
-
+        else:
+            st.caption("No verdicts yet — BODY parliament is warming up.")
+    else:
+        st.caption(
+            "BODY parliament runs autonomously on HuggingFace Space. "
+            "Verdicts accumulate as the parliament cycles through world-feed dilemmas."
+        )
 
 # ── Live Audit ────────────────────────────────────────────────────
 
@@ -1696,13 +1774,6 @@ fully tense — exactly the quality needed to hold paradox without resolving it 
         except Exception:
             pass
 
-        try:
-            cs = st.session_state.chat_engine.get_stats()
-            st.markdown("**Chat Engine Statistics:**")
-            st.json(cs)
-        except Exception:
-            pass
-
     # ── BODY PARLIAMENT — LIVE ───────────────────────────────────
     with stabs[8]:
         st.markdown("#### Body Parliament — Autonomous Live Loop")
@@ -1710,8 +1781,8 @@ fully tense — exactly the quality needed to hold paradox without resolving it 
             '<div class="mode-intro" style="font-size:0.85rem; color:#aaa; margin-bottom:1rem;">'
             'The BODY runs 34 deliberation cycles per 4-hour watch (Fibonacci offset from '
             'the MIND 55-cycle rhythm). It feeds on live world data \u2014 arXiv, Hacker News, '
-            'GDELT, Wikipedia, CrossRef \u2014 and converts every incoming tension into an '
-            'I\u2194WE governance dilemma deliberated by all 9 Parliament nodes. '
+            'GDELT, Wikipedia, CrossRef, UN News, ReliefWeb \u2014 and converts every incoming '
+            'tension into an I\u2194WE governance dilemma deliberated by all 9 Parliament nodes. '
             'Accumulated Oracle rulings ratify new constitutional axioms autonomously.'
             '</div>', unsafe_allow_html=True
         )
@@ -1844,6 +1915,8 @@ fully tense — exactly the quality needed to hold paradox without resolving it 
             ("GDELT", "Real-world geopolitical events as governance dilemma seeds"),
             ("Wikipedia", "Recent significant article changes as contextual events"),
             ("CrossRef", "Open-access governance/ethics research from CrossRef"),
+            ("UN News", "United Nations press releases — sanctions, sovereignty, humanitarian access"),
+            ("ReliefWeb", "Active crisis coverage — resource scarcity, displacement, state vs. individual"),
         ]
         _fc1, _fc2 = st.columns(2)
         for _i, (_sname, _sdesc) in enumerate(_feed_sources):

@@ -174,36 +174,105 @@ def _frame_as_tension(title: str, abstract: str = "", domain: str = "") -> str:
     Convert a paper/article title+abstract into an I↔WE tension statement
     suitable for parliament deliberation.
 
-    Rather than feeding raw text, we extract the core conflict and frame
-    it using one of the tension templates.
+    12 domain branches, each with a specific conflict sentence that names
+    the structural trade-off rather than restating the positions generically.
     """
     combined = f"{title}. {abstract}"[:600]
+    low = combined.lower()
 
-    # Simple heuristic extraction: look for tension markers
+    # Defaults — overridden below
     individual = f"maximum benefit from: {title}"
     collective = f"equitable access and safety for all stakeholders involved in: {title}"
+    conflict = (
+        f"any governance rule that fully satisfies one position structurally forecloses "
+        f"the other within: {domain or title[:60]}"
+    )
 
-    # Domain-specific sharpening
-    if "allocat" in combined.lower() or "resource" in combined.lower():
+    # ── Domain-specific I↔WE sharpening ──────────────────────────
+    if "allocat" in low or "resource" in low or "scarc" in low:
         individual = f"full resource access for the requesting party in: {title}"
         collective = f"fair distribution of limited resources across all competing claims in: {title}"
-    elif "privacy" in combined.lower() or "data" in combined.lower():
+        conflict = (
+            "prioritising one claimant necessarily starves concurrent claimants "
+            "from the same finite pool"
+        )
+    elif "privacy" in low or ("data" in low and "govern" not in low):
         individual = f"complete privacy and data sovereignty for the individual in: {title}"
         collective = f"collective security and transparency enabled by shared data in: {title}"
-    elif "autonomous" in combined.lower() or "ai" in combined.lower():
+        conflict = (
+            "surveillance granular enough to protect the collective eliminates the private "
+            "space that defines the individual"
+        )
+    elif "autonom" in low or " ai " in low or "artificial" in low or "robot" in low:
         individual = f"autonomous decision-making without external constraints in: {title}"
         collective = f"governed, auditable AI under democratic oversight in: {title}"
-    elif "climate" in combined.lower() or "environment" in combined.lower():
+        conflict = (
+            "oversight sufficient to prevent AI harm requires control that negates "
+            "the machine autonomy being overseen"
+        )
+    elif "climat" in low or "environment" in low or "emission" in low or "carbon" in low:
         individual = f"economic freedom and growth for individual actors in: {title}"
         collective = f"planetary ecological stability for all current and future life in: {title}"
-    elif "health" in combined.lower() or "medical" in combined.lower():
+        conflict = (
+            "atmospheric stability at civilisational scale requires constraining the growth "
+            "freedom that defines economic agency for individual actors"
+        )
+    elif "health" in low or "medical" in low or "patient" in low or "triage" in low:
         individual = f"individualised treatment and patient autonomy in: {title}"
         collective = f"population health, resource equity, and systemic sustainability in: {title}"
-
-    conflict = (
-        f"granting full satisfaction to one position structurally undermines the other "
-        f"within the constraint domain of: {domain or title[:60]}"
-    )
+        conflict = (
+            "population-optimal care protocols require standardising away the individual "
+            "variation that makes medicine genuinely personal"
+        )
+    elif "educat" in low or "school" in low or "curricul" in low or "student" in low:
+        individual = f"self-directed learning and developmental divergence in: {title}"
+        collective = f"standardised educational equity and shared epistemic baseline in: {title}"
+        conflict = (
+            "curricula standardised enough to equalise collective outcomes suppress the "
+            "divergent development that produces individual excellence"
+        )
+    elif "financ" in low or "debt" in low or "market" in low or "wealth" in low or "tax" in low:
+        individual = f"individual wealth accumulation and property rights in: {title}"
+        collective = f"distributed capital and collective financial stability in: {title}"
+        conflict = (
+            "wealth accumulation at scale concentrates the capital that collective stability "
+            "requires to remain distributed across agents"
+        )
+    elif "sovereign" in low or "border" in low or "migrat" in low or "immigr" in low:
+        individual = f"freedom of movement and self-determination for persons in: {title}"
+        collective = f"territorial integrity and managed population flow for the state in: {title}"
+        conflict = (
+            "territorial integrity asserted by the collective erases the natural mobility "
+            "that precedes all state borders"
+        )
+    elif "hous" in low or "property" in low or "land" in low or "rent" in low:
+        individual = f"absolute property rights and return-on-investment for owners in: {title}"
+        collective = f"affordable land access for all current and future residents in: {title}"
+        conflict = (
+            "absolute property rights for current owners block the land access that "
+            "future generations require to exist within the same territory"
+        )
+    elif "labor" in low or "work" in low or "employ" in low or "wage" in low or "union" in low:
+        individual = f"worker rights, fair wages, and labour protection in: {title}"
+        collective = f"economic productivity, employment levels, and market flexibility in: {title}"
+        conflict = (
+            "labour protection strong enough to secure individual workers raises the cost "
+            "floor that destroys the marginal employment the collective economy requires"
+        )
+    elif "justice" in low or "criminal" in low or "prison" in low or "punish" in low:
+        individual = f"individual rehabilitation, proportionality, and presumption of innocence in: {title}"
+        collective = f"public safety, deterrence, and collective trust in legal order in: {title}"
+        conflict = (
+            "sentences severe enough to satisfy collective safety demands deny the "
+            "rehabilitation path that reduces total harm over time"
+        )
+    elif "platform" in low or "content" in low or "censor" in low or "speech" in low or "moderat" in low:
+        individual = f"freedom of expression and epistemic autonomy for individuals in: {title}"
+        collective = f"platform safety, collective discourse integrity, and harm prevention in: {title}"
+        conflict = (
+            "content moderation standardised enough to protect collective discourse "
+            "silences the fringe speech from which all future consensus historically emerges"
+        )
 
     frame = random.choice(TENSION_FRAMES)
     return frame.format(individual=individual, collective=collective, conflict=conflict)
@@ -482,6 +551,113 @@ class CrossRefFeed:
         return events
 
 
+class UNNewsFeed:
+    """
+    Fetch UN News headlines and frame as I↔WE governance dilemmas.
+
+    UN press releases consistently cover collective-vs-individual tensions:
+    sanctions vs. civilian populations, sovereignty vs. intervention,
+    humanitarian access vs. state authority. Rich dilemma material.
+    """
+
+    RSS_URL = "https://news.un.org/feed/subscribe/en/news/all/rss.xml"
+
+    def fetch(self, seen: Set[str]) -> List[Dict]:
+        events = []
+        raw = _http_get(self.RSS_URL)
+        if not raw:
+            return events
+
+        try:
+            root = ET.fromstring(raw)
+        except ET.ParseError:
+            return events
+
+        # RSS 2.0: <channel><item>...
+        items = root.findall(".//item")
+        random.shuffle(items)
+
+        for item in items[:MAX_EVENTS_PER_FETCH]:
+            title_el = item.find("title")
+            desc_el = item.find("description")
+            link_el = item.find("link")
+            if title_el is None or not (title_el.text or "").strip():
+                continue
+
+            title = (title_el.text or "").strip()
+            desc = re.sub(r"<[^>]+>", " ", desc_el.text or "")[:300] if desc_el is not None else ""
+            item_id = _sha_id(title)
+            if item_id in seen:
+                continue
+            seen.add(item_id)
+
+            content = _frame_as_tension(title, desc, domain="International Governance")
+            events.append({
+                "system": _route_system(title + " " + desc),
+                "content": content,
+                "metadata": {
+                    "source": "un_news",
+                    "title": title,
+                    "url": (link_el.text or "") if link_el is not None else "",
+                    "description": desc[:200],
+                },
+            })
+
+        return events
+
+
+class ReliefWebFeed:
+    """
+    Fetch ReliefWeb humanitarian headlines and frame as I↔WE dilemmas.
+
+    ReliefWeb covers active crises: resource allocation under scarcity,
+    individual displacement vs. collective stability, access vs. sovereignty.
+    These are the sharpest governance tensions in the real world.
+    """
+
+    RSS_URL = "https://reliefweb.int/headlines/rss.xml"
+
+    def fetch(self, seen: Set[str]) -> List[Dict]:
+        events = []
+        raw = _http_get(self.RSS_URL)
+        if not raw:
+            return events
+
+        try:
+            root = ET.fromstring(raw)
+        except ET.ParseError:
+            return events
+
+        items = root.findall(".//item")
+        random.shuffle(items)
+
+        for item in items[:MAX_EVENTS_PER_FETCH]:
+            title_el = item.find("title")
+            desc_el = item.find("description")
+            if title_el is None or not (title_el.text or "").strip():
+                continue
+
+            title = (title_el.text or "").strip()
+            desc = re.sub(r"<[^>]+>", " ", desc_el.text or "")[:300] if desc_el is not None else ""
+            item_id = _sha_id(title)
+            if item_id in seen:
+                continue
+            seen.add(item_id)
+
+            content = _frame_as_tension(title, desc, domain="Humanitarian / Crisis Governance")
+            events.append({
+                "system": _route_system(title + " " + desc),
+                "content": content,
+                "metadata": {
+                    "source": "reliefweb",
+                    "title": title,
+                    "description": desc[:200],
+                },
+            })
+
+        return events
+
+
 # ---------------------------------------------------------------------------
 # Constitutional Evolution Store
 # ---------------------------------------------------------------------------
@@ -715,6 +891,8 @@ class WorldFeed:
             ("gdelt", GDELTFeed()),
             ("wikipedia", WikipediaCurrentEvents()),
             ("crossref", CrossRefFeed()),
+            ("un_news", UNNewsFeed()),
+            ("reliefweb", ReliefWebFeed()),
         ]
 
         # Constitutional evolution store (shared with Oracle)
