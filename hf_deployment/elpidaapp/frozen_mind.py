@@ -249,6 +249,7 @@ class FrozenMind:
                 S3_BUCKET, S3_KERNEL_KEY,
             )
 
+    def _get_s3_client(self):
         """Lazy-init S3 client."""
         if self._s3_client is not None:
             return self._s3_client
