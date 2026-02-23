@@ -728,6 +728,64 @@ class ArkCurator:
         """Number of themes awaiting generativity proof."""
         return len(self._canonical_pending)
 
+    def get_synod_candidates(
+        self,
+        current_cycle: int,
+        min_cross_domain: int = 3,
+        min_pending_age: int = 21,
+        refractory: int = 89,
+    ) -> List[Dict]:
+        """
+        Return PENDING CANONICAL entries that are ripe for a Synod session.
+
+        A candidate qualifies when ALL four gates pass:
+          Gate 1 — generative_confirmed = True (Gate B already proven)
+          Gate 2 — age >= min_pending_age cycles (Fibonacci maturity)
+          Gate 3 — cross_domain_contributors >= min_cross_domain distinct domains
+          Gate 4 — refractory: >= `refractory` cycles since last Synod on this theme
+
+        Returns list sorted by age descending (oldest / most urgent first).
+        Called by NativeCycleEngine after every update_cadence() invocation.
+        """
+        candidates = []
+        for pending in self._canonical_pending:
+            # Gate 1: generativity confirmed
+            if not pending.get("generative_confirmed"):
+                continue
+
+            # Gate 2: sufficient age
+            age = current_cycle - pending.get("cycle", 0)
+            if age < min_pending_age:
+                continue
+
+            # Gate 3: cross-domain breadth
+            theme = pending.get("theme", "")
+            domains_for_theme: set = {pending.get("domain", -1)}
+            for entry in self.canonical_registry:
+                if entry.get("theme") == theme:
+                    domains_for_theme.add(entry.get("domain", -1))
+            for other in self._canonical_pending:
+                if other.get("theme") == theme:
+                    domains_for_theme.add(other.get("domain", -1))
+            domains_for_theme.discard(-1)
+
+            if len(domains_for_theme) < min_cross_domain:
+                continue
+
+            # Gate 4: refractory period (only applies if a prior Synod ran)
+            last_synod = pending.get("last_synod_cycle", 0)
+            if last_synod > 0 and (current_cycle - last_synod) < refractory:
+                continue
+
+            candidates.append({
+                **pending,
+                "cross_domain_contributors": sorted(domains_for_theme),
+                "age_cycles": age,
+            })
+
+        # Oldest first — most urgent patterns first
+        return sorted(candidates, key=lambda x: x["age_cycles"], reverse=True)
+
     # ====================================================================
     # SHOULD BROADCAST (D14 shapes what D15 transmits)
     # ====================================================================

@@ -48,6 +48,7 @@ import json
 import time
 import random
 import hashlib
+import threading
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Any
@@ -63,6 +64,7 @@ except ImportError:
     HAS_BOTO3 = False
 
 from ark_curator import ArkCurator
+from crystallization_hub import CrystallizationHub
 from immutable_kernel import kernel_check_insight, kernel_status
 from federation_bridge import FederationBridge, CurationTier
 
@@ -302,6 +304,24 @@ class NativeCycleEngine:
         # Emits heartbeat, curation metadata, and governance exchanges
         # to the BODY bucket for Parliament to read.
         self.federation = FederationBridge(ark_curator=self.ark_curator)
+
+        # EVOLUTION MEMORY WRITE LOCK
+        # Shared between _store_insight() and CrystallizationHub._promote_to_canonical()
+        # to prevent file-write contention when the Synod runs in a background thread.
+        self._memory_lock = threading.Lock()
+
+        # CRYSTALLIZATION HUB (THE SYNOD)
+        # Triggered by D14 every curation_interval cycles when a PENDING CANONICAL
+        # pattern has ripened. Runs concurrent multi-domain LLM deliberation in a
+        # background thread, then promotes the result to CANONICAL via D11 synthesis.
+        self.synod = CrystallizationHub(
+            llm=self.llm,
+            ark_curator=self.ark_curator,
+            evolution_memory_path=EVOLUTION_MEMORY,
+            memory_lock=self._memory_lock,
+            domains_config=DOMAINS,
+            federation_bridge=self.federation,
+        )
         
         print(f"✨ Native Cycle Engine initialized:")
         print(f"   Evolution: {len(self.evolution_memory)} patterns")
@@ -310,6 +330,7 @@ class NativeCycleEngine:
         print(f"   Kernel: {k_status['rules_count']} rules active (v{k_status['kernel_version']})")
         print(f"   Federation: {self.federation.status()['architecture']} bridge ready")
         print(f"   Critical: {len(self.critical_memory)} session memories")
+        print(f"   Synod: ready | {self.ark_curator.get_pending_canonical_count()} pending canonicals in queue")
     
     def _should_research(self, domain_responses: List[str]) -> tuple:
         """
@@ -1636,7 +1657,21 @@ Be brief - the void distills."""
             print(f"      Pattern: {ark.dominant_pattern} | Mood: {ark.cadence_mood}")
             print(f"      Weights: C{ark.suggested_weights.get('CONTEMPLATION')} S{ark.suggested_weights.get('SYNTHESIS')} An{ark.suggested_weights.get('ANALYSIS')} Ac{ark.suggested_weights.get('ACTION')} E{ark.suggested_weights.get('EMERGENCY')}")
             print(f"      Breath: D0 every {ark.breath_interval} | Canonical: {ark.canonical_count}")
-            print(f"      Broadcast: {ark.broadcast_readiness}{recursion_tag}")        
+            print(f"      Broadcast: {ark.broadcast_readiness}{recursion_tag}")
+
+            # ── SYNOD TRIGGER ──────────────────────────────────────────────
+            # After every cadence update, ask D14 if any PENDING CANONICAL
+            # pattern has ripened for a Synod session.
+            # The Hub runs in a daemon thread — the cycle loop continues.
+            synod_candidates = self.ark_curator.get_synod_candidates(self.cycle_count)
+            if synod_candidates and not self.synod._active:
+                candidate = synod_candidates[0]   # Oldest / highest urgency
+                self._fire_synod(candidate)
+            elif synod_candidates and self.synod._active:
+                print(
+                    f"      ⏳ Synod pending ({len(synod_candidates)} candidate(s)) "
+                    f"— session already running"
+                )        
 
         # HEARTBEAT: Emit native engine heartbeat every 13 cycles (Fibonacci boundary)
         if self.cycle_count % 13 == 0:
@@ -1883,6 +1918,50 @@ Be brief - the void distills."""
             print(f"   ⚠️  D15 broadcast failed: {e}")
             return False
 
+    # ========================================================================
+    # CRYSTALLIZATION HUB — SYNOD TRIGGER
+    # ========================================================================
+
+    def _fire_synod(self, candidate: Dict):
+        """
+        Spawn a background thread for one Synod session.
+
+        The Synod runs _outside_ the sequential cycle loop so cycles
+        continue uninterrupted while domains deliberate concurrently.
+
+        Thread safety:
+          - self.synod._active gates reentrancy (checked before calling)
+          - self._memory_lock guards evolution_memory.jsonl writes
+          - CrystallizationHub.convene() resets _active in its finally block
+
+        Args:
+            candidate: A qualified PENDING CANONICAL dict from
+                       ark_curator.get_synod_candidates().
+        """
+        self.synod._active = True
+        # Snapshot recent insights for the Synod context brief
+        # (the main loop may add new entries while Synod runs — the snapshot
+        # is intentionally frozen at the moment of trigger).
+        recent_snapshot = list(self.insights[-80:])
+        cycle_snapshot = self.cycle_count
+
+        def _synod_worker():
+            try:
+                self.synod.convene(candidate, recent_snapshot, cycle_snapshot)
+            except Exception as e:
+                import logging
+                logging.getLogger("elpida.synod").error(
+                    "_fire_synod worker unhandled: %s", e, exc_info=True
+                )
+                self.synod._active = False
+
+        t = threading.Thread(
+            target=_synod_worker,
+            name=f"synod-{candidate.get('theme', 'unknown')}-{cycle_snapshot}",
+            daemon=True,
+        )
+        t.start()
+
     def _store_insight(self, insight: Dict):
         """Store insight in evolution memory — curated by D14 Ark.
         
@@ -1900,18 +1979,21 @@ Be brief - the void distills."""
         """
         # D14 Ark curation: classify before storing
         verdict = self.ark_curator.curate_insight(insight)
-        
-        with open(EVOLUTION_MEMORY, 'a') as f:
-            entry = {
-                "timestamp": datetime.now().isoformat(),
-                "type": "NATIVE_CYCLE_INSIGHT",
-                "curation_level": verdict.level,
-                "curation_reason": verdict.reason,
-                **insight
-            }
-            if verdict.canonical_theme:
-                entry["canonical_theme"] = verdict.canonical_theme
-            f.write(json.dumps(entry) + "\n")
+
+        # Lock guards against concurrent write from Synod thread
+        # (_promote_to_canonical also acquires this lock before writing).
+        with self._memory_lock:
+            with open(EVOLUTION_MEMORY, 'a') as f:
+                entry = {
+                    "timestamp": datetime.now().isoformat(),
+                    "type": "NATIVE_CYCLE_INSIGHT",
+                    "curation_level": verdict.level,
+                    "curation_reason": verdict.reason,
+                    **insight
+                }
+                if verdict.canonical_theme:
+                    entry["canonical_theme"] = verdict.canonical_theme
+                f.write(json.dumps(entry) + "\n")
         
         if verdict.level == "CANONICAL":
             print(f"   🏛️ ARK: CANONICAL — {verdict.canonical_theme} (persists forever)")
@@ -1978,6 +2060,10 @@ Be brief - the void distills."""
                 
         except KeyboardInterrupt:
             print("\n\n🛑 Cycle interrupted")
+
+        # Graceful Synod shutdown — wait for any active session to finish
+        print("   🔮 Synod: shutting down thread pool...")
+        self.synod.shutdown()
         
         # Compute stats
         duration = time.time() - start_time
