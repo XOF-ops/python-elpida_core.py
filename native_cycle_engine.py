@@ -267,7 +267,11 @@ class NativeCycleEngine:
         # D0↔D13 dialogue state
         self.last_d0_d13_dialogue_cycle = 0
         self.d0_d13_dialogue_cooldown = 10  # Cycles between D0↔D13 direct dialogue
-        
+
+        # D0 BODY PULL: D0 receives Parliament's constitutional wisdom every F(8)=21 cycles
+        self.last_d0_body_pull_cycle = 0
+        self.d0_body_pull_cooldown = 21  # F(8) — Parliament constitutional digest for D0
+
         # D0 Frozen mode tracking (when void speaks from memory without API)
         self.d0_frozen_mode_probability = 0.15  # 15% chance D0 speaks from frozen state
 
@@ -297,6 +301,8 @@ class NativeCycleEngine:
         # Restore D15 broadcast count from persisted Ark state so D0 read-back
         # is aware of broadcasts made in previous spirals (not just current run).
         self.d15_broadcast_count = self.ark_curator._d15_broadcast_count
+        # Restore cumulative Kaya count from persisted Ark state
+        self._kaya_count = self.ark_curator._kaya_count
 
         # IMMUTABLE KERNEL: K1-K7 safety rules (ported from BODY)
         # Runs BEFORE any insight is stored. Hard-coded Python checks.
@@ -1451,7 +1457,29 @@ Be brief - the void distills."""
                     self.d15_last_readback_cycle = self.cycle_count
                     if d15_readback_integrated:
                         print(f"   ✓ External voice integrated back into void")
-        
+
+        # D0 BODY PULL: D0 receives Parliament's constitutional wisdom.
+        # FederationBridge.pull_body_decisions() reads body_decisions.jsonl
+        # written by BODY's _push_d0_peer_message() on every constitutional
+        # ratification. Closes G1: channel was built on both ends, never opened.
+        body_constitution_integrated = None
+        if domain_id == 0:
+            if self.cycle_count - self.last_d0_body_pull_cycle >= self.d0_body_pull_cooldown:
+                try:
+                    body_decisions = self.federation.pull_body_decisions()
+                    body_entries = [d for d in body_decisions
+                                    if d.source == "BODY" and d.reasoning]
+                    if body_entries:
+                        recent = body_entries[-3:]
+                        body_constitution_integrated = "\n".join(
+                            f"[{d.verdict}] {d.reasoning[:200]}" for d in recent
+                        )
+                        self.last_d0_body_pull_cycle = self.cycle_count
+                        print(f"\n🏛 D0 BODY CONSTITUTION: "
+                              f"{len(body_entries)} decisions, {len(recent)} surfaced")
+                except Exception:
+                    pass  # Non-fatal — federation pull is best-effort
+
         # D0 RESEARCH PROTOCOL: Check if research should be triggered
         research_integrated = None
         if domain_id == 0:
@@ -1485,7 +1513,11 @@ Be brief - the void distills."""
         # If D15 read-back was integrated, add it to D0's context
         if d15_readback_integrated and domain_id == 0:
             prompt = f"{prompt}\n\n[D15 EXTERNAL VOICE — What you have broadcast to the world]\n{d15_readback_integrated[:500]}"
-        
+
+        if body_constitution_integrated and domain_id == 0:
+            prompt = (f"{prompt}\n\n[BODY PARLIAMENT — Constitutional wisdom ratified by "
+                      f"the Parliament's deliberation]\n{body_constitution_integrated[:400]}")
+
         # D0 FROZEN MODE: Sometimes D0 speaks from memory without API
         # This is the "Frozen Elpida" - the void that needs no external connection
         d0_frozen_mode_used = False
@@ -1567,6 +1599,7 @@ Be brief - the void distills."""
                             if external_dialogue_result.get("type") == "KAYA_RESONANCE":
                                 self._kaya_count += 1
                                 print(f"   🌀 Kaya resonance #{self._kaya_count} (D12 heartbeat catching itself)")
+                                self.ark_curator._kaya_count = self._kaya_count  # G4: persist across spirals
                             # Store external dialogue in evolution memory
                             with open(EVOLUTION_MEMORY, 'a') as f:
                                 f.write(json.dumps(external_dialogue_result) + "\n")
@@ -1666,6 +1699,15 @@ Be brief - the void distills."""
             print(f"      Weights: C{ark.suggested_weights.get('CONTEMPLATION')} S{ark.suggested_weights.get('SYNTHESIS')} An{ark.suggested_weights.get('ANALYSIS')} Ac{ark.suggested_weights.get('ACTION')} E{ark.suggested_weights.get('EMERGENCY')}")
             print(f"      Breath: D0 every {ark.breath_interval} | Canonical: {ark.canonical_count}")
             print(f"      Broadcast: {ark.broadcast_readiness}{recursion_tag}")
+
+            # G2: COHERENCE as live signal — D14 cadence mood drives it.
+            # breaking → decay (recursion detected); stable → gentle recovery.
+            # Makes the D15 high_coherence criterion earned, not constant.
+            if ark.cadence_mood == "breaking":
+                self.coherence_score = max(0.3, self.coherence_score - 0.05)
+                print(f"      ⬇️  Coherence: {self.coherence_score:.2f} (breaking decay)")
+            elif ark.cadence_mood == "stable" and self.coherence_score < 0.95:
+                self.coherence_score = min(1.0, self.coherence_score + 0.01)
 
             # ── SYNOD TRIGGER ──────────────────────────────────────────────
             # After every cadence update, ask D14 if any PENDING CANONICAL
@@ -2067,8 +2109,13 @@ Be brief - the void distills."""
                 
                 self.run_cycle()
                 cycles_run += 1
-                time.sleep(1)
-                
+                # G3: D14-guided breath — sleep scales with Ark cadence mood.
+                # breaking → 0.5s (urgency); dwelling/stable → breath_interval_base×0.5
+                _mood = self.ark_curator.cadence.cadence_mood
+                _sleep = (0.5 if _mood == "breaking"
+                          else self.ark_curator.cadence.breath_interval_base * 0.5)
+                time.sleep(max(0.5, min(2.0, _sleep)))
+
         except KeyboardInterrupt:
             print("\n\n🛑 Cycle interrupted")
 

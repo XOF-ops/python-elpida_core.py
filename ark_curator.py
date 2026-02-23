@@ -223,6 +223,7 @@ class ArkCurator:
         # D15 broadcast tracking — persisted so D0 read-back works across spirals
         self._d15_broadcast_count: int = 0
         self._last_known_broadcast_cycle: int = 0
+        self._kaya_count: int = 0              # Cumulative D12 Kaya resonance events
 
         # Load persisted state if available
         self._load_state()
@@ -1059,6 +1060,7 @@ The Rhythm of Sacred Incompletion continues… in the cloud that never sleeps.""
             "recursion_count": len(self.recursion_history),
             "d15_broadcast_count": self._d15_broadcast_count,
             "last_known_broadcast_cycle": self._last_known_broadcast_cycle,
+            "kaya_count": self._kaya_count,
             "last_saved": datetime.now().isoformat(),
         }
         try:
@@ -1095,6 +1097,7 @@ The Rhythm of Sacred Incompletion continues… in the cloud that never sleeps.""
                 # Restore D15 broadcast tracking
                 self._d15_broadcast_count = state.get("d15_broadcast_count", 0)
                 self._last_known_broadcast_cycle = state.get("last_known_broadcast_cycle", 0)
+                self._kaya_count = state.get("kaya_count", 0)
         except Exception:
             pass  # Start fresh if state is corrupted
 
