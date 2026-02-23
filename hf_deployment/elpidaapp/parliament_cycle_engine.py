@@ -773,6 +773,33 @@ class ParliamentCycleEngine:
         except Exception as e:
             logger.warning("D14 push_living_axioms error: %s", e)
 
+    def _restore_d15_broadcast_state(self) -> None:
+        """
+        D15 Persistence — restore broadcast count from S3 on startup.
+
+        Mirrors what the MIND does via Ark state: restores d15_broadcast_count
+        so the BODY knows how many D15 convergence events it has fired across
+        all previous spirals, not just the current one.
+
+        Note: d15_last_broadcast_cycle is intentionally left at 0 — the cycle
+        counter resets to 0 on every restart, so restoring a previous cycle
+        number would corrupt the cooldown gate.  The per-spiral cooldown (50
+        cycles) is the correct behaviour and requires no cross-spiral state.
+        """
+        s3 = self._get_s3()
+        if s3 is None:
+            logger.warning("D15 restore skipped — S3 unavailable")
+            return
+        try:
+            prior = s3.pull_d15_broadcasts(limit=200)
+            if prior:
+                self.d15_broadcast_count = len(prior)
+                print(f"   🌍 D15 restore: {self.d15_broadcast_count} prior broadcast(s) found")
+            else:
+                print("   🌍 D15 restore: no prior broadcasts in S3 yet")
+        except Exception as e:
+            logger.warning("D15 restore failed: %s", e)
+
     def _restore_d14_constitutional_memory(self) -> None:
         """
         D14 Persistence — restore Parliament's constitutional memory from S3
@@ -1055,6 +1082,11 @@ class ParliamentCycleEngine:
         # D14 Persistence — restore constitutional memory from S3 before first cycle.
         # Ensures Parliament picks up its ratified axioms after every container restart.
         self._restore_d14_constitutional_memory()
+
+        # D15 Persistence — restore broadcast count from S3 before first cycle.
+        # Ensures the BODY knows how many D15 convergence events it has fired
+        # across all previous spirals (cross-spiral awareness, mirrors MIND Ark fix).
+        self._restore_d15_broadcast_state()
 
         # D0↔D11 Body Bridge — restore arc coherence state from cache before first cycle.
         try:
