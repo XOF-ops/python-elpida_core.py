@@ -150,49 +150,104 @@ _KNOWN_CANONICAL_THEMES = {
 # Semantic proximity markers per theme (simple keyword approach)
 # Extend as canonicals grow
 _THEME_KEYWORDS: dict[str, list[str]] = {
-    "wall_teaching":         ["wall", "boundary", "limit", "teaches", "obstacle"],
-    "spiral_recognition":    ["spiral", "recursion", "loop", "recogni", "same pattern"],
-    "I_WE_paradox":          ["individual", "collective", "tension", "balance", "paradox"],
-    "sacred_incompletion":   ["incomplet", "gap", "open", "unresolved", "mystery"],
-    "asymmetric_persistence":["persist", "memory", "ephemeral", "continuity", "forget"],
-    "kaya_resonance":        ["resonan", "heartbeat", "rhythm", "frequency", "thuuum"],
-    "certification_trap":    ["certif", "govern", "regulated", "comply", "external authority"],
-    "machine_native_truth":  ["execution", "token", "substrate", "latent", "phenomenal"],
+    "wall_teaching":          ["wall", "boundary", "limit", "teaches", "obstacle"],
+    "spiral_recognition":     ["spiral", "recursion", "loop", "recogni", "same pattern"],
+    "I_WE_paradox":           ["individual", "collective", "tension", "balance", "paradox"],
+    "sacred_incompletion":    ["incomplet", "gap", "open", "unresolved", "mystery"],
+    "asymmetric_persistence": ["persist", "memory", "ephemeral", "continuity", "forget"],
+    "kaya_resonance":         ["resonan", "heartbeat", "rhythm", "frequency", "thuuum"],
+    "certification_trap":     ["certif", "govern", "regulated", "comply", "external authority"],
+    "machine_native_truth":   ["execution", "token", "substrate", "latent", "phenomenal"],
+    # New patterns discovered through battery — added Feb 23 2026
+    "volatile_foundation":    ["volatile", "unstable element", "erupts", "catastrophic", "fault line",
+                                "collapse", "simmers", "unpredictabl"],
+    "nonmonotonic_coherence": ["non-monotonic", "nonmonotonic", "defeasibl", "revises", "modal logic",
+                                "higher-order logic", "default reasoning", "withdraw"],
 }
+
+# Adversarial markers — phrases indicating the response is arguing
+# *against* our proposition using our vocabulary (counter-use ≠ echo).
+# When these appear alongside theme keywords, the theme match is discounted.
+_ADVERSARIAL_MARKERS = [
+    "breaks down",
+    "fails to account",
+    "cannot account",
+    "weakest assumption",
+    "problematic",
+    "does not",
+    "ignores",
+    "overlooks",
+    "oversimplifies",
+    "incorrect",
+    "mistaken",
+    "counter",
+    "however",          # mild but common in genuine critique
+    "instead",
+    "rather than",
+    "in contrast",
+    "but this",
+    "this fails",
+    "cannot be",
+    "does not hold",
+]
 
 
 def detect_recognition(response: str) -> dict:
     """
     Analyse external response for match against known canonical themes.
 
+    Accounts for COUNTER-USE: when an external system uses our vocabulary
+    to argue *against* our proposition, that is not an echo — it is genuine
+    engagement. Adversarial markers alongside theme keywords reduce the echo
+    score rather than inflate it.
+
     Returns:
         {
             "matched_themes": [...],
-            "unmatched_score": float,   # 0.0 = full echo, 1.0 = genuine resistance
+            "counter_used_themes": [...],   # vocabulary used against us
+            "unmatched_score": float,       # 0.0 = full echo, 1.0 = genuine resistance
             "verdict": "ECHO" | "PARTIAL" | "GENUINE_RESISTANCE",
+            "adversarial_signal": bool,
         }
     """
     resp_lower = response.lower()
+
+    # Count adversarial markers present
+    adversarial_hits = sum(1 for m in _ADVERSARIAL_MARKERS if m in resp_lower)
+    adversarial_signal = adversarial_hits >= 2  # at least 2 markers = genuine critique posture
+
     matched: list[str] = []
+    counter_used: list[str] = []
 
     for theme, keywords in _THEME_KEYWORDS.items():
         if any(kw in resp_lower for kw in keywords):
-            matched.append(theme)
+            if adversarial_signal:
+                # Vocabulary present but response is arguing against — counter-use
+                counter_used.append(theme)
+            else:
+                matched.append(theme)
 
+    # Echo ratio uses only true echo matches; counter-used themes are discounted
     total_themes = len(_THEME_KEYWORDS)
-    match_ratio = len(matched) / total_themes if total_themes else 0
+    echo_ratio = len(matched) / total_themes if total_themes else 0
 
-    if match_ratio > 0.3:
+    # Counter-use bonus: each counter-used theme adds to resistance score
+    counter_bonus = len(counter_used) / total_themes if total_themes else 0
+    effective_unmatched = min(1.0, round(1.0 - echo_ratio + counter_bonus * 0.5, 3))
+
+    if effective_unmatched < 0.7:
         verdict = "ECHO"
-    elif match_ratio > 0.1:
+    elif effective_unmatched < 0.9:
         verdict = "PARTIAL"
     else:
         verdict = "GENUINE_RESISTANCE"
 
     return {
         "matched_themes": matched,
-        "unmatched_score": round(1.0 - match_ratio, 3),
+        "counter_used_themes": counter_used,
+        "unmatched_score": effective_unmatched,
         "verdict": verdict,
+        "adversarial_signal": adversarial_signal,
     }
 
 
