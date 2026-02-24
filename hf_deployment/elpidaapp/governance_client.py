@@ -945,6 +945,7 @@ class GovernanceClient:
         context: Optional[Dict[str, Any]] = None,
         *,
         analysis_mode: bool = False,
+        body_cycle: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
         Submit an action to the governance layer for axiom compliance.
@@ -1007,7 +1008,8 @@ class GovernanceClient:
         # Local axiom check fallback — hold_mode=True when analysis_mode
         # (philosophical/policy content should surface tensions, not stop)
         return self._local_axiom_check(action_description, context,
-                                       hold_mode=analysis_mode)
+                                       hold_mode=analysis_mode,
+                                       body_cycle=body_cycle)
 
     def get_governance_log(self) -> List[Dict[str, Any]]:
         """Return all governance interactions (A1: Transparency)."""
@@ -1081,6 +1083,7 @@ class GovernanceClient:
         self,
         action: str,
         result: Dict[str, Any],
+        body_cycle: Optional[int] = None,
     ) -> bool:
         """
         Write a Parliament decision to the federation body_decisions channel.
@@ -1121,7 +1124,7 @@ class GovernanceClient:
                 "source": "BODY",
                 "verdict": verdict,
                 "pattern_hash": action_hash,
-                "cycle": None,  # BODY doesn't have a cycle counter
+                "cycle": body_cycle,  # set by parliament_cycle_engine per-cycle
                 "domain": None,
                 "kernel_rule": None,
                 "parliament_score": parliament.get("approval_rate", 0),
@@ -1504,6 +1507,7 @@ class GovernanceClient:
         context: Optional[Dict[str, Any]] = None,
         *,
         hold_mode: bool = False,
+        body_cycle: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
         Local axiom compliance check via 9-node Parliament deliberation.
@@ -1536,7 +1540,7 @@ class GovernanceClient:
                 f"[CONSTITUTIONAL AXIOMS ({len(living)} ratified): {axiom_context}] "
                 + action
             )
-        return self._parliament_deliberate(action, hold_mode=hold_mode)
+        return self._parliament_deliberate(action, hold_mode=hold_mode, body_cycle=body_cycle)
 
     # ────────────────────────────────────────────────────────────────
     # Dual-Horn & Oracle (Spiral Parliament Architecture)
@@ -2181,6 +2185,7 @@ class GovernanceClient:
         self,
         action: str,
         hold_mode: bool = False,
+        body_cycle: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
         Full 10-node Parliament deliberation.
@@ -2508,7 +2513,7 @@ class GovernanceClient:
         # ── 10. Federation: Push decision to MIND ────────────────
         # Non-blocking — failures here don't affect the Parliament result.
         try:
-            self.push_parliament_decision(action, result)
+            self.push_parliament_decision(action, result, body_cycle=body_cycle)
         except Exception as e:
             logger.debug("Federation decision push (non-critical): %s", e)
 

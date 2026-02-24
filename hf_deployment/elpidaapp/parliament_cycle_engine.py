@@ -576,7 +576,7 @@ class ParliamentCycleEngine:
             logger.debug("Domain council routing unavailable: %s", e)
 
         try:
-            result = gov.check_action(action, analysis_mode=True)
+            result = gov.check_action(action, analysis_mode=True, body_cycle=self.cycle_count)
         except Exception as e:
             logger.error("Parliament deliberation failed: %s", e)
             return None
@@ -795,7 +795,10 @@ class ParliamentCycleEngine:
                 self.coherence = min(1.0, self.coherence + delta * 0.3)
             elif consonance < 0.35:   # was 0.4 — A9→A9 is 0.383 (mild dissonance, not collapse)
                 self.coherence = max(0.05, self.coherence - delta * 0.3)  # floor at 0.05
-            # Neutral range [0.35–0.7]: coherence stays stable
+            else:
+                # Neutral range [0.35–0.7]: slow drift toward 0.5
+                # Without this, coherence stays stuck at its floor indefinitely.
+                self.coherence = self.coherence * 0.997 + 0.5 * 0.003
         else:
             # First cycle or no axiom — slight decay toward 0.5
             self.coherence = self.coherence * 0.99 + 0.5 * 0.01

@@ -378,6 +378,14 @@ class ConvergenceGate:
                     }
                     for t in tensions
                 ],
+                "parliament_votes": {
+                    name: {
+                        "vote": v.get("vote", "ABSTAIN"),
+                        "score": v.get("score", 0),
+                        "axiom": v.get("axiom_invoked", ""),
+                    }
+                    for name, v in parliament.get("votes", {}).items()
+                },
                 "reasoning": parliament_reasoning[:600],
             },
 
@@ -413,7 +421,7 @@ class ConvergenceGate:
             governance_meta = {
                 "governance": "PROCEED",
                 "parliament": {
-                    "votes": {},
+                    "votes": broadcast["body"].get("parliament_votes", {}),
                     "approval_rate": broadcast["body"]["approval_rate"],
                     "veto_exercised": broadcast["body"]["veto_exercised"],
                     "veto_nodes": [],
