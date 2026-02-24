@@ -576,7 +576,10 @@ class ParliamentCycleEngine:
             logger.debug("Domain council routing unavailable: %s", e)
 
         try:
-            result = gov.check_action(action, analysis_mode=True, body_cycle=self.cycle_count)
+            # analysis_mode=False: parliament is doing real deliberation on
+            # operational actions, not policy analysis. This enables kernel
+            # checks AND LLM escalation for contested votes.
+            result = gov.check_action(action, analysis_mode=False, body_cycle=self.cycle_count)
         except Exception as e:
             logger.error("Parliament deliberation failed: %s", e)
             return None
@@ -794,14 +797,14 @@ class ParliamentCycleEngine:
             if consonance > 0.7:
                 self.coherence = min(1.0, self.coherence + delta * 0.3)
             elif consonance < 0.35:   # was 0.4 — A9→A9 is 0.383 (mild dissonance, not collapse)
-                self.coherence = max(0.05, self.coherence - delta * 0.3)  # floor at 0.05
+                self.coherence = max(0.20, self.coherence - delta * 0.15)  # floor at 0.20, halved decay
             else:
-                # Neutral range [0.35–0.7]: slow drift toward 0.5
-                # Without this, coherence stays stuck at its floor indefinitely.
-                self.coherence = self.coherence * 0.997 + 0.5 * 0.003
+                # Neutral range [0.35–0.7]: drift toward 0.5, but recover faster when very low
+                target = 0.65 if self.coherence < 0.30 else 0.5
+                self.coherence = self.coherence * 0.995 + target * 0.005
         else:
-            # First cycle or no axiom — slight decay toward 0.5
-            self.coherence = self.coherence * 0.99 + 0.5 * 0.01
+            # First cycle or no axiom — slight decay toward 0.5, floor at 0.20
+            self.coherence = max(0.20, self.coherence * 0.99 + 0.5 * 0.01)
 
         self.last_dominant_axiom = dominant_axiom
         self.last_rhythm = rhythm

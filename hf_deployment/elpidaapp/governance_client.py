@@ -872,7 +872,19 @@ class GovernanceClient:
         """
         Check if the remote governance server is reachable.
         Caches result for 60s to avoid hammering.
+
+        IMPORTANT: If governance_url points to an HF Space (*.hf.space),
+        we are almost certainly running *inside* that same Space — calling
+        ourselves would create an infinite self-call loop and bypass local
+        deliberation entirely (cycle=null, no votes, rubber-stamping).
+        Disable remote when running on HF Space infrastructure.
         """
+        # Prevent self-calls: HF Space calling itself as remote governance
+        if not self.governance_url or "hf.space" in self.governance_url:
+            self._remote_available = False
+            self._last_check_time = time.time()
+            return False
+
         now = time.time()
         # Don't spam checks — cache for 60s
         if self._remote_available is not None and (now - self._last_check_time) < 60:

@@ -113,7 +113,7 @@ def snapshot_mind() -> dict:
         except Exception:
             pass
 
-    cycles = [e for e in entries if e.get("type") == "NATIVE_CYCLE"]
+    cycles = [e for e in entries if e.get("type") in ("NATIVE_CYCLE", "NATIVE_CYCLE_INSIGHT")]
     merges = [e for e in entries if e.get("type") == "FEEDBACK_MERGE"]
     result["last_native_cycle"] = cycles[-1] if cycles else {}
     result["last_feedback_merge"] = merges[-1] if merges else {}
