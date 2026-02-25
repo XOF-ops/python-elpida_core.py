@@ -433,8 +433,8 @@ class LLMClient:
             contents.append({"parts": [{"text": "Understood."}], "role": "model"})
         contents.append({"parts": [{"text": prompt}]})
 
-        try:
-            response = requests.post(
+        def _gemini_post() -> requests.Response:
+            return requests.post(
                 f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}",
                 headers={"Content-Type": "application/json"},
                 json={
@@ -443,13 +443,40 @@ class LLMClient:
                 },
                 timeout=timeout,
             )
+
+        try:
+            response = _gemini_post()
             if response.status_code == 200:
                 data = response.json()
                 text = data["candidates"][0]["content"]["parts"][0]["text"]
-                tokens = len(text) // 4  # Gemini doesn't reliably report usage
+                tokens = len(text) // 4
                 self.stats[Provider.GEMINI].requests += 1
                 self.stats[Provider.GEMINI].tokens += tokens
                 return text
+            elif response.status_code == 429:
+                logger.warning("Gemini: 429 Resource Exhausted — backoff retry")
+                self.stats[Provider.GEMINI].failures += 1
+                for delay in [5, 15, 30]:
+                    logger.info("Gemini 429 backoff — retrying in %ds", delay)
+                    time.sleep(delay)
+                    try:
+                        r2 = _gemini_post()
+                        if r2.status_code == 200:
+                            data = r2.json()
+                            text = data["candidates"][0]["content"]["parts"][0]["text"]
+                            tokens = len(text) // 4
+                            self.stats[Provider.GEMINI].requests += 1
+                            self.stats[Provider.GEMINI].tokens += tokens
+                            logger.info("Gemini 429 recovered after %ds backoff", delay)
+                            return text
+                        elif r2.status_code != 429:
+                            logger.warning("Gemini backoff retry: HTTP %d", r2.status_code)
+                            return None
+                    except Exception as e:
+                        logger.error("Gemini backoff retry exception: %s", e)
+                        return None
+                logger.warning("Gemini: all 429 retries exhausted — handing off to OpenRouter")
+                return None
             else:
                 logger.warning("Gemini: HTTP %d — %s", response.status_code, response.text[:200])
                 self.stats[Provider.GEMINI].failures += 1
