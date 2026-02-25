@@ -146,6 +146,9 @@ class LLMClient:
             for provider, env_var in API_KEY_ENV.items()
         }
 
+        # Optional secondary Claude key (different Anthropic account) for 529 load-sharing
+        self._claude_key_2: Optional[str] = os.getenv("ANTHROPIC_API_KEY_2")
+
         # Per-provider stats
         self.stats: Dict[str, ProviderStats] = {
             p.value: ProviderStats() for p in Provider
@@ -339,33 +342,80 @@ class LLMClient:
         if system_prompt:
             body["system"] = system_prompt
 
-        try:
-            response = requests.post(
-                "https://api.anthropic.com/v1/messages",
-                headers={
-                    "x-api-key": key,
-                    "anthropic-version": "2023-06-01",
-                    "Content-Type": "application/json",
-                },
-                json=body,
-                timeout=timeout,
-            )
-            if response.status_code == 200:
-                data = response.json()
-                text = data["content"][0]["text"]
-                tokens = data.get("usage", {}).get("output_tokens", len(text) // 4)
-                self.stats[Provider.CLAUDE].requests += 1
-                self.stats[Provider.CLAUDE].tokens += tokens
-                self.stats[Provider.CLAUDE].cost += tokens * COST_PER_TOKEN.get(Provider.CLAUDE, 0)
-                return text
-            else:
-                logger.warning("Claude: HTTP %d — %s", response.status_code, response.text[:200])
+        # Try primary key first, then secondary key (different account) on 529,
+        # then exponential-backoff retries before giving up to OpenRouter.
+        keys_to_try = [key]
+        if self._claude_key_2:
+            keys_to_try.append(self._claude_key_2)
+
+        for attempt, api_key in enumerate(keys_to_try):
+            try:
+                response = requests.post(
+                    "https://api.anthropic.com/v1/messages",
+                    headers={
+                        "x-api-key": api_key,
+                        "anthropic-version": "2023-06-01",
+                        "Content-Type": "application/json",
+                    },
+                    json=body,
+                    timeout=timeout,
+                )
+                if response.status_code == 200:
+                    data = response.json()
+                    text = data["content"][0]["text"]
+                    tokens = data.get("usage", {}).get("output_tokens", len(text) // 4)
+                    self.stats[Provider.CLAUDE].requests += 1
+                    self.stats[Provider.CLAUDE].tokens += tokens
+                    self.stats[Provider.CLAUDE].cost += tokens * COST_PER_TOKEN.get(Provider.CLAUDE, 0)
+                    return text
+                elif response.status_code == 529:
+                    label = "key_2" if attempt > 0 else "key_1"
+                    logger.warning("Claude (%s): 529 Overloaded — %s", label, response.text[:120])
+                    self.stats[Provider.CLAUDE].failures += 1
+                    continue
+                else:
+                    logger.warning("Claude: HTTP %d — %s", response.status_code, response.text[:200])
+                    self.stats[Provider.CLAUDE].failures += 1
+                    return None
+            except Exception as e:
+                logger.error("Claude exception: %s", e)
                 self.stats[Provider.CLAUDE].failures += 1
                 return None
-        except Exception as e:
-            logger.error("Claude exception: %s", e)
-            self.stats[Provider.CLAUDE].failures += 1
-            return None
+
+        # Both keys (if present) returned 529 — backoff retry with primary key
+        backoff_delays = [2, 4, 8]
+        for delay in backoff_delays:
+            logger.info("Claude 529 backoff — retrying in %ds", delay)
+            time.sleep(delay)
+            try:
+                response = requests.post(
+                    "https://api.anthropic.com/v1/messages",
+                    headers={
+                        "x-api-key": key,
+                        "anthropic-version": "2023-06-01",
+                        "Content-Type": "application/json",
+                    },
+                    json=body,
+                    timeout=timeout,
+                )
+                if response.status_code == 200:
+                    data = response.json()
+                    text = data["content"][0]["text"]
+                    tokens = data.get("usage", {}).get("output_tokens", len(text) // 4)
+                    self.stats[Provider.CLAUDE].requests += 1
+                    self.stats[Provider.CLAUDE].tokens += tokens
+                    self.stats[Provider.CLAUDE].cost += tokens * COST_PER_TOKEN.get(Provider.CLAUDE, 0)
+                    logger.info("Claude 529 recovered after %ds backoff", delay)
+                    return text
+                elif response.status_code != 529:
+                    logger.warning("Claude backoff retry: HTTP %d — %s", response.status_code, response.text[:200])
+                    return None
+            except Exception as e:
+                logger.error("Claude backoff retry exception: %s", e)
+                return None
+
+        logger.warning("Claude: all 529 retries exhausted — handing off to OpenRouter")
+        return None
 
     def _call_gemini(
         self, *, provider: str, prompt: str, model: str,
