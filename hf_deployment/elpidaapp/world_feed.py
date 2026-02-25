@@ -688,6 +688,8 @@ class TheGuardianFeed:
                 },
             })
 
+        return events
+
 
 # ---------------------------------------------------------------------------
 # Constitutional Evolution Store
