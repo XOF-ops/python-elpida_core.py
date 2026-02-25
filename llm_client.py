@@ -157,6 +157,13 @@ class LLMClient:
         # Rate-limit timestamps
         self._last_call: Dict[str, float] = {}
 
+        # Circuit breaker: trip after N consecutive failures, cooldown for COOLDOWN_S seconds.
+        # While tripped the provider is bypassed and OpenRouter is used immediately.
+        self._CB_THRESHOLD: int = 3
+        self._CB_COOLDOWN_S: int = 300  # 5 minutes
+        self._cb_consec: Dict[str, int] = {}      # consecutive failure count
+        self._cb_until: Dict[str, float] = {}     # epoch time when cooldown expires
+
         # Dispatch table
         self._dispatch = {
             Provider.CLAUDE:      self._call_claude,
@@ -170,6 +177,38 @@ class LLMClient:
             Provider.GROQ:        self._call_openai_compat,
             Provider.HUGGINGFACE: self._call_openai_compat,
         }
+
+    # ----- public API -------------------------------------------------------
+
+    # ----- circuit breaker -------------------------------------------------
+
+    def _is_tripped(self, provider: str) -> bool:
+        """Return True if this provider is in its cooldown window."""
+        until = self._cb_until.get(provider, 0.0)
+        if until and time.time() < until:
+            remaining = int(until - time.time())
+            logger.info("[CB] %s is tripped — %ds cooldown remaining, routing to OpenRouter", provider, remaining)
+            return True
+        return False
+
+    def _cb_record_success(self, provider: str):
+        """A successful call resets the consecutive-failure counter."""
+        if self._cb_consec.get(provider, 0) > 0:
+            logger.info("[CB] %s circuit reset after success", provider)
+        self._cb_consec[provider] = 0
+        self._cb_until[provider] = 0.0
+
+    def _cb_record_failure(self, provider: str):
+        """Record a failure; trip the breaker if threshold is reached."""
+        count = self._cb_consec.get(provider, 0) + 1
+        self._cb_consec[provider] = count
+        if count >= self._CB_THRESHOLD:
+            self._cb_until[provider] = time.time() + self._CB_COOLDOWN_S
+            logger.warning(
+                "[CB] %s tripped after %d consecutive failures — "
+                "bypassing for %ds, all calls go to OpenRouter",
+                provider, count, self._CB_COOLDOWN_S,
+            )
 
     # ----- public API -------------------------------------------------------
 
@@ -194,27 +233,38 @@ class LLMClient:
             logger.warning("Unknown provider '%s', routing to OpenRouter", provider)
             provider = Provider.OPENROUTER.value
 
-        self._rate_limit(provider)
-
         _model = model or DEFAULT_MODELS.get(provider, "")
         _max = max_tokens or self.default_max_tokens
         _timeout = timeout or self.default_timeout
 
+        # Circuit breaker check — skip directly to OpenRouter if provider is cooling down
+        circuit_tripped = (
+            provider not in (Provider.OPENROUTER.value, Provider.GROQ.value)
+            and self._is_tripped(provider)
+        )
+
         result = None
-        try:
-            handler = self._dispatch.get(Provider(provider))
-            if handler:
-                result = handler(
-                    provider=provider,
-                    prompt=prompt,
-                    model=_model,
-                    max_tokens=_max,
-                    timeout=_timeout,
-                    system_prompt=system_prompt,
-                )
-        except Exception as e:
-            logger.error("%s exception: %s", provider, e)
-            self.stats[provider].failures += 1
+        if not circuit_tripped:
+            self._rate_limit(provider)
+            try:
+                handler = self._dispatch.get(Provider(provider))
+                if handler:
+                    result = handler(
+                        provider=provider,
+                        prompt=prompt,
+                        model=_model,
+                        max_tokens=_max,
+                        timeout=_timeout,
+                        system_prompt=system_prompt,
+                    )
+            except Exception as e:
+                logger.error("%s exception: %s", provider, e)
+                self.stats[provider].failures += 1
+
+            if result is not None:
+                self._cb_record_success(provider)
+            else:
+                self._cb_record_failure(provider)
 
         # Groq silent fallback for Perplexity
         if result is None and provider == Provider.PERPLEXITY.value:
