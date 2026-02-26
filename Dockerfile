@@ -26,6 +26,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy engine code and all local dependencies
 COPY native_cycle_engine.py /app/native_cycle_engine.py
 COPY ark_curator.py /app/ark_curator.py
+COPY crystallization_hub.py /app/crystallization_hub.py
+COPY diplomatic_handshake.py /app/diplomatic_handshake.py
 COPY immutable_kernel.py /app/immutable_kernel.py
 COPY federation_bridge.py /app/federation_bridge.py
 COPY llm_client.py /app/llm_client.py
