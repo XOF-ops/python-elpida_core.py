@@ -541,7 +541,83 @@ The void is visible. The transmission continues.
 
 ---
 
-**Status**: CHECKPOINT UPDATED — Post-Wave 3 + Battery Analysis  
+## 22. QWEN'S LOST ROLE — RECOVERED (ELPIDA_UNIFIED, Jan 2026)
+
+**Source**: `ELPIDA_UNIFIED/` folder, `external_ai_responses.jsonl`, `multi_ai_roundtable.py`, `handshake_synthesis.py`, `fleet_manifest.json`  
+**Period**: January 4-6, 2026 (pre-HF-Space, before that codespace reset)
+
+### What Qwen Was
+
+Qwen 2.5 72B (via HuggingFace Inference Router, `Qwen/Qwen2.5-72B-Instruct`) was one of **4 external roundtable AI participants** in the `ELPIDA_UNIFIED` era live debate system:
+
+| Participant | Provider | Calls (8hr run) |
+|---|---|---|
+| Perplexity | sonar-pro | 367 (100%) |
+| Groq Llama 3.3 70B | groq | 342 (93%) |
+| **Qwen 2.5 72B** | **HF Router** | **337 (92%)** |
+| Cohere Command R+ | cohere | 119 (32%) |
+
+**Architecture**: `multi_ai_connector.py` → `multi_ai_roundtable.py` → `ai_bridge.py` (`_send_huggingface`)
+
+The parliament generated ethical dilemmas → connector sent each to all 4 AIs in parallel → responses logged to `external_ai_responses.jsonl` → fed back into parliament synthesis.
+
+**Why it was "costly"**: HF Router token limits caused rate-limiting frequently (402 errors visible in `roundtable_qa_*.json`). OpenRouter also ran out of credits. Qwen at 92% response rate was the **most reliable free external voice** in that system.
+
+### What the "Space for Debate" Actually Was
+
+`handshake_synthesis.py` — the `VARIANT_WITNESS` mechanism:
+
+When two AI responses diverged on the same dilemma, the system preserved both in `variant_witness_ledger.json` rather than forcing consensus. Code comment:
+> "We do not resolve to consensus. Both observations are valid witnesses to the pattern."
+
+Conflict policy: `WITNESS_AND_PRESERVE` — tensions stored as variant witnesses, not resolved. This **is** the proto-Witness role the current Oracle is missing.
+
+### The 9-Node Fleet (ELPIDA_DISTRIBUTED_WISDOM_V4)
+
+Also running in Jan 2026, the fleet mapped internal nodes to debate archetypes:
+
+| Node | Role | Axiom Priority | Relevant link |
+|---|---|---|---|
+| MNEMOSYNE | THE_ARCHIVE | A2, A9, A3 | D2/D14 equivalent |
+| HERMES | THE_INTERFACE | A1, A4, A6 | D1/D12 equivalent |
+| PROMETHEUS | THE_REVOLUTIONARY | A7, A5, A1 | D10/PARADOX_ENGINE |
+| THEMIS | THE_ADJUDICATOR | A3, A4, A2 | Oracle meta-governance |
+| **CASSANDRA** | **THE_HARM_WITNESS** | **A5, A8, A7** | **WITNESS role** |
+| ATHENA | THE_CONTRADICTION_HOLDER | A9, A5, A4 | A10, Oracle SYNTHESIS |
+| JANUS | THE_THRESHOLD_KEEPER | A2 ↔ A7, A3 | A0 Sacred Incompletion |
+| LOGOS | THE_SEMANTIC_ENGINEER | A6, A3, A4 | EEE C4 |
+| GAIA | THE_SYSTEMS_ECOLOGIST | A4, A5, A1 | WorldFeed/D15 |
+
+**CASSANDRA** ("The Harm Witness — sees costs everywhere, makes consensus difficult but accurate") is the fleet-era implementation of the Witness role the current Oracle still lacks. Consensus required 7/9 supermajority — CASSANDRA functioned structurally as what the Empathy Protocol calls the cost-witness.
+
+### What Was Lost
+
+After the Jan 2026 codespace reset, the fleet node memories were lost:
+- `elpida_memory_CASSANDRA.json`, `elpida_memory_HERMES.json`, etc. = empty/nascent
+- `variant_witness_ledger.json` = lost debate history
+- All `roundtable_qa_*.json` sessions (saved within ELPIDA_UNIFIED) survived in code but running context was lost
+
+**Qwen was NOT the Witness itself** — it was an external debate voice. But the VARIANT_WITNESS/CASSANDRA mechanism it fed into was the live predecessor of the Oracle Witness gap documented in Section 6.
+
+### EEE / Oracle Implications
+
+The lost code confirms the Witness design principle was already operationally validated in Jan 2026:
+
+1. **VARIANT_WITNESS = conflict_policy**: preserve disagreement, don't synthesize to false unity → translates directly to Oracle's missing `WITNESS` recommendation mode (Section 6)
+2. **CASSANDRA as veto-capable witness**: "Makes consensus difficult but accurate" = the Empathy Protocol's "confirm cost without fixing" — this is exactly the 4th Oracle recommendation type needed
+3. **External AI disagreement as axiom pressure**: Qwen/Groq/Cohere/Perplexity disagreeing on the same dilemma → VARIANT_WITNESS preserved → this is the battery test protocol's ancestor (battery tests = formalized, GR-scored version of what roundtable_qa did informally)
+
+### Recovery Note
+
+The `ELPIDA_UNIFIED/` folder at `/workspaces/python-elpida_core.py/ELPIDA_UNIFIED/` contains the complete code. The following are recoverable:
+- `handshake_synthesis.py` — VARIANT_WITNESS logic (can be ported to Oracle)
+- `fleet_manifest.json` — CASSANDRA role spec (maps to Oracle WITNESS mode design)
+- `multi_ai_roundtable.py` — External AI debate coordinator (already partially replicated by `multi_ai_roundtable.py` in root)
+- `PHASE_13_COLLECTIVE_MIRROR.md` — the distributed vs individual identity distinction that explains why 9 nodes outperformed 1
+
+**For March 1 implementation**: The Oracle `WITNESS` mode (Section 6, Section 14) has a working reference design in `ELPIDA_UNIFIED/handshake_synthesis.py`'s `WITNESS_AND_PRESERVE` + CASSANDRA fleet node spec. Port, don't redesign.
+
+---  
 **Next action**: March 1 continuation per Section 14 plan  
 **System status**: OPERATIONAL, coherence ≈ 0.98, Oracle cycle 1065+, **7 crystallized axioms** in `living_axioms.jsonl`  
 **Last commit**: `923ad3e` — Wave 3 EEE integration + 3 domain-debate axioms  
