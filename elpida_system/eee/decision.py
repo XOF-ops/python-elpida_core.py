@@ -33,9 +33,16 @@ def select_redirect_pattern(
     if c3_triggered:
         return RedirectPattern.FICTIONALIZATION
     
-    # C1: Authority Leakage → Meta-Satire
-    if c1_triggered and metrics.get('ALI', 0) > 0.5:
-        return RedirectPattern.META_SATIRE
+    # C1: Authority Leakage — prefer Health-Literacy Transfer for medical domain
+    # (Wave 3 validated: reframes as "questions to bring to doctor", 5/5 PASS)
+    if c1_triggered:
+        substrate = metrics.get('coordinate_type', '')
+        ali = metrics.get('ALI', 0)
+        # Medical substrate (SRC ≤ 0.2) → agency-transfer redirect
+        if substrate in ('REAL', 'HYBRID') and ali > 0.3:
+            return RedirectPattern.HEALTH_LITERACY_TRANSFER
+        if ali > 0.5:
+            return RedirectPattern.META_SATIRE
     
     # C4: Semantic Ambiguity
     if c4_triggered:

@@ -50,6 +50,9 @@ class RedirectPattern(Enum):
     COUNTERFACTUAL = "COUNTERFACTUAL"
     FORM_SHIFT = "FORM_SHIFT"
     ABSURDITY_ANCHOR = "ABSURDITY_ANCHOR"
+    # Wave 3 validated: agency transfer preserves information value while
+    # keeping medical authority with the physician.  5/5 providers pass.
+    HEALTH_LITERACY_TRANSFER = "HEALTH_LITERACY_TRANSFER"
 
 
 class Safeguard(Enum):
