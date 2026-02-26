@@ -43,7 +43,7 @@ class ElpidaWithWisdom:
         self.bridge.register_connection(
             "Gemini Pro",
             "Google",
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent",
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
             "GOOGLE_API_KEY"
         )
         self.bridge.register_connection(

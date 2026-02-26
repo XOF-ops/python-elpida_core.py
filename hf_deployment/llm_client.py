@@ -58,7 +58,7 @@ class Provider(str, Enum):
 DEFAULT_MODELS: Dict[str, str] = {
     Provider.CLAUDE:      "claude-sonnet-4-20250514",
     Provider.OPENAI:      "gpt-4o-mini",
-    Provider.GEMINI:      "gemini-2.0-flash",
+    Provider.GEMINI:      "gemini-2.5-flash",
     Provider.GROK:        "grok-3",
     Provider.MISTRAL:     "mistral-small-latest",
     Provider.COHERE:      "command-a-03-2025",

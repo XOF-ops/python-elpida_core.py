@@ -208,7 +208,7 @@ class AIBridge:
                         return {
                             "success": True,
                             "response": data["candidates"][0]["content"]["parts"][0]["text"],
-                            "model": "gemini-pro",
+                            "model": "gemini-2.5-flash",
                             "timestamp": datetime.now().isoformat()
                         }
                     else:

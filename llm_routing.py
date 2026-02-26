@@ -111,7 +111,7 @@ LLM_ROUTING = {
     # Gemini - Safety focused
     4: {
         "provider": "gemini",
-        "model": "gemini-2.0-flash",
+        "model": "gemini-2.5-flash",
         "role": "Safety - Harm prevention",
         "prompt_style": "protective",
         "max_tokens": 500,
