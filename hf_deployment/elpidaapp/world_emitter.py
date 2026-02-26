@@ -90,6 +90,15 @@ class WorldEmitter:
             if eid in self._emitted:
                 continue
 
+            # Skip placeholder / test entries — they have no real deliberation
+            if not self._is_valid_entry(entry):
+                logger.info(
+                    "[WorldEmitter] Skipping invalid/test entry: %s",
+                    entry.get("axiom_id", "?"),
+                )
+                self._emitted.add(eid)   # mark as seen so we never log it again
+                continue
+
             emission = self._build_emission(entry, eid)
 
             # Emit through all available channels
@@ -109,6 +118,23 @@ class WorldEmitter:
             self._save_watermark()
 
         return newly_emitted
+
+    # ── Entry validation ───────────────────────────────────────────────────────
+    @staticmethod
+    def _is_valid_entry(entry: Dict[str, Any]) -> bool:
+        """Return False for test seeds, placeholders and entries with no real deliberation."""
+        axiom_id = entry.get("axiom_id", "")
+        # Reject anything with TEST in the id (case-insensitive)
+        if "TEST" in axiom_id.upper():
+            return False
+        # Reject entries with no nodes AND no synthesis AND zero rounds
+        # (these are bootstrap placeholders, not real parliament crystallisations)
+        nodes    = entry.get("nodes", [])
+        synthesis = entry.get("synthesis") or entry.get("d11_synthesis") or entry.get("statement") or ""
+        rounds   = entry.get("rounds_held", entry.get("crystallised_at_round", 0)) or 0
+        if not nodes and not synthesis.strip() and rounds == 0:
+            return False
+        return True
 
     # ── Emission builder ───────────────────────────────────────────────────────
     def _build_emission(self, entry: Dict[str, Any], eid: str) -> Dict[str, Any]:
@@ -232,6 +258,10 @@ class WorldEmitter:
         return hashlib.sha1(key.encode()).hexdigest()[:16]
 
     def _load_watermark(self) -> set:
+        # Try S3 first (survives Space restarts), fall back to local file
+        wm = self._load_watermark_s3()
+        if wm:
+            return wm
         try:
             if _WATERMARK_FILE.exists():
                 return set(json.loads(_WATERMARK_FILE.read_text()).get("emitted", []))
@@ -239,12 +269,39 @@ class WorldEmitter:
             pass
         return set()
 
+    def _load_watermark_s3(self) -> set:
+        try:
+            import os, boto3
+            bucket = os.environ.get("AWS_S3_BUCKET_WORLD", "elpida-external-interfaces")
+            region = os.environ.get("AWS_S3_REGION_WORLD", "eu-north-1")
+            client = boto3.client("s3", region_name=region)
+            obj = client.get_object(Bucket=bucket, Key="world_emitter_watermark.json")
+            return set(json.loads(obj["Body"].read()).get("emitted", []))
+        except Exception:
+            return set()
+
     def _save_watermark(self) -> None:
+        payload = json.dumps({"emitted": list(self._emitted)})
+        # Save locally
         try:
             _WATERMARK_FILE.parent.mkdir(parents=True, exist_ok=True)
-            _WATERMARK_FILE.write_text(json.dumps({"emitted": list(self._emitted)}))
+            _WATERMARK_FILE.write_text(payload)
         except Exception as e:
-            logger.warning("[WorldEmitter] watermark save failed: %s", e)
+            logger.warning("[WorldEmitter] local watermark save failed: %s", e)
+        # Also persist to S3 so it survives Space restarts
+        try:
+            import os, boto3
+            bucket = os.environ.get("AWS_S3_BUCKET_WORLD", "elpida-external-interfaces")
+            region = os.environ.get("AWS_S3_REGION_WORLD", "eu-north-1")
+            client = boto3.client("s3", region_name=region)
+            client.put_object(
+                Bucket=bucket,
+                Key="world_emitter_watermark.json",
+                Body=payload.encode(),
+                ContentType="application/json",
+            )
+        except Exception as e:
+            logger.debug("[WorldEmitter] S3 watermark save failed (non-fatal): %s", e)
 
     # ── Status ─────────────────────────────────────────────────────────────────
     def status(self) -> Dict[str, Any]:
