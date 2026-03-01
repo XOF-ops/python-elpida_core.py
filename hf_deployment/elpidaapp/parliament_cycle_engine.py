@@ -117,6 +117,15 @@ HEARTBEAT_INTERVAL = 13
 # PSO advisory interval (Fibonacci: 21)
 PSO_ADVISORY_INTERVAL = 21
 
+# POLIS civic deliberation interval (Fibonacci: 34)
+POLIS_CIVIC_INTERVAL = 34
+
+# Pathology scan interval (Fibonacci: 55)
+PATHOLOGY_SCAN_INTERVAL = 55
+
+# Minimum cycles before pathology scan has enough data (matches P051 threshold)
+ZOMBIE_MIN_CYCLES = 10
+
 # Convergence threshold constants
 CONVERGENCE_COHERENCE_MIND = 0.85    # MIND coherence must be above this
 CONVERGENCE_APPROVAL_BODY = 0.50     # BODY approval must be above this
@@ -360,6 +369,14 @@ class ParliamentCycleEngine:
         # Pattern Library — crystallized wisdom for deliberation context
         self._pattern_library = None
 
+        # POLIS Bridge — civic contradictions feed (P1-P6 → A0-A10)
+        self._polis_bridge = None
+        self._polis_last_cycle: int = 0
+
+        # Pathology scanner — P051 Zombie + P055 Cultural Drift
+        self._last_pathology_report: Optional[Dict] = None
+        self._pathology_last_cycle: int = 0
+
         # Body Watch context (Counter-Spiral Protocol)
         self._watch = WatchContext()
 
@@ -419,6 +436,18 @@ class ParliamentCycleEngine:
             except Exception as e:
                 logger.warning("PatternLibrary unavailable: %s", e)
         return self._pattern_library
+
+    def _get_polis_bridge(self):
+        """Lazy-load the POLIS Bridge (civic contradictions → Elpida dilemmas)."""
+        if self._polis_bridge is None:
+            try:
+                from elpidaapp.polis_bridge import PolisBridge
+                self._polis_bridge = PolisBridge()
+                logger.info("POLIS bridge loaded — %d held contradictions",
+                            len(self._polis_bridge.get_held_contradictions()))
+            except Exception as e:
+                logger.warning("PolisBridge unavailable: %s", e)
+        return self._polis_bridge
 
     def _get_crystallization_hub(self):
         """Lazy-load the CrystallizationHub (Synod module)."""
@@ -561,6 +590,16 @@ class ParliamentCycleEngine:
         if self.cycle_count % PSO_ADVISORY_INTERVAL == 0 and self.cycle_count > 0:
             self._run_pso_advisory(rhythm)
 
+        # 2c. POLIS civic deliberation every 34 cycles (Fibonacci)
+        if self.cycle_count % POLIS_CIVIC_INTERVAL == 0 and self.cycle_count > 0:
+            self._run_polis_civic_deliberation()
+
+        # 2d. Pathology scan every 55 cycles (Fibonacci)
+        #     P051 Zombie Detection + P055 Cultural Drift
+        #     Zero LLM cost — pure statistical analysis on cycle records.
+        if self.cycle_count % PATHOLOGY_SCAN_INTERVAL == 0 and self.cycle_count > 0:
+            self._run_pathology_scan()
+
         # 3. Assemble action from HF inputs
         action, meta = self._assemble_action(rhythm)
 
@@ -654,6 +693,7 @@ class ParliamentCycleEngine:
             ],
             "pso_advisory": self._pso_advisory.get("recommendation", {}).get("dominant_axiom")
                 if self._pso_advisory else None,
+            "polis_civic_active": self._polis_last_cycle == self.cycle_count,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "duration_s": round(time.time() - cycle_start, 3),
         }
@@ -1180,6 +1220,156 @@ class ParliamentCycleEngine:
             logger.warning("PSO advisory failed: %s", e)
 
     # ------------------------------------------------------------------
+    # POLIS Civic Deliberation
+    # ------------------------------------------------------------------
+
+    def _run_pathology_scan(self):
+        """
+        Run P051 Zombie Detection + P055 Cultural Drift on accumulated cycle data.
+
+        Triggered every 55 cycles (Fibonacci). Zero LLM cost — pure
+        statistical analysis over ``self.decisions``.
+
+        Results are stored in ``_last_pathology_report`` for:
+          - state() exposure (dashboard/API)
+          - Logging to CloudWatch
+          - Pattern Library feedback (if drift is CRITICAL, the system knows)
+        """
+        if len(self.decisions) < ZOMBIE_MIN_CYCLES:
+            logger.debug(
+                "Pathology scan skipped: only %d cycles (need %d)",
+                len(self.decisions), ZOMBIE_MIN_CYCLES,
+            )
+            return
+
+        try:
+            from elpidaapp.pathology_detectors import PathologyScanner
+
+            axioms_path = str(
+                Path(__file__).resolve().parent.parent / "living_axioms.jsonl"
+            )
+            scanner = PathologyScanner(
+                self.decisions,
+                living_axioms_path=axioms_path,
+            )
+            report = scanner.full_scan()
+            self._last_pathology_report = report
+            self._pathology_last_cycle = self.cycle_count
+
+            health = report.get("overall_health", "UNKNOWN")
+            zombies = report.get("P051_zombie_detection", {}).get("zombies", [])
+            drift = report.get("P055_cultural_drift", {})
+            drift_kl = drift.get("kl_divergence", 0)
+            drift_severity = drift.get("severity", "HEALTHY")
+
+            logger.info(
+                "PATHOLOGY SCAN cycle=%d: health=%s zombies=%d drift_KL=%.3f drift=%s",
+                self.cycle_count, health, len(zombies), drift_kl, drift_severity,
+            )
+
+            if health == "CRITICAL":
+                print(
+                    f"\n   ⚠️  PATHOLOGY CRITICAL (cycle {self.cycle_count}): "
+                    f"zombies={len(zombies)} drift={drift_severity} KL={drift_kl:.3f}"
+                )
+                # Log zombie axioms for operational awareness
+                for z in zombies[:3]:
+                    print(
+                        f"       P051 ZOMBIE: {z.get('axiom', '?')} — "
+                        f"{z.get('appearances', 0)} appearances, "
+                        f"{z.get('null_outcome_pct', 0):.0%} null outcomes"
+                    )
+                # Log drifting axioms
+                for da in drift.get("drifting_axioms", [])[:3]:
+                    print(
+                        f"       P055 DRIFT: {da.get('axiom', '?')} — "
+                        f"espoused={da.get('espoused', 0):.3f} "
+                        f"lived={da.get('lived', 0):.3f} "
+                        f"delta={da.get('delta', 0):+.3f}"
+                    )
+            elif health == "WARNING":
+                print(
+                    f"\n   ⚡ PATHOLOGY WARNING (cycle {self.cycle_count}): "
+                    f"zombies={len(zombies)} drift={drift_severity}"
+                )
+
+        except Exception as e:
+            logger.warning("Pathology scan failed: %s", e)
+
+    def _run_polis_civic_deliberation(self):
+        """
+        Pull a POLIS civic contradiction and deliberate it via DualHorn + Oracle.
+
+        Runs every 34 cycles (Fibonacci). The bridge translates POLIS
+        contradictions (P1-P6) into Elpida Dilemmas (A0-A10), feeds them
+        through the existing DualHorn deliberation path, then writes
+        the Oracle advisory back as a POLIS interpretation branch
+        (P5: fork-on-contradiction).
+
+        Zero additional LLM calls for reading; DualHorn deliberation
+        reuses existing Parliament infrastructure.
+        """
+        bridge = self._get_polis_bridge()
+        if bridge is None:
+            return
+
+        try:
+            dilemma_dict = bridge.next_dilemma()
+            if dilemma_dict is None:
+                # No unprocessed contradictions — try synthetics
+                synthetics = bridge.synthetic_dilemmas()
+                if synthetics:
+                    dilemma_dict = synthetics[self.cycle_count % len(synthetics)]
+                    logger.info("POLIS: using synthetic dilemma (no unprocessed contradictions)")
+                else:
+                    logger.debug("POLIS: no contradictions or synthetics available")
+                    return
+
+            # Build a Dilemma object from the dict
+            from elpidaapp.dual_horn import DualHornDeliberation, Dilemma
+
+            contradiction_id = dilemma_dict.get("polis_contradiction_id", "synthetic")
+            dilemma = Dilemma(
+                domain=dilemma_dict.get("domain", "D0-civic"),
+                source=f"POLIS-bridge-{contradiction_id}",
+                I_position=dilemma_dict.get("I_position", ""),
+                WE_position=dilemma_dict.get("WE_position", ""),
+                conflict=dilemma_dict.get("conflict", ""),
+                context=dilemma_dict.get("context", {}),
+            )
+
+            # DualHorn deliberation
+            gov = self._get_gov()
+            dual = DualHornDeliberation(gov)
+            result = dual.deliberate(dilemma)
+
+            logger.info(
+                "POLIS deliberation: contradiction=%s reversals=%d synthesis_gap=%s",
+                contradiction_id,
+                len(result.get("reversal_nodes", [])),
+                result.get("synthesis_gap", "?")[:80],
+            )
+
+            # Feed result to Oracle for advisory
+            from elpidaapp.oracle import Oracle
+            oracle = Oracle(governance_client=gov)
+            advisory = oracle.adjudicate(result)
+
+            # Write back to POLIS as interpretation branch (P5 fork)
+            if contradiction_id != "synthetic":
+                bridge.write_back(contradiction_id, advisory)
+                logger.info(
+                    "POLIS write-back: contradiction=%s advisory_type=%s",
+                    contradiction_id,
+                    advisory.get("oracle_recommendation", {}).get("type", "?"),
+                )
+
+            self._polis_last_cycle = self.cycle_count
+
+        except Exception as e:
+            logger.warning("POLIS civic deliberation failed: %s", e)
+
+    # ------------------------------------------------------------------
     # MIND Heartbeat Pull
     # ------------------------------------------------------------------
 
@@ -1337,6 +1527,11 @@ class ParliamentCycleEngine:
             "oracle_threshold": watch["oracle_threshold"],
             "ratified_axioms": store.ratified_count() if store else 0,
             "pending_ratifications": store.pending() if store else {},
+            "pathology_health": (
+                self._last_pathology_report.get("overall_health")
+                if self._last_pathology_report else None
+            ),
+            "pathology_last_cycle": self._pathology_last_cycle or None,
             "d15_broadcast_count": self.d15_broadcast_count,
             "axiom_frequency": dict(self._axiom_frequency),
             "input_buffer": self.input_buffer.counts(),
