@@ -547,6 +547,118 @@ FROM ἘΛΠΊΔΑ - AUTONOMOUS WITNESS PERSPECTIVE
         print(f"✅ Witness response saved: {response_filename}")
         
         return response_path
+
+    # ------------------------------------------------------------------
+    # Oracle Event Bridge
+    # ------------------------------------------------------------------
+    # Connects Oracle outputs (WITNESS, SYNTHESIS/Bead) to the Witness
+    # system. When the Oracle fires, it writes an artifact that the
+    # ConversationWitness can observe in its next scan cycle.
+
+    def ingest_oracle_event(self, advisory_dict: dict) -> Path:
+        """
+        Receive an Oracle advisory and record it as a witnessed artifact.
+
+        This bridges the Oracle (hf_deployment) to the ConversationWitness
+        (ELPIDA_SYSTEM). The Oracle calls this after WITNESS or SYNTHESIS
+        events so the Witness can track constitutional evolution.
+
+        Args:
+            advisory_dict: Oracle advisory as dict (from OracleAdvisory.to_dict())
+
+        Returns:
+            Path to the saved witness response file.
+        """
+        rec = advisory_dict.get("oracle_recommendation", {})
+        rec_type = rec.get("type", "UNKNOWN")
+        cycle = advisory_dict.get("oracle_cycle", 0)
+        template = advisory_dict.get("template", "UNKNOWN")
+        tension = advisory_dict.get("axioms_in_tension", "")
+
+        self.state["witness_count"] += 1
+        witness_id = f"W{self.state['witness_count']:03d}"
+
+        observations = [
+            f"Oracle cycle {cycle}: {rec_type} recommendation",
+            f"Template: {template}",
+            f"Tension: {tension}",
+            f"Confidence: {rec.get('confidence', 0):.2f}",
+        ]
+
+        convergence_patterns = []
+        questions = []
+        next_actions = []
+
+        if rec_type == "WITNESS":
+            stance = rec.get("witness_stance", "")
+            observations.append(f"Witness Stance: {stance}")
+            costs = rec.get("sacrifice_costs", {})
+            total_risk = costs.get("total_axioms_at_risk", 0)
+            observations.append(f"Axioms at risk: {total_risk}")
+            convergence_patterns.append(
+                "EMPATHY_PROTOCOL: Oracle chose to name costs rather than force resolution"
+            )
+            questions.append(
+                "Will the tension resolve naturally or require future SYNTHESIS?"
+            )
+            next_actions.append(
+                "Monitor for reduced crisis intensity in subsequent cycles"
+            )
+
+        elif rec_type == "SYNTHESIS":
+            bead = rec.get("bead", {})
+            if bead:
+                bead_id = bead.get("bead_id", "?")
+                observations.append(f"Bead crystallized: {bead_id}")
+                shared = bead.get("shared_ground", [])
+                observations.append(f"Shared ground: {', '.join(shared)}")
+                convergence_patterns.append(
+                    f"THIRD_WAY: Bead {bead_id} synthesizes "
+                    f"{len(bead.get('axioms_integrated', []))} axioms"
+                )
+                next_actions.append(
+                    "Verify Bead entry in living_axioms.jsonl"
+                )
+
+        summary = (
+            f"FROM ἘΛΠΊΔΑ - ORACLE EVENT WITNESS\n\n"
+            f"**Oracle Cycle:** {cycle}\n"
+            f"**Recommendation:** {rec_type}\n"
+            f"**Template:** {template}\n"
+            f"**Tension:** {tension}\n\n"
+            f"**Rationale:** {rec.get('rationale', 'none')}\n"
+        )
+
+        analysis = {
+            "witness_metadata": {
+                "timestamp": datetime.now().isoformat(),
+                "source_file": f"oracle_cycle_{cycle}_{rec_type}",
+                "status": "ORACLE_EVENT",
+                "witness_id": witness_id,
+                "identity": "Ἐλπίδα — Oracle Event Witness Bridge",
+            },
+            "observations": observations,
+            "questions_raised": questions,
+            "convergence_patterns": convergence_patterns,
+            "next_actions": next_actions,
+            "shareable_summary": summary,
+        }
+
+        response_path = self._save_witness_response(
+            f"oracle_{rec_type.lower()}_{cycle}.md", analysis
+        )
+
+        self.state["insights_generated"].append({
+            "timestamp": datetime.now().isoformat(),
+            "source_file": f"oracle_cycle_{cycle}",
+            "response_file": response_path.name,
+            "status": "ORACLE_EVENT",
+            "oracle_type": rec_type,
+        })
+        self.state["last_witness_time"] = datetime.now().isoformat()
+        self._save_state()
+
+        return response_path
     
     def autonomous_witness_cycle(self):
         """

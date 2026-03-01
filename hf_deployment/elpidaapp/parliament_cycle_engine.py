@@ -357,6 +357,9 @@ class ParliamentCycleEngine:
         self._pso_advisory: Optional[Dict] = None
         self._pso_last_cycle: int = 0
 
+        # Pattern Library — crystallized wisdom for deliberation context
+        self._pattern_library = None
+
         # Body Watch context (Counter-Spiral Protocol)
         self._watch = WatchContext()
 
@@ -404,6 +407,18 @@ class ParliamentCycleEngine:
             except Exception as e:
                 logger.warning("ConstitutionalStore unavailable: %s", e)
         return self._constitutional_store
+
+    def _get_pattern_library(self):
+        """Lazy-load the Pattern Library from living_axioms.jsonl."""
+        if self._pattern_library is None:
+            try:
+                from elpidaapp.pattern_library import PatternLibrary
+                store_path = Path(__file__).resolve().parent.parent / "living_axioms.jsonl"
+                self._pattern_library = PatternLibrary(str(store_path))
+                logger.info("Pattern library loaded — %d entries", self._pattern_library.count)
+            except Exception as e:
+                logger.warning("PatternLibrary unavailable: %s", e)
+        return self._pattern_library
 
     def _get_crystallization_hub(self):
         """Lazy-load the CrystallizationHub (Synod module)."""
@@ -557,10 +572,28 @@ class ParliamentCycleEngine:
         ) + action
         meta["watch"] = watch["name"]
 
+        # 3b. Pattern Library context — inject crystallized wisdom
+        #     before Parliament deliberates. Axioms come from active domains.
+        active_domains = RHYTHM_DOMAINS.get(rhythm, [0])
+        active_axioms = [
+            DOMAIN_AXIOM.get(d)
+            for d in active_domains
+            if DOMAIN_AXIOM.get(d) is not None
+        ]
+        lib = self._get_pattern_library()
+        if lib:
+            pattern_ctx = lib.context_for_deliberation(active_axioms, max_patterns=3)
+            if pattern_ctx:
+                action = pattern_ctx + "\n" + action
+                cycle_record_patterns = True
+            else:
+                cycle_record_patterns = False
+        else:
+            cycle_record_patterns = False
+
         # 4. Federated domain council routing (then full Parliament)
         # Single domain → council pre-vote. If consensus, annotate.
         # Cross-domain or contested → full Parliament always.
-        active_domains = RHYTHM_DOMAINS.get(rhythm, [0])
         council_routing: dict = {}
         try:
             from elpidaapp.domain_councils import parliament_routing as _pr
@@ -614,6 +647,7 @@ class ParliamentCycleEngine:
             "council_path": council_routing.get("path", "parliament"),
             "council_escalated": council_routing.get("escalated", True),
             "council_reason": council_routing.get("reason", ""),
+            "pattern_library_consulted": cycle_record_patterns,
             "tensions": [
                 {"pair": t["axiom_pair"], "synthesis": t["synthesis"][:100]}
                 for t in tensions
@@ -727,6 +761,15 @@ class ParliamentCycleEngine:
                         # D14 Persistence — snapshot living_axioms.jsonl to S3
                         # so constitutional memory survives container restarts.
                         self._push_d14_living_axioms()
+                        # Reload pattern library so new axiom is available
+                        # for the next deliberation cycle.
+                        if self._pattern_library:
+                            self._pattern_library.reload()
+
+                # ConversationWitness bridge — notify ELPIDA_SYSTEM of
+                # WITNESS/SYNTHESIS events for cross-system observation.
+                if advisory["oracle_recommendation"]["type"] == "WITNESS":
+                    self._notify_conversation_witness(advisory)
 
         # 9. Emit body heartbeat every cycle
         self._emit_heartbeat(rhythm, dominant_axiom, result)
@@ -1006,6 +1049,38 @@ class ParliamentCycleEngine:
             )
         except Exception as e:
             logger.warning("D0↔D0 peer message push failed: %s", e)
+
+    # ------------------------------------------------------------------
+    # ConversationWitness Bridge
+    # ------------------------------------------------------------------
+
+    def _notify_conversation_witness(self, advisory: Dict):
+        """
+        Bridge Oracle events to ELPIDA_SYSTEM ConversationWitness.
+
+        When a WITNESS or SYNTHESIS advisory fires, the ConversationWitness
+        records it so cross-system observation is maintained. This is a
+        fire-and-forget notification — failure doesn't block the cycle.
+        """
+        try:
+            import sys, os
+            elpida_sys = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.dirname(
+                    os.path.abspath(__file__)
+                ))),
+                "ELPIDA_SYSTEM",
+            )
+            if elpida_sys not in sys.path:
+                sys.path.insert(0, os.path.dirname(elpida_sys))
+            from ELPIDA_SYSTEM.elpida_conversation_witness import ConversationWitness
+            witness = ConversationWitness(system_root=elpida_sys)
+            witness.ingest_oracle_event(advisory)
+            logger.debug(
+                "ConversationWitness notified: %s",
+                advisory.get("oracle_recommendation", {}).get("type", "?"),
+            )
+        except Exception as e:
+            logger.debug("ConversationWitness notification skipped: %s", e)
 
     # ------------------------------------------------------------------
     # Heartbeat Emission

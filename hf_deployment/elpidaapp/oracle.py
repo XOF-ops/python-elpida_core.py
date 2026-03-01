@@ -172,6 +172,7 @@ class Oracle:
         self._advisories: List[OracleAdvisory] = []
         self._log_path = advisory_log_path
         self._sacrifice_tracker = sacrifice_tracker
+        self._living_axioms_path: Optional[Path] = None
 
         # Load existing advisories if available
         if self._log_path and self._log_path.exists():
@@ -308,6 +309,16 @@ class Oracle:
                 )
             except Exception as e:
                 logger.warning("Sacrifice tracker record failed: %s", e)
+
+        # ── SYNTHESIS → Bead auto-crystallization ────────────────
+        # When SYNTHESIS fires and produces a valid Bead, auto-crystallize
+        # to living_axioms.jsonl so the Third Way becomes constitutional.
+        bead = recommendation.get("bead")
+        if recommendation.get("type") == "SYNTHESIS" and bead and bead.get("valid"):
+            try:
+                self._auto_crystallize_bead(bead, cycle, debate_id)
+            except Exception as e:
+                logger.warning("Bead auto-crystallization failed: %s", e)
 
         # ── Construct Advisory ───────────────────────────────────
         advisory = OracleAdvisory(
@@ -566,19 +577,24 @@ class Oracle:
             }
 
         # ── SYNTHESIS: gap is closable ───────────────────────────
-        # If no reversal nodes and no governance divergence, synthesis possible
+        # If no reversal nodes and no governance divergence, synthesis possible.
+        # Generate a BEAD statement — the Third Way.
         requires_oracle = synthesis_gap.get("requires_oracle", True)
         if not requires_oracle:
+            bead = self._extract_bead(
+                horn_1, horn_2, comparison, synthesis_gap, template
+            )
             return {
                 "type": "SYNTHESIS",
                 "rationale": (
                     "No reversal nodes, no governance divergence. "
                     "Third Way synthesis is achievable. "
-                    "Positions converge on common ground."
+                    "Bead extracted: positions converge on common ground."
                 ),
                 "preserve_contradictions": [],
                 "reversal_signal": [],
                 "confidence": 0.7,
+                "bead": bead,
             }
 
         # ── TIERED_OPENNESS: low crisis, gradual approach ────────
@@ -594,6 +610,113 @@ class Oracle:
         }
 
     # ── WITNESS helpers (Empathy Protocol) ────────────────────────
+
+    def _extract_bead(
+        self,
+        horn_1: Dict,
+        horn_2: Dict,
+        comparison: Dict[str, Dict],
+        synthesis_gap: Dict,
+        template: str,
+    ) -> Dict[str, Any]:
+        """
+        Extract a Bead — the Third Way statement — from converging horns.
+
+        The Bead captures:
+          - What both horns agree on (shared ground)
+          - What each horn uniquely contributes (unique insights)
+          - The synthesis statement that holds both
+
+        A Bead is NOT a compromise. It is the emergent position that
+        neither horn could reach alone but that both validate.
+
+        Returns a dict:
+            {
+                "bead_id": str,
+                "shared_ground": list,
+                "horn_1_contribution": str,
+                "horn_2_contribution": str,
+                "synthesis_statement": str,
+                "axioms_integrated": list,
+                "template": str,
+                "valid": bool,
+            }
+        """
+        import hashlib
+        from datetime import datetime, timezone
+
+        # Shared ground: axioms satisfied by BOTH horns
+        h1_satisfied = set(
+            ax for ax, v in horn_1.get("axiom_results", {}).items()
+            if v.get("satisfied", False)
+        ) if horn_1.get("axiom_results") else set()
+        h2_satisfied = set(
+            ax for ax, v in horn_2.get("axiom_results", {}).items()
+            if v.get("satisfied", False)
+        ) if horn_2.get("axiom_results") else set()
+
+        # Fallback: use votes if axiom_results not available
+        if not h1_satisfied:
+            h1_satisfied = set(
+                comparison[n].get("axiom", "")
+                for n in comparison
+                if comparison[n].get("horn_1_vote") in ("APPROVE", "CONDITIONAL")
+            )
+        if not h2_satisfied:
+            h2_satisfied = set(
+                comparison[n].get("axiom", "")
+                for n in comparison
+                if comparison[n].get("horn_2_vote") in ("APPROVE", "CONDITIONAL")
+            )
+
+        shared_ground = sorted(h1_satisfied & h2_satisfied)
+        h1_unique = sorted(h1_satisfied - h2_satisfied)
+        h2_unique = sorted(h2_satisfied - h1_satisfied)
+
+        # Unique contributions: reasoning from each horn
+        h1_reasoning = horn_1.get("reasoning", horn_1.get("summary", ""))[:200]
+        h2_reasoning = horn_2.get("reasoning", horn_2.get("summary", ""))[:200]
+
+        # Synthesis statement: combine shared ground + unique contributions
+        if shared_ground:
+            synthesis = (
+                f"Both paths share {', '.join(shared_ground)}. "
+                f"Horn 1 uniquely holds {', '.join(h1_unique) or 'no additional axioms'}. "
+                f"Horn 2 uniquely holds {', '.join(h2_unique) or 'no additional axioms'}. "
+                f"The Third Way integrates all {len(shared_ground) + len(h1_unique) + len(h2_unique)} "
+                f"axiom positions into a single stance."
+            )
+        else:
+            synthesis = (
+                f"No shared axiom ground between horns. "
+                f"Third Way must construct common ground from "
+                f"Horn 1 ({', '.join(h1_unique) or '?'}) and "
+                f"Horn 2 ({', '.join(h2_unique) or '?'})."
+            )
+
+        # Bead validation: valid if shared_ground is non-empty
+        # (Third Way requires at least some common ground to synthesize)
+        valid = len(shared_ground) > 0
+
+        # Generate bead ID
+        ts = datetime.now(timezone.utc).isoformat()
+        raw = f"{template}:{shared_ground}:{ts}"
+        bead_hash = hashlib.sha256(raw.encode()).hexdigest()[:8]
+        bead_id = f"BEAD_{bead_hash.upper()}"
+
+        return {
+            "bead_id": bead_id,
+            "shared_ground": shared_ground,
+            "horn_1_contribution": h1_reasoning,
+            "horn_2_contribution": h2_reasoning,
+            "horn_1_unique_axioms": h1_unique,
+            "horn_2_unique_axioms": h2_unique,
+            "synthesis_statement": synthesis,
+            "axioms_integrated": sorted(set(shared_ground + h1_unique + h2_unique)),
+            "template": template,
+            "valid": valid,
+            "extracted_at": ts,
+        }
 
     def _compute_sacrifice_costs(
         self,
@@ -683,6 +806,68 @@ class Oracle:
         )
         return " | ".join(lines)
 
+    # ── Bead crystallization (Third Way Engine) ───────────────────
+
+    def _auto_crystallize_bead(
+        self,
+        bead: Dict[str, Any],
+        oracle_cycle: int,
+        dilemma_id: str,
+    ) -> None:
+        """
+        Auto-crystallize a valid Bead to living_axioms.jsonl.
+
+        This is the Third Way Engine's output pathway. When Oracle
+        SYNTHESIS fires and the Bead has shared ground, it becomes
+        a permanent entry in the living pattern library.
+
+        The entry follows the same format as other living_axioms entries
+        so it can be queried by PatternLibrary and consulted by Parliament.
+        """
+        if self._living_axioms_path is None:
+            # Try default path
+            default = Path(__file__).resolve().parent.parent / "living_axioms.jsonl"
+            if default.exists():
+                self._living_axioms_path = default
+            else:
+                logger.info(
+                    "Bead %s valid but no living_axioms_path — skip crystallization",
+                    bead.get("bead_id"),
+                )
+                return
+
+        entry = {
+            "axiom_id": bead["bead_id"],
+            "source": "oracle_synthesis_bead",
+            "oracle_cycle": oracle_cycle,
+            "dilemma_id": dilemma_id,
+            "template": bead.get("template", "UNKNOWN"),
+            "axiom_mapping": bead.get("axioms_integrated", []),
+            "tension": bead.get("synthesis_statement", ""),
+            "synthesis": (
+                f"Third Way Bead: {len(bead.get('shared_ground', []))} shared axioms, "
+                f"{len(bead.get('horn_1_unique_axioms', []))} from Horn 1, "
+                f"{len(bead.get('horn_2_unique_axioms', []))} from Horn 2. "
+                f"Horn 1: {bead.get('horn_1_contribution', '')[:100]} | "
+                f"Horn 2: {bead.get('horn_2_contribution', '')[:100]}"
+            ),
+            "shared_ground": bead.get("shared_ground", []),
+            "status": "bead_crystallized",
+            "ratified_at": bead.get("extracted_at", ""),
+        }
+
+        try:
+            with open(self._living_axioms_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+            logger.info(
+                "BEAD CRYSTALLIZED: %s → %s (axioms: %s)",
+                bead["bead_id"],
+                self._living_axioms_path.name,
+                ", ".join(bead.get("axioms_integrated", [])),
+            )
+        except OSError as e:
+            logger.warning("Failed to crystallize bead: %s", e)
+
     # ── Public utilities ──────────────────────────────────────────
 
     @property
@@ -764,6 +949,17 @@ class Oracle:
                 lines.append(f"  Total Axioms At Risk: {costs.get('total_axioms_at_risk', 0)}")
             lines.append(f"  Philosophy: {rec.get('variant_witness_philosophy', '')}")
 
+        # SYNTHESIS Bead fields (Third Way)
+        bead = rec.get("bead")
+        if rec.get("type") == "SYNTHESIS" and bead:
+            lines.append(f"  Bead ID: {bead.get('bead_id', '?')}")
+            lines.append(f"  Shared Ground: {', '.join(bead.get('shared_ground', []))}")
+            lines.append(f"  Synthesis: {bead.get('synthesis_statement', '')[:200]}")
+            lines.append(f"  Valid: {bead.get('valid', False)}")
+            ai = bead.get("axioms_integrated", [])
+            if ai:
+                lines.append(f"  Axioms Integrated: {', '.join(ai)}")
+
         return "\n".join(lines)
 
 
@@ -772,6 +968,7 @@ class Oracle:
 def create_oracle(
     log_path: Optional[str] = None,
     sacrifice_tracker=None,
+    living_axioms_path: Optional[str] = None,
 ) -> Oracle:
     """
     Create an Oracle instance.
@@ -781,6 +978,12 @@ def create_oracle(
             If None, advisories are kept in memory only.
         sacrifice_tracker: Optional SacrificeTracker instance for
             recording A7 sacrifice costs when WITNESS fires.
+        living_axioms_path: Path to living_axioms.jsonl for Bead
+            auto-crystallization. If None, Beads are logged but not
+            persisted.
     """
     path = Path(log_path) if log_path else None
-    return Oracle(advisory_log_path=path, sacrifice_tracker=sacrifice_tracker)
+    oracle = Oracle(advisory_log_path=path, sacrifice_tracker=sacrifice_tracker)
+    if living_axioms_path:
+        oracle._living_axioms_path = Path(living_axioms_path)
+    return oracle
