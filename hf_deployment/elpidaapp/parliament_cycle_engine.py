@@ -717,6 +717,16 @@ class ParliamentCycleEngine:
 
         self.decisions.append(cycle_record)
 
+        # 8a-local. Write decision to local cache (UI reads this cross-process)
+        try:
+            local_dec_dir = Path(__file__).resolve().parent.parent / "cache"
+            local_dec_dir.mkdir(parents=True, exist_ok=True)
+            dec_path = local_dec_dir / "body_decisions.jsonl"
+            with open(dec_path, "a") as _df:
+                _df.write(json.dumps(cycle_record) + "\n")
+        except Exception:
+            pass
+
         # 8b. Oracle advisory → ConstitutionalStore
         #
         # When the Parliament identifies genuine tensions AND its approval
@@ -1171,10 +1181,27 @@ class ParliamentCycleEngine:
             "d15_broadcast_count": self.d15_broadcast_count,
             "input_buffer_counts": self.input_buffer.counts(),
             "current_watch": watch["name"],
+            "watch_symbol": watch.get("symbol", ""),
             "watch_cycle": watch["cycle_within_watch"],
             "oracle_threshold": watch["oracle_threshold"],
+            # Wave 3-4 fields
+            "pathology_health": (
+                self._last_pathology_report.get("overall_health")
+                if self._last_pathology_report else None
+            ),
+            "pathology_last_cycle": self._pathology_last_cycle or None,
+            "fork_active_count": (
+                self._last_fork_report.get("summary", {}).get("active_count", 0)
+                if self._last_fork_report else 0
+            ),
+            "fork_confirmed_total": (
+                self._last_fork_report.get("forks_confirmed", 0)
+                if self._last_fork_report else 0
+            ),
+            "fork_last_cycle": self._fork_last_cycle or None,
+            "polis_civic_active": self._polis_last_cycle == self.cycle_count,
             "timestamp": datetime.now(timezone.utc).isoformat(),
-            "federation_version": "1.0.0",
+            "federation_version": "1.1.0",
         }
 
         # Write locally

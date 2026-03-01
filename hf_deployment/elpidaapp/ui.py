@@ -448,24 +448,22 @@ if "chat_history" not in st.session_state:
 # ── Parliament Engine Integration ─────────────────────────────────
 # Push events from UI tabs into the Parliament body loop input buffer.
 def _push_to_parliament(system: str, content: str, **meta):
-    """Push an event to the Parliament cycle engine's input buffer."""
+    """Push an event to the Parliament cycle engine's input buffer via local file."""
     try:
-        import sys as _sys, os as _os
-        _parent = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
-        if _parent not in _sys.path:
-            _sys.path.insert(0, _parent)
-        from app import get_parliament_engine
-        engine = get_parliament_engine()
-        if engine:
-            from elpidaapp.parliament_cycle_engine import InputEvent
-            engine.input_buffer.push(InputEvent(
-                system=system,
-                content=content[:1000],
-                timestamp=__import__("datetime").datetime.now(
-                    __import__("datetime").timezone.utc
-                ).isoformat(),
-                metadata=meta,
-            ))
+        import json as _json_push
+        from pathlib import Path as _Path_push
+        from datetime import datetime as _dt_push, timezone as _tz_push
+        _buf_dir = _Path_push(__file__).resolve().parent.parent / "cache"
+        _buf_dir.mkdir(parents=True, exist_ok=True)
+        _buf_file = _buf_dir / "input_buffer.jsonl"
+        event = {
+            "system": system,
+            "content": content[:1000],
+            "timestamp": _dt_push.now(_tz_push.utc).isoformat(),
+            "metadata": meta,
+        }
+        with open(_buf_file, "a") as _bf:
+            _bf.write(_json_push.dumps(event) + "\n")
     except Exception:
         pass  # Non-critical — Parliament may not be running yet
 
@@ -543,22 +541,35 @@ def _show_analysis(result: dict):
 # Header + Ambient Heartbeat
 # ═══════════════════════════════════════════════════════════════════
 
-# Fetch live BODY state for the heartbeat indicator
+# Fetch live BODY state from local heartbeat file (cross-process safe)
 _body_alive = False
 _body_cycle = 0
 _body_coherence = 0.0
 _body_axiom = "—"
 _body_rhythm = "—"
 try:
-    from app import get_parliament_engine as _gpe_hb
-    _hb_engine = _gpe_hb()
-    if _hb_engine:
-        _hb_state = _hb_engine.state()
-        _body_alive = True
-        _body_cycle = _hb_state.get("body_cycle", 0)
-        _body_coherence = _hb_state.get("coherence", 0)
-        _body_axiom = _hb_state.get("last_dominant_axiom", "—")
-        _body_rhythm = _hb_state.get("last_rhythm", "—")
+    import json as _json_hb
+    from pathlib import Path as _Path_hb
+    _hb_file = _Path_hb(__file__).resolve().parent.parent / "cache" / "body_heartbeat.json"
+    if _hb_file.exists():
+        with open(_hb_file) as _hbf:
+            _hb_data = _json_hb.load(_hbf)
+        # Check if heartbeat is recent (< 10 minutes old)
+        from datetime import datetime as _dt_hb, timezone as _tz_hb
+        _hb_ts = _hb_data.get("timestamp", "")
+        if _hb_ts:
+            try:
+                _hb_time = _dt_hb.fromisoformat(_hb_ts.replace("Z", "+00:00"))
+                _hb_age = (_dt_hb.now(_tz_hb.utc) - _hb_time).total_seconds()
+                _body_alive = _hb_age < 600  # alive if heartbeat < 10 min old
+            except Exception:
+                _body_alive = True  # file exists, assume alive
+        else:
+            _body_alive = True
+        _body_cycle = _hb_data.get("body_cycle", 0)
+        _body_coherence = _hb_data.get("coherence", 0.0)
+        _body_axiom = _hb_data.get("dominant_axiom", _hb_data.get("last_dominant_axiom", "—"))
+        _body_rhythm = _hb_data.get("current_rhythm", _hb_data.get("last_rhythm", "—"))
 except Exception:
     pass
 
@@ -841,41 +852,41 @@ with tab_chat:
     # ── Recent BODY verdicts (shows the system is alive) ─────────
     st.divider()
     st.markdown("##### Recent Parliament Verdicts")
-    _peng_chat = None
+    _recent_v2 = []
     try:
-        from app import get_parliament_engine as _gpve2
-        _peng_chat = _gpve2()
+        import json as _json_dec
+        from pathlib import Path as _Path_dec
+        _dec_file = _Path_dec(__file__).resolve().parent.parent / "cache" / "body_decisions.jsonl"
+        if _dec_file.exists():
+            _dec_lines = _dec_file.read_text().strip().split("\n")
+            _recent_v2 = [_json_dec.loads(l) for l in _dec_lines[-5:] if l.strip()]
     except Exception:
         pass
 
-    if _peng_chat is not None:
-        _recent_v2 = _peng_chat.decisions[-5:] if hasattr(_peng_chat, "decisions") else []
-        if _recent_v2:
-            for _rv2 in reversed(_recent_v2):
-                _rvt2 = _rv2.get("timestamp", "")[:19].replace("T", " ")
-                _rvg2 = _rv2.get("governance", "")
-                _rva2 = _rv2.get("dominant_axiom", "?")
-                _rvapp2 = _rv2.get("approval_rate", 0)
-                _rvtens2 = _rv2.get("tensions", [])
-                _rvsyn2 = _rvtens2[0].get("synthesis", "") if _rvtens2 else ""
-                _rvc2 = "#22cc44" if _rvg2 == "PROCEED" else "#cc8800" if _rvg2 == "REVIEW" else "#ff4444"
-                st.markdown(
-                    f'<div style="background:rgba(255,255,255,0.03);border-left:3px solid {_rvc2};'
-                    f'border-radius:0 6px 6px 0;padding:0.5rem 0.8rem;margin-bottom:0.5rem;'
-                    f'font-size:0.8rem;">'
-                    f'<span style="color:#666;">{_rvt2}</span>'
-                    f' &nbsp;<span style="color:{_rvc2};font-weight:600;">{_rvg2}</span>'
-                    f' &nbsp;<span style="color:#aa88ff;">[{_rva2}]</span>'
-                    f' &nbsp;<span style="color:#555;">{_rvapp2:.0%} approval</span><br>'
-                    f'<span style="color:#aaa;">{_rvsyn2[:140]}</span>'
-                    f'</div>', unsafe_allow_html=True,
-                )
-        else:
-            st.caption("No verdicts yet — BODY parliament is warming up.")
+    if _recent_v2:
+        for _rv2 in reversed(_recent_v2):
+            _rvt2 = _rv2.get("timestamp", "")[:19].replace("T", " ")
+            _rvg2 = _rv2.get("governance", "")
+            _rva2 = _rv2.get("dominant_axiom", "?")
+            _rvapp2 = _rv2.get("approval_rate", 0)
+            _rvtens2 = _rv2.get("tensions", [])
+            _rvsyn2 = _rvtens2[0].get("synthesis", "") if _rvtens2 else ""
+            _rvc2 = "#22cc44" if _rvg2 == "PROCEED" else "#cc8800" if _rvg2 == "REVIEW" else "#ff4444"
+            st.markdown(
+                f'<div style="background:rgba(255,255,255,0.03);border-left:3px solid {_rvc2};'
+                f'border-radius:0 6px 6px 0;padding:0.5rem 0.8rem;margin-bottom:0.5rem;'
+                f'font-size:0.8rem;">'
+                f'<span style="color:#666;">{_rvt2}</span>'
+                f' &nbsp;<span style="color:{_rvc2};font-weight:600;">{_rvg2}</span>'
+                f' &nbsp;<span style="color:#aa88ff;">[{_rva2}]</span>'
+                f' &nbsp;<span style="color:#555;">{_rvapp2:.0%} approval</span><br>'
+                f'<span style="color:#aaa;">{_rvsyn2[:140]}</span>'
+                f'</div>', unsafe_allow_html=True,
+            )
     else:
         st.caption(
             "BODY parliament runs autonomously. "
-            "Verdicts accumulate as the parliament cycles through world-feed dilemmas."
+            "Verdicts appear here as the parliament cycles through world-feed dilemmas."
         )
 
 # ── Live Audit ────────────────────────────────────────────────────
@@ -1010,6 +1021,31 @@ with tab_audit:
                         )
                     st.markdown("</div>", unsafe_allow_html=True)
             _show_analysis(result)
+
+            # Pattern Library matching (Wave 2)
+            try:
+                from elpidaapp.pattern_library import PatternLibrary
+                _plib = PatternLibrary()
+                _matches = _plib.search(problem[:200], top_k=3)
+                if _matches:
+                    with st.expander(f"📚 Matching historical patterns ({len(_matches)})", expanded=False):
+                        for _pm in _matches:
+                            _pm_name = _pm.get("name", "?")
+                            _pm_domain = _pm.get("domain", "")
+                            _pm_tension = _pm.get("tension_pair", ("?", "?"))
+                            _pm_desc = _pm.get("description", "")[:160]
+                            st.markdown(
+                                f'<div style="background:rgba(100,68,204,0.06);border-left:2px solid #6644cc;'
+                                f'border-radius:0 4px 4px 0;padding:0.4rem 0.7rem;margin-bottom:0.4rem;'
+                                f'font-size:0.8rem;">'
+                                f'<span style="color:#aa88ff;font-weight:600;">{_pm_name}</span>'
+                                f'<span style="color:#666;"> · {_pm_domain} · '
+                                f'{_pm_tension[0]}↔{_pm_tension[1]}</span><br>'
+                                f'<span style="color:#bbb;">{_pm_desc}</span>'
+                                f'</div>', unsafe_allow_html=True,
+                            )
+            except Exception:
+                pass  # Pattern Library not critical
 
     results_dir = Path(__file__).parent / "results"
     if results_dir.exists():
@@ -1659,6 +1695,54 @@ with tab_gov:
         except Exception as _ge:
             st.error(f"Layer error: {_ge}")
 
+    # ── SECTION 4: Fork Protocol + POLIS (Wave 3-4) ─────────────
+    st.divider()
+    with st.expander("Fork Protocol — Article VII Constitutional Forks", expanded=False):
+        st.markdown(
+            '<div style="font-size:0.8rem;color:#888;margin-bottom:0.5rem;">'
+            'When Oracle WITNESS advisories persist across ≥3 Watch windows, '
+            'Article VII declares a constitutional fork — an unresolvable tension '
+            'preserved as permanent record. Evaluated every 89 cycles (Fibonacci).'
+            '</div>', unsafe_allow_html=True,
+        )
+        try:
+            from pathlib import Path as _Path_fk
+            import json as _json_fk
+            _fk_file = _Path_fk(__file__).resolve().parent.parent / "cache" / "body_heartbeat.json"
+            if _fk_file.exists():
+                _fk_data = _json_fk.loads(_fk_file.read_text())
+                _fk1c, _fk2c = st.columns(2)
+                _fk1c.metric("Active", _fk_data.get("fork_active_count", 0))
+                _fk2c.metric("Confirmed", _fk_data.get("fork_confirmed_total", 0))
+            else:
+                st.caption("Fork data appears once the BODY parliament starts cycling.")
+        except Exception:
+            st.caption("Fork Protocol status unavailable.")
+
+    with st.expander("POLIS Civic Contradictions", expanded=False):
+        st.markdown(
+            '<div style="font-size:0.8rem;color:#888;margin-bottom:0.5rem;">'
+            'Six civic contradictions (P1–P6) from real POLIS deliberations, '
+            'each irreducible to a single axiom. The parliament holds them, '
+            'injecting them as pre-deliberation context every 34 cycles.'
+            '</div>', unsafe_allow_html=True,
+        )
+        try:
+            from elpidaapp.polis_bridge import PolisBridge
+            _polis_gov = PolisBridge()
+            _held_gov = _polis_gov.get_held_contradictions()
+            if _held_gov:
+                for _pg in _held_gov:
+                    _pg_id = _pg.get("id", "?")
+                    _pg_stmt = _pg.get("statement", "")[:180]
+                    _pg_ax = _pg.get("axiom_tension", ("?", "?"))
+                    st.markdown(
+                        f"**{_pg_id}** · {_pg_ax[0]} ↔ {_pg_ax[1]}  \n"
+                        f"_{_pg_stmt}_"
+                    )
+        except Exception:
+            st.caption("POLIS Bridge loads civic contradictions during parliament cycles.")
+
 # ── System ────────────────────────────────────────────────────────
 
 with tab_system:
@@ -1670,7 +1754,7 @@ with tab_system:
         Ethical Language & Paradox Intelligence for Distributed Autonomy
       </div>
       <div class="welcome-glow" style="font-size:0.85rem; margin-top:0.6rem; color:#aaa;">
-        v2.1.0 &nbsp;·&nbsp; 2026-02-20 &nbsp;·&nbsp; Spiral Parliament Architecture
+        v2.5.0 &nbsp;·&nbsp; 2026-03-01 &nbsp;·&nbsp; Spiral Parliament Architecture · Waves 1–4 Complete
       </div>
     </div>
     """, unsafe_allow_html=True)
@@ -1679,10 +1763,10 @@ with tab_system:
     _ks1, _ks2, _ks3, _ks4, _ks5, _ks6 = st.columns(6)
     _ks1.metric("Axioms", "11", help="Harmonic laws of governance (A0–A10)")
     _ks2.metric("Domains", "15", help="D0–D14: LLM-embodied axiom nodes")
-    _ks3.metric("Providers", "10", help="claude, openai, mistral, gemini, cohere, grok, perplexity, s3_cloud, local, free")
-    _ks4.metric("Parliament Nodes", "9", help="HERMES · MNEMOSYNE · CRITIAS · TECHNE · KAIROS · THEMIS · PROMETHEUS · IANUS · CHAOS")
-    _ks5.metric("ARK Patterns", "66,718", help="Recovered behavioural memory from lost progress archive")
-    _ks6.metric("Oracle Cycles", "1,096", help="Historical Oracle advisories — tensions recorded and held")
+    _ks3.metric("Parliament", "9 nodes", help="HERMES · MNEMOSYNE · CRITIAS · TECHNE · KAIROS · THEMIS · PROMETHEUS · IANUS · CHAOS")
+    _ks4.metric("Pattern Library", "21+", help="Seed patterns + accumulated wisdom from Wave 2")
+    _ks5.metric("POLIS", "6 civic", help="P1–P6 civic contradictions held from real POLIS data")
+    _ks6.metric("Fibonacci", "13·21·34·55·89", help="Heartbeat · PSO · POLIS · Pathology · Fork")
 
     st.divider()
 
@@ -2066,116 +2150,193 @@ fully tense — exactly the quality needed to hold paradox without resolving it 
         )
 
         # ── Engine state ─────────────────────────────────────────
-        _engine = None
-        _feed = None
-        try:
-            import sys as _sys, os as _os
-            _parent = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
-            if _parent not in _sys.path:
-                _sys.path.insert(0, _parent)
-            from app import get_parliament_engine, get_world_feed
-            _engine = get_parliament_engine()
-            _feed = get_world_feed()
-        except Exception as _bp_err:
-            st.caption(f"Engine lookup: {_bp_err}")
+        # Read from local cache files (cross-process safe; engine writes these)
+        import json as _json_bp
+        from pathlib import Path as _Path_bp
 
-        if _engine is None:
+        _bp_cache = _Path_bp(__file__).resolve().parent.parent / "cache"
+        _bp_hb_file = _bp_cache / "body_heartbeat.json"
+        _bp_dec_file = _bp_cache / "body_decisions.jsonl"
+
+        _bp_state = None
+        if _bp_hb_file.exists():
+            try:
+                with open(_bp_hb_file) as _bpf:
+                    _bp_state = _json_bp.load(_bpf)
+            except Exception:
+                pass
+
+        if _bp_state is None:
             st.info(
-                "Parliament engine is not yet running in this session. "
+                "Parliament engine is warming up — no heartbeat file yet. "
                 "It starts automatically when launched via app.py (the full deployment). "
-                "In the Hugging Face Space, it runs autonomously as a background thread."
+                "In the Hugging Face Space, it runs as a background thread."
             )
         else:
-            # Live state from engine
-            try:
-                _state = _engine.state()
+            # Row 1: Core cycle metrics
+            _c1, _c2, _c3, _c4, _c5 = st.columns(5)
+            _c1.metric("Cycle", _bp_state.get("body_cycle", 0))
+            _c2.metric("Rhythm", _bp_state.get("current_rhythm", "—"))
+            _c3.metric("Dominant Axiom", _bp_state.get("dominant_axiom", "—"))
+            _coh = _bp_state.get("coherence", 0)
+            _coh_delta = round(_coh - 0.85, 3) if isinstance(_coh, float) else None
+            _c4.metric(
+                "Coherence",
+                f"{_coh:.3f}" if isinstance(_coh, float) else _coh,
+                delta=f"{_coh_delta:+.3f} vs D15 threshold" if _coh_delta is not None else None,
+                delta_color="normal" if _coh_delta is not None and _coh_delta >= 0 else "inverse",
+                help="BODY consonance coherence. D15 convergence fires when ≥ 0.85",
+            )
+            _buf_counts = _bp_state.get("input_buffer_counts", {})
+            _buf_total = sum(_buf_counts.values()) if isinstance(_buf_counts, dict) else 0
+            _c5.metric("Buffer Depth", _buf_total)
 
-                # Row 1: Core cycle metrics
-                _c1, _c2, _c3, _c4, _c5 = st.columns(5)
-                _c1.metric("Cycle", _state.get("body_cycle", 0))
-                _c2.metric("Rhythm", _state.get("last_rhythm", "\u2014"))
-                _c3.metric("Dominant Axiom", _state.get("last_dominant_axiom", "\u2014"))
-                _coh = _state.get("coherence", 0)
-                _coh_delta = round(_coh - 0.85, 3) if isinstance(_coh, float) else None
-                _c4.metric(
-                    "Coherence",
-                    f"{_coh:.3f}" if isinstance(_coh, float) else _coh,
-                    delta=f"{_coh_delta:+.3f} vs D15 threshold" if _coh_delta is not None else None,
-                    delta_color="normal" if _coh_delta is not None and _coh_delta >= 0 else "inverse",
-                    help="BODY consonance coherence. D15 convergence fires when ≥ 0.85",
-                )
-                _buf_counts = _state.get("input_buffer", {})
-                _buf_total = sum(_buf_counts.values()) if isinstance(_buf_counts, dict) else 0
-                _c5.metric("Buffer Depth", _buf_total)
+            # Row 2: Watch context
+            _w1, _w2, _w3, _w4 = st.columns(4)
+            _w1.metric(
+                "Active Watch",
+                f"{_bp_state.get('watch_symbol', '')} {_bp_state.get('current_watch', '—')}",
+            )
+            _w2.metric("Watch Cycle", f"{_bp_state.get('watch_cycle', 0)}/34")
+            _w3.metric(
+                "Oracle Threshold",
+                f"{_bp_state.get('oracle_threshold', 0):.0%}",
+                help="Approval rate needed for a tension to advance toward constitutional ratification"
+            )
+            _w4.metric("D15 Broadcasts", _bp_state.get("d15_broadcast_count", 0))
 
-                # Row 2: Watch context
-                _w1, _w2, _w3, _w4 = st.columns(4)
-                _w1.metric(
-                    "Active Watch",
-                    f"{_state.get('watch_symbol', '')} {_state.get('current_watch', '\u2014')}",
-                )
-                _w2.metric("Watch Cycle", f"{_state.get('watch_cycle', 0)}/34")
-                _w3.metric(
-                    "Oracle Threshold",
-                    f"{_state.get('oracle_threshold', 0):.0%}",
-                    help="Approval rate needed for a tension to advance toward constitutional ratification"
-                )
-                _w4.metric("Ratified Axioms", _state.get("ratified_axioms", 0))
+            # Heartbeat timestamp
+            _bp_ts = _bp_state.get("timestamp", "")[:19].replace("T", " ")
+            st.caption(f"Last heartbeat: {_bp_ts}Z")
 
-                # Row 3: Cross-layer MIND↔BODY visibility
-                _m1, _m2, _m3, _m4 = st.columns(4)
-                _m1.metric(
-                    "D15 Broadcasts",
-                    _state.get("d15_broadcast_count", 0),
-                    help="Cumulative MIND→BODY convergence broadcasts — persists across ECS restarts",
-                )
-                _m2.metric(
-                    "MIND Cycle",
-                    _state.get("mind_heartbeat_cycle") or "—",
-                    help="Last MIND spiral cycle seen via S3 heartbeat",
-                )
-                _mind_coh = _state.get("mind_coherence")
-                _m3.metric(
-                    "MIND Coherence",
-                    f"{_mind_coh:.3f}" if isinstance(_mind_coh, float) else ("—" if _mind_coh is None else _mind_coh),
-                    help="MIND cadence coherence score from latest heartbeat",
-                )
-                _m4.metric(
-                    "MIND Rhythm",
-                    _state.get("mind_rhythm") or "—",
-                    help="MIND active rhythm from latest heartbeat",
-                )
+            st.divider()
 
-                st.divider()
+            # Last verdicts (from local decisions file)
+            _bp_verdicts = []
+            if _bp_dec_file.exists():
+                try:
+                    _dec_lines = _bp_dec_file.read_text().strip().split("\n")
+                    _bp_verdicts = [_json_bp.loads(l) for l in _dec_lines[-3:] if l.strip()]
+                except Exception:
+                    pass
 
-                # Last verdicts (from engine.decisions list)
-                _verdicts = _engine.decisions[-3:] if hasattr(_engine, "decisions") else []
-                if _verdicts:
-                    st.markdown("**Last Parliament Verdicts:**")
-                    for _v in reversed(_verdicts):
-                        _vt = _v.get("timestamp", "")[:19].replace("T", " ")
-                        _vdom = _v.get("dominant_axiom", "?")
-                        _vwatch = _v.get("watch", "")
-                        _vgov = _v.get("governance", "")
-                        _vapp = _v.get("approval_rate", 0)
-                        _vtens = _v.get("tensions", [])
-                        _vsyn = _vtens[0].get("synthesis", "") if _vtens else ""
-                        st.markdown(
-                            f'<div style="background:rgba(255,255,255,0.04); '
-                            f'border-left:3px solid #6644cc; border-radius:0 6px 6px 0; '
-                            f'padding:0.6rem 0.9rem; margin-bottom:0.5rem; font-size:0.82rem;">'
-                            f'<span style="color:#888;">{_vt}</span>'
-                            f' &nbsp;<span style="color:#aa88ff;">[{_vdom}]</span>'
-                            f' &nbsp;<span style="color:#666;">{_vwatch} watch</span>'
-                            f' &nbsp;<span style="color:#aaa;">{_vgov} ({_vapp:.0%})</span><br>'
-                            f'<span style="color:#ccc;">{_vsyn[:160]}</span>'
-                            f'</div>', unsafe_allow_html=True
-                        )
-                else:
-                    st.caption("No verdicts yet this session. Parliament is warming up.")
+            if _bp_verdicts:
+                st.markdown("**Last Parliament Verdicts:**")
+                for _v in reversed(_bp_verdicts):
+                    _vt = _v.get("timestamp", "")[:19].replace("T", " ")
+                    _vdom = _v.get("dominant_axiom", "?")
+                    _vwatch = _v.get("watch", "")
+                    _vgov = _v.get("governance", "")
+                    _vapp = _v.get("approval_rate", 0)
+                    _vtens = _v.get("tensions", [])
+                    _vsyn = _vtens[0].get("synthesis", "") if _vtens else ""
+                    st.markdown(
+                        f'<div style="background:rgba(255,255,255,0.04); '
+                        f'border-left:3px solid #6644cc; border-radius:0 6px 6px 0; '
+                        f'padding:0.6rem 0.9rem; margin-bottom:0.5rem; font-size:0.82rem;">'
+                        f'<span style="color:#888;">{_vt}</span>'
+                        f' &nbsp;<span style="color:#aa88ff;">[{_vdom}]</span>'
+                        f' &nbsp;<span style="color:#666;">{_vwatch} watch</span>'
+                        f' &nbsp;<span style="color:#aaa;">{_vgov} ({_vapp:.0%})</span><br>'
+                        f'<span style="color:#ccc;">{_vsyn[:160]}</span>'
+                        f'</div>', unsafe_allow_html=True
+                    )
+            else:
+                st.caption("No verdicts recorded yet. Parliament is warming up.")
 
-            except Exception as _se:
-                st.warning(f"Engine state unavailable: {_se}")
+        st.divider()
+
+        # ── Pathology Scanner (Wave 3 — P051 + P055) ─────────────
+        st.markdown("##### Pathology Scanner — Deliberative Health")
+        st.markdown(
+            '<div style="font-size:0.8rem; color:#888; margin-bottom:0.7rem;">'
+            'Monitors parliament health via two detectors:<br>'
+            '<b>P051 Zombie Parliament</b> — flags when vote distributions collapse to uniformity<br>'
+            '<b>P055 Cultural Drift</b> — measures KL divergence across watches to detect axiom erosion'
+            '</div>', unsafe_allow_html=True
+        )
+        if _bp_state is not None:
+            _path_health = _bp_state.get("pathology_health")
+            _path_cycle = _bp_state.get("pathology_last_cycle")
+            _ph1, _ph2 = st.columns(2)
+            _health_colors = {
+                "HEALTHY": "#22cc44", "WARNING": "#cc8800", "CRITICAL": "#ff4444"
+            }
+            _ph1.metric(
+                "Overall Health",
+                _path_health or "Pending",
+                help="Runs every 55 cycles (Fibonacci). HEALTHY / WARNING / CRITICAL"
+            )
+            if _path_health:
+                _ph_col = _health_colors.get(_path_health, "#888")
+                st.markdown(
+                    f'<div style="height:4px;border-radius:2px;background:{_ph_col};'
+                    f'width:100%;margin-bottom:0.5rem;"></div>',
+                    unsafe_allow_html=True,
+                )
+            _ph2.metric("Last Scan Cycle", _path_cycle or "—")
+        else:
+            st.caption("Pathology scanner runs every 55 cycles (Fibonacci).")
+
+        st.divider()
+
+        # ── Fork Protocol (Wave 4 — Article VII) ─────────────────
+        st.markdown("##### Fork Protocol — Article VII Declarations")
+        st.markdown(
+            '<div style="font-size:0.8rem; color:#888; margin-bottom:0.7rem;">'
+            'At Fibonacci cycle 89, the Fork Protocol evaluates Oracle advisories for '
+            'unresolvable axiom violations. When confirmed across ≥3 Watch windows, '
+            'Article VII declares a constitutional fork — a permanent record that the '
+            'system cannot resolve a tension, only acknowledge it.'
+            '</div>', unsafe_allow_html=True
+        )
+        if _bp_state is not None:
+            _fk1, _fk2, _fk3 = st.columns(3)
+            _fk_active = _bp_state.get("fork_active_count", 0)
+            _fk_confirmed = _bp_state.get("fork_confirmed_total", 0)
+            _fk_cycle = _bp_state.get("fork_last_cycle")
+            _fk1.metric("Active Forks", _fk_active,
+                         help="Fork declarations pending confirmation")
+            _fk2.metric("Confirmed Forks", _fk_confirmed,
+                         help="Article VII declarations confirmed across ≥3 Watches")
+            _fk3.metric("Last Evaluation", _fk_cycle or "—",
+                         help="Runs every 89 cycles (Fibonacci)")
+        else:
+            st.caption("Fork Protocol evaluates every 89 cycles (Fibonacci).")
+
+        st.divider()
+
+        # ── POLIS Civic Deliberation (Wave 3) ─────────────────────
+        st.markdown("##### POLIS Bridge — Civic Contradictions")
+        st.markdown(
+            '<div style="font-size:0.8rem; color:#888; margin-bottom:0.7rem;">'
+            'Six civic contradictions (P1–P6) drawn from real POLIS deliberation data. '
+            'Each maps to an axiom tension that the parliament cannot resolve — only hold. '
+            'Active every 34 cycles (Fibonacci) during pre-deliberation.'
+            '</div>', unsafe_allow_html=True
+        )
+        try:
+            from elpidaapp.polis_bridge import PolisBridge
+            _polis = PolisBridge()
+            _held = _polis.get_held_contradictions()
+            if _held:
+                for _pc in _held[:4]:
+                    _pc_id = _pc.get("id", "?")
+                    _pc_stmt = _pc.get("statement", "")
+                    _pc_ax = _pc.get("axiom_tension", ("?", "?"))
+                    st.markdown(
+                        f'<div style="background:rgba(100,68,204,0.08);border-left:3px solid #6644cc;'
+                        f'border-radius:0 6px 6px 0;padding:0.5rem 0.8rem;margin-bottom:0.5rem;'
+                        f'font-size:0.8rem;">'
+                        f'<span style="color:#aa88ff;font-weight:700;">{_pc_id}</span> '
+                        f'<span style="color:#666;">{_pc_ax[0]} ↔ {_pc_ax[1]}</span><br>'
+                        f'<span style="color:#ccc;">{_pc_stmt[:160]}</span>'
+                        f'</div>', unsafe_allow_html=True,
+                    )
+            else:
+                st.caption("No POLIS contradictions currently held.")
+        except Exception:
+            st.caption("POLIS Bridge activates during pre-deliberation (every 34 cycles).")
 
         st.divider()
 
@@ -2207,35 +2368,17 @@ fully tense — exactly the quality needed to hold paradox without resolving it 
                 f'</div>', unsafe_allow_html=True
             )
 
-        if _feed is not None:
-            _fs = _feed.status()
-            st.markdown("**Live Feed Stats:**")
-            _fs_c1, _fs_c2, _fs_c3, _fs_c4 = st.columns(4)
-            _fs_c1.metric("Events Pushed", _fs.get("total_events_pushed", 0))
-            _fs_c2.metric("Fetch Cycles", _fs.get("fetch_cycles", 0))
-            _fs_c3.metric("Ratified Axioms", _fs.get("ratified_axioms", 0))
-            _fs_c4.metric("Feed Running", "✓" if _fs.get("running") else "—")
-
-            _ebs = _fs.get("events_per_source", {})
-            if _ebs:
-                st.markdown("Events by source:")
-                import pandas as pd
-                st.dataframe(
-                    pd.DataFrame([
-                        {"Source": k, "Events Ingested": v}
-                        for k, v in sorted(_ebs.items(), key=lambda x: -x[1])
-                    ]),
-                    use_container_width=True, hide_index=True
-                )
-
-            _buf_counts = _fs.get("buffer_counts", {})
-            if _buf_counts:
-                st.markdown("InputBuffer depth per system:")
+        if _bp_state is not None:
+            _buf_counts_wf = _bp_state.get("input_buffer_counts", {})
+            if _buf_counts_wf:
+                st.markdown("**InputBuffer depth per system** (from last heartbeat):")
                 _bc1, _bc2, _bc3, _bc4 = st.columns(4)
-                _bc1.metric("chat", _buf_counts.get("chat", 0))
-                _bc2.metric("audit", _buf_counts.get("audit", 0))
-                _bc3.metric("scanner", _buf_counts.get("scanner", 0))
-                _bc4.metric("governance", _buf_counts.get("governance", 0))
+                _bc1.metric("chat", _buf_counts_wf.get("chat", 0))
+                _bc2.metric("audit", _buf_counts_wf.get("audit", 0))
+                _bc3.metric("scanner", _buf_counts_wf.get("scanner", 0))
+                _bc4.metric("governance", _buf_counts_wf.get("governance", 0))
+        else:
+            st.caption("World Feed stats appear once the Parliament engine starts cycling.")
 
         st.divider()
 
@@ -2258,10 +2401,10 @@ fully tense — exactly the quality needed to hold paradox without resolving it 
                 _agent_status = _suite.status()
                 _ag1, _ag2, _ag3, _ag4 = st.columns(4)
                 _agent_cols = {
-                    "ChatAgent": ("💬", _ag1),
-                    "AuditAgent": ("🔍", _ag2),
-                    "ScannerAgent": ("📡", _ag3),
-                    "GovernanceAgent": ("⚖️", _ag4),
+                    "ChatAgent": ("\U0001f4ac", _ag1),
+                    "AuditAgent": ("\U0001f50d", _ag2),
+                    "ScannerAgent": ("\U0001f4e1", _ag3),
+                    "GovernanceAgent": ("\u2696\ufe0f", _ag4),
                 }
                 for _aname, (_aico, _acol) in _agent_cols.items():
                     _as = _agent_status.get(_aname, {})
@@ -2276,10 +2419,14 @@ fully tense — exactly the quality needed to hold paradox without resolving it 
                 )
             else:
                 st.caption(
-                    "Federated agents start automatically alongside the Parliament engine."
+                    "Federated agents run as background threads in the Parliament engine process. "
+                    "Their inputs appear in the Buffer Depth metric above."
                 )
-        except Exception as _fae:
-            st.caption(f"Agent suite: {_fae}")
+        except Exception:
+            st.caption(
+                "Federated agents run as background threads in the Parliament engine process. "
+                "Their inputs appear in the Buffer Depth metric above."
+            )
 
         st.divider()
 
@@ -2335,10 +2482,22 @@ fully tense — exactly the quality needed to hold paradox without resolving it 
                     )
             else:
                 st.caption(
-                    "Kaya detector starts automatically with the Parliament engine."
+                    "Kaya detector runs as a background thread in the Parliament engine process."
                 )
-        except Exception as _kde:
-            st.caption(f"Kaya detector: {_kde}")
+        except Exception:
+            # Cross-process — can't access in-process kaya detector from Streamlit subprocess
+            if _bp_state is not None:
+                _kd_coh = _bp_state.get("coherence", 0)
+                st.markdown(
+                    f"**Current BODY coherence:** {_kd_coh:.3f} "
+                    f"({'≥ 0.85 threshold' if _kd_coh >= 0.85 else 'below 0.85 threshold'})"
+                )
+                st.caption(
+                    "Kaya detector runs in the Parliament engine process. "
+                    "Cross-layer events are pushed to the WORLD S3 bucket when conditions align."
+                )
+            else:
+                st.caption("Kaya detector activates with the Parliament engine.")
 
         st.divider()
 
@@ -2353,23 +2512,21 @@ fully tense — exactly the quality needed to hold paradox without resolving it 
             'Reverse path: MIND curation → BODY GovernanceClient living axioms.'
             '</div>', unsafe_allow_html=True
         )
-        if _engine is not None:
-            try:
-                _bridge_state = _engine.state()
-                _ratified_n = _bridge_state.get("ratified_axioms", 0)
-                _pending_n = len(_bridge_state.get("pending_ratifications", {}))
-                _d0b1, _d0b2, _d0b3 = st.columns(3)
-                _d0b1.metric("Ratified (BODY → MIND)", _ratified_n,
-                             help="Each ratified axiom triggers a D0↔D0 peer message")
-                _d0b2.metric("Pending Ratifications", _pending_n,
-                             help="Tensions accumulating toward constitutional threshold")
-                _d0b3.metric(
-                    "D15 Broadcasts",
-                    _bridge_state.get("d15_broadcast_count", 0),
-                    help="MIND→BODY spiral broadcasts — now persists cumulatively across ECS restarts",
-                )
-            except Exception:
-                st.caption("Bridge state unavailable.")
+        if _bp_state is not None:
+            _d0b1, _d0b2, _d0b3 = st.columns(3)
+            _d0b1.metric(
+                "D15 Broadcasts",
+                _bp_state.get("d15_broadcast_count", 0),
+                help="MIND→BODY spiral broadcasts — persists cumulatively across ECS restarts",
+            )
+            _d0b2.metric(
+                "BODY Coherence",
+                f"{_bp_state.get('coherence', 0):.3f}",
+            )
+            _d0b3.metric(
+                "Current Watch",
+                f"{_bp_state.get('watch_symbol', '')} {_bp_state.get('current_watch', '—')}",
+            )
         else:
             st.caption("D0↔D0 bridge activates when Parliament engine is running.")
 
@@ -2438,8 +2595,8 @@ fully tense — exactly the quality needed to hold paradox without resolving it 
 
 st.markdown("""
 <div class="elpida-footer">
-    v2.1.0 &nbsp;·&nbsp; 11 Axioms &nbsp;·&nbsp; 15 Domains &nbsp;·&nbsp; 9 Parliament Nodes &nbsp;·&nbsp; 66,718 ARK Patterns &nbsp;·&nbsp; 1,096 Oracle Cycles<br>
-    Spiral Parliament Architecture &nbsp;·&nbsp; Dual-Horn Deliberation &nbsp;·&nbsp; Oracle Adjudication<br>
+    v2.5.0 &nbsp;·&nbsp; 11 Axioms &nbsp;·&nbsp; 15 Domains &nbsp;·&nbsp; 9 Parliament Nodes &nbsp;·&nbsp; Fibonacci 13·21·34·55·89<br>
+    Spiral Parliament &nbsp;·&nbsp; Dual-Horn Deliberation &nbsp;·&nbsp; Oracle WITNESS &nbsp;·&nbsp; Fork Protocol &nbsp;·&nbsp; POLIS Bridge<br>
     <a href="https://github.com/XOF-ops/python-elpida_core.py" target="_blank">GitHub</a>
 </div>
 """, unsafe_allow_html=True)
