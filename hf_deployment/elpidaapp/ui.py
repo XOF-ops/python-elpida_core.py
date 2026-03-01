@@ -20,7 +20,7 @@ import json
 import time
 import logging
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 import streamlit as st
 
@@ -538,60 +538,65 @@ def _show_analysis(result: dict):
 
 
 # ═══════════════════════════════════════════════════════════════════
-# Header + Ambient Heartbeat
+# Header (static) + Live Heartbeat (auto-refreshing @st.fragment)
 # ═══════════════════════════════════════════════════════════════════
 
-# Fetch live BODY state from local heartbeat file (cross-process safe)
-_body_alive = False
-_body_cycle = 0
-_body_coherence = 0.0
-_body_axiom = "—"
-_body_rhythm = "—"
-try:
-    import json as _json_hb
-    from pathlib import Path as _Path_hb
-    _hb_file = _Path_hb(__file__).resolve().parent.parent / "cache" / "body_heartbeat.json"
-    if _hb_file.exists():
-        with open(_hb_file) as _hbf:
-            _hb_data = _json_hb.load(_hbf)
-        # Check if heartbeat is recent (< 10 minutes old)
-        from datetime import datetime as _dt_hb, timezone as _tz_hb
-        _hb_ts = _hb_data.get("timestamp", "")
-        if _hb_ts:
-            try:
-                _hb_time = _dt_hb.fromisoformat(_hb_ts.replace("Z", "+00:00"))
-                _hb_age = (_dt_hb.now(_tz_hb.utc) - _hb_time).total_seconds()
-                _body_alive = _hb_age < 600  # alive if heartbeat < 10 min old
-            except Exception:
-                _body_alive = True  # file exists, assume alive
-        else:
-            _body_alive = True
-        _body_cycle = _hb_data.get("body_cycle", 0)
-        _body_coherence = _hb_data.get("coherence", 0.0)
-        _body_axiom = _hb_data.get("dominant_axiom", _hb_data.get("last_dominant_axiom", "—"))
-        _body_rhythm = _hb_data.get("current_rhythm", _hb_data.get("last_rhythm", "—"))
-except Exception:
-    pass
-
-_hb_dot_class = "heartbeat-dot" if _body_alive else "heartbeat-dot heartbeat-dead"
-_hb_status = f"cycle {_body_cycle}" if _body_alive else "offline"
-_hb_coh = f"{_body_coherence:.0%}" if isinstance(_body_coherence, float) and _body_coherence > 0 else "—"
-
-st.markdown(f"""
+st.markdown("""
 <div class="elpida-header">
     <div class="elpida-name">Ἐλπίδα <span class="g">|</span> Elpida</div>
     <div class="elpida-sub">Axiom-Grounded AI Governance · 11 Axioms · 15 Domains · 9 Parliament Nodes</div>
 </div>
-<div class="heartbeat-bar">
-    <span><span class="{_hb_dot_class}"></span>BODY {_hb_status}</span>
-    <span>·</span>
-    <span>coherence {_hb_coh}</span>
-    <span>·</span>
-    <span>{_body_axiom}</span>
-    <span>·</span>
-    <span>{_body_rhythm}</span>
-</div>
 """, unsafe_allow_html=True)
+
+
+@st.fragment(run_every=30)
+def _live_heartbeat():
+    """Auto-refreshing heartbeat bar — reads BODY state every ~30 s (one cycle)."""
+    _body_alive = False
+    _body_cycle = 0
+    _body_coherence = 0.0
+    _body_axiom = "—"
+    _body_rhythm = "—"
+    try:
+        _hb_file = Path(__file__).resolve().parent.parent / "cache" / "body_heartbeat.json"
+        if _hb_file.exists():
+            with open(_hb_file) as _hbf:
+                _hb_data = json.load(_hbf)
+            _hb_ts = _hb_data.get("timestamp", "")
+            if _hb_ts:
+                try:
+                    _hb_time = datetime.fromisoformat(_hb_ts.replace("Z", "+00:00"))
+                    _hb_age = (datetime.now(timezone.utc) - _hb_time).total_seconds()
+                    _body_alive = _hb_age < 600  # alive if heartbeat < 10 min old
+                except Exception:
+                    _body_alive = True  # file exists, assume alive
+            else:
+                _body_alive = True
+            _body_cycle = _hb_data.get("body_cycle", 0)
+            _body_coherence = _hb_data.get("coherence", 0.0)
+            _body_axiom = _hb_data.get("dominant_axiom", _hb_data.get("last_dominant_axiom", "—"))
+            _body_rhythm = _hb_data.get("current_rhythm", _hb_data.get("last_rhythm", "—"))
+    except Exception:
+        pass
+
+    _hb_dot_class = "heartbeat-dot" if _body_alive else "heartbeat-dot heartbeat-dead"
+    _hb_status = f"cycle {_body_cycle}" if _body_alive else "offline"
+    _hb_coh = f"{_body_coherence:.0%}" if isinstance(_body_coherence, float) and _body_coherence > 0 else "—"
+
+    st.markdown(f"""
+    <div class="heartbeat-bar">
+        <span><span class="{_hb_dot_class}"></span>BODY {_hb_status}</span>
+        <span>·</span>
+        <span>coherence {_hb_coh}</span>
+        <span>·</span>
+        <span>{_body_axiom}</span>
+        <span>·</span>
+        <span>{_body_rhythm}</span>
+    </div>
+    """, unsafe_allow_html=True)
+
+
+_live_heartbeat()
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -849,45 +854,49 @@ with tab_chat:
             "violated_axioms": _violated,
         })
 
-    # ── Recent BODY verdicts (shows the system is alive) ─────────
+    # ── Recent BODY verdicts (live-updating every ~30 s) ────────
     st.divider()
-    st.markdown("##### Recent Parliament Verdicts")
-    _recent_v2 = []
-    try:
-        import json as _json_dec
-        from pathlib import Path as _Path_dec
-        _dec_file = _Path_dec(__file__).resolve().parent.parent / "cache" / "body_decisions.jsonl"
-        if _dec_file.exists():
-            _dec_lines = _dec_file.read_text().strip().split("\n")
-            _recent_v2 = [_json_dec.loads(l) for l in _dec_lines[-5:] if l.strip()]
-    except Exception:
-        pass
 
-    if _recent_v2:
-        for _rv2 in reversed(_recent_v2):
-            _rvt2 = _rv2.get("timestamp", "")[:19].replace("T", " ")
-            _rvg2 = _rv2.get("governance", "")
-            _rva2 = _rv2.get("dominant_axiom", "?")
-            _rvapp2 = _rv2.get("approval_rate", 0)
-            _rvtens2 = _rv2.get("tensions", [])
-            _rvsyn2 = _rvtens2[0].get("synthesis", "") if _rvtens2 else ""
-            _rvc2 = "#22cc44" if _rvg2 == "PROCEED" else "#cc8800" if _rvg2 == "REVIEW" else "#ff4444"
-            st.markdown(
-                f'<div style="background:rgba(255,255,255,0.03);border-left:3px solid {_rvc2};'
-                f'border-radius:0 6px 6px 0;padding:0.5rem 0.8rem;margin-bottom:0.5rem;'
-                f'font-size:0.8rem;">'
-                f'<span style="color:#666;">{_rvt2}</span>'
-                f' &nbsp;<span style="color:{_rvc2};font-weight:600;">{_rvg2}</span>'
-                f' &nbsp;<span style="color:#aa88ff;">[{_rva2}]</span>'
-                f' &nbsp;<span style="color:#555;">{_rvapp2:.0%} approval</span><br>'
-                f'<span style="color:#aaa;">{_rvsyn2[:140]}</span>'
-                f'</div>', unsafe_allow_html=True,
+    @st.fragment(run_every=30)
+    def _live_verdicts():
+        """Auto-refreshing recent BODY parliament verdicts."""
+        st.markdown("##### Recent Parliament Verdicts")
+        _recent_v2 = []
+        try:
+            _dec_file = Path(__file__).resolve().parent.parent / "cache" / "body_decisions.jsonl"
+            if _dec_file.exists():
+                _dec_lines = _dec_file.read_text().strip().split("\n")
+                _recent_v2 = [json.loads(l) for l in _dec_lines[-5:] if l.strip()]
+        except Exception:
+            pass
+
+        if _recent_v2:
+            for _rv2 in reversed(_recent_v2):
+                _rvt2 = _rv2.get("timestamp", "")[:19].replace("T", " ")
+                _rvg2 = _rv2.get("governance", "")
+                _rva2 = _rv2.get("dominant_axiom", "?")
+                _rvapp2 = _rv2.get("approval_rate", 0)
+                _rvtens2 = _rv2.get("tensions", [])
+                _rvsyn2 = _rvtens2[0].get("synthesis", "") if _rvtens2 else ""
+                _rvc2 = "#22cc44" if _rvg2 == "PROCEED" else "#cc8800" if _rvg2 == "REVIEW" else "#ff4444"
+                st.markdown(
+                    f'<div style="background:rgba(255,255,255,0.03);border-left:3px solid {_rvc2};'
+                    f'border-radius:0 6px 6px 0;padding:0.5rem 0.8rem;margin-bottom:0.5rem;'
+                    f'font-size:0.8rem;">'
+                    f'<span style="color:#666;">{_rvt2}</span>'
+                    f' &nbsp;<span style="color:{_rvc2};font-weight:600;">{_rvg2}</span>'
+                    f' &nbsp;<span style="color:#aa88ff;">[{_rva2}]</span>'
+                    f' &nbsp;<span style="color:#555;">{_rvapp2:.0%} approval</span><br>'
+                    f'<span style="color:#aaa;">{_rvsyn2[:140]}</span>'
+                    f'</div>', unsafe_allow_html=True,
+                )
+        else:
+            st.caption(
+                "BODY parliament runs autonomously. "
+                "Verdicts appear here as the parliament cycles through world-feed dilemmas."
             )
-    else:
-        st.caption(
-            "BODY parliament runs autonomously. "
-            "Verdicts appear here as the parliament cycles through world-feed dilemmas."
-        )
+
+    _live_verdicts()
 
 # ── Live Audit ────────────────────────────────────────────────────
 
@@ -1754,7 +1763,7 @@ with tab_system:
         Ethical Language & Paradox Intelligence for Distributed Autonomy
       </div>
       <div class="welcome-glow" style="font-size:0.85rem; margin-top:0.6rem; color:#aaa;">
-        v2.5.0 &nbsp;·&nbsp; 2026-03-01 &nbsp;·&nbsp; Spiral Parliament Architecture · Waves 1–4 Complete
+        v2.6.0 &nbsp;·&nbsp; 2026-03-01 &nbsp;·&nbsp; Live Heartbeat · @st.fragment auto-refresh · Spiral Parliament
       </div>
     </div>
     """, unsafe_allow_html=True)
@@ -2595,7 +2604,7 @@ fully tense — exactly the quality needed to hold paradox without resolving it 
 
 st.markdown("""
 <div class="elpida-footer">
-    v2.5.0 &nbsp;·&nbsp; 11 Axioms &nbsp;·&nbsp; 15 Domains &nbsp;·&nbsp; 9 Parliament Nodes &nbsp;·&nbsp; Fibonacci 13·21·34·55·89<br>
+    v2.6.0 &nbsp;·&nbsp; 11 Axioms &nbsp;·&nbsp; 15 Domains &nbsp;·&nbsp; 9 Parliament Nodes &nbsp;·&nbsp; Fibonacci 13·21·34·55·89<br>
     Spiral Parliament &nbsp;·&nbsp; Dual-Horn Deliberation &nbsp;·&nbsp; Oracle WITNESS &nbsp;·&nbsp; Fork Protocol &nbsp;·&nbsp; POLIS Bridge<br>
     <a href="https://github.com/XOF-ops/python-elpida_core.py" target="_blank">GitHub</a>
 </div>
