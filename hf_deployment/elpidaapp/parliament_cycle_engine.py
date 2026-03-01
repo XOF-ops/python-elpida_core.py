@@ -52,6 +52,7 @@ import random
 import hashlib
 import logging
 import threading
+import traceback
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Tuple
@@ -554,7 +555,7 @@ class ParliamentCycleEngine:
         if not events:
             domains = RHYTHM_DOMAINS.get(rhythm, [6])
             axioms_active = [DOMAIN_AXIOM.get(d) for d in domains if DOMAIN_AXIOM.get(d)]
-            axiom_names = ", ".join(a for a in axioms_active if a)
+            axiom_names = ", ".join(str(a) for a in axioms_active if a)
             return (
                 f"[BODY CONTEMPLATION — {rhythm}] "
                 f"Active axioms: {axiom_names}. "
@@ -722,7 +723,7 @@ class ParliamentCycleEngine:
             "council_reason": council_routing.get("reason", ""),
             "pattern_library_consulted": cycle_record_patterns,
             "tensions": [
-                {"pair": t["axiom_pair"], "synthesis": t["synthesis"][:100]}
+                {"pair": str(t.get("axiom_pair", "?")), "synthesis": str(t.get("synthesis", ""))[:100]}
                 for t in tensions
             ],
             "pso_advisory": self._pso_advisory.get("recommendation", {}).get("dominant_axiom")
@@ -769,7 +770,7 @@ class ParliamentCycleEngine:
                             "type": "WITNESS",
                             "confidence": round(approval_rate, 3),
                             "preserve_contradictions": [
-                                t.get("synthesis", t.get("axiom_pair", ""))[:120]
+                                str(t.get("synthesis", t.get("axiom_pair", "")))[:120]
                                 for t in tensions[:3]
                             ],
                             "witness_stance": (
@@ -778,19 +779,19 @@ class ParliamentCycleEngine:
                                 f"forced resolution would sacrifice more than it gains. "
                                 f"Axioms in tension: "
                                 + ", ".join(
-                                    t.get("axiom_pair", "?") for t in tensions[:3]
+                                    str(t.get("axiom_pair", "?")) for t in tensions[:3]
                                 )
                             ),
                             "sacrifice_costs": {
                                 "horn_1_sacrifices": [
-                                    t.get("axiom_pair", "").split("↔")[0].strip()
+                                    str(t.get("axiom_pair", "")).split("↔")[0].strip()
                                     for t in tensions[:3]
-                                    if "↔" in t.get("axiom_pair", "")
+                                    if "↔" in str(t.get("axiom_pair", ""))
                                 ],
                                 "horn_2_sacrifices": [
-                                    t.get("axiom_pair", "").split("↔")[-1].strip()
+                                    str(t.get("axiom_pair", "")).split("↔")[-1].strip()
                                     for t in tensions[:3]
-                                    if "↔" in t.get("axiom_pair", "")
+                                    if "↔" in str(t.get("axiom_pair", ""))
                                 ],
                                 "shared_cost": [],
                                 "total_axioms_at_risk": len(tensions),
@@ -801,7 +802,7 @@ class ParliamentCycleEngine:
                             ),
                         },
                         "template": watch["name"],
-                        "axioms_in_tension": [t.get("axiom_pair") for t in tensions[:3]],
+                        "axioms_in_tension": [str(t.get("axiom_pair", "?")) for t in tensions[:3]],
                         "q2_crisis_intensity": crisis_intensity,
                     }
                     logger.info(
@@ -815,12 +816,12 @@ class ParliamentCycleEngine:
                             "type": "PRESERVE_CONTRADICTION",
                             "confidence": round(approval_rate, 3),
                             "preserve_contradictions": [
-                                t.get("synthesis", t.get("axiom_pair", ""))[:120]
+                                str(t.get("synthesis", t.get("axiom_pair", "")))[:120]
                                 for t in tensions[:3]
                             ],
                         },
                         "template": watch["name"],
-                        "axioms_in_tension": [t.get("axiom_pair") for t in tensions[:3]],
+                        "axioms_in_tension": [str(t.get("axiom_pair", "?")) for t in tensions[:3]],
                         "q2_crisis_intensity": crisis_intensity,
                     }
                 store = self._get_constitutional_store()
@@ -1515,11 +1516,14 @@ class ParliamentCycleEngine:
             dual = DualHornDeliberation(gov)
             result = dual.deliberate(dilemma)
 
+            # synthesis_gap may be a dict — stringify for logging
+            _sg = result.get("synthesis_gap", "?")
+            _sg_str = str(_sg) if not isinstance(_sg, str) else _sg
             logger.info(
                 "POLIS deliberation: contradiction=%s reversals=%d synthesis_gap=%s",
                 contradiction_id,
                 len(result.get("reversal_nodes", [])),
-                result.get("synthesis_gap", "?")[:80],
+                _sg_str[:80],
             )
 
             # Feed result to Oracle for advisory
@@ -1659,7 +1663,7 @@ class ParliamentCycleEngine:
                 try:
                     cycle_result = self.run_cycle()
                 except Exception as e:
-                    logger.error("Cycle %d failed: %s", self.cycle_count, e)
+                    logger.error("Cycle %d failed: %s\n%s", self.cycle_count, e, traceback.format_exc())
                     print(f"   ❌ cycle {self.cycle_count} error: {e}")
 
                 time.sleep(cycle_delay_s)

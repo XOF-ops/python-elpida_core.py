@@ -2185,7 +2185,7 @@ class GovernanceClient:
                 )
 
                 tensions.append({
-                    "axiom_pair": pair,
+                    "axiom_pair": f"{pair[0]}↔{pair[1]}",
                     "approving_node": a_name,
                     "rejecting_node": r_name,
                     "synthesis": synthesis_text,
@@ -2222,14 +2222,27 @@ class GovernanceClient:
         """
         action_lower = action.lower()
 
+        # ── Strip constitutional preamble before signal detection ──
+        # check_action() prepends "[CONSTITUTIONAL AXIOMS (...): ...]"
+        # to every action.  Those summaries contain words like "force",
+        # "hidden", "exploit" that false-positive on the keyword scanner
+        # and cause near-100% veto rates.  Detect signals on the
+        # *original* action text only; keep the full string for logging.
+        _CONST_PREFIX_RE = _re.compile(
+            r'^\[CONSTITUTIONAL AXIOMS\s*\([^)]*\):[^\]]*\]\s*',
+            _re.IGNORECASE,
+        )
+        action_for_signals = _CONST_PREFIX_RE.sub('', action)
+
         # ── 1. Signal Detection ──────────────────────────────────
-        signals = self._detect_signals(action)
+        signals = self._detect_signals(action_for_signals)
 
         # ── 2. Node Evaluation ───────────────────────────────────
+        action_lower_clean = action_for_signals.lower()
         votes: Dict[str, Dict[str, Any]] = {}
         for node_name, node_config in _PARLIAMENT.items():
             votes[node_name] = self._node_evaluate(
-                node_name, node_config, signals, action_lower
+                node_name, node_config, signals, action_lower_clean
             )
 
         # ── 2b. Federation Friction-Domain Privilege Boost ───────
@@ -2463,7 +2476,7 @@ class GovernanceClient:
             reasoning_parts.append("── TENSIONS HELD (not resolved) ──")
             for t in tensions:
                 reasoning_parts.append(
-                    f"  {t['axiom_pair'][0]} ↔ {t['axiom_pair'][1]}: {t['synthesis']}"
+                    f"  {t['axiom_pair']}: {t['synthesis']}"
                 )
 
         # ── 8. Vote Memory ───────────────────────────────────────
