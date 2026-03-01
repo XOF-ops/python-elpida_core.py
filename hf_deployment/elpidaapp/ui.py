@@ -887,7 +887,7 @@ with tab_chat:
                     f' &nbsp;<span style="color:{_rvc2};font-weight:600;">{_rvg2}</span>'
                     f' &nbsp;<span style="color:#aa88ff;">[{_rva2}]</span>'
                     f' &nbsp;<span style="color:#555;">{_rvapp2:.0%} approval</span><br>'
-                    f'<span style="color:#aaa;">{_rvsyn2[:140]}</span>'
+                    f'<span style="color:#aaa;">{_rvsyn2}</span>'
                     f'</div>', unsafe_allow_html=True,
                 )
         else:
@@ -2247,7 +2247,7 @@ fully tense — exactly the quality needed to hold paradox without resolving it 
                         f' &nbsp;<span style="color:#aa88ff;">[{_vdom}]</span>'
                         f' &nbsp;<span style="color:#666;">{_vwatch} watch</span>'
                         f' &nbsp;<span style="color:#aaa;">{_vgov} ({_vapp:.0%})</span><br>'
-                        f'<span style="color:#ccc;">{_vsyn[:160]}</span>'
+                        f'<span style="color:#ccc;">{_vsyn}</span>'
                         f'</div>', unsafe_allow_html=True
                     )
             else:
