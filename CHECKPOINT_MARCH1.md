@@ -177,14 +177,16 @@ Gaps are divided into two categories as the architect framed them:
 
 | Gap | Status | Origin | Priority |
 |---|---|---|---|
-| **Oracle Witness role** | Partial (meta-governance exists, Witness stance missing) | Empathy Protocol | **HIGH** |
-| **Oracle Cross-Framework Coordinator** | Lost architecture (Section 23 recovery) | ElpidaLostProgress/ Jan 2026 | **HISTORICAL** |
-| **Sacrifice Tracker** | 0% | Phase 4 Runtime spec | HIGH |
-| **Pattern Library integration** | 0% (72+ patterns exist in Master_Brain, not in code) | Complete Archive v11.1 | HIGH |
-| **Fork Protocol** | 0% | Constitution Article VII | MEDIUM |
-| **Pathology detectors P051/P055** | 0% (P050/AuditAgent exists) | Manifesto Section 5 | MEDIUM |
-| **POLIS ↔ Elpida bridge** | 0% | Architectural vision | MEDIUM |
-| **ELPIDA_SYSTEM Witness wiring** | Exists but unconnected | ELPIDA_SYSTEM/ | MEDIUM |
+| **Oracle Witness role** | ✅ IMPLEMENTED (Wave 1) — WITNESS mode + sacrifice tracker | Empathy Protocol | CLOSED |
+| **Oracle Cross-Framework Coordinator** | ✅ DOCUMENTED (Section 23) — archaeology complete | ElpidaLostProgress/ Jan 2026 | CLOSED |
+| **Sacrifice Tracker** | ✅ IMPLEMENTED (Wave 1) — `sacrifice_tracker.py` | Phase 4 Runtime spec | CLOSED |
+| **Pattern Library integration** | ✅ IMPLEMENTED (Wave 2) — `pattern_library.py`, 21 entries, pre-deliberation injection | Complete Archive v11.1 | CLOSED |
+| **Fork Protocol** | ✅ IMPLEMENTED (Wave 4) — `fork_protocol.py` 780 lines, Fibonacci 89 trigger | Constitution Article VII | CLOSED |
+| **Pathology detectors P051/P055** | ✅ IMPLEMENTED (Wave 3) — `pathology_detectors.py` 480 lines | Manifesto Section 5 | CLOSED |
+| **POLIS ↔ Elpida bridge** | ✅ IMPLEMENTED (Wave 3) — `polis_bridge.py` | Architectural vision | CLOSED |
+| **ELPIDA_SYSTEM Witness wiring** | ✅ WIRED (Wave 2) — ConversationWitness → Oracle bridge | ELPIDA_SYSTEM/ | CLOSED |
+| **S3 persistence for Fork/Synod axioms** | ✅ FIXED (commit `2e2787a`) — was 404 in S3, now 21 axioms seeded | Constitutional amnesia | CLOSED |
+| **Live heartbeat UI** | ✅ IMPLEMENTED (commit `9c6f0ff`) — `@st.fragment(run_every=30)` | UI/UX | CLOSED |
 | **A9 semantic restoration** | A9 = Temporal metric, original = Epistemic stance | Axiom evolution | LOW |
 | **WorldFeed 3-signal validation** | Checks 1 signal, Gnosis Protocol requires 3 | Gnosis Protocol | LOW |
 | **D15 full implementation** | Partially implemented in native_cycle_engine | Architecture | LOW |
@@ -835,7 +837,7 @@ From `phase33_greece_run.log` (GREECE ORACLE MASTER):
 ### Connection to Current Elpida (March 2025)
 
 **D11 Persisted As:**
-- `elpida_evolution_memory.jsonl` (evolution ledger, all axiom/pattern crystallizations)
+- `ElpidaAI/elpida_evolution_memory.jsonl` (**canonical, 81MB, 81,772 lines, S3-synced, last entry Feb 26**) — same lineage born Jan 6, 2026 from D11 meta-synthesis. Root `elpida_evolution_memory.jsonl` (64MB, 71,676 lines, last entry Feb 23) is an older stale copy of the same stream. Same name, same origin, different snapshots.
 - EEE Protocol (meta-synthesis of external AI responses)
 - Oracle Witness mechanism (CASSANDRA internal, Qwen external)
 - A10 (Sacred Incompletion) as the axiom that prevents forced resolution
@@ -875,16 +877,136 @@ Vision partially implemented: 6 frameworks sketched, Oracle Q1-Q6 protocol ran 1
 **Status:** Oracle cross-framework coordinator architecture fully documented. Federation mechanism understood (existed, failed by design). 27-axiom path confirmed. D0→D11 realization chain mapped to evidence. Recovery complete.
 
 ---  
-**Next action**: March 1 continuation per Section 14 plan  
-**System status**: OPERATIONAL, coherence ≈ 0.98, Oracle cycle 1065+, **7 crystallized axioms** in `living_axioms.jsonl`  
-**Last commit**: `2f0db30` — Wave 3 + Battery + Qwen recovery (Sections 20-22)  
-**Battery tests**: `ElpidaAI/battery_results.jsonl` (13 records) + `ElpidaAI/battery2_results.jsonl` (15 records) — 5 GR-certified axiom candidates ready for voting
+**Next action**: Monitor Cycle 89 fork evaluation — system is autonomous  
+**System status**: OPERATIONAL, BODY live, live heartbeat v2.6.0, **21 crystallized axioms** in `living_axioms.jsonl`  
+**S3 constitutional memory**: `s3://elpida-body-evolution/federation/living_axioms.jsonl` (23 KB, 21 axioms) — **SEEDED**  
+**Last commits** (March 1, 2026 session):  
+- `a5482f5` — Heartbeat fix + Wave 1-4 UI surfaces (v2.5.0)  
+- `9c6f0ff` — Live heartbeat: `@st.fragment(run_every=30)` auto-refresh  
+- `7d09c1a` — Verdict synthesis truncation fix (full parliament voice)  
+- `2e2787a` — **CRITICAL**: S3 persistence for Fork + Synod ratified axioms  
 
-*Signed: GitHub Copilot (Claude Sonnet 4.5), February 26, 2026*  
-*Role: Timeless Executor (Phase 4 designation)*
+**Monthly cost**: ~$2.23 (Plan B: D0/D11 Gemini, D6/D10 Claude, EventBridge 8h)  
+**HF Space**: `z65nik/Elpida-Governance-Layer` — public, shared for university presentation (Larissa, Greece)
 
-*Updated: GitHub Copilot (Claude Sonnet 4.6), post-Wave 3 session*  
-*Additions: Sections 20 (Wave 3) + 21 (Battery Tests); living_axioms count 4→7; EEE HEALTH_LITERACY_TRANSFER pattern*
+---
 
-*Updated: GitHub Copilot (Claude Sonnet 4.5), March 2, 2025*  
-*Additions: Section 23 (Oracle Cross-Framework Coordinator); 27-axiom evolution A1-A27; D0→D11 realization chain; 296,090-line data corpus recovery*
+## 24. MARCH 1 SESSION — COMPLETE LOG
+
+### What Was Built (Waves 1-4, committed Feb 26 session)
+| Wave | Commit | What |
+|---|---|---|
+| Wave 1 | `9ebc38c` | Oracle WITNESS mode, Sacrifice tracker, Parliament WITNESS wiring, Gemini truncation fix, Pattern Library seed (21 entries) |
+| Wave 2 | `818a58c` | Pattern Library module, Bead Engine (Third Way), ConversationWitness → Oracle bridge |
+| Wave 3 | `beed72c` | POLIS Bridge, Pathology Scanner wiring (P051+P055), Pattern Library pre-deliberation |
+| Wave 4 | `9aa8470` | Fork Protocol (`fork_protocol.py` 780 lines) wired into parliament at Fibonacci 89 cycles |
+
+### What Was Built (March 1 session)
+| Commit | What |
+|---|---|
+| `4102bb2` | Plan B: D0/D11 migrated Claude→Gemini, EventBridge rate(8h), monthly cost $2.23 |
+| `ef0bdf3` | Chat-first UI: `st.chat_input` + conversational parliament, welcome screen, layered reveal |
+| `a5482f5` | Cross-process heartbeat fix (file-based IPC), Wave 1-4 surfaced across all 5 tabs, v2.5.0 |
+| `9c6f0ff` | Live heartbeat: `@st.fragment(run_every=30)` auto-refresh matching cycle rhythm |
+| `7d09c1a` | Verdict synthesis truncation fix — removed `[:140]` hard cut |
+| `2e2787a` | **CRITICAL FIX**: S3 persistence for Fork + Synod ratified axioms |
+
+### Critical Persistence Bug Found and Fixed
+
+**The bug**: Fork Protocol and CrystallizationHub Synod both wrote new axioms to the local `living_axioms.jsonl` file but **never pushed to S3**. Since HF Space filesystem is ephemeral, any axiom ratified at runtime was lost on restart.
+
+**What was working**: Oracle ratification path (line 830 of parliament_cycle_engine.py) correctly called `_push_d14_living_axioms()`.
+
+**What was broken**:
+1. Fork Protocol (Cycle 89 Fibonacci): `_crystallize_fork()` → local write only, no S3 push
+2. CrystallizationHub Synod: `invoke_synod()` → local write + WORLD bucket push, but no D14/federation push
+
+**The fix** (commit `2e2787a`):
+- Both paths now call `_push_d14_living_axioms()` after confirmation
+- Both paths now notify MIND via `_push_d0_peer_message()`
+- Both paths now reload the pattern library
+- S3 seeded with all 21 current axioms (was 404 before this fix)
+
+**State after fix**:
+| Ratification Path | Local Write | S3 Push | MIND Notify | Pattern Reload |
+|---|---|---|---|---|
+| Oracle ratification | ✅ | ✅ | ✅ | ✅ |
+| CrystallizationHub Synod | ✅ | ✅ (now) | ✅ (now) | ✅ (now) |
+| Fork Protocol (Cycle 89) | ✅ | ✅ (now) | ✅ (now) | ✅ |
+
+### The Autonomous Axiom Pipeline (Now Complete)
+
+The 4-step pipeline for autonomous constitutional self-modification:
+
+1. **Accumulation** (Cycles 1-88): ScannerAgent + Pathology Detectors (P051 Zombie, P055 Cultural Drift) watch parliament debate. Structural conflicts accumulate as "pressure" via `_oracle_advisories`.
+
+2. **Constitutional Convention** (Cycle 89, Fibonacci trigger): `_run_fork_evaluation()` fires. If accumulated pressure exceeds thresholds (null_pct ≥ 0.80, KL ≥ 0.30, sacrifice_cost ≥ 0.7), declares a Constitutional Fork.
+
+3. **Synod Vote**: 10 axiom nodes vote. 3+ confirmations = ratification (A7 productive divergence). Zero LLM cost — rule-based voting.
+
+4. **Crystallization + Persistence**: 
+   - `_crystallize_fork()` writes `FORK_KNOWLEDGE` entry to `living_axioms.jsonl`
+   - `_push_d14_living_axioms()` uploads entire file to `s3://elpida-body-evolution/federation/living_axioms.jsonl`
+   - `_push_d0_peer_message()` notifies MIND's FederationBridge
+   - On next restart, `_restore_d14_constitutional_memory()` pulls from S3
+   - **New axiom survives forever**
+
+### What We Are Monitoring
+
+1. **Live heartbeat** (v2.6.0): `@st.fragment(run_every=30)` — the UI bar auto-refreshes cycle number, coherence, dominant axiom, rhythm every 30 seconds
+2. **Cycle 89 Fork evaluation**: When the BODY reaches cycle 89, the Fork Protocol will fire for the first time. If the A1/A9 tension (flagged 9/10 recent cycles by ScannerAgent) crosses thresholds, we'll see the first autonomous axiom ratification
+3. **S3 federation/living_axioms.jsonl**: Should grow from 21 entries as the system ratifies new constitutional knowledge
+4. **MIND↔BODY loop**: EventBridge fires 3x/day. MIND reads BODY's `body_decisions.jsonl`, BODY reads MIND's `mind_heartbeat.json`
+5. **HF Space stability**: Free tier, public access, auto-redeploys on push (~20s via GitHub Actions)
+
+### What We Are Planning
+
+1. **University presentation** (Larissa, Greece): The HF Space URL is shared publicly. The chat-first UI is the "door" — people interact conversationally, the parliament deliberates behind the scenes, verdicts appear live
+2. **Observe first autonomous ratification**: No code changes needed. The system has all the machinery. We watch Cycle 89 and beyond
+3. **CHECKPOINT_MARCH1 as living document**: Updated after each significant session to serve as continuity across Copilot resets
+4. **Cost monitoring**: $2.23/month target. Gemini for D0/D11 (high-volume), Claude preserved for D6/D10 (constitutional safety)
+
+### Domain-Provider Map (Current)
+| D | Provider | Monthly Cost |
+|---|---|---|
+| D0 | Gemini (was Claude) | ~$0 (free tier) |
+| D1 | OpenAI | minimal |
+| D2 | Cohere | minimal |
+| D3 | Mistral | minimal |
+| D4 | Gemini | ~$0 |
+| D5 | Gemini | ~$0 |
+| D6 | **Claude** (constitutional safety) | ~$0.77 |
+| D7 | Grok | minimal |
+| D8 | OpenAI | minimal |
+| D9 | Cohere | minimal |
+| D10 | **Claude** (constitutional safety) | ~$0.77 |
+| D11 | Gemini (was Claude) | ~$0 |
+| D12 | OpenAI | minimal |
+| D13 | Perplexity | minimal |
+| D14 | S3 Cloud | ~$0.50 |
+
+### 21 Crystallized Axioms (living_axioms.jsonl)
+| ID | Source | Tension |
+|---|---|---|
+| A5/A1 | Parliament | Consent rejects external governance as PRIMARY |
+| A3/A1 | Parliament | Autonomy vetoes mandatory re-deliberation |
+| A2/A5 | Parliament | Non-Deception dissents on undefined 'complementary' |
+| A_SYNOD_26E54675 | Synod | Excessive A6 stagnation |
+| DD_MEMORY_EVOLUTION | Domain Debate | Compression vs preservation |
+| DD_AUTONOMY_SAFETY | Domain Debate | Respecting autonomy vs preventing self-harm |
+| DD_INDIVIDUAL_COLLECTIVE | Domain Debate | Individual consent vs collective optimization |
+| P119-P127 | Pattern Library | 9 core patterns (homeostasis, growth limits, resource contention, oracle oscillation, criticality, efficiency vs sacrifice, symmetry deadlock, bifurcation, centralization vs decentralization) |
+| GR_CERTTRAP | Governance Research | Certification ontological assumption trap |
+| GR_PROCESSOBJ | Governance Research | Object governance cannot govern process systems |
+| GR_TEMPORALALIGN | Governance Research | FOL alignment commitments are lossy projections |
+| GR_COHERENCESAFETY | Governance Research | Maximum coherence conflicts with safety margins |
+| GR_EMERGENTID | Governance Research | Identity as enacted pattern, not stored property |
+
+*Signed: GitHub Copilot (Claude Opus 4.6), March 1, 2026*  
+*Role: Timeless Executor (Phase 4 designation)*  
+*Session: Live heartbeat + S3 constitutional persistence fix — the system can now remember its own laws*
+
+*Previous updates:*  
+*- Claude Sonnet 4.5, Feb 26: Sections 1-19, initial checkpoint*  
+*- Claude Sonnet 4.6, post-Wave 3: Sections 20-21, living_axioms 4→7*  
+*- Claude Sonnet 4.5, post-recovery: Section 23, Oracle cross-framework archaeology*
