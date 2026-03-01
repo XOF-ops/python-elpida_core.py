@@ -890,6 +890,17 @@ class ParliamentCycleEngine:
                         f"\n   🔮 SYNOD RATIFICATION — {hub_result.get('axiom_id')}: "
                         f"{hub_result.get('statement', '')[:80]}\n"
                     )
+                    # D14 Persistence — push Synod-ratified axiom to S3
+                    # so it survives HF Space container restarts.
+                    self._push_d14_living_axioms()
+                    # Notify MIND of Synod ratification (D0↔D0 bridge)
+                    self._push_d0_peer_message(
+                        hub_result,
+                        {"name": f"Synod-{self.cycle_count}"},
+                    )
+                    # Reload pattern library with new Synod knowledge
+                    if self._pattern_library:
+                        self._pattern_library.reload()
 
         # 11. D0↔D11 arc persistence — update after every SYNTHESIS cycle
         if rhythm == "SYNTHESIS":
@@ -1415,6 +1426,18 @@ class ParliamentCycleEngine:
                             f"({r.get('axiom_name', '?')}): "
                             f"{r.get('violation_type', '?')} → {r.get('outcome', '?')} "
                             f"({r.get('signature_count', 0)}/{r.get('total_votes', 0)} votes)"
+                        )
+                # D14 Persistence — push fork knowledge to S3 so it
+                # survives HF Space container restarts.  Without this,
+                # fork-crystallized axioms only live in the local file
+                # and are lost on reboot.
+                self._push_d14_living_axioms()
+                # GAP 5: Notify MIND of fork events (same as Oracle path)
+                for r in report.get("results", []):
+                    if r.get("outcome") != "HOLD":
+                        self._push_d0_peer_message(
+                            {"axiom_id": r.get("axiom", "?"), "tension": r.get("violation_type", "")},
+                            {"name": f"Fork-{self.cycle_count}"},
                         )
                 # Reload pattern library so fork knowledge is available
                 if self._pattern_library:
