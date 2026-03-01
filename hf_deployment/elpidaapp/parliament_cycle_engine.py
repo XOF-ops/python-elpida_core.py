@@ -123,6 +123,10 @@ POLIS_CIVIC_INTERVAL = 34
 # Pathology scan interval (Fibonacci: 55)
 PATHOLOGY_SCAN_INTERVAL = 55
 
+# Fork Protocol evaluation interval (Fibonacci: 89)
+# Article VII escape valve — high-severity axiom violations.
+FORK_EVAL_INTERVAL = 89
+
 # Minimum cycles before pathology scan has enough data (matches P051 threshold)
 ZOMBIE_MIN_CYCLES = 10
 
@@ -377,6 +381,13 @@ class ParliamentCycleEngine:
         self._last_pathology_report: Optional[Dict] = None
         self._pathology_last_cycle: int = 0
 
+        # Fork Protocol (Article VII) — axiom-violation escape valve
+        self._last_fork_report: Optional[Dict] = None
+        self._fork_last_cycle: int = 0
+
+        # Oracle advisory accumulator (WITNESS events for Fork Protocol)
+        self._oracle_advisories: List[Dict] = []
+
         # Body Watch context (Counter-Spiral Protocol)
         self._watch = WatchContext()
 
@@ -600,6 +611,12 @@ class ParliamentCycleEngine:
         if self.cycle_count % PATHOLOGY_SCAN_INTERVAL == 0 and self.cycle_count > 0:
             self._run_pathology_scan()
 
+        # 2e. Fork Protocol evaluation every 89 cycles (Fibonacci)
+        #     Article VII escape valve — axiom-violation declarations.
+        #     Zero LLM cost — rule-based voting + statistical thresholds.
+        if self.cycle_count % FORK_EVAL_INTERVAL == 0 and self.cycle_count > 0:
+            self._run_fork_evaluation()
+
         # 3. Assemble action from HF inputs
         action, meta = self._assemble_action(rhythm)
 
@@ -810,6 +827,11 @@ class ParliamentCycleEngine:
                 # WITNESS/SYNTHESIS events for cross-system observation.
                 if advisory["oracle_recommendation"]["type"] == "WITNESS":
                     self._notify_conversation_witness(advisory)
+
+                # Accumulate oracle advisories for Fork Protocol evaluation.
+                # The fork evaluator uses WITNESS sacrifice_costs to detect
+                # axiom violations that warrant Article VII declarations.
+                self._oracle_advisories.append(advisory)
 
         # 9. Emit body heartbeat every cycle
         self._emit_heartbeat(rhythm, dominant_axiom, result)
@@ -1296,6 +1318,89 @@ class ParliamentCycleEngine:
         except Exception as e:
             logger.warning("Pathology scan failed: %s", e)
 
+    # ------------------------------------------------------------------
+    # Fork Protocol (Article VII)
+    # ------------------------------------------------------------------
+
+    def _run_fork_evaluation(self):
+        """
+        Run Fork Protocol evaluation on accumulated cycle data.
+
+        Triggered every 89 cycles (Fibonacci). Article VII escape valve:
+        when axiom violations (zombie, drift, sacrifice) exceed thresholds,
+        the protocol declares a constitutional fork, deliberates via
+        parliament node voting, and — if confirmed — crystallizes the
+        outcome to living_axioms.jsonl.
+
+        Zero LLM cost: rule-based voting + statistical thresholds.
+        Three evidence sources:
+          - P051 Zombie Detection (null_pct >= 0.80)
+          - P055 Cultural Drift  (KL >= 0.30)
+          - Oracle WITNESS        (sacrifice_cost >= 0.7)
+        """
+        if len(self.decisions) < ZOMBIE_MIN_CYCLES:
+            logger.debug(
+                "Fork evaluation skipped: only %d cycles (need %d)",
+                len(self.decisions), ZOMBIE_MIN_CYCLES,
+            )
+            return
+
+        try:
+            from elpidaapp.fork_protocol import run_fork_evaluation
+
+            axioms_path = str(
+                Path(__file__).resolve().parent.parent / "living_axioms.jsonl"
+            )
+            declarations_path = str(
+                Path(__file__).resolve().parent.parent / "fork_declarations.jsonl"
+            )
+
+            report = run_fork_evaluation(
+                cycle_records=self.decisions,
+                pathology_report=self._last_pathology_report,
+                oracle_advisories=self._oracle_advisories,
+                current_cycle=self.cycle_count,
+                declarations_path=declarations_path,
+                living_axioms_path=axioms_path,
+            )
+
+            self._last_fork_report = report
+            self._fork_last_cycle = self.cycle_count
+
+            n_eval = report.get("declarations_evaluated", 0)
+            n_confirmed = report.get("forks_confirmed", 0)
+            n_held = report.get("forks_held", 0)
+
+            logger.info(
+                "FORK EVAL cycle=%d: evaluated=%d confirmed=%d held=%d",
+                self.cycle_count, n_eval, n_confirmed, n_held,
+            )
+
+            if n_confirmed > 0:
+                print(
+                    f"\n   ⚖️  FORK DECLARED (cycle {self.cycle_count}): "
+                    f"{n_confirmed} forks confirmed, {n_held} held"
+                )
+                for r in report.get("results", []):
+                    if r.get("outcome") != "HOLD":
+                        print(
+                            f"       {r.get('axiom', '?')} "
+                            f"({r.get('axiom_name', '?')}): "
+                            f"{r.get('violation_type', '?')} → {r.get('outcome', '?')} "
+                            f"({r.get('signature_count', 0)}/{r.get('total_votes', 0)} votes)"
+                        )
+                # Reload pattern library so fork knowledge is available
+                if self._pattern_library:
+                    self._pattern_library.reload()
+            elif n_eval > 0:
+                print(
+                    f"\n   ⚖️  FORK EVAL (cycle {self.cycle_count}): "
+                    f"{n_eval} declarations evaluated, all HELD (insufficient signatures)"
+                )
+
+        except Exception as e:
+            logger.warning("Fork evaluation failed: %s", e)
+
     def _run_polis_civic_deliberation(self):
         """
         Pull a POLIS civic contradiction and deliberate it via DualHorn + Oracle.
@@ -1532,6 +1637,15 @@ class ParliamentCycleEngine:
                 if self._last_pathology_report else None
             ),
             "pathology_last_cycle": self._pathology_last_cycle or None,
+            "fork_active_count": (
+                self._last_fork_report.get("summary", {}).get("active_count", 0)
+                if self._last_fork_report else 0
+            ),
+            "fork_confirmed_total": (
+                self._last_fork_report.get("forks_confirmed", 0)
+                if self._last_fork_report else 0
+            ),
+            "fork_last_cycle": self._fork_last_cycle or None,
             "d15_broadcast_count": self.d15_broadcast_count,
             "axiom_frequency": dict(self._axiom_frequency),
             "input_buffer": self.input_buffer.counts(),
