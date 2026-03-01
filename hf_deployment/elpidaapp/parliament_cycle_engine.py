@@ -632,34 +632,92 @@ class ParliamentCycleEngine:
         # rate meets the watch's oracle threshold, the tension is fed to
         # the ConstitutionalStore. After 3 such cycles the tension is
         # ratified as a constitutional axiom in living_axioms.jsonl.
+        #
+        # WITNESS MODE (Empathy Protocol):
+        # When tensions exist AND a veto was exercised (governance diverged),
+        # the advisory type escalates to WITNESS — naming costs without
+        # forcing resolution. Ported from CASSANDRA fleet node + VARIANT_WITNESS.
         if tensions:
             approval_rate = result.get("parliament", {}).get("approval_rate", 0)
+            veto_exercised = result.get("parliament", {}).get("veto_exercised", False)
+            crisis_intensity = round(1.0 - self.coherence, 3)
+
             if approval_rate >= watch["oracle_threshold"]:
-                advisory = {
-                    "oracle_recommendation": {
-                        "type": "PRESERVE_CONTRADICTION",
-                        "confidence": round(approval_rate, 3),
-                        "preserve_contradictions": [
-                            t.get("synthesis", t.get("axiom_pair", ""))[:120]
-                            for t in tensions[:3]
-                        ],
-                    },
-                    "template": watch["name"],
-                    "axioms_in_tension": [t.get("axiom_pair") for t in tensions[:3]],
-                    "q2_crisis_intensity": round(1.0 - self.coherence, 3),
-                }
+                # Determine advisory type: WITNESS if deeply divided, else PRESERVE
+                if veto_exercised and crisis_intensity > 0.5 and len(tensions) >= 2:
+                    # WITNESS — Empathy Protocol: name the cost, don't fix
+                    advisory = {
+                        "oracle_recommendation": {
+                            "type": "WITNESS",
+                            "confidence": round(approval_rate, 3),
+                            "preserve_contradictions": [
+                                t.get("synthesis", t.get("axiom_pair", ""))[:120]
+                                for t in tensions[:3]
+                            ],
+                            "witness_stance": (
+                                f"CASSANDRA WITNESS (Watch: {watch['name']}): "
+                                f"Veto exercised with {len(tensions)} active tensions — "
+                                f"forced resolution would sacrifice more than it gains. "
+                                f"Axioms in tension: "
+                                + ", ".join(
+                                    t.get("axiom_pair", "?") for t in tensions[:3]
+                                )
+                            ),
+                            "sacrifice_costs": {
+                                "horn_1_sacrifices": [
+                                    t.get("axiom_pair", "").split("↔")[0].strip()
+                                    for t in tensions[:3]
+                                    if "↔" in t.get("axiom_pair", "")
+                                ],
+                                "horn_2_sacrifices": [
+                                    t.get("axiom_pair", "").split("↔")[-1].strip()
+                                    for t in tensions[:3]
+                                    if "↔" in t.get("axiom_pair", "")
+                                ],
+                                "shared_cost": [],
+                                "total_axioms_at_risk": len(tensions),
+                            },
+                            "variant_witness_philosophy": (
+                                "We do not resolve to consensus. Both observations "
+                                "are valid witnesses to the pattern."
+                            ),
+                        },
+                        "template": watch["name"],
+                        "axioms_in_tension": [t.get("axiom_pair") for t in tensions[:3]],
+                        "q2_crisis_intensity": crisis_intensity,
+                    }
+                    logger.info(
+                        "WITNESS advisory (Watch: %s, veto=%s, tensions=%d)",
+                        watch["name"], veto_exercised, len(tensions),
+                    )
+                else:
+                    # Standard PRESERVE_CONTRADICTION
+                    advisory = {
+                        "oracle_recommendation": {
+                            "type": "PRESERVE_CONTRADICTION",
+                            "confidence": round(approval_rate, 3),
+                            "preserve_contradictions": [
+                                t.get("synthesis", t.get("axiom_pair", ""))[:120]
+                                for t in tensions[:3]
+                            ],
+                        },
+                        "template": watch["name"],
+                        "axioms_in_tension": [t.get("axiom_pair") for t in tensions[:3]],
+                        "q2_crisis_intensity": crisis_intensity,
+                    }
                 store = self._get_constitutional_store()
                 if store:
                     new_axiom = store.ingest_oracle(advisory)
                     if new_axiom:
                         cycle_record["constitutional_axiom_ratified"] = new_axiom["axiom_id"]
+                        rec_type = advisory["oracle_recommendation"]["type"]
                         logger.info(
-                            "CONSTITUTIONAL AXIOM RATIFIED: %s — %s",
-                            new_axiom["axiom_id"], new_axiom["tension"][:80]
+                            "CONSTITUTIONAL AXIOM RATIFIED: %s — %s (via %s)",
+                            new_axiom["axiom_id"], new_axiom["tension"][:80], rec_type,
                         )
                         print(
                             f"\n   *** CONSTITUTIONAL AXIOM {new_axiom['axiom_id']} RATIFIED"
-                            f" (Watch: {watch['name']}) ***\n"
+                            f" (Watch: {watch['name']}, mode: {rec_type}) ***\n"
                         )
                         # GAP 5: D0↔D0 Cross-Bucket Bridge
                         # The BODY notifies the MIND's FederationBridge of every

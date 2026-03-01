@@ -26,6 +26,12 @@ Oracle recommendation types:
     OSCILLATION     — High crisis. Oscillate between poles to absorb tension.
     TIERED_OPENNESS — Low crisis. Gradual reveal / phased approach.
     SYNTHESIS       — Third Way found. Propose concrete integration.
+    WITNESS         — Name the cost without fixing. Empathy Protocol.
+                      Ported from CASSANDRA fleet node ("sees costs everywhere,
+                      makes consensus difficult but accurate") and
+                      ELPIDA_UNIFIED/handshake_synthesis.py VARIANT_WITNESS
+                      mechanism ("We do not resolve to consensus. Both
+                      observations are valid witnesses to the pattern.").
 
 The Oracle is NOT another parliament. It is a meta-observer that watches
 HOW the parliament behaves across two horns, not WHAT it decides.
@@ -68,6 +74,14 @@ CRISIS_THRESHOLD = 0.5      # crisis_intensity above this → crisis detected
 A10_ALWAYS_CRISIS = True     # A10 (Paradox as Fuel) always triggers crisis mode
 OSCILLATION_CONFIDENCE_BASE = 0.8  # base confidence for OSCILLATION
 TIERED_CONFIDENCE_BASE = 0.6       # base confidence for TIERED_OPENNESS
+WITNESS_CONFIDENCE_BASE = 0.75     # base confidence for WITNESS
+
+# WITNESS thresholds — ported from CASSANDRA fleet node (A5/A8/A7)
+# WITNESS fires when crisis IS detected but the cost of resolution
+# exceeds the cost of holding the tension. This is the Empathy Protocol:
+# "confirm cost without fixing."
+WITNESS_MIN_REVERSAL_NODES = 2     # Need ≥2 reversal nodes (both horns shifted)
+WITNESS_GOVERNANCE_DIVERGE = True  # Governance must diverge between horns
 
 
 class OracleAdvisory:
@@ -152,10 +166,12 @@ class Oracle:
         self,
         *,
         advisory_log_path: Optional[Path] = None,
+        sacrifice_tracker=None,
     ):
         self._cycle_counter = 0
         self._advisories: List[OracleAdvisory] = []
         self._log_path = advisory_log_path
+        self._sacrifice_tracker = sacrifice_tracker
 
         # Load existing advisories if available
         if self._log_path and self._log_path.exists():
@@ -276,7 +292,22 @@ class Oracle:
             reversal_nodes=reversal_nodes,
             synthesis_gap=synthesis_gap,
             comparison=comparison,
+            horn_1=horn_1,
+            horn_2=horn_2,
         )
+
+        # ── WITNESS → Sacrifice Tracker (A7 compliance) ──────────
+        if recommendation.get("type") == "WITNESS" and self._sacrifice_tracker:
+            try:
+                self._sacrifice_tracker.record(
+                    oracle_cycle=cycle,
+                    dilemma_id=debate_id,
+                    template=template,
+                    sacrifice_costs=recommendation.get("sacrifice_costs", {}),
+                    witness_stance=recommendation.get("witness_stance", ""),
+                )
+            except Exception as e:
+                logger.warning("Sacrifice tracker record failed: %s", e)
 
         # ── Construct Advisory ───────────────────────────────────
         advisory = OracleAdvisory(
@@ -437,18 +468,82 @@ class Oracle:
         reversal_nodes: List[str],
         synthesis_gap: Dict[str, Any],
         comparison: Dict[str, Dict],
+        horn_1: Optional[Dict] = None,
+        horn_2: Optional[Dict] = None,
     ) -> Dict[str, Any]:
         """
         Produce the Oracle recommendation.
 
-        Three possible types (from oracle_advisories.jsonl patterns):
+        Four possible types:
           OSCILLATION     — crisis detected, oscillate between poles
+          WITNESS         — crisis detected, cost of resolution > cost of holding
+                            (Empathy Protocol: name the cost, don't fix)
           TIERED_OPENNESS — low crisis, gradual approach
           SYNTHESIS       — third way discovered
+
+        WITNESS evaluation order:
+          After crisis detection but BEFORE OSCILLATION.
+          WITNESS fires when:
+            1. Crisis detected (q2)
+            2. ≥2 reversal nodes (both horns shifted ground)
+            3. Governance diverges (both horns can't agree on action)
+            4. A10 is active (paradox must be preserved, not oscillated away)
+          When all 4 hold, the cost of oscillation or synthesis is higher
+          than the cost of holding still and naming what each path would
+          sacrifice. This is the CASSANDRA function: "makes consensus
+          difficult but accurate."
         """
         preserve = []
         if q2_type:
             preserve.append(q2_type)
+
+        horn_1 = horn_1 or {}
+        horn_2 = horn_2 or {}
+
+        # ── WITNESS: Empathy Protocol (evaluated first within crisis) ───
+        # "Confirm cost without fixing." — CHECKPOINT Section 6
+        # Ported from CASSANDRA fleet node (A5/A8/A7) and
+        # ELPIDA_UNIFIED/handshake_synthesis.py VARIANT_WITNESS.
+        governance_diverges = synthesis_gap.get("governance_diverges", False)
+        if (
+            q2_detected
+            and crisis_intensity > CRISIS_THRESHOLD
+            and len(reversal_nodes) >= WITNESS_MIN_REVERSAL_NODES
+            and governance_diverges
+            and a10_active
+        ):
+            # Compute sacrifice costs — what each horn would lose
+            sacrifice_costs = self._compute_sacrifice_costs(
+                horn_1, horn_2, comparison, reversal_nodes
+            )
+            witness_stance = self._witness_stance(
+                sacrifice_costs, q2_type, crisis_intensity
+            )
+
+            confidence = WITNESS_CONFIDENCE_BASE + crisis_intensity * 0.1
+            if len(reversal_nodes) > 2:
+                confidence += 0.05  # More reversals = higher witness confidence
+
+            return {
+                "type": "WITNESS",
+                "rationale": (
+                    f"CASSANDRA WITNESS: Crisis detected (intensity="
+                    f"{crisis_intensity:.2f}) with {len(reversal_nodes)} "
+                    f"reversal nodes and governance divergence. "
+                    f"Both horns shifted ground — forced resolution would "
+                    f"sacrifice more than it gains. "
+                    f"Holding the tension and naming costs."
+                ),
+                "preserve_contradictions": preserve,
+                "reversal_signal": reversal_nodes,
+                "sacrifice_costs": sacrifice_costs,
+                "witness_stance": witness_stance,
+                "confidence": min(1.0, confidence),
+                "variant_witness_philosophy": (
+                    "We do not resolve to consensus. Both observations "
+                    "are valid witnesses to the pattern."
+                ),
+            }
 
         # ── OSCILLATION: crisis detected ─────────────────────────
         if q2_detected and crisis_intensity > CRISIS_THRESHOLD:
@@ -497,6 +592,96 @@ class Oracle:
             "reversal_signal": reversal_nodes,
             "confidence": TIERED_CONFIDENCE_BASE,
         }
+
+    # ── WITNESS helpers (Empathy Protocol) ────────────────────────
+
+    def _compute_sacrifice_costs(
+        self,
+        horn_1: Dict,
+        horn_2: Dict,
+        comparison: Dict[str, Dict],
+        reversal_nodes: List[str],
+    ) -> Dict[str, Any]:
+        """
+        Compute what each horn would sacrifice if chosen.
+
+        This is the CASSANDRA function: "sees costs everywhere."
+        Rather than optimizing for the best outcome, it makes the costs
+        of BOTH paths explicit so the system can hold them honestly.
+
+        Returns:
+            sacrifice_costs: {
+                "horn_1_sacrifices": [axiom names that horn 1 would violate],
+                "horn_2_sacrifices": [axiom names that horn 2 would violate],
+                "shared_cost": axioms violated by BOTH (irresolvable tension),
+                "reversal_cost": what the reversal nodes gave up,
+            }
+        """
+        h1_violated = set(horn_1.get("violated_axioms", []))
+        h2_violated = set(horn_2.get("violated_axioms", []))
+        shared = h1_violated & h2_violated
+        h1_only = h1_violated - shared
+        h2_only = h2_violated - shared
+
+        # Reversal cost: what each reversal node shifted away from
+        reversal_details = []
+        for node_name in reversal_nodes:
+            node_comp = comparison.get(node_name, {})
+            axiom = node_comp.get("axiom", "unknown")
+            delta = node_comp.get("score_delta", 0)
+            shift = node_comp.get("shift_class", "SHIFT")
+            reversal_details.append({
+                "node": node_name,
+                "axiom_abandoned": axiom,
+                "score_delta": delta,
+                "shift_class": shift,
+            })
+
+        return {
+            "horn_1_sacrifices": sorted(h1_only),
+            "horn_2_sacrifices": sorted(h2_only),
+            "shared_cost": sorted(shared),
+            "reversal_cost": reversal_details,
+            "total_axioms_at_risk": len(h1_violated | h2_violated),
+        }
+
+    def _witness_stance(
+        self,
+        sacrifice_costs: Dict[str, Any],
+        template: Optional[str],
+        crisis_intensity: float,
+    ) -> str:
+        """
+        Generate the Witness stance — a human-readable statement of
+        what the Oracle is holding and why it won't let go.
+
+        This is the Empathy Protocol's output: a named tension with
+        explicitly stated costs, not a recommendation to act.
+        """
+        h1_sac = sacrifice_costs.get("horn_1_sacrifices", [])
+        h2_sac = sacrifice_costs.get("horn_2_sacrifices", [])
+        shared = sacrifice_costs.get("shared_cost", [])
+        total = sacrifice_costs.get("total_axioms_at_risk", 0)
+
+        lines = []
+        lines.append(
+            f"WITNESS STANCE — {template or 'UNNAMED_TENSION'} "
+            f"(intensity: {crisis_intensity:.2f})"
+        )
+        if shared:
+            lines.append(
+                f"Irresolvable: {', '.join(shared)} — violated by BOTH paths. "
+                f"No resolution removes this cost."
+            )
+        if h1_sac:
+            lines.append(f"Horn 1 would sacrifice: {', '.join(h1_sac)}")
+        if h2_sac:
+            lines.append(f"Horn 2 would sacrifice: {', '.join(h2_sac)}")
+        lines.append(
+            f"{total} axiom(s) at risk. The Oracle holds this tension "
+            f"because naming the cost is more honest than forcing a path."
+        )
+        return " | ".join(lines)
 
     # ── Public utilities ──────────────────────────────────────────
 
@@ -560,6 +745,25 @@ class Oracle:
         if reversal:
             lines.append(f"  Reversal Signal: {', '.join(reversal)}")
 
+        # WITNESS-specific fields (Empathy Protocol)
+        if rec.get("type") == "WITNESS":
+            stance = rec.get("witness_stance", "")
+            if stance:
+                lines.append(f"  Witness Stance: {stance}")
+            costs = rec.get("sacrifice_costs", {})
+            if costs:
+                shared = costs.get("shared_cost", [])
+                if shared:
+                    lines.append(f"  Irresolvable Cost: {', '.join(shared)}")
+                h1 = costs.get("horn_1_sacrifices", [])
+                h2 = costs.get("horn_2_sacrifices", [])
+                if h1:
+                    lines.append(f"  Horn 1 Sacrifices: {', '.join(h1)}")
+                if h2:
+                    lines.append(f"  Horn 2 Sacrifices: {', '.join(h2)}")
+                lines.append(f"  Total Axioms At Risk: {costs.get('total_axioms_at_risk', 0)}")
+            lines.append(f"  Philosophy: {rec.get('variant_witness_philosophy', '')}")
+
         return "\n".join(lines)
 
 
@@ -567,6 +771,7 @@ class Oracle:
 
 def create_oracle(
     log_path: Optional[str] = None,
+    sacrifice_tracker=None,
 ) -> Oracle:
     """
     Create an Oracle instance.
@@ -574,6 +779,8 @@ def create_oracle(
     Args:
         log_path: Path to JSONL file for persisting advisories.
             If None, advisories are kept in memory only.
+        sacrifice_tracker: Optional SacrificeTracker instance for
+            recording A7 sacrifice costs when WITNESS fires.
     """
     path = Path(log_path) if log_path else None
-    return Oracle(advisory_log_path=path)
+    return Oracle(advisory_log_path=path, sacrifice_tracker=sacrifice_tracker)

@@ -1322,11 +1322,27 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
         S3 cloud (D14) is handled locally since it's not an LLM call.
         Everything else delegates to llm_client which handles rate
         limiting, stats tracking, and OpenRouter failsafe.
+        
+        Gemini (D4/D5) gets higher max_tokens because:
+          - Flash model is free (cost: $0.00/token)
+          - Cycle data shows intermittent truncation at 700 tokens
+          - Raising to 1024 is budget-neutral and fixes truncation
         """
         if provider == "s3_cloud":
             return self._call_s3_cloud(prompt, domain_id)
         
-        return self.llm.call(provider, prompt, max_tokens=700)
+        # Gemini Flash is free — give it more room to avoid truncation
+        # (observed in March 1 cycle data: cycles 11, 27, 31, 37)
+        max_tok = 1024 if provider == "gemini" else 700
+        response = self.llm.call(provider, prompt, max_tokens=max_tok)
+
+        # Truncation detection: if response is suspiciously short for a
+        # domain prompt, log it so CloudWatch captures the pattern.
+        if response and len(response) < 80 and provider != "s3_cloud":
+            print(f"   ⚠️ TRUNCATION WARNING: D{domain_id}/{provider} returned "
+                  f"only {len(response)} chars — possible provider-side truncation")
+
+        return response
     
     def _call_s3_cloud(self, prompt: str, domain_id: int) -> Optional[str]:
         """
