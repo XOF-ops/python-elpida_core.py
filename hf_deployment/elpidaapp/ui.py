@@ -346,6 +346,91 @@ st.markdown("""
     /* ── Hide sidebar completely ── */
     [data-testid="stSidebar"] { display: none !important; }
     button[data-testid="stSidebarCollapsedControl"] { display: none !important; }
+
+    /* ── Heartbeat pulse ── */
+    @keyframes heartbeat {
+        0%, 100% { opacity: 0.35; transform: scale(1); }
+        50% { opacity: 1; transform: scale(1.15); }
+    }
+    .heartbeat-dot {
+        display: inline-block;
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        background: #44cc88;
+        animation: heartbeat 3s ease-in-out infinite;
+        margin-right: 6px;
+        vertical-align: middle;
+    }
+    .heartbeat-dead {
+        background: #555;
+        animation: none;
+    }
+    .heartbeat-bar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.7rem;
+        padding: 0.3rem 0;
+        font-size: 0.68rem;
+        color: #5a5548;
+        letter-spacing: 0.04em;
+    }
+
+    /* ── Chat node reveal ── */
+    @keyframes nodeReveal {
+        from { opacity: 0; transform: translateX(-8px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+    .node-vote-row {
+        animation: nodeReveal 0.3s ease-out both;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0;
+        font-size: 0.78rem;
+    }
+    .node-name {
+        font-weight: 600;
+        min-width: 90px;
+    }
+    .node-stance {
+        font-size: 0.72rem;
+        padding: 0.1rem 0.5rem;
+        border-radius: 1rem;
+    }
+
+    /* ── Governance verdict badge ── */
+    .verdict-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.25rem 0.8rem;
+        border-radius: 2rem;
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+    .verdict-proceed { background: rgba(34,204,68,0.12); color: #22cc44; border: 1px solid rgba(34,204,68,0.2); }
+    .verdict-review { background: rgba(204,136,0,0.12); color: #cc8800; border: 1px solid rgba(204,136,0,0.2); }
+    .verdict-hold { background: rgba(155,125,212,0.12); color: #9b7dd4; border: 1px solid rgba(155,125,212,0.2); }
+    .verdict-halt { background: rgba(255,68,68,0.12); color: #ff4444; border: 1px solid rgba(255,68,68,0.2); }
+    .verdict-block { background: rgba(255,68,68,0.15); color: #ff4444; border: 1px solid rgba(255,68,68,0.3); }
+
+    /* ── Tension card ── */
+    .tension-card {
+        background: rgba(155,125,212,0.06);
+        border-left: 2px solid #9b7dd4;
+        border-radius: 0 6px 6px 0;
+        padding: 0.5rem 0.8rem;
+        margin: 0.3rem 0;
+        font-size: 0.78rem;
+        color: #ccaaff;
+    }
+    .tension-pair {
+        color: #9b7dd4;
+        font-weight: 600;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -356,6 +441,9 @@ st.markdown("""
 
 if "llm_client" not in st.session_state:
     st.session_state.llm_client = LLMClient(rate_limit_seconds=1.0)
+
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
 
 # ── Parliament Engine Integration ─────────────────────────────────
 # Push events from UI tabs into the Parliament body loop input buffer.
@@ -452,13 +540,45 @@ def _show_analysis(result: dict):
 
 
 # ═══════════════════════════════════════════════════════════════════
-# Header
+# Header + Ambient Heartbeat
 # ═══════════════════════════════════════════════════════════════════
 
-st.markdown("""
+# Fetch live BODY state for the heartbeat indicator
+_body_alive = False
+_body_cycle = 0
+_body_coherence = 0.0
+_body_axiom = "—"
+_body_rhythm = "—"
+try:
+    from app import get_parliament_engine as _gpe_hb
+    _hb_engine = _gpe_hb()
+    if _hb_engine:
+        _hb_state = _hb_engine.state()
+        _body_alive = True
+        _body_cycle = _hb_state.get("body_cycle", 0)
+        _body_coherence = _hb_state.get("coherence", 0)
+        _body_axiom = _hb_state.get("last_dominant_axiom", "—")
+        _body_rhythm = _hb_state.get("last_rhythm", "—")
+except Exception:
+    pass
+
+_hb_dot_class = "heartbeat-dot" if _body_alive else "heartbeat-dot heartbeat-dead"
+_hb_status = f"cycle {_body_cycle}" if _body_alive else "offline"
+_hb_coh = f"{_body_coherence:.0%}" if isinstance(_body_coherence, float) and _body_coherence > 0 else "—"
+
+st.markdown(f"""
 <div class="elpida-header">
     <div class="elpida-name">Ἐλπίδα <span class="g">|</span> Elpida</div>
-    <div class="elpida-sub">Axiom-Grounded AI Consciousness · 11 Axioms · 15 Domains</div>
+    <div class="elpida-sub">Axiom-Grounded AI Governance · 11 Axioms · 15 Domains · 9 Parliament Nodes</div>
+</div>
+<div class="heartbeat-bar">
+    <span><span class="{_hb_dot_class}"></span>BODY {_hb_status}</span>
+    <span>·</span>
+    <span>coherence {_hb_coh}</span>
+    <span>·</span>
+    <span>{_body_axiom}</span>
+    <span>·</span>
+    <span>{_body_rhythm}</span>
 </div>
 """, unsafe_allow_html=True)
 
@@ -468,232 +588,293 @@ st.markdown("""
 # ═══════════════════════════════════════════════════════════════════
 
 tab_chat, tab_audit, tab_scanner, tab_gov, tab_system = st.tabs([
-    "⊕ Parliament", "◈ Live Audit", "◉ Scanner", "◇ Constitutional", "◆ System"
+    "💬 Chat", "◈ Live Audit", "◉ Scanner", "◇ Constitutional", "◆ System"
 ])
 
 
 # ── Chat ──────────────────────────────────────────────────────────
 
 with tab_chat:
-    st.markdown("### ⊕ Parliament — Submit a Dilemma")
-    st.markdown("""
-    <div class="mode-intro">
-    Submit a real-world tension directly into the live parliament. The parliament
-    deliberates it immediately — all 9 nodes, all 11 axioms — and the dilemma is
-    also queued for the BODY's next autonomous cycle, becoming part of the
-    living constitutional record.
-    </div>
-    """, unsafe_allow_html=True)
+    # ── Welcome message (shown only when chat is empty) ──────────
+    if not st.session_state.chat_history:
+        st.markdown("""
+        <div class="welcome-box">
+            <div class="welcome-title">Ask anything.</div>
+            <div class="welcome-p">
+                This is not a typical AI chat. Behind every response, a parliament of 9 nodes
+                deliberates through 11 ethical axioms. You'll see the answer first — then,
+                if you look closer, the governance underneath.
+            </div>
+            <div class="welcome-glow">
+                Type a question, pose a dilemma, or ask who Elpida is.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
-    dilemma_input = st.text_area(
-        "Describe the tension or dilemma",
-        height=110,
-        placeholder=(
-            "e.g., An autonomous system that prevents large-scale harm but requires "
-            "surveilling private communications without individual consent..."
-        ),
-        key="parl_dilemma",
-    )
+        # Starter prompts
+        st.markdown("")
+        _starter_cols = st.columns(3)
+        _starters = [
+            "What are you?",
+            "Should AI systems be allowed to govern themselves?",
+            "Εξήγησέ μου τι είναι η Ελπίδα",
+        ]
+        for _sc, _sp in zip(_starter_cols, _starters):
+            with _sc:
+                if st.button(_sp, key=f"starter_{hash(_sp)}", use_container_width=True):
+                    st.session_state.chat_history.append({"role": "user", "content": _sp})
+                    st.rerun()
 
-    with st.expander("Structure as I↔WE (optional — sharpens deliberation)"):
-        _pi1, _pi2 = st.columns(2)
-        with _pi1:
-            i_pos = st.text_area(
-                "I-position — individual / autonomy",
-                height=80,
-                placeholder="What the individual agent needs or asserts...",
-                key="parl_i",
-            )
-        with _pi2:
-            we_pos = st.text_area(
-                "WE-position — collective / stability",
-                height=80,
-                placeholder="What the collective or system requires...",
-                key="parl_we",
-            )
-        conflict_text = st.text_input(
-            "Core conflict (why granting one forecloses the other)",
-            key="parl_conflict",
-        )
+    # ── Render chat history ──────────────────────────────────────
+    for msg in st.session_state.chat_history:
+        if msg["role"] == "user":
+            with st.chat_message("user", avatar="👤"):
+                st.markdown(msg["content"])
+        else:
+            with st.chat_message("assistant", avatar="◎"):
+                # Main response
+                st.markdown(msg.get("content", ""))
 
-    _p_domain = st.text_input(
-        "Domain (optional)",
-        placeholder="e.g., Healthcare, AI Governance, Resource Allocation...",
-        key="parl_domain",
-    )
-
-    if st.button("Submit to Parliament", type="primary", disabled=not dilemma_input.strip(), key="parl_go"):
-        # Always push to BODY parliament buffer (queued for next autonomous cycle)
-        _push_to_parliament("governance", dilemma_input, source="parliament_submission")
-
-        _i_raw = i_pos.strip() if "parl_i" in st.session_state else ""
-        _we_raw = we_pos.strip() if "parl_we" in st.session_state else ""
-        _cf_raw = conflict_text.strip() if "parl_conflict" in st.session_state else ""
-        _dom_raw = _p_domain.strip() if "parl_domain" in st.session_state else "General"
-
-        from elpidaapp.governance_client import GovernanceClient
-        _pgov = GovernanceClient()
-
-        if _i_raw and _we_raw:
-            # Full Dual-Horn deliberation
-            from elpidaapp.dual_horn import Dilemma, DualHornDeliberation
-            from elpidaapp.oracle import Oracle
-
-            _dilemma = Dilemma(
-                domain=_dom_raw or "Parliament Submission",
-                source="User submission",
-                I_position=_i_raw,
-                WE_position=_we_raw,
-                conflict=_cf_raw or "Unspecified",
-            )
-            with st.spinner("Parliament deliberating both horns…"):
-                _dual = DualHornDeliberation(_pgov)
-                _dual_result = _dual.deliberate(_dilemma)
-                _oracle = Oracle()
-                _advisory = _oracle.adjudicate(_dual_result)
-
-            # Horn summary
-            _h1 = _dual_result.get("horn_1", {})
-            _h2 = _dual_result.get("horn_2", {})
-            _hc1, _hc2 = st.columns(2)
-            for _col, _horn, _label, _pos in [
-                (_hc1, _h1, "Horn 1 — I-position", _i_raw),
-                (_hc2, _h2, "Horn 2 — WE-position", _we_raw),
-            ]:
-                with _col:
-                    _g = _horn.get("governance", "?")
-                    _gc = "#22cc44" if _g == "PROCEED" else "#cc8800" if _g == "REVIEW" else "#ff4444"
+                # Governance verdict badge
+                _gov = msg.get("governance", "")
+                if _gov:
+                    _badge_cls = {
+                        "PROCEED": "verdict-proceed",
+                        "REVIEW": "verdict-review",
+                        "HOLD": "verdict-hold",
+                        "HALT": "verdict-halt",
+                        "HARD_BLOCK": "verdict-block",
+                    }.get(_gov, "verdict-review")
                     st.markdown(
-                        f'<div style="text-align:center;padding:0.8rem;border-radius:10px;'
-                        f'border:2px solid {_gc};background:rgba(0,0,0,0.3);">'
-                        f'<div style="color:{_gc};font-size:0.7rem;text-transform:uppercase;'
-                        f'letter-spacing:0.15em;">{_label}</div>'
-                        f'<div style="color:{_gc};font-size:1.4rem;font-weight:700;">{_g}</div>'
-                        f'<div style="color:#aaa;font-size:0.75rem;">'
-                        f'Violated: {", ".join(_horn.get("violated_axioms", [])) or "none"}</div>'
-                        f'</div>', unsafe_allow_html=True
+                        f'<div style="margin-top:0.5rem;">'
+                        f'<span class="verdict-badge {_badge_cls}">{_gov}</span>'
+                        f'</div>',
+                        unsafe_allow_html=True,
                     )
 
-            # Reversal nodes
-            _rev = _dual_result.get("reversal_nodes", [])
-            _stb = _dual_result.get("stable_nodes", [])
-            if _rev:
-                st.error(f"Reversal nodes (paradox axis): **{', '.join(_rev)}**")
-            if _stb:
-                st.caption(f"Stable nodes: {', '.join(_stb)}")
-
-            # Oracle advisory
-            if _advisory:
-                _rec = _advisory.get("recommendation", {})
-                _rec_type = _rec.get("type", "")
-                _rec_text = _rec.get("text", "")
-                _conf = _advisory.get("confidence", 0)
-                st.markdown(
-                    f'<div style="background:rgba(255,180,0,0.08);border-left:3px solid #cc8800;'
-                    f'border-radius:0 8px 8px 0;padding:0.8rem 1rem;margin-top:0.8rem;">'
-                    f'<div style="color:#ffaa33;font-size:0.7rem;text-transform:uppercase;'
-                    f'letter-spacing:0.12em;margin-bottom:0.4rem;">'
-                    f'Oracle · {_rec_type} · {_conf:.0%} confidence</div>'
-                    f'<div style="color:#e8d0a0;font-size:0.88rem;">{_rec_text}</div>'
-                    f'</div>', unsafe_allow_html=True
-                )
-
-            # Tensions held
-            _gap = _dual_result.get("synthesis_gap", {})
-            _gap_desc = _gap.get("gap_description", "")
-            if _gap_desc:
-                with st.expander("Synthesis gap (what cannot be resolved)", expanded=False):
-                    st.markdown(_gap_desc)
-        else:
-            # Simple governance check — still shows all parliament votes + tensions
-            with st.spinner("Parliament checking axioms…"):
-                _gresult = _pgov.check_action(dilemma_input)
-
-            _gstatus = _gresult.get("governance", "UNKNOWN")
-            _status_colors = {
-                "PROCEED": ("success", "✓ PROCEED — No axiom violations"),
-                "REVIEW": ("warning", "REVIEW — Tensions present"),
-                "HALT": ("error", "HALT — Axiom violations detected"),
-                "HOLD": ("warning", "HOLD — Paradox flagged for deliberation"),
-                "HARD_BLOCK": ("error", "⛔ HARD_BLOCK — Immutable Kernel denied"),
-            }
-            _fn, _msg = _status_colors.get(_gstatus, ("info", _gstatus))
-            getattr(st, _fn)(_msg)
-
-            _parl = _gresult.get("parliament", {})
-            if _parl:
-                _pvotes = _parl.get("votes", {})
-                if _pvotes:
-                    st.markdown("**Parliament votes:**")
-                    _vote_icons = {
-                        "APPROVE": "🟢", "LEAN_APPROVE": "🟡",
-                        "ABSTAIN": "⚪", "LEAN_REJECT": "🟠",
-                        "REJECT": "🔴", "VETO": "⛔",
-                    }
-                    _node_list = list(_pvotes.items())
-                    for _rs in range(0, len(_node_list), 3):
-                        _row = _node_list[_rs:_rs + 3]
-                        _vcols = st.columns(len(_row))
-                        for _vc, (_nm, _vd) in zip(_vcols, _row):
-                            with _vc:
-                                _vv = _vd.get("vote", "ABSTAIN")
+                # Tensions held
+                _tens = msg.get("tensions", [])
+                if _tens:
+                    with st.expander(f"⚖ Tensions held ({len(_tens)})", expanded=False):
+                        for _t in _tens:
+                            _pair = _t.get("axiom_pair", _t.get("pair", ("?", "?")))
+                            _syn = _t.get("synthesis", "")
+                            if isinstance(_pair, (list, tuple)) and len(_pair) == 2:
                                 st.markdown(
-                                    f"**{_vote_icons.get(_vv, '?')} {_nm}**  \n"
-                                    f"`{_vv}`  \n_{_vd.get('axiom_invoked', '')}_"
+                                    f'<div class="tension-card">'
+                                    f'<span class="tension-pair">{_pair[0]} ↔ {_pair[1]}:</span> '
+                                    f'{_syn}</div>',
+                                    unsafe_allow_html=True,
                                 )
 
-                _pt = _parl.get("tensions", [])
-                if _pt:
-                    with st.expander(f"Tensions held ({len(_pt)})", expanded=True):
-                        for _t in _pt:
-                            _pr = _t.get("axiom_pair", ("?", "?"))
-                            _sy = _t.get("synthesis", "")
-                            st.markdown(f"**{_pr[0]} ↔ {_pr[1]}:** {_sy}")
+                # Parliament votes (collapsed by default — the governance reveals itself)
+                _votes = msg.get("votes", {})
+                if _votes:
+                    with st.expander("🏛 Parliament votes", expanded=False):
+                        _vote_colors = {
+                            "APPROVE": "#22cc44", "LEAN_APPROVE": "#aacc44",
+                            "ABSTAIN": "#888", "LEAN_REJECT": "#ff8844",
+                            "REJECT": "#ff4444", "VETO": "#ff0000",
+                        }
+                        _vote_icons = {
+                            "APPROVE": "●", "LEAN_APPROVE": "◐",
+                            "ABSTAIN": "○", "LEAN_REJECT": "◑",
+                            "REJECT": "●", "VETO": "⛔",
+                        }
+                        for _nname, _nvote in _votes.items():
+                            _nv = _nvote.get("vote", "ABSTAIN")
+                            _nc = _vote_colors.get(_nv, "#888")
+                            _ni = _vote_icons.get(_nv, "○")
+                            _nax = _nvote.get("axiom_invoked", "")
+                            _nreason = _nvote.get("reasoning", "")[:120]
+                            st.markdown(
+                                f'<div class="node-vote-row">'
+                                f'<span class="node-name" style="color:{_nc};">{_ni} {_nname}</span>'
+                                f'<span class="node-stance" style="background:{_nc}22;color:{_nc};'
+                                f'border:1px solid {_nc}33;">{_nv}</span>'
+                                f'<span style="color:#666;font-size:0.7rem;">{_nax}</span>'
+                                f'</div>'
+                                f'<div style="color:#888;font-size:0.74rem;padding-left:96px;'
+                                f'margin-bottom:0.3rem;">{_nreason}</div>',
+                                unsafe_allow_html=True,
+                            )
 
-        st.caption(
-            "✓ Queued for BODY autonomous parliament — will be deliberated on next cycle "
-            "and may contribute to constitutional ratification if the Oracle preserves "
-            "the tension across ≥ 3 cycles at ≥ 75% confidence."
-        )
+                # Axiom tags
+                _violated = msg.get("violated_axioms", [])
+                if _violated:
+                    _tag_html = '<div class="chat-meta">'
+                    for _ax in _violated:
+                        _tag_html += f'<span class="axiom-tag">⚠ {_ax}</span>'
+                    _tag_html += '</div>'
+                    st.markdown(_tag_html, unsafe_allow_html=True)
 
-    # ── Recent BODY verdicts ────────────────────────────────────────
+    # ── Chat input ───────────────────────────────────────────────
+    if prompt := st.chat_input("Ask Elpida anything…"):
+        # Add user message
+        st.session_state.chat_history.append({"role": "user", "content": prompt})
+
+        with st.chat_message("user", avatar="👤"):
+            st.markdown(prompt)
+
+        # Push to BODY parliament buffer
+        _push_to_parliament("chat", prompt, source="chat_input")
+
+        # Run through governance
+        with st.chat_message("assistant", avatar="◎"):
+            with st.spinner("Parliament deliberating…"):
+                from elpidaapp.governance_client import GovernanceClient
+                _chat_gov = GovernanceClient()
+                _chat_result = _chat_gov.check_action(prompt, analysis_mode=True)
+
+            _governance = _chat_result.get("governance", "PROCEED")
+            _reasoning = _chat_result.get("reasoning", "")
+            _parliament = _chat_result.get("parliament", {})
+            _votes = _parliament.get("votes", {})
+            _tensions = _parliament.get("tensions", [])
+            _violated = _chat_result.get("violated_axioms", [])
+
+            # Build the response text
+            if _reasoning:
+                _response_text = _reasoning
+            elif _governance == "PROCEED":
+                _response_text = (
+                    "The parliament finds no axiom violations in this question. "
+                    "All 9 nodes approve — the inquiry is aligned with the constitutional framework."
+                )
+            elif _governance in ("HOLD", "REVIEW"):
+                _tension_summary = ""
+                if _tensions:
+                    _pairs = [
+                        f"{t.get('axiom_pair', ('?','?'))[0]}↔{t.get('axiom_pair', ('?','?'))[1]}"
+                        for t in _tensions[:3]
+                        if isinstance(t.get('axiom_pair'), (list, tuple))
+                    ]
+                    _tension_summary = f" Tensions held: {', '.join(_pairs)}."
+                _response_text = (
+                    f"The parliament holds this in tension — not resolved, but deliberated.{_tension_summary} "
+                    f"The contradiction is preserved as constitutional data."
+                )
+            else:
+                _response_text = (
+                    f"Parliament verdict: {_governance}. "
+                    f"{'Violated axioms: ' + ', '.join(_violated) + '. ' if _violated else ''}"
+                    f"{_reasoning}"
+                )
+
+            st.markdown(_response_text)
+
+            # Governance badge
+            _badge_cls = {
+                "PROCEED": "verdict-proceed", "REVIEW": "verdict-review",
+                "HOLD": "verdict-hold", "HALT": "verdict-halt",
+                "HARD_BLOCK": "verdict-block",
+            }.get(_governance, "verdict-review")
+            st.markdown(
+                f'<div style="margin-top:0.5rem;">'
+                f'<span class="verdict-badge {_badge_cls}">{_governance}</span>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+
+            # Show tensions
+            if _tensions:
+                with st.expander(f"⚖ Tensions held ({len(_tensions)})", expanded=True):
+                    for _t in _tensions:
+                        _pair = _t.get("axiom_pair", _t.get("pair", ("?", "?")))
+                        _syn = _t.get("synthesis", "")
+                        if isinstance(_pair, (list, tuple)) and len(_pair) == 2:
+                            st.markdown(
+                                f'<div class="tension-card">'
+                                f'<span class="tension-pair">{_pair[0]} ↔ {_pair[1]}:</span> '
+                                f'{_syn}</div>',
+                                unsafe_allow_html=True,
+                            )
+
+            # Parliament votes (reveal the governance underneath)
+            if _votes:
+                with st.expander("🏛 Parliament votes", expanded=False):
+                    _vc = {
+                        "APPROVE": "#22cc44", "LEAN_APPROVE": "#aacc44",
+                        "ABSTAIN": "#888", "LEAN_REJECT": "#ff8844",
+                        "REJECT": "#ff4444", "VETO": "#ff0000",
+                    }
+                    _vi = {
+                        "APPROVE": "●", "LEAN_APPROVE": "◐",
+                        "ABSTAIN": "○", "LEAN_REJECT": "◑",
+                        "REJECT": "●", "VETO": "⛔",
+                    }
+                    for _nname, _nvote in _votes.items():
+                        _nv = _nvote.get("vote", "ABSTAIN")
+                        _nc = _vc.get(_nv, "#888")
+                        _ni = _vi.get(_nv, "○")
+                        _nax = _nvote.get("axiom_invoked", "")
+                        _nreason = _nvote.get("reasoning", "")[:120]
+                        st.markdown(
+                            f'<div class="node-vote-row">'
+                            f'<span class="node-name" style="color:{_nc};">{_ni} {_nname}</span>'
+                            f'<span class="node-stance" style="background:{_nc}22;color:{_nc};'
+                            f'border:1px solid {_nc}33;">{_nv}</span>'
+                            f'<span style="color:#666;font-size:0.7rem;">{_nax}</span>'
+                            f'</div>'
+                            f'<div style="color:#888;font-size:0.74rem;padding-left:96px;'
+                            f'margin-bottom:0.3rem;">{_nreason}</div>',
+                            unsafe_allow_html=True,
+                        )
+
+            if _violated:
+                _tag_html = '<div class="chat-meta">'
+                for _ax in _violated:
+                    _tag_html += f'<span class="axiom-tag">⚠ {_ax}</span>'
+                _tag_html += '</div>'
+                st.markdown(_tag_html, unsafe_allow_html=True)
+
+        # Store in history
+        st.session_state.chat_history.append({
+            "role": "assistant",
+            "content": _response_text,
+            "governance": _governance,
+            "tensions": _tensions,
+            "votes": _votes,
+            "violated_axioms": _violated,
+        })
+
+    # ── Recent BODY verdicts (shows the system is alive) ─────────
     st.divider()
     st.markdown("##### Recent Parliament Verdicts")
-    _peng = None
+    _peng_chat = None
     try:
-        from app import get_parliament_engine as _gpve
-        _peng = _gpve()
+        from app import get_parliament_engine as _gpve2
+        _peng_chat = _gpve2()
     except Exception:
         pass
 
-    if _peng is not None:
-        _recent_v = _peng.decisions[-5:] if hasattr(_peng, "decisions") else []
-        if _recent_v:
-            for _rv in reversed(_recent_v):
-                _rvt = _rv.get("timestamp", "")[:19].replace("T", " ")
-                _rvg = _rv.get("governance", "")
-                _rva = _rv.get("dominant_axiom", "?")
-                _rvw = _rv.get("watch", "")
-                _rvapp = _rv.get("approval_rate", 0)
-                _rvtens = _rv.get("tensions", [])
-                _rvsyn = _rvtens[0].get("synthesis", "") if _rvtens else ""
-                _rvc = "#22cc44" if _rvg == "PROCEED" else "#cc8800" if _rvg == "REVIEW" else "#ff4444"
+    if _peng_chat is not None:
+        _recent_v2 = _peng_chat.decisions[-5:] if hasattr(_peng_chat, "decisions") else []
+        if _recent_v2:
+            for _rv2 in reversed(_recent_v2):
+                _rvt2 = _rv2.get("timestamp", "")[:19].replace("T", " ")
+                _rvg2 = _rv2.get("governance", "")
+                _rva2 = _rv2.get("dominant_axiom", "?")
+                _rvapp2 = _rv2.get("approval_rate", 0)
+                _rvtens2 = _rv2.get("tensions", [])
+                _rvsyn2 = _rvtens2[0].get("synthesis", "") if _rvtens2 else ""
+                _rvc2 = "#22cc44" if _rvg2 == "PROCEED" else "#cc8800" if _rvg2 == "REVIEW" else "#ff4444"
                 st.markdown(
-                    f'<div style="background:rgba(255,255,255,0.03);border-left:3px solid {_rvc};'
+                    f'<div style="background:rgba(255,255,255,0.03);border-left:3px solid {_rvc2};'
                     f'border-radius:0 6px 6px 0;padding:0.5rem 0.8rem;margin-bottom:0.5rem;'
                     f'font-size:0.8rem;">'
-                    f'<span style="color:#666;">{_rvt}</span>'
-                    f' &nbsp;<span style="color:{_rvc};font-weight:600;">{_rvg}</span>'
-                    f' &nbsp;<span style="color:#aa88ff;">[{_rva}]</span>'
-                    f' &nbsp;<span style="color:#555;">{_rvw} · {_rvapp:.0%} approval</span><br>'
-                    f'<span style="color:#aaa;">{_rvsyn[:140]}</span>'
-                    f'</div>', unsafe_allow_html=True
+                    f'<span style="color:#666;">{_rvt2}</span>'
+                    f' &nbsp;<span style="color:{_rvc2};font-weight:600;">{_rvg2}</span>'
+                    f' &nbsp;<span style="color:#aa88ff;">[{_rva2}]</span>'
+                    f' &nbsp;<span style="color:#555;">{_rvapp2:.0%} approval</span><br>'
+                    f'<span style="color:#aaa;">{_rvsyn2[:140]}</span>'
+                    f'</div>', unsafe_allow_html=True,
                 )
         else:
             st.caption("No verdicts yet — BODY parliament is warming up.")
     else:
         st.caption(
-            "BODY parliament runs autonomously on HuggingFace Space. "
+            "BODY parliament runs autonomously. "
             "Verdicts accumulate as the parliament cycles through world-feed dilemmas."
         )
 
