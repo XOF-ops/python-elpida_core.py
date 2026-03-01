@@ -284,8 +284,25 @@ def calculate_consonance(axiom_a: Optional[str], axiom_b: Optional[str]) -> floa
     if axiom_a is None or axiom_b is None:
         return 0.5  # Neutral for domains without axioms
 
-    ra = AXIOM_RATIOS.get(axiom_a, 1.0)
-    rb = AXIOM_RATIOS.get(axiom_b, 1.0)
+    # AXIOM_RATIOS values are dicts like {'name': ..., 'ratio': '15:8', ...}
+    # Extract the numeric ratio by parsing the 'ratio' string (e.g. '15:8' → 1.875)
+    def _parse_ratio(axiom_key: str) -> float:
+        entry = AXIOM_RATIOS.get(axiom_key)
+        if entry is None:
+            return 1.0
+        if isinstance(entry, (int, float)):
+            return float(entry)
+        if isinstance(entry, dict):
+            ratio_str = entry.get("ratio", "1:1")
+            try:
+                num, den = ratio_str.split(":")
+                return float(num) / float(den)
+            except (ValueError, ZeroDivisionError):
+                return 1.0
+        return 1.0
+
+    ra = _parse_ratio(axiom_a)
+    rb = _parse_ratio(axiom_b)
 
     combined = ra * rb
     # Normalize: simpler ratios → closer to 1.0

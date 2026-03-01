@@ -1763,7 +1763,7 @@ with tab_system:
         Ethical Language & Paradox Intelligence for Distributed Autonomy
       </div>
       <div class="welcome-glow" style="font-size:0.85rem; margin-top:0.6rem; color:#aaa;">
-        v2.6.0 &nbsp;·&nbsp; 2026-03-01 &nbsp;·&nbsp; Live Heartbeat · @st.fragment auto-refresh · Spiral Parliament
+        v2.7.0 &nbsp;·&nbsp; 2026-03-01 &nbsp;·&nbsp; Coherence Fix · Live Heartbeat · @st.fragment auto-refresh · Spiral Parliament
       </div>
     </div>
     """, unsafe_allow_html=True)
@@ -2604,7 +2604,7 @@ fully tense — exactly the quality needed to hold paradox without resolving it 
 
 st.markdown("""
 <div class="elpida-footer">
-    v2.6.0 &nbsp;·&nbsp; 11 Axioms &nbsp;·&nbsp; 15 Domains &nbsp;·&nbsp; 9 Parliament Nodes &nbsp;·&nbsp; Fibonacci 13·21·34·55·89<br>
+    v2.7.0 &nbsp;·&nbsp; 11 Axioms &nbsp;·&nbsp; 15 Domains &nbsp;·&nbsp; 9 Parliament Nodes &nbsp;·&nbsp; Fibonacci 13·21·34·55·89<br>
     Spiral Parliament &nbsp;·&nbsp; Dual-Horn Deliberation &nbsp;·&nbsp; Oracle WITNESS &nbsp;·&nbsp; Fork Protocol &nbsp;·&nbsp; POLIS Bridge<br>
     <a href="https://github.com/XOF-ops/python-elpida_core.py" target="_blank">GitHub</a>
 </div>
