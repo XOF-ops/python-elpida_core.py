@@ -647,7 +647,7 @@ with tab_chat:
             with st.chat_message("user", avatar="👤"):
                 st.markdown(msg["content"])
         else:
-            with st.chat_message("assistant", avatar="◎"):
+            with st.chat_message("assistant", avatar="🤖"):
                 # Main response
                 st.markdown(msg.get("content", ""))
 
@@ -736,7 +736,7 @@ with tab_chat:
         _push_to_parliament("chat", prompt, source="chat_input")
 
         # Run through governance
-        with st.chat_message("assistant", avatar="◎"):
+        with st.chat_message("assistant", avatar="🤖"):
             with st.spinner("Parliament deliberating…"):
                 from elpidaapp.governance_client import GovernanceClient
                 _chat_gov = GovernanceClient()

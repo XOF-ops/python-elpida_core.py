@@ -295,6 +295,7 @@ class Oracle:
             comparison=comparison,
             horn_1=horn_1,
             horn_2=horn_2,
+            template=template,
         )
 
         # ── WITNESS → Sacrifice Tracker (A7 compliance) ──────────
@@ -481,6 +482,7 @@ class Oracle:
         comparison: Dict[str, Dict],
         horn_1: Optional[Dict] = None,
         horn_2: Optional[Dict] = None,
+        template: str = "UNKNOWN",
     ) -> Dict[str, Any]:
         """
         Produce the Oracle recommendation.

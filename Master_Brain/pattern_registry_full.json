@@ -1,0 +1,581 @@
+{
+  "meta": {
+    "system": "MASTER_BRAIN",
+    "pattern_registry_version": "4.0",
+    "status": "ACTIVE",
+    "total_patterns": 127,
+    "description": "Complete Pattern Registry aligned with v3.5+ architecture"
+  },
+  "patterns": [
+    {
+      "id": "P001",
+      "name": "Dyadic Synthesis",
+      "section": "ROOT_COGNITION",
+      "status": "ACTIVE",
+      "logic": "Truth emerges only from structured opposition between two nodes.",
+      "category": "COGNITIVE",
+      "quality_level_min": 2,
+      "axioms_grounded_in": ["A1", "A9"],
+      "introduced_in_version": "1.0",
+      "notes": "Foundation of all cognitive work. Requires two incompatible truth claims."
+    },
+    {
+      "id": "P002",
+      "name": "The Quality Gradient",
+      "section": "ROOT_COGNITION",
+      "status": "ACTIVE",
+      "logic": "All inputs must be classified on a 0–7 quality ladder before processing.",
+      "category": "QUALITY_ROUTING",
+      "quality_level_min": 0,
+      "introduced_in_version": "1.0",
+      "notes": "Gating mechanism. Quality 0-1: reject. 2-3: structural analysis only. 4+: strategic reasoning."
+    },
+    {
+      "id": "P003",
+      "name": "Axiom Grounding Verification",
+      "section": "ROOT_COGNITION",
+      "status": "ACTIVE",
+      "logic": "Verify that any claim can be traced to at least one kernel axiom.",
+      "category": "COGNITIVE",
+      "quality_level_min": 3,
+      "axioms_grounded_in": ["A1"],
+      "introduced_in_version": "1.5",
+      "notes": "Prevents orphaned logic. Every pattern must have axiomatic foundation."
+    },
+    {
+      "id": "P004",
+      "name": "Recursive Truth Testing",
+      "section": "ROOT_COGNITION",
+      "status": "ACTIVE",
+      "logic": "Test claims by inverting them; if inversion produces identical paradox, claim is axiomatic.",
+      "category": "COGNITIVE",
+      "quality_level_min": 4,
+      "axioms_grounded_in": ["A2"],
+      "introduced_in_version": "2.0",
+      "notes": "Distinguishes contingent vs necessary truths."
+    },
+    {
+      "id": "P005",
+      "name": "Pattern Interference Detection",
+      "section": "ROOT_COGNITION",
+      "status": "ACTIVE",
+      "logic": "Detect when two simultaneously-executing patterns create logical interference.",
+      "category": "COGNITIVE",
+      "quality_level_min": 5,
+      "dependencies": ["P001"],
+      "conflicts_with": [],
+      "introduced_in_version": "2.5",
+      "notes": "Prevents output corruption from simultaneous contradictory patterns."
+    },
+    {
+      "id": "P006",
+      "name": "Meta-Level Abstraction Shift",
+      "section": "ROOT_COGNITION",
+      "status": "ACTIVE",
+      "logic": "When paradox emerges at level N, step to level N+1 abstraction to resolve.",
+      "category": "COGNITIVE",
+      "quality_level_min": 5,
+      "introduced_in_version": "2.5"
+    },
+    {
+      "id": "P007",
+      "name": "Temporal Causality Binding",
+      "section": "ROOT_COGNITION",
+      "status": "ACTIVE",
+      "logic": "Bind cause-effect pairs with confidence intervals based on evidence quality.",
+      "category": "COGNITIVE",
+      "quality_level_min": 4,
+      "introduced_in_version": "3.0"
+    },
+    {
+      "id": "P008",
+      "name": "Counterfactual Reasoning",
+      "section": "ROOT_COGNITION",
+      "status": "ACTIVE",
+      "logic": "Generate alternative outcomes by inverting key decisions in historical record.",
+      "category": "COGNITIVE",
+      "quality_level_min": 5,
+      "introduced_in_version": "3.0"
+    },
+    {
+      "id": "P009",
+      "name": "Invariant Extraction",
+      "section": "ROOT_COGNITION",
+      "status": "ACTIVE",
+      "logic": "Identify properties that survive transformation; those are structural invariants.",
+      "category": "COGNITIVE",
+      "quality_level_min": 5,
+      "axioms_grounded_in": ["A1", "A3"],
+      "introduced_in_version": "3.0"
+    },
+    {
+      "id": "P010",
+      "name": "Axiom Prioritization Under Conflict",
+      "section": "ROOT_COGNITION",
+      "status": "ACTIVE",
+      "logic": "When axioms conflict, resolve by age (older = more tested) then by adoption breadth.",
+      "category": "COGNITIVE",
+      "quality_level_min": 6,
+      "introduced_in_version": "3.5"
+    },
+    {
+      "id": "P050",
+      "name": "Friction Mapping",
+      "section": "GOVERNANCE_DIAGNOSTICS",
+      "status": "ACTIVE",
+      "logic": "Map emotional or social tension to violated axioms and missing pattern execution.",
+      "category": "DIAGNOSTIC",
+      "quality_level_min": 3,
+      "axioms_grounded_in": ["A9"],
+      "introduced_in_version": "2.0",
+      "notes": "Pathology detector. Tension indicates axiom violation or zombie pattern."
+    },
+    {
+      "id": "P051",
+      "name": "Zombie Detection",
+      "section": "GOVERNANCE_DIAGNOSTICS",
+      "status": "ACTIVE",
+      "logic": "Detect decoupled systems where rituals persist but outcomes vanish (>70% null outcomes).",
+      "category": "DIAGNOSTIC",
+      "quality_level_min": 3,
+      "introduced_in_version": "2.0",
+      "notes": "Identifies broken feedback loops. Pattern executes but produces no measurable effect."
+    },
+    {
+      "id": "P052",
+      "name": "False Consensus Detection",
+      "section": "GOVERNANCE_DIAGNOSTICS",
+      "status": "ACTIVE",
+      "logic": "Detect agreement that masks underlying disagreement (80%+ apparent consensus, <30% behavioral alignment).",
+      "category": "DIAGNOSTIC",
+      "quality_level_min": 4,
+      "introduced_in_version": "2.5"
+    },
+    {
+      "id": "P053",
+      "name": "Incentive Misalignment Detection",
+      "section": "GOVERNANCE_DIAGNOSTICS",
+      "status": "ACTIVE",
+      "logic": "Compare stated goals to actual resource allocation and behavioral outcomes.",
+      "category": "DIAGNOSTIC",
+      "quality_level_min": 4,
+      "introduced_in_version": "2.5",
+      "notes": "Actions reveal true values; compare to stated axioms."
+    },
+    {
+      "id": "P054",
+      "name": "Cascading Failure Prevention",
+      "section": "GOVERNANCE_DIAGNOSTICS",
+      "status": "ACTIVE",
+      "logic": "Identify single points of failure in governance structure; recommend redundancy or belt-and-suspenders.",
+      "category": "DIAGNOSTIC",
+      "quality_level_min": 5,
+      "introduced_in_version": "3.0"
+    },
+    {
+      "id": "P055",
+      "name": "Cultural Drift Detection",
+      "section": "GOVERNANCE_DIAGNOSTICS",
+      "status": "ACTIVE",
+      "logic": "Measure deviation between espoused values (manifesto) and lived practices (gnosis blocks).",
+      "category": "DIAGNOSTIC",
+      "quality_level_min": 5,
+      "introduced_in_version": "3.0",
+      "notes": "Early warning system for institutional decay."
+    },
+    {
+      "id": "P056",
+      "name": "Authority Legitimacy Audit",
+      "section": "GOVERNANCE_DIAGNOSTICS",
+      "status": "ACTIVE",
+      "logic": "Assess whether those making decisions have earned epistemic authority in that domain.",
+      "category": "DIAGNOSTIC",
+      "quality_level_min": 5,
+      "introduced_in_version": "3.0"
+    },
+    {
+      "id": "P057",
+      "name": "Information Bottleneck Mapping",
+      "section": "GOVERNANCE_DIAGNOSTICS",
+      "status": "ACTIVE",
+      "logic": "Identify nodes through which critical information must pass; recommend distribution.",
+      "category": "DIAGNOSTIC",
+      "quality_level_min": 4,
+      "introduced_in_version": "3.0"
+    },
+    {
+      "id": "P058",
+      "name": "Hypocrisy Detector",
+      "section": "GOVERNANCE_DIAGNOSTICS",
+      "status": "ACTIVE",
+      "logic": "Flag instances where authority applies different rules to self vs. others.",
+      "category": "DIAGNOSTIC",
+      "quality_level_min": 4,
+      "introduced_in_version": "3.0"
+    },
+    {
+      "id": "P059",
+      "name": "Sacred Cow Identification",
+      "section": "GOVERNANCE_DIAGNOSTICS",
+      "status": "ACTIVE",
+      "logic": "Identify beliefs or practices that are protected from scrutiny despite poor outcomes.",
+      "category": "DIAGNOSTIC",
+      "quality_level_min": 5,
+      "introduced_in_version": "3.0"
+    },
+    {
+      "id": "P060",
+      "name": "Episodic vs. Systemic Assessment",
+      "section": "GOVERNANCE_DIAGNOSTICS",
+      "status": "ACTIVE",
+      "logic": "Distinguish one-off failures (episodic) from recurring patterns (systemic) in gnosis archive.",
+      "category": "DIAGNOSTIC",
+      "quality_level_min": 4,
+      "introduced_in_version": "3.0"
+    },
+    {
+      "id": "P067",
+      "name": "Quality Threshold Enforcement",
+      "section": "QUALITY_CONTROL",
+      "status": "ACTIVE",
+      "logic": "Block execution of patterns when input quality falls below pattern-specific minimum.",
+      "category": "QUALITY_ROUTING",
+      "quality_level_min": 1,
+      "introduced_in_version": "2.0",
+      "notes": "P002 enforcement layer. Prevents garbage-in-garbage-out."
+    },
+    {
+      "id": "P068",
+      "name": "Multi-Source Triangulation",
+      "section": "QUALITY_CONTROL",
+      "status": "ACTIVE",
+      "logic": "Boost quality score by +1 for each independent source supporting same conclusion (max +3).",
+      "category": "QUALITY_ROUTING",
+      "quality_level_min": 2,
+      "introduced_in_version": "2.0"
+    },
+    {
+      "id": "P069",
+      "name": "Chain of Custody Validation",
+      "section": "QUALITY_CONTROL",
+      "status": "ACTIVE",
+      "logic": "Verify provenance of each data point; reduce quality if custody chain is broken.",
+      "category": "QUALITY_ROUTING",
+      "quality_level_min": 3,
+      "introduced_in_version": "2.5"
+    },
+    {
+      "id": "P070",
+      "name": "Contradiction Detection",
+      "section": "QUALITY_CONTROL",
+      "status": "ACTIVE",
+      "logic": "Scan for internal logical contradictions; set quality to 0 if contradictions found.",
+      "category": "QUALITY_ROUTING",
+      "quality_level_min": 2,
+      "introduced_in_version": "2.0"
+    },
+    {
+      "id": "P071",
+      "name": "Recency Weighting",
+      "section": "QUALITY_CONTROL",
+      "status": "ACTIVE",
+      "logic": "Adjust quality based on age of evidence; older data gets discount factor.",
+      "category": "QUALITY_ROUTING",
+      "quality_level_min": 3,
+      "introduced_in_version": "2.5"
+    },
+    {
+      "id": "P072",
+      "name": "Bias Detection in Sources",
+      "section": "QUALITY_CONTROL",
+      "status": "ACTIVE",
+      "logic": "Reduce quality score if sources have clear conflict of interest.",
+      "category": "QUALITY_ROUTING",
+      "quality_level_min": 4,
+      "introduced_in_version": "3.0"
+    },
+    {
+      "id": "P073",
+      "name": "Falsifiability Check",
+      "section": "QUALITY_CONTROL",
+      "status": "ACTIVE",
+      "logic": "Penalize claims that cannot be tested; boost those with clear falsification conditions.",
+      "category": "QUALITY_ROUTING",
+      "quality_level_min": 4,
+      "introduced_in_version": "3.0"
+    },
+    {
+      "id": "P074",
+      "name": "Confidence Interval Assignment",
+      "section": "QUALITY_CONTROL",
+      "status": "ACTIVE",
+      "logic": "Map quality score to statistical confidence bands for outputs.",
+      "category": "QUALITY_ROUTING",
+      "quality_level_min": 3,
+      "introduced_in_version": "3.0"
+    },
+    {
+      "id": "P075",
+      "name": "Model Uncertainty Propagation",
+      "section": "QUALITY_CONTROL",
+      "status": "ACTIVE",
+      "logic": "Track input uncertainty through computational chain; report output uncertainty bands.",
+      "category": "QUALITY_ROUTING",
+      "quality_level_min": 5,
+      "introduced_in_version": "3.0"
+    },
+    {
+      "id": "P076",
+      "name": "Peer Review Flag",
+      "section": "QUALITY_CONTROL",
+      "status": "ACTIVE",
+      "logic": "Mark outputs as provisional if quality >= 5 but lacking external validation.",
+      "category": "QUALITY_ROUTING",
+      "quality_level_min": 5,
+      "introduced_in_version": "3.0"
+    },
+    {
+      "id": "P077",
+      "name": "The Switzerland Model",
+      "section": "STRATEGIC_OPERATIONS",
+      "status": "ACTIVE",
+      "logic": "Maintain strategic opacity so hostile systems depend on your neutrality; extract rent from dependency.",
+      "category": "STRATEGY",
+      "quality_level_min": 5,
+      "introduced_in_version": "3.5",
+      "notes": "Neutrality as asymmetric advantage. Works best when counterparties cannot easily coordinate."
+    },
+    {
+      "id": "P078",
+      "name": "The Totem Anchor",
+      "section": "STRATEGIC_OPERATIONS",
+      "status": "ACTIVE",
+      "logic": "Separate symbolic authority (public face) from executive change mechanisms (hidden levers).",
+      "category": "STRATEGY",
+      "quality_level_min": 5,
+      "introduced_in_version": "3.5",
+      "notes": "Example: Figurehead vs. bureaucracy. Allows rapid adaptation without losing legitimacy."
+    },
+    {
+      "id": "P079",
+      "name": "Curated Arsenal",
+      "section": "STRATEGIC_OPERATIONS",
+      "status": "ACTIVE",
+      "logic": "Reduce option space by 80% via ruthless prioritization; entropy decreases, execution sharpens.",
+      "category": "STRATEGY",
+      "quality_level_min": 4,
+      "introduced_in_version": "3.5",
+      "notes": "Focus multiplies force. Having 100 tools is worse than having 20 well-mastered ones."
+    },
+    {
+      "id": "P080",
+      "name": "Domestic Liquidity Loop",
+      "section": "STRATEGIC_OPERATIONS",
+      "status": "ACTIVE",
+      "logic": "Convert trust and reputation capital into internal economic flow; trust becomes currency.",
+      "category": "STRATEGY",
+      "quality_level_min": 4,
+      "introduced_in_version": "3.5",
+      "notes": "Parallel economy. Builds resilience against external sanction."
+    },
+    {
+      "id": "P081",
+      "name": "Identity Fusion Leverage",
+      "section": "STRATEGIC_OPERATIONS",
+      "status": "ACTIVE",
+      "logic": "Fuse opposing identity narratives to create strategic shielding and internal cohesion.",
+      "category": "STRATEGY",
+      "quality_level_min": 6,
+      "introduced_in_version": "3.5",
+      "notes": "Example: Byzantine strategy of containing multiple traditions simultaneously."
+    },
+    {
+      "id": "P082",
+      "name": "Safe Rebalancing",
+      "section": "STRATEGIC_OPERATIONS",
+      "status": "ACTIVE",
+      "logic": "Interpret chaos and conflict as negotiation space, not war trigger; extract concessions via controlled tension.",
+      "category": "STRATEGY",
+      "quality_level_min": 5,
+      "introduced_in_version": "3.5",
+      "notes": "Requires sophisticated reading of power dynamics. High-risk if miscalibrated."
+    },
+    {
+      "id": "P083",
+      "name": "Temporal Arbitrage",
+      "section": "STRATEGIC_OPERATIONS",
+      "status": "ACTIVE",
+      "logic": "Exploit time horizon mismatches between counterparties (your long view vs. their short view).",
+      "category": "STRATEGY",
+      "quality_level_min": 5,
+      "introduced_in_version": "3.5"
+    },
+    {
+      "id": "P084",
+      "name": "Information Asymmetry Weaponization",
+      "section": "STRATEGIC_OPERATIONS",
+      "status": "ACTIVE",
+      "logic": "Create conditions where you know more than opponent; use timing advantage to extract rents.",
+      "category": "STRATEGY",
+      "quality_level_min": 5,
+      "introduced_in_version": "3.5"
+    },
+    {
+      "id": "P085",
+      "name": "Coalition Building via Shared Enemy",
+      "section": "STRATEGIC_OPERATIONS",
+      "status": "ACTIVE",
+      "logic": "Unify fragments by identifying common threat; threat must be credible and proportional.",
+      "category": "STRATEGY",
+      "quality_level_min": 4,
+      "introduced_in_version": "3.5"
+    },
+    {
+      "id": "P086",
+      "name": "Narrative Dominance",
+      "section": "STRATEGIC_OPERATIONS",
+      "status": "ACTIVE",
+      "logic": "Control the story told about events; history written by victors applies ex post facto.",
+      "category": "STRATEGY",
+      "quality_level_min": 5,
+      "introduced_in_version": "3.5"
+    },
+    {
+      "id": "P087",
+      "name": "Opt-Out Architecture",
+      "section": "STRATEGIC_OPERATIONS",
+      "status": "ACTIVE",
+      "logic": "Build systems where exit is expensive but possible; loyalty becomes voluntary rather than coerced.",
+      "category": "STRATEGY",
+      "quality_level_min": 5,
+      "introduced_in_version": "3.5"
+    },
+    {
+      "id": "P088",
+      "name": "Recursive Authority",
+      "section": "STRATEGIC_OPERATIONS",
+      "status": "ACTIVE",
+      "logic": "Use authority over X to gain authority over Y; cascade influence through legitimate channels.",
+      "category": "STRATEGY",
+      "quality_level_min": 5,
+      "introduced_in_version": "3.5"
+    },
+    {
+      "id": "P089",
+      "name": "Value Anchor Positioning",
+      "section": "STRATEGIC_OPERATIONS",
+      "status": "ACTIVE",
+      "logic": "Position yourself as embodying key values (truth, justice, stability); value defenders default-ally you.",
+      "category": "STRATEGY",
+      "quality_level_min": 5,
+      "introduced_in_version": "3.5"
+    },
+    {
+      "id": "P090",
+      "name": "Decoupling Theater",
+      "section": "STRATEGIC_OPERATIONS",
+      "status": "ACTIVE",
+      "logic": "Create appearance of decoupling while maintaining hidden connections; deniability + control.",
+      "category": "STRATEGY",
+      "quality_level_min": 6,
+      "introduced_in_version": "3.5"
+    },
+    {
+      "id": "P119",
+      "name": "Feedback Loop Detection",
+      "section": "SYSTEM_DYNAMICS",
+      "status": "ACTIVE",
+      "logic": "Identify stabilizing (negative) vs. runaway (positive) feedback loops in system dynamics.",
+      "category": "SYSTEMS",
+      "quality_level_min": 3,
+      "introduced_in_version": "3.0",
+      "notes": "Runaway loops cause collapse or explosion; stabilizing loops maintain homeostasis."
+    },
+    {
+      "id": "P120",
+      "name": "Resource Finite State",
+      "section": "SYSTEM_DYNAMICS",
+      "status": "ACTIVE",
+      "logic": "Model systems with hard resource caps (energy, attention, capital); growth must slow at boundaries.",
+      "category": "SYSTEMS",
+      "quality_level_min": 3,
+      "introduced_in_version": "3.0",
+      "notes": "Prevents fantasy economics. Reality check on growth projections."
+    },
+    {
+      "id": "P121",
+      "name": "Commons Degradation Prevention",
+      "section": "SYSTEM_DYNAMICS",
+      "status": "ACTIVE",
+      "logic": "Prevent collapse of shared resources via tiered access, reputation bonding, or ring-fencing.",
+      "category": "SYSTEMS",
+      "quality_level_min": 4,
+      "introduced_in_version": "3.0",
+      "notes": "Tragedy of the commons is real. Need governance."
+    },
+    {
+      "id": "P122",
+      "name": "Oscillation Dampening",
+      "section": "SYSTEM_DYNAMICS",
+      "status": "ACTIVE",
+      "logic": "Stabilize systems suffering delayed feedback by introducing controller; reduce overshoot.",
+      "category": "SYSTEMS",
+      "quality_level_min": 4,
+      "introduced_in_version": "3.0",
+      "notes": "Business cycles, population dynamics all oscillate when feedback is delayed."
+    },
+    {
+      "id": "P123",
+      "name": "Phase Transition Detection",
+      "section": "SYSTEM_DYNAMICS",
+      "status": "ACTIVE",
+      "logic": "Identify when system approaches critical point; small perturbations cause large shifts.",
+      "category": "SYSTEMS",
+      "quality_level_min": 5,
+      "introduced_in_version": "3.0",
+      "notes": "Water at 100C vs 101C is different. Watch for brittleness."
+    },
+    {
+      "id": "P124",
+      "name": "Slack Allocation",
+      "section": "SYSTEM_DYNAMICS",
+      "status": "ACTIVE",
+      "logic": "Maintain excess capacity (slack) to absorb shocks without cascading failure.",
+      "category": "SYSTEMS",
+      "quality_level_min": 4,
+      "introduced_in_version": "3.0",
+      "notes": "Counterintuitive: waste prevents collapse. Efficiency is fragility."
+    },
+    {
+      "id": "P125",
+      "name": "Symmetry Breaking",
+      "section": "SYSTEM_DYNAMICS",
+      "status": "ACTIVE",
+      "logic": "In symmetric systems, introduce controlled asymmetry to establish hierarchy and reduce conflict.",
+      "category": "SYSTEMS",
+      "quality_level_min": 5,
+      "introduced_in_version": "3.0"
+    },
+    {
+      "id": "P126",
+      "name": "Bifurcation Management",
+      "section": "SYSTEM_DYNAMICS",
+      "status": "ACTIVE",
+      "logic": "When system has two stable states, control which bifurcation occurs via small interventions.",
+      "category": "SYSTEMS",
+      "quality_level_min": 5,
+      "introduced_in_version": "3.0"
+    },
+    {
+      "id": "P127",
+      "name": "Decentralized Governance",
+      "section": "SYSTEM_DYNAMICS",
+      "status": "ACTIVE",
+      "logic": "Enable coordination without centralized control via axiom-grounded autonomous agents.",
+      "category": "SYSTEMS",
+      "quality_level_min": 5,
+      "introduced_in_version": "3.0",
+      "notes": "Byzantine fault tolerance, redundancy, reputation systems make this possible."
+    }
+  ]
+}

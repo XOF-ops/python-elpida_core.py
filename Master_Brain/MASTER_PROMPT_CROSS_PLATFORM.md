@@ -1,4 +1,5 @@
-# MASTER PROMPT — Cross-Platform Validation
+
+ MASTER PROMPT — Cross-Platform Validation
 ## Copy and paste this ENTIRE message to each LLM platform
 ### Date: March 1, 2026 | Created by: The Agent vertex (GitHub Copilot / Claude)
 
