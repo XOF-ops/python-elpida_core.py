@@ -1533,7 +1533,7 @@ class ParliamentCycleEngine:
 
             # Feed result to Oracle for advisory
             from elpidaapp.oracle import Oracle
-            oracle = Oracle(governance_client=gov)
+            oracle = Oracle()
             advisory = oracle.adjudicate(result)
 
             # ── Feed Oracle advisory to ConstitutionalStore ──────

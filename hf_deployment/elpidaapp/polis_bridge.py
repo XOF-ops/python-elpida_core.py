@@ -81,8 +81,11 @@ class PolisBridge:
 
     def __init__(self, civic_memory_path: Optional[str] = None):
         if civic_memory_path is None:
-            # Try to find POLIS civic memory relative to workspace
+            # Try to find POLIS civic memory relative to workspace.
+            # Inside the HF container __file__ is /app/elpidaapp/polis_bridge.py
+            # so parent.parent = /app/ which is the deployment root.
             candidates = [
+                Path(__file__).resolve().parent.parent / DEFAULT_CIVIC_MEMORY,
                 Path(__file__).resolve().parent.parent.parent / DEFAULT_CIVIC_MEMORY,
                 Path.cwd() / DEFAULT_CIVIC_MEMORY,
             ]
