@@ -1836,9 +1836,18 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
                 print(f"   ⚠️ Heartbeat emission failed: {e}")
             # FEDERATION HEARTBEAT: Unified cycle counter for BODY
             try:
-                # Derive dominant axiom from current domain
+                # Derive TRUE dominant axiom from recent insight cluster
+                # (not just the current domain's axiom — that's misleading)
                 _hb_domain = domain_id if 'domain_id' in dir() else 0
-                _hb_axiom = _CFG_DOMAINS.get(_hb_domain, {}).get('axiom', '')
+                _axiom_freq: dict = {}
+                for _ins in self.insights[-13:]:  # Last 13 insights (Fibonacci)
+                    _ins_domain = _ins.get('domain', -1)
+                    _ins_axiom = _CFG_DOMAINS.get(_ins_domain, {}).get('axiom')
+                    if _ins_axiom:
+                        _axiom_freq[_ins_axiom] = _axiom_freq.get(_ins_axiom, 0) + 1
+                _hb_axiom = max(_axiom_freq, key=_axiom_freq.get) if _axiom_freq else (
+                    _CFG_DOMAINS.get(_hb_domain, {}).get('axiom', '')
+                )
                 self.federation.emit_heartbeat(
                     cycle=self.cycle_count,
                     coherence=self.coherence_score,
@@ -1847,7 +1856,7 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
                     dominant_axiom=_hb_axiom or '',
                     kaya_moments=self._kaya_count,
                 )
-                print(f"   🌉 Federation heartbeat emitted")
+                print(f"   🌉 Federation heartbeat emitted (dominant={_hb_axiom})")
             except Exception as e:
                 print(f"   ⚠️ Federation heartbeat failed: {e}")
 

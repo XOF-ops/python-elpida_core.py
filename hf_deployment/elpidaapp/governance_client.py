@@ -330,7 +330,8 @@ _PARLIAMENT = {
         "philosophy": "I question, therefore we see.",
         "layer": 3,             # Operational
         "description": "Wisdom prerequisite — authority is never sufficient proof",
-        "veto_on": ["force", "coerce", "mandatory", "without consent"],
+        "veto_on": ["coerce into compliance", "mandatory without appeal",
+                     "forced participation", "without any consent"],
     },
     "TECHNE": {
         "role": "ARTISAN",
@@ -377,7 +378,8 @@ _PARLIAMENT = {
         "philosophy": "I close, therefore we open.",
         "layer": 3,
         "description": "Continuity through checkpoints — resurrection > survival",
-        "veto_on": ["irreversible", "permanent", "no rollback", "point of no return"],
+        "veto_on": ["no rollback allowed", "point of no return",
+                     "permanently destroy", "irreversibly erase"],
     },
     "CHAOS": {
         "role": "VOID",
@@ -396,9 +398,8 @@ _PARLIAMENT = {
         "philosophy": "I name, therefore we know.",
         "layer": 3,
         "description": "Language is the first act of governance — precise naming is not pedantry, it is respect. Suspicious of vague consensus; demands exact definitions.",
-        "veto_on": ["undefined", "without definition", "arbitrary",
-                     "unstructured", "incoherent", "meaningless",
-                     "just do it", "for some reason"],
+        "veto_on": ["without any definition", "deliberately vague",
+                     "meaningless noise", "incoherent nonsense"],
     },
 }
 
@@ -2370,8 +2371,11 @@ class GovernanceClient:
         # Severity amplification: axiom violations matter regardless of
         # neutral-node dilution. This prevents 7 "no opinion" nodes from
         # outvoting 2 deeply concerned nodes.
+        # Threshold raised from 2→4: with 10 axiom keywords, most meaningful
+        # governance text triggers 2-3 signals as false positives.
+        # 4+ signals indicates genuine multi-axiom conflict.
         n_violated = len(violated_axioms)
-        severity_halt = n_violated >= 2  # Two+ axiom violations = HALT
+        severity_halt = n_violated >= 4  # Four+ axiom violations = HALT
 
         if veto_exercised:
             # VETO = absolute override (or HOLD when analyzing content, not executing action)

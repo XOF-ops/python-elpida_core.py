@@ -509,6 +509,14 @@ If this is merely a summary of existing views, say "NO EMERGENCE" and explain wh
 Reference the axioms in tension. Name what is sacrificed and what is preserved."""
 
             output = self.llm.call("claude", prompt, max_tokens=600)
+            # Fallback: if Claude fails (e.g., out of credits), try OpenRouter
+            if not output:
+                logger.warning("D15 emergence: Claude returned empty — trying openrouter fallback")
+                output = self.llm.call("openrouter", prompt, max_tokens=600)
+            # Second fallback: try openai
+            if not output:
+                logger.warning("D15 emergence: OpenRouter also failed — trying openai")
+                output = self.llm.call("openai", prompt, max_tokens=600)
             
             if output and "NO EMERGENCE" not in output.upper():
                 # D15 has emerged!

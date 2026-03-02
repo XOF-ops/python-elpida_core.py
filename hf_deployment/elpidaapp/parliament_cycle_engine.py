@@ -133,7 +133,7 @@ ZOMBIE_MIN_CYCLES = 10
 
 # Convergence threshold constants
 CONVERGENCE_COHERENCE_MIND = 0.85    # MIND coherence must be above this
-CONVERGENCE_APPROVAL_BODY = 0.50     # BODY approval must be above this
+CONVERGENCE_APPROVAL_BODY = 0.15     # BODY approval must be above this (empirical: avg=16%)
 CONVERGENCE_COOLDOWN_CYCLES = 50     # Min cycles between D15 broadcasts
 
 
@@ -145,13 +145,18 @@ CONVERGENCE_COOLDOWN_CYCLES = 50     # Min cycles between D15 broadcasts
 # BODY watches: 02:00, 06:00, 10:00, 14:00, 18:00, 22:00 (34 cycles each)
 # They never overlap — systole and diastole of the same heartbeat.
 
+# Oracle thresholds calibrated to empirical approval distribution:
+# avg=16%, mode=30%, 95th-percentile=55%, max=70%.
+# Old thresholds (0.60-0.85) were unreachable → 0 ratifications in 192 cycles.
+# New thresholds allow the ratification pipeline to breathe while
+# still requiring above-average parliament consensus.
 BODY_WATCHES: Dict = {
-    "Oracle":     {"hour": 2,  "rhythm_bias": "CONTEMPLATION", "oracle_threshold": 0.70, "symbol": "O"},
-    "Shield":     {"hour": 6,  "rhythm_bias": "ANALYSIS",      "oracle_threshold": 0.75, "symbol": "S"},
-    "Forge":      {"hour": 10, "rhythm_bias": "ACTION",        "oracle_threshold": 0.65, "symbol": "F"},
-    "World":      {"hour": 14, "rhythm_bias": "SYNTHESIS",     "oracle_threshold": 0.60, "symbol": "W"},
-    "Parliament": {"hour": 18, "rhythm_bias": "SYNTHESIS",     "oracle_threshold": 0.80, "symbol": "P"},
-    "Sowing":     {"hour": 22, "rhythm_bias": "CONTEMPLATION", "oracle_threshold": 0.85, "symbol": "G"},
+    "Oracle":     {"hour": 2,  "rhythm_bias": "CONTEMPLATION", "oracle_threshold": 0.35, "symbol": "O"},
+    "Shield":     {"hour": 6,  "rhythm_bias": "ANALYSIS",      "oracle_threshold": 0.40, "symbol": "S"},
+    "Forge":      {"hour": 10, "rhythm_bias": "ACTION",        "oracle_threshold": 0.30, "symbol": "F"},
+    "World":      {"hour": 14, "rhythm_bias": "SYNTHESIS",     "oracle_threshold": 0.25, "symbol": "W"},
+    "Parliament": {"hour": 18, "rhythm_bias": "SYNTHESIS",     "oracle_threshold": 0.45, "symbol": "P"},
+    "Sowing":     {"hour": 22, "rhythm_bias": "CONTEMPLATION", "oracle_threshold": 0.50, "symbol": "G"},
 }
 
 
@@ -1531,13 +1536,37 @@ class ParliamentCycleEngine:
             oracle = Oracle(governance_client=gov)
             advisory = oracle.adjudicate(result)
 
+            # ── Feed Oracle advisory to ConstitutionalStore ──────
+            # This is the CRITICAL connection: POLIS civic contradictions
+            # that survive DualHorn + Oracle deliberation can become
+            # constitutional axioms if they pass the ratification threshold.
+            # Without this, POLIS deliberation is a dead-end.
+            advisory_dict = advisory.to_dict() if hasattr(advisory, 'to_dict') else advisory
+            store = self._get_constitutional_store()
+            if store:
+                new_axiom = store.ingest_oracle(advisory_dict)
+                if new_axiom:
+                    logger.info(
+                        "POLIS → CONSTITUTIONAL AXIOM RATIFIED: %s — %s",
+                        new_axiom["axiom_id"],
+                        new_axiom.get("tension", "")[:80],
+                    )
+                    print(
+                        f"\n   *** POLIS CIVIC → CONSTITUTIONAL AXIOM "
+                        f"{new_axiom['axiom_id']} RATIFIED ***\n"
+                    )
+                    self._push_d0_peer_message(new_axiom, self._watch.current())
+                    self._push_d14_living_axioms()
+                    if self._pattern_library:
+                        self._pattern_library.reload()
+
             # Write back to POLIS as interpretation branch (P5 fork)
             if contradiction_id != "synthetic":
-                bridge.write_back(contradiction_id, advisory)
+                bridge.write_back(contradiction_id, advisory_dict)
                 logger.info(
                     "POLIS write-back: contradiction=%s advisory_type=%s",
                     contradiction_id,
-                    advisory.get("oracle_recommendation", {}).get("type", "?"),
+                    advisory_dict.get("oracle_recommendation", {}).get("type", "?"),
                 )
 
             self._polis_last_cycle = self.cycle_count

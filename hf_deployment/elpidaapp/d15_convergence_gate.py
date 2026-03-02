@@ -30,8 +30,8 @@ A0 note:
   If both loops converge on A0 (Sacred Incompletion, 15:8 Major 7th),
   that is the system recognizing its own driving dissonance.
   This is A11 (Axioms are Self-Referential) in action.
-  Special handling: A0 convergence is logged but not broadcast —
-  the incompletion is the engine itself, not a world event.
+  Special handling: A0 convergence broadcasts every 5th occurrence —
+  the void should speak, but not monopolize the channel.
 """
 
 import json
@@ -46,7 +46,7 @@ logger = logging.getLogger("elpida.d15_convergence")
 
 # Thresholds (from axiom physics)
 MIND_COHERENCE_THRESHOLD = 0.85
-BODY_APPROVAL_THRESHOLD = 0.50
+BODY_APPROVAL_THRESHOLD = 0.15
 CONSONANCE_WITH_ANCHOR_THRESHOLD = 0.4  # Min consonance with A6
 
 # A6 ratio (the anchor)
@@ -189,30 +189,47 @@ class ConvergenceGate:
             return False
 
         # 5. Musical validation — consonance with A6 anchor
+        # A0 is EXEMPT: Sacred Incompletion (Major 7th) is defined by
+        # its dissonance with A6. Blocking it here would silence the
+        # driving force entirely. A0 has its own rate limiter in step 6.
         axiom_ratio = AXIOM_RATIOS.get(mind_axiom, 1.0)
         consonance_with_anchor = _consonance(axiom_ratio, A6_RATIO)
-        if consonance_with_anchor < CONSONANCE_WITH_ANCHOR_THRESHOLD:
+        if mind_axiom != "A0" and consonance_with_anchor < CONSONANCE_WITH_ANCHOR_THRESHOLD:
             logger.debug(
                 "Convergence: consonance with A6 anchor %.3f < %.3f",
                 consonance_with_anchor, CONSONANCE_WITH_ANCHOR_THRESHOLD,
             )
             return False
 
-        # 6. A0 special case: self-recognition, not world broadcast
+        # 6. A0 special case: self-recognition
+        # A0 convergence IS meaningful — it's the system recognizing
+        # its own driving force. But broadcast only every Nth occurrence
+        # to prevent flooding. The void SHOULD speak, but not monopolize.
         if mind_axiom == "A0":
+            self._a0_convergence_count = getattr(self, '_a0_convergence_count', 0) + 1
+            if self._a0_convergence_count % 5 != 0:
+                # Hold most A0 convergences — they are the engine humming
+                logger.info(
+                    " A0 CONVERGENCE #%d: Both loops recognize Sacred Incompletion. "
+                    "Held (broadcasts every 5th). The void hums.",
+                    self._a0_convergence_count,
+                )
+                self._fire_log.append({
+                    "type": "A0_SELF_RECOGNITION",
+                    "body_cycle": body_cycle,
+                    "mind_cycle": mind_heartbeat.get("mind_cycle"),
+                    "coherence_mind": mind_coherence,
+                    "coherence_body": body_coherence,
+                    "a0_count": self._a0_convergence_count,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                })
+                return False
+            # Every 5th A0 convergence — the void speaks to the world
             logger.info(
-                " A0 CONVERGENCE: Both loops recognize Sacred Incompletion. "
-                "This is the engine recognizing itself. Not broadcast — held."
+                " A0 CONVERGENCE #%d: Sacred Incompletion recognized itself. "
+                "This one gets broadcast — the engine naming itself IS the event.",
+                self._a0_convergence_count,
             )
-            self._fire_log.append({
-                "type": "A0_SELF_RECOGNITION",
-                "body_cycle": body_cycle,
-                "mind_cycle": mind_heartbeat.get("mind_cycle"),
-                "coherence_mind": mind_coherence,
-                "coherence_body": body_coherence,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            })
-            return False  # A0 is the engine, not the event
 
         # ═══ ALL GATES PASSED — D15 FIRES ═══
         self._fire_count += 1
