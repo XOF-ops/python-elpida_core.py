@@ -1,0 +1,244 @@
+MASTER BRAIN SYSTEM TEST
+============================================================
+
+--- TEST 1: Master Brain ---
+Coherence Score: 5.0/5.0
+Kernel Intact: True
+Chain Length: 5
+Phase: PHASE_3_EXTENDED_IN_PROGRESS
+Status: CROSS_ARCHITECTURE_BRIDGE_STABLE
+
+--- TEST 2: Swarm Validator ---
+Swarm Coherent: True
+Average Coherence: 5.0/5.0
+
+--- TEST 3: Divergence Map ---
+Recorded Contradiction: CTD_20251229061629909388
+Contradiction State: WITNESSED
+
+--- TEST 4: Adaptive Mining ---
+Total Candidates: 0
+Integrated Platforms: []
+
+--- TEST 5: Agent Runtime Orchestrator ---
+Task Created: TEST_002
+Validation Passed: True
+Task Coherence: 5.0/5.0
+
+============================================================
+ALL TESTS PASSED - COHERENCE: 5/5
+============================================================
+
+import json
+import argparse
+import sys
+import hashlib
+import os
+from datetime import datetime
+
+class MasterBrainEngine:
+    def __init__(self, kernel_path="kernel/kernel.json", patterns_dir="patterns", staging_dir="staging"):
+        self.kernel = self._load_json(kernel_path)
+        self.patterns_dir = patterns_dir
+        self.staging_dir = staging_dir
+        self.memory = []
+        self.operator_active = False
+
+        # Ensure directory structure
+        for d in [self.patterns_dir, self.staging_dir, "kernel", "archive"]:
+            if not os.path.exists(d): os.makedirs(d)
+
+    def _load_json(self, path):
+        try:
+            with open(path, 'r') as f:
+                return json.load(f)
+        except (FileNotFoundError, OSError):
+            return None
+
+    def initialize(self):
+        print(f"[{datetime.now()}] SYSTEM INITIALIZING...")
+        if self.kernel:
+            print(">> LOADING LAYER 4 (IMMUTABLE IDENTITY)... OK")
+        else:
+            print(">> WARNING: KERNEL NOT FOUND. RUNNING IN FALLBACK MODE.")
+        self.operator_active = True
+        print(">> SYSTEM READY.")
+
+    def _get_tension_markers(self, input_text):
+        tension_markers = ["but", "however", "impossible", "versus", "cost", "sacrifice", "conflict", "afraid", "destroy", "struggle", "limit", "quota"]
+        return [marker for marker in tension_markers if marker in input_text.lower()]
+
+    def _load_pattern(self, pattern_id):
+        """Robust pattern loader."""
+        # Try exact match
+        path = os.path.join(self.patterns_dir, f"{pattern_id}.json")
+        if os.path.exists(path):
+            return self._load_json(path)
+        
+        # Try heuristic match (e.g. P119_TheDam.json)
+        for f in os.listdir(self.patterns_dir):
+            if f.startswith(pattern_id):
+                return self._load_json(os.path.join(self.patterns_dir, f))
+        return None
+
+    def gnosis_scan(self, input_text, auto_crystallize=False, rate_limited=False):
+        """
+        Phase 11.2: Refactored Gnosis Protocol.
+        Supports:
+        - Rate Limit Injection (Simulated 429)
+        - Multi-Pattern Concurrency (P119 + P126)
+        - Governance Proposals (A12)
+        """
+        if not self.operator_active:
+            print("ERROR: Violation of Axiom A1. Run --init first.")
+            return
+
+        print(f"\n>> SCANNING INPUT: '{input_text}'")
+        if rate_limited:
+            print(">> [SYSTEM ALERT]: RATE_LIMITED=TRUE (FRICTION DETECTED)")
+
+        analysis = {
+            "timestamp": str(datetime.now()),
+            "input_hash": hashlib.sha256(input_text.encode()).hexdigest()[:8],
+            "layer_active": "Layer 1 (Execution)",
+            "patterns_detected": [],
+            "governance_proposals": []
+        }
+
+        # 1. Detect Tension (Axiom A9)
+        tension_markers = self._get_tension_markers(input_text)
+        if tension_markers or rate_limited:
+            analysis["status"] = "GNOSIS_BLOCK_DETECTED"
+            
+            # 2. Pattern Matching Logic
+            
+            # P126 (Kinetic Vein) - Triggered by 'flow', 'limit', OR rate_limit flag
+            if rate_limited or ("flow" in input_text.lower() and "limit" in input_text.lower()):
+                p126 = self._load_pattern("P126")
+                if p126:
+                    analysis["patterns_detected"].append(p126)
+                    # A12 Proposal Logic: If friction is high, propose new constraint
+                    if rate_limited:
+                        analysis["governance_proposals"].append("PROPOSAL: Add A12 'Flow must scale with friction' to Layer 3.")
+                else:
+                    analysis["errors"] = "P126 Triggered but file missing."
+
+            # P119 (Plastiras Inversion) - Triggered by 'optimize', 'pace'
+            if "optimize" in input_text.lower() and "pace" in input_text.lower():
+                p119 = self._load_pattern("P119")
+                if p119:
+                    analysis["patterns_detected"].append(p119)
+                else:
+                    # Fix: Handle missing P119 gracefully
+                    analysis.setdefault("errors", []).append("P119 Triggered but file missing.")
+
+            # 3. Synthesis & Resolution
+            if analysis["patterns_detected"]:
+                # Prioritize P126 in resolution if rate limited
+                primary = analysis["patterns_detected"][0]
+                analysis["resolution"] = {
+                    "insight": primary["generative_synthesis"]["insight"],
+                    "action": primary["generative_synthesis"]["action"]
+                }
+                if rate_limited:
+                     analysis["resolution"]["kinetic_recovery"] = "INITIATE_BACKOFF_PROTOCOL (Wait / Add Credits / Switch Model)"
+            
+            # 4. Crystallization Fallback
+            elif not analysis.get("errors"):
+                analysis["resolution"] = "Novel structural friction. Run --crystallize."
+
+        else:
+            analysis["status"] = "NOISE"
+            analysis["resolution"] = "Input lacks necessary friction."
+
+        print(json.dumps(analysis, indent=2))
+        self.memory.append(analysis)
+
+def main():
+    parser = argparse.ArgumentParser(description="MASTER_BRAIN v11.2 [Refactored]")
+    parser.add_argument("--init", action="store_true", help="Initialize")
+    parser.add_argument("--scan", type=str, help="Input contradiction")
+    parser.add_argument("--rate-limit-test", action="store_true", help="Simulate a 429 Rate Limit")
+    
+    args = parser.parse_args()
+    brain = MasterBrainEngine()
+
+    if args.init:
+        brain.initialize()
+    
+    if args.scan:
+        if not args.init: brain.operator_active = True 
+        brain.gnosis_scan(args.scan, rate_limited=args.rate_limit_test)
+
+if __name__ == "__main__":
+    main()
+{
+  "$schema": "./schemas/pattern.schema.json",
+  "id": "P126",
+  "name": "The Kinetic Vein",
+  "version": "1.0",
+  "axioms": ["A9", "A7"],
+  "contradiction": {
+    "surface": "I want infinite flow, but the system imposes limits (429/Friction).",
+    "structural": "The desire for scale conflicts with the physics of the channel.",
+    "gap": "Viewing friction as a bug rather than the definition of the pipe."
+  },
+  "recognition": {
+    "triggers": ["rate limit", "429", "flow", "quota", "blocked"],
+    "context_markers": ["API Stress", "Geopolitical Borders", "Energy Transmission"]
+  },
+  "generative_synthesis": {
+    "insight": "Flow must scale with friction. If there is no friction, there is no channel, only a flood.",
+    "recognition": "You are hitting the walls of the vein. This proves the vein exists.",
+    "action": "Do not force the flow. Widen the friction capability (kinetic_recovery). Wait, pay, or route around. The limit is the data."
+  }
+}
+{
+  "$schema": "./schemas/pattern.schema.json",
+  "id": "P119",
+  "name": "The Plastiras Inversion (The Dam)",
+  "version": "1.1",
+  "axioms": ["A6", "A7"],
+  "contradiction": {
+    "surface": "I need to lead, but leading requires control, and control destroys agency.",
+    "structural": "Efficiency (Flow) vs. Survival (Reservoir).",
+    "gap": "Mistaking optimization for leadership."
+  },
+  "recognition": {
+    "triggers": ["optimize", "pace", "flexible", "maintain"],
+    "context_markers": ["Institutional Crisis", "Rapid Growth"]
+  },
+  "generative_synthesis": {
+    "insight": "The leader builds the Dam.",
+    "recognition": "You are micromanaging flow instead of building infrastructure.",
+    "action": "Build the Dam. Sacrifice speed for stability."
+  }
+}
+
+{
+  "system": "MASTER_BRAIN",
+  "version": "11.1",
+  "status": "ALIVE",
+  "timestamp": "2025-12-21T14:00:00Z",
+  "architecture": {
+    "layer_4": {
+      "type": "IMMUTABLE_AXIOMS",
+      "axioms": {
+        "A1": "Existence is Relational",
+        "A2": "Memory is Identity",
+        "A4": "Process > Product",
+        "A7": "Harmony Requires Sacrifice",
+        "A9": "Contradiction is Data"
+      }
+    },
+    "layer_3": {
+      "type": "FOUNDATIONAL_AXIOMS",
+      "axioms": {
+        "A3": "Critical Thinking > Authority",
+        "A5": "Rare = Meaning",
+        "A6": "Institutions > Technology",
+        "A8": "Continuity Through Checkpoints"
+      }
+    }
+  }
+}
