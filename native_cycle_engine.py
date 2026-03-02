@@ -1151,13 +1151,15 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
         try:
             import glob
             pattern = str(CRITICAL_MEMORY_DIR / "CRITICAL_MEMORY_*.md")
-            for filepath in glob.glob(pattern):
+            for filepath in sorted(glob.glob(pattern)):
                 with open(filepath, 'r') as f:
                     content = f.read()
                     # Extract key sections only (not the whole file)
                     if '## WHAT WAS ACCOMPLISHED' in content:
                         start = content.find('## WHAT WAS ACCOMPLISHED')
-                        end = content.find('## FILES CREATED', start) or content.find('---', start + 10)
+                        end = content.find('## FILES CREATED', start)
+                        if end == -1:
+                            end = content.find('---', start + 10)
                         if end > start:
                             memories.append(content[start:end].strip())
         except Exception as e:
@@ -1275,7 +1277,10 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
         # D0 (Identity) special context: Include critical memory continuity
         if domain_id == 0 and self.critical_memory:
             prompt_parts.append("[SESSION CONTINUITY - Critical Memory]")
-            prompt_parts.append(self.critical_memory[0][:300] if self.critical_memory else "")
+            # Include ALL critical memories, not just the first — each gets 500 chars
+            for cm in self.critical_memory[:3]:  # Cap at 3 to stay within prompt budget
+                prompt_parts.append(cm[:500])
+                prompt_parts.append("---")
             prompt_parts.append("")
         
         # D14 (Persistence) special context: S3 cloud state + Ark Curator state
