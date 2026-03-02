@@ -67,6 +67,17 @@ def run():
         logger.warning(f"  S3 pull failed: {e}")
         logger.info("  Continuing with local memory (may be empty on first run)")
 
+    # ── PHASE 1.5: Pull critical memory files from S3 ──
+    logger.info("PHASE 1.5: Pulling critical memory context from S3...")
+    try:
+        from ElpidaS3Cloud import S3MemorySync
+        s3_cm = S3MemorySync()
+        cm_result = s3_cm.pull_critical_memories()
+        logger.info(f"  Critical memories: {cm_result}")
+    except Exception as e:
+        logger.warning(f"  Critical memory pull failed: {e}")
+        logger.info("  D0 will run without external context injection")
+
     # ── PHASE 2: Initialize engine ──
     logger.info("PHASE 2: Initializing Native Cycle Engine...")
     from native_cycle_engine import NativeCycleEngine, DOMAINS, AXIOMS

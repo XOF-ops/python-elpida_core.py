@@ -62,6 +62,14 @@ def attach_s3_to_engine(engine, sync_every: int = 13, push_on_exit: bool = True)
         engine.evolution_memory = engine._load_memory()
         print(f"   🔄 Engine memory reloaded: {len(engine.evolution_memory)} patterns")
     
+    # --- Pull critical memory files (D0 context injection) ---
+    try:
+        cm_result = sync.pull_critical_memories()
+        if cm_result.get("files"):
+            print(f"   📥 Critical memories pulled: {len(cm_result['files'])} files")
+    except Exception as e:
+        print(f"   ⚠️  Critical memory pull failed (non-fatal): {e}")
+    
     # --- Wrap _store_insight to push after every N cycles ---
     original_store = engine._store_insight
     _cycles_since_push = {"count": 0}

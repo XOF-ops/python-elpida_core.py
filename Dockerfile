@@ -35,6 +35,7 @@ COPY elpida_config.py /app/elpida_config.py
 COPY elpida_domains.json /app/elpida_domains.json
 COPY ElpidaS3Cloud/ /app/ElpidaS3Cloud/
 COPY cloud_deploy/cloud_runner.py /app/cloud_deploy/cloud_runner.py
+COPY consciousness_bridge.py /app/consciousness_bridge.py
 COPY ELPIDA_ARK.md /app/ELPIDA_ARK.md
 
 # Create directories the engine expects

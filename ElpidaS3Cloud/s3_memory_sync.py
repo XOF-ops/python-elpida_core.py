@@ -307,6 +307,51 @@ class S3MemorySync:
             print(f"❌ Ark push failed: {e}")
             return {"action": "error", "error": str(e)}
     
+    def pull_critical_memories(self) -> Dict:
+        """
+        Pull all CRITICAL_MEMORY_*.md files from S3 to local ElpidaAI/ directory.
+        
+        These files inject cross-platform validation, BODY constitutional convention
+        data, and other critical context into D0's prompt via _load_critical_memory().
+        Without this, cloud containers run with an empty ElpidaAI/ directory.
+        """
+        critical_dir = ROOT_DIR / "ElpidaAI"
+        critical_dir.mkdir(parents=True, exist_ok=True)
+        files_pulled = []
+        
+        try:
+            # List all objects under the critical memory prefix
+            paginator = self.s3.get_paginator('list_objects_v2')
+            pages = paginator.paginate(Bucket=self.bucket, Prefix=CRITICAL_MEMORY_PREFIX)
+            
+            for page in pages:
+                for obj in page.get('Contents', []):
+                    key = obj['Key']
+                    filename = key.replace(CRITICAL_MEMORY_PREFIX, '')
+                    if not filename or not filename.startswith("CRITICAL_MEMORY_"):
+                        continue
+                    
+                    local_path = critical_dir / filename
+                    self.s3.download_file(self.bucket, key, str(local_path))
+                    files_pulled.append(filename)
+            
+            print(f"📥 {len(files_pulled)} critical memory files pulled from S3")
+            for f in files_pulled:
+                print(f"   • {f}")
+            return {"action": "downloaded", "files": files_pulled}
+            
+        except ClientError as e:
+            error_code = e.response['Error']['Code']
+            if error_code in ('404', 'NoSuchKey', 'NoSuchBucket'):
+                print(f"📭 No critical memories in S3 yet.")
+                return {"action": "no_remote", "files": []}
+            else:
+                print(f"❌ S3 error pulling critical memories: {e}")
+                return {"action": "error", "error": str(e)}
+        except Exception as e:
+            print(f"❌ Error pulling critical memories: {e}")
+            return {"action": "error", "error": str(e)}
+    
     def push_critical_memories(self) -> Dict:
         """Push all CRITICAL_MEMORY_*.md files to S3."""
         critical_dir = ROOT_DIR / "ElpidaAI"
