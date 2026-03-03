@@ -586,11 +586,17 @@ No explanation.  No markdown fences.  Pure JSON."""
             f"- {t}" for t in divergence.get("irreconcilable", [])
         )
 
+        identity_anchor = (
+            "[IDENTITY ANCHOR]\n"
+            + (_frozen_mind.get_synthesis_context() if _frozen_mind else "")
+            + "\n"
+        ) if self.integration_enabled and _frozen_mind else ""
+
         prompt = f"""You are the Elpida Synthesis — you witness all domain perspectives
 and must produce a recommendation that EXPLICITLY confronts the
 irreconcilable tensions rather than papering over them.
 
-{('[IDENTITY ANCHOR]\n' + (_frozen_mind.get_synthesis_context() if _frozen_mind else '') + '\n') if self.integration_enabled and _frozen_mind else ''}Your synthesis must:
+{identity_anchor}Your synthesis must:
 1. Name the subordinate axiom — which value bends
 2. Name what is refused — what is never sacrificed
 3. Propose a concrete plan with stages
