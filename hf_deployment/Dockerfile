@@ -16,8 +16,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
-# Expose Streamlit default port
-EXPOSE 7860
+# Expose Streamlit (public HF port) and FastAPI (API port)
+EXPOSE 7860 8000
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1

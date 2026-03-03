@@ -360,10 +360,23 @@ async def governance_audit(
     if _gov_client is None:
         raise HTTPException(503, "Governance client not initialized")
 
+    # Timeout: 10s for quick (kernel+parliament, no LLM),
+    #          60s for full (may include multi-LLM contested deliberation).
+    _timeout = 10.0 if req.depth == "quick" else 60.0
+
     try:
-        result = _gov_client.check_action(
-            req.action,
-            analysis_mode=req.analysis_mode,
+        # Run in executor (check_action is sync/blocking).
+        loop = asyncio.get_event_loop()
+        result = await asyncio.wait_for(
+            loop.run_in_executor(
+                None,
+                lambda: _gov_client.check_action(
+                    req.action,
+                    analysis_mode=req.analysis_mode,
+                    depth=req.depth,
+                ),
+            ),
+            timeout=_timeout,
         )
 
         # Enrich the response for API consumers
@@ -425,6 +438,12 @@ async def governance_audit(
 
     except HTTPException:
         raise
+    except asyncio.TimeoutError:
+        raise HTTPException(
+            504,
+            f"Audit timed out after {int(_timeout)}s. "
+            "Try depth='quick' for a faster kernel-only check.",
+        )
     except Exception as e:
         logger.exception("Governance audit failed")
         raise HTTPException(500, f"Audit failed: {e}")

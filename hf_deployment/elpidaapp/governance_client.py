@@ -959,6 +959,7 @@ class GovernanceClient:
         *,
         analysis_mode: bool = False,
         body_cycle: Optional[int] = None,
+        depth: str = "full",
     ) -> Dict[str, Any]:
         """
         Submit an action to the governance layer for axiom compliance.
@@ -1020,9 +1021,12 @@ class GovernanceClient:
 
         # Local axiom check fallback — hold_mode=True when analysis_mode
         # (philosophical/policy content should surface tensions, not stop)
+        # no_llm=True in quick mode — skip expensive LLM escalation entirely
+        _no_llm = (depth == "quick")
         return self._local_axiom_check(action_description, context,
                                        hold_mode=analysis_mode,
-                                       body_cycle=body_cycle)
+                                       body_cycle=body_cycle,
+                                       no_llm=_no_llm)
 
     def get_governance_log(self) -> List[Dict[str, Any]]:
         """Return all governance interactions (A1: Transparency)."""
@@ -1521,6 +1525,7 @@ class GovernanceClient:
         *,
         hold_mode: bool = False,
         body_cycle: Optional[int] = None,
+        no_llm: bool = False,
     ) -> Dict[str, Any]:
         """
         Local axiom compliance check via 9-node Parliament deliberation.
@@ -1553,7 +1558,7 @@ class GovernanceClient:
                 f"[CONSTITUTIONAL AXIOMS ({len(living)} ratified): {axiom_context}] "
                 + action
             )
-        return self._parliament_deliberate(action, hold_mode=hold_mode, body_cycle=body_cycle)
+        return self._parliament_deliberate(action, hold_mode=hold_mode, body_cycle=body_cycle, no_llm=no_llm)
 
     # ────────────────────────────────────────────────────────────────
     # Dual-Horn & Oracle (Spiral Parliament Architecture)
@@ -2210,6 +2215,7 @@ class GovernanceClient:
         action: str,
         hold_mode: bool = False,
         body_cycle: Optional[int] = None,
+        no_llm: bool = False,
     ) -> Dict[str, Any]:
         """
         Full 10-node Parliament deliberation.
@@ -2334,7 +2340,7 @@ class GovernanceClient:
             not _has_hard_veto
             and 0.10 <= _prelim_rate < 0.70
         )
-        if _is_contested and not hold_mode:
+        if _is_contested and not hold_mode and not no_llm:
             logger.info(
                 "Parliament contested (prelim=%.0f%%) — escalating to multi-LLM deliberation",
                 _prelim_rate * 100,

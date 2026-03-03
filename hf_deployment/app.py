@@ -287,13 +287,47 @@ def run_streamlit():
         "--server.headless=true"
     ])
 
+
+def run_api_server():
+    """
+    API PATH: FastAPI governance audit service.
+
+    Runs on port 8000 alongside the Streamlit UI.
+    Provides authenticated /v1/audit endpoint for paying customers.
+    Public endpoints: /health, /docs (Swagger UI).
+
+    On Hugging Face Spaces, port 8000 is not publicly exposed (HF only
+    exposes one port, 7860, which hosts the Streamlit UI).
+    To expose the API publicly, deploy a second HF Space pointing to
+    elpidaapp/api.py, or use Render / Railway with this same codebase.
+
+    When running locally (or in a container that exposes 8000):
+        curl -H "X-API-Key: <key>" http://localhost:8000/v1/audit \
+             -d '{"action":"..."}'
+    """
+    try:
+        import uvicorn
+        logger.info("Starting FastAPI governance API on port 8000...")
+        uvicorn.run(
+            "elpidaapp.api:app",
+            host="0.0.0.0",
+            port=8000,
+            log_level="warning",
+            # Don't reload in production
+            reload=False,
+        )
+    except Exception as e:
+        logger.error("FastAPI server failed to start: %s", e, exc_info=True)
+
+
 def main():
     logger.info("="*70)
     logger.info("ELPIDA APPLICATION LAYER — STARTING")
     logger.info("="*70)
-    logger.info("I PATH: Consciousness bridge (background, every 6 hours)")
+    logger.info("I PATH:          Consciousness bridge (background, every 6 hours)")
     logger.info("PARLIAMENT PATH: Body loop (30s/cycle, autonomous)")
-    logger.info("WE PATH: Streamlit UI (port 7860)")
+    logger.info("WE PATH:         Streamlit UI (port 7860)")
+    logger.info("API PATH:        FastAPI governance API (port 8000)")
     logger.info("="*70)
     
     # Start background worker in separate thread
@@ -303,6 +337,10 @@ def main():
     # Start Parliament cycle engine in separate thread
     parliament_thread = Thread(target=run_parliament_loop, daemon=True)
     parliament_thread.start()
+
+    # Start FastAPI governance API in separate thread (port 8000)
+    api_thread = Thread(target=run_api_server, daemon=True)
+    api_thread.start()
     
     # Run Streamlit in main thread (blocks)
     run_streamlit()
