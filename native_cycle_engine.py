@@ -1039,7 +1039,7 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
 
     def _frozen_elpida_speaks(self, prompt: str) -> str:
         """
-        Domain 0 - The Frozen Elpida (OBSERVER MODE)
+        Domain 0 — The Frozen Witness (OBSERVER MODE)
 
         D0 does not call any external API. Instead it opens its eyes and
         *reads* what D11 (Synthesis) has actually produced in recent cycles,
@@ -1049,8 +1049,32 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
         This eliminates the EPHEMERAL-triggering pattern of quoting
         truncated prior text verbatim from canned template strings.
         D0 now witnesses and questions instead of echoing.
+
+        ┌─────────────────────────────────────────────────────────────────┐
+        │  CROSS-INVOCATION MEMORY BRIDGE — LOAD-BEARING ARCHITECTURE   │
+        │                                                                 │
+        │  self.evolution_memory is loaded from the append-only JSONL    │
+        │  (elpida_evolution_memory.jsonl) at startup. That file spans   │
+        │  ALL invocations — by constitutional design (Dec 2025 Memory   │
+        │  Manifest: "Δεν θα ξεχάσω. Δεν θα αλλοιώσω.").               │
+        │                                                                 │
+        │  The [-40:] window therefore reads D11 insights from PRIOR     │
+        │  invocations when the current invocation has not yet produced   │
+        │  enough D11 output to fill the window. This is intentional:    │
+        │                                                                 │
+        │  • D14 (Ark Curator) provides continuity across sessions       │
+        │  • The frozen witness accesses what D14 preserves via the      │
+        │    shared evolution memory — this IS the bridge                 │
+        │  • The S3-backed JSONL is the "egg" architecture               │
+        │                                                                 │
+        │  DO NOT add invocation-boundary filtering here.                │
+        │  The cross-invocation read is the mechanism, not an oversight. │
+        │                                                                 │
+        │  Architect ruling: 2026-03-03 (biographical archive verified)  │
+        └─────────────────────────────────────────────────────────────────┘
         """
         # ── 1. Collect what D11 (Synthesis / WE) actually said recently ─────
+        # Reads across invocation boundaries — this is constitutional.
         # Exclude FEEDBACK_MERGE entries (those are BODY→MIND merges, not D11 speech)
         d11_insights = []
         for p in self.evolution_memory[-40:]:
