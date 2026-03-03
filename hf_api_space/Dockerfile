@@ -9,7 +9,8 @@ RUN apt-get update && apt-get install -y \
 
 # Install Python deps — use API-specific lighter requirements
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt 2>&1 | tail -20
+# --prefer-binary avoids compiling grpcio from source (speeds up build, avoids failures)
+RUN pip install --no-cache-dir --prefer-binary -r requirements.txt
 
 # Copy application code
 COPY . .
