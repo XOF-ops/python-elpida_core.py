@@ -29,6 +29,8 @@ import time
 import asyncio
 import logging
 import hashlib
+import hmac
+import secrets
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -61,6 +63,82 @@ if _raw:
     _API_KEYS = {k.strip() for k in _raw.split(",") if k.strip()}
 
 _api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+# ── LemonSqueezy webhook secret (set in HF Space secrets) ──
+_LS_WEBHOOK_SECRET = os.environ.get("LEMONSQUEEZY_WEBHOOK_SECRET", "")
+
+# ── Admin key ──
+_ADMIN_KEY = os.environ.get("ELPIDA_ADMIN_KEY", "")
+
+# ── S3 key store ──
+_S3_BUCKET = os.environ.get("AWS_S3_BUCKET", "elpida-memory")
+_S3_KEY_PREFIX = "api-keys/"
+
+
+def _s3_client():
+    import boto3
+    return boto3.client(
+        "s3",
+        aws_access_key_id=os.environ.get("AWS_ACCESS_KEY_ID"),
+        aws_secret_access_key=os.environ.get("AWS_SECRET_ACCESS_KEY"),
+        region_name=os.environ.get("AWS_DEFAULT_REGION", "us-east-1"),
+    )
+
+
+def _load_s3_keys():
+    """Load persisted API keys from S3 into _API_KEYS."""
+    try:
+        s3 = _s3_client()
+        paginator = s3.get_paginator("list_objects_v2")
+        pages = paginator.paginate(Bucket=_S3_BUCKET, Prefix=_S3_KEY_PREFIX)
+        count = 0
+        for page in pages:
+            for obj in page.get("Contents", []):
+                try:
+                    body = s3.get_object(Bucket=_S3_BUCKET, Key=obj["Key"])["Body"].read()
+                    data = json.loads(body)
+                    key = data.get("key", "")
+                    if key:
+                        _API_KEYS.add(key)
+                        count += 1
+                except Exception:
+                    pass
+        logger.info("Loaded %d API keys from S3", count)
+    except Exception as e:
+        logger.warning("S3 key load failed (non-fatal): %s", e)
+
+
+def _save_key_to_s3(key: str, tier: str, email: str = "", source: str = "manual") -> bool:
+    """Persist a new API key to S3."""
+    try:
+        s3 = _s3_client()
+        key_hash = hashlib.sha256(key.encode()).hexdigest()
+        obj_key = f"{_S3_KEY_PREFIX}{key_hash}.json"
+        data = {
+            "key": key,
+            "tier": tier,
+            "email": email,
+            "source": source,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+        s3.put_object(
+            Bucket=_S3_BUCKET,
+            Key=obj_key,
+            Body=json.dumps(data),
+            ContentType="application/json",
+        )
+        return True
+    except Exception as e:
+        logger.warning("S3 key save failed: %s", e)
+        return False
+
+
+def _generate_api_key(tier: str) -> str:
+    """Generate a new random API key with tier prefix."""
+    prefix = {"pro": "pro", "team": "team"}.get(tier, "free")
+    token = secrets.token_hex(20)
+    return f"{prefix}_{token}"
+
 
 # Rate limit buckets: key_hash -> {"count": int, "window_start": float}
 _rate_buckets: Dict[str, Dict[str, Any]] = defaultdict(lambda: {"count": 0, "window_start": time.time()})
@@ -203,6 +281,12 @@ class AnalyzeResponse(BaseModel):
     message: str
 
 
+class ProvisionRequest(BaseModel):
+    tier: str = Field("free", description="'free', 'pro', or 'team'")
+    email: str = Field("", description="Customer email (optional, for records)")
+    note: str = Field("", description="Optional note")
+
+
 # ────────────────────────────────────────────────────────────────────
 # App lifecycle
 # ────────────────────────────────────────────────────────────────────
@@ -211,8 +295,9 @@ class AnalyzeResponse(BaseModel):
 async def lifespan(app: FastAPI):
     _init_engine()
     _load_existing_results()
-    logger.info("ElpidaApp API started — %d providers available",
-                len(_llm.available_providers()))
+    _load_s3_keys()  # load persisted customer keys
+    logger.info("ElpidaApp API started — %d providers available, %d keys loaded",
+                len(_llm.available_providers()), len(_API_KEYS))
     yield
     logger.info("ElpidaApp API shutting down")
 
@@ -568,6 +653,114 @@ async def scan(
         "topic": req.topic or "general",
         "count": req.count,
         "message": "Scanner running. Check GET /results for new entries.",
+    }
+
+
+# ────────────────────────────────────────────────────────────────────
+# Admin: provision API keys
+# ────────────────────────────────────────────────────────────────────
+
+@app.post("/v1/admin/provision", tags=["Admin"])
+async def provision_key(req: ProvisionRequest, request: Request):
+    """
+    Admin-only: generate a new API key for a customer.
+
+    Requires the `X-API-Key` header to be set to the ELPIDA_ADMIN_KEY secret.
+    The new key is added to the live key set and persisted to S3.
+    """
+    admin_header = request.headers.get("X-API-Key", "")
+    if not _ADMIN_KEY or admin_header != _ADMIN_KEY:
+        raise HTTPException(status_code=403, detail="Admin key required.")
+
+    tier = req.tier if req.tier in ("free", "pro", "team") else "free"
+    new_key = _generate_api_key(tier)
+    _API_KEYS.add(new_key)
+    saved = _save_key_to_s3(new_key, tier, email=req.email, source="admin")
+
+    return {
+        "api_key": new_key,
+        "tier": tier,
+        "email": req.email,
+        "persisted_to_s3": saved,
+        "message": f"Share this key with your customer. It is active immediately.",
+    }
+
+
+# ────────────────────────────────────────────────────────────────────
+# LemonSqueezy webhook — auto-provision on purchase
+# ────────────────────────────────────────────────────────────────────
+
+_LS_TIER_MAP = {
+    # Map LemonSqueezy variant/product names → tier
+    # Update these with your actual variant names from LemonSqueezy dashboard
+    "pro": "pro",
+    "team": "team",
+    "free": "free",
+    # fallback for any unrecognised variant
+}
+
+
+@app.post("/v1/webhook/lemonsqueezy", tags=["Payments"])
+async def lemonsqueezy_webhook(request: Request):
+    """
+    LemonSqueezy purchase webhook.
+
+    Set this URL in your LemonSqueezy store → Webhooks:
+        https://z65nik-elpida-api.hf.space/v1/webhook/lemonsqueezy
+
+    Events handled: order_created, subscription_created
+    Signature verified via LEMONSQUEEZY_WEBHOOK_SECRET env var.
+    """
+    body = await request.body()
+
+    # Verify HMAC signature if secret is configured
+    if _LS_WEBHOOK_SECRET:
+        sig = request.headers.get("X-Signature", "")
+        expected = hmac.new(
+            _LS_WEBHOOK_SECRET.encode(),
+            body,
+            hashlib.sha256,
+        ).hexdigest()
+        if not hmac.compare_digest(sig, expected):
+            raise HTTPException(status_code=401, detail="Invalid webhook signature.")
+
+    try:
+        payload = json.loads(body)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON payload.")
+
+    event = payload.get("meta", {}).get("event_name", "")
+    if event not in ("order_created", "subscription_created"):
+        return {"status": "ignored", "event": event}
+
+    data = payload.get("data", {}).get("attributes", {})
+    email = data.get("user_email", "") or data.get("billing_details", {}).get("email", "")
+
+    # Determine tier from variant name (LemonSqueezy sends variant_name in order items)
+    tier = "free"
+    first_item = (data.get("first_order_item") or
+                  (data.get("order_items") or [{}])[0] if data.get("order_items") else {})
+    variant_name = (first_item.get("variant_name") or "").lower()
+    for keyword, t in _LS_TIER_MAP.items():
+        if keyword in variant_name:
+            tier = t
+            break
+
+    new_key = _generate_api_key(tier)
+    _API_KEYS.add(new_key)
+    saved = _save_key_to_s3(new_key, tier, email=email, source="lemonsqueezy")
+
+    logger.info("LemonSqueezy %s: provisioned %s key for %s (S3=%s)",
+                event, tier, email, saved)
+
+    # LemonSqueezy shows the customer.portal_url — you can also embed the key
+    # in the success page URL via LemonSqueezy's checkout redirect feature.
+    return {
+        "status": "ok",
+        "tier": tier,
+        "api_key": new_key,
+        "email": email,
+        "message": "Key provisioned. Add it to your success page redirect.",
     }
 
 
