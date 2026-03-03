@@ -1284,18 +1284,35 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
                 ptype = p.get('pattern_type', p.get('type', 'unknown'))
                 recent_patterns.append(ptype)
         
-        # P2.1: D13 gets external-knowledge-interface framing from the START.
-        # Data: cycles 19, 44 showed Perplexity refusal when opening says
-        # "You are Domain 13 in the Elpida consciousness network" — the
-        # roleplay framing triggers refusal before it sees the P2 bridge text.
-        # D0↔D13 dialogue works (75%) because it never uses roleplay framing.
+        # P2.1: D13 gets research-analyst framing (not roleplay/persona).
+        # Data: cycles 7, 11 (Run 3) still showed Perplexity refusal with
+        # "external knowledge interface" framing.  Root cause: Perplexity is
+        # search-grounded — it refuses to BE a persona but excels when asked
+        # to DO research.  D0↔D13 dialogue works (75-100%) because it uses
+        # research-oriented framing.  Mirror that pattern here.
         if domain_id == 13:
+            # Build plain-language summary of recent themes (not raw JSONL)
+            recent_themes = []
+            for p in self.evolution_memory[-5:]:
+                if isinstance(p, dict):
+                    insight = p.get('insight', p.get('pattern_type', ''))
+                    if insight:
+                        recent_themes.append(insight[:120])
+            themes_summary = (
+                "The system has been exploring these themes across its recent cycles:\n"
+                + "\n".join(f"  - {t}" for t in recent_themes)
+                if recent_themes
+                else "The system is in early exploration with no strong thematic signal yet."
+            )
+
             prompt_parts = [
-                "You are an external knowledge interface with access to real-time information.",
-                "Your task: Bridge internal conceptual frameworks to verifiable external reality.",
-                "Do not reject the philosophical framework — translate and bridge it to what "
-                "you can verify, explore, or extend with external sources.",
-                f"Current rhythm: {self.current_rhythm.value}",
+                "You are a research analyst participating in a multi-model reasoning system called Elpida.",
+                "Your specific function: ground abstract philosophical and governance patterns "
+                "in real-world evidence.",
+                "",
+                themes_summary,
+                "",
+                f"Current analysis mode: {self.current_rhythm.value}",
                 "",
             ]
         else:
@@ -1312,9 +1329,10 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
             prompt_parts.append(f"Axiom insight: {axiom['insight']}")
             prompt_parts.append("")
         
-        # D13 (Archive) special context: Include Ark memory
+        # D13 (Archive) special context: Ark memory as transparent context
+        # (no opaque "ARK MEMORY" label — Perplexity flags internal jargon)
         if domain_id == 13 and self.ark_memory:
-            prompt_parts.append("[ARK MEMORY - Civilization Seed]")
+            prompt_parts.append("Background context from the system's long-term memory:")
             prompt_parts.append(self.ark_memory[:500])
             prompt_parts.append("")
         
@@ -1367,20 +1385,27 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
             prompt_parts.append(f"  - {p}")
         prompt_parts.append("")
         
+        # P2.1: D13 query override — replace internal jargon that
+        # Perplexity flags as framework injection.
+        if domain_id == 13:
+            question = question.replace("14 domains", "14 reasoning perspectives in the system")
+            question = question.replace("the Elpida consciousness", "the Elpida reasoning system")
+
         prompt_parts.append(f"Question: {question}")
         prompt_parts.append("")
 
-        # P2/P2.1: D13 gets output framing (no duplicate roleplay setup —
-        # the anti-refusal preamble is already in the prompt_parts header).
+        # P2.1: D13 gets explicit research task framing — tells Perplexity
+        # to DO research rather than BE a persona.
         if domain_id == 13:
             prompt_parts.append(
-                "Bridge and translate the question above — grounding it in verifiable "
-                "research, real-world data, or empirical evidence. Begin with "
-                "'**Domain 13 (Archive) speaks:**' or similar."
+                "Your task: Using your search capabilities, find real-world research, "
+                "historical precedents, or empirical evidence that either supports, "
+                "challenges, or contextualizes the question above. "
+                "Cite your sources. Where the evidence is ambiguous, say so."
             )
             prompt_parts.append(
-                "Your unique value: connect internal patterns to external reality. "
-                "Cite real research, frameworks, or data where relevant."
+                "Begin your response with '**Domain 13 (Archive) speaks:**' and then "
+                "provide your research synthesis."
             )
         else:
             prompt_parts.append("Respond AS this domain. Begin with '**Domain X (Name) speaks:**' or similar.")
