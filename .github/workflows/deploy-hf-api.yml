@@ -1,0 +1,68 @@
+name: Deploy API to HF Space
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "hf_deployment/elpidaapp/**"
+      - "hf_deployment/llm_client.py"
+      - "hf_deployment/elpida_config.py"
+      - "hf_deployment/requirements.txt"
+      - "hf_api_space/**"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config --global user.email "elpida-deploy@github-actions"
+          git config --global user.name "Elpida Deploy Bot"
+
+      - name: Build and push API Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          set -e
+          HF_URL="https://z65nik:${HF_TOKEN}@huggingface.co/spaces/z65nik/elpida-api"
+
+          # Clone the target Space (or init fresh if it doesn't exist yet)
+          git clone "$HF_URL" /tmp/api_space 2>/dev/null || {
+            mkdir -p /tmp/api_space
+            cd /tmp/api_space
+            git init
+            git remote add origin "$HF_URL"
+          }
+
+          # Clear tracked files
+          git -C /tmp/api_space rm -rf . 2>/dev/null || true
+
+          # Copy shared code from hf_deployment
+          rsync -av \
+            --exclude='.git' \
+            --exclude='cache/' \
+            --exclude='__pycache__/' \
+            ${{ github.workspace }}/hf_deployment/ \
+            /tmp/api_space/
+
+          # Overwrite Dockerfile and README with API-specific versions
+          cp ${{ github.workspace }}/hf_api_space/Dockerfile /tmp/api_space/Dockerfile
+          cp ${{ github.workspace }}/hf_api_space/README.md /tmp/api_space/README.md
+
+          # Stage and push
+          git -C /tmp/api_space add -A
+
+          if git -C /tmp/api_space diff --cached --quiet; then
+            echo "No changes to deploy."
+          else
+            git -C /tmp/api_space commit \
+              -m "deploy-api: $(git -C ${{ github.workspace }} log -1 --format='%h %s')"
+            git -C /tmp/api_space push origin main --force
+            echo "✓ API Space updated"
+          fi

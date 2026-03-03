@@ -658,6 +658,35 @@ with tab_chat:
         </div>
         """, unsafe_allow_html=True)
 
+        # ── API Pricing CTA ──
+        st.markdown("---")
+        api_col1, api_col2, api_col3 = st.columns(3)
+        with api_col1:
+            st.markdown("""
+            **🆓 Free Tier**
+            - 50 calls / day
+            - Kernel + Parliament (no LLM cost)
+            - `depth=quick`
+            - [Get Free Key →](https://elpida.lemonsqueezy.com)
+            """)
+        with api_col2:
+            st.markdown("""
+            **⚡ Pro — $29/mo**
+            - 2,000 calls / day
+            - Full multi-LLM deliberation
+            - `depth=quick` + `depth=full`
+            - [Subscribe →](https://elpida.lemonsqueezy.com)
+            """)
+        with api_col3:
+            st.markdown("""
+            **🏢 Team — $99/mo**
+            - 10,000 calls / day
+            - Priority support
+            - All features
+            - [Subscribe →](https://elpida.lemonsqueezy.com)
+            """)
+        st.caption("API Docs: [z65nik-elpida-api.hf.space/docs](https://z65nik-elpida-api.hf.space/docs)")
+
         # Starter prompts
         st.markdown("")
         _starter_cols = st.columns(3)
@@ -2645,5 +2674,9 @@ st.markdown("""
     v2.8.0 &nbsp;·&nbsp; 11 Axioms &nbsp;·&nbsp; 15 Domains &nbsp;·&nbsp; 9 Parliament Nodes &nbsp;·&nbsp; Fibonacci 13·21·34·55·89<br>
     Spiral Parliament &nbsp;·&nbsp; Dual-Horn Deliberation &nbsp;·&nbsp; Oracle WITNESS &nbsp;·&nbsp; Fork Protocol &nbsp;·&nbsp; POLIS Bridge<br>
     <a href="https://github.com/XOF-ops/python-elpida_core.py" target="_blank">GitHub</a>
+    &nbsp;·&nbsp;
+    <a href="https://z65nik-elpida-api.hf.space/docs" target="_blank">API Docs</a>
+    &nbsp;·&nbsp;
+    <a href="https://elpida.lemonsqueezy.com" target="_blank">Get API Key</a>
 </div>
 """, unsafe_allow_html=True)
