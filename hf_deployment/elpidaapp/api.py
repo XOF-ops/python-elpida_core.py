@@ -1,23 +1,36 @@
 #!/usr/bin/env python3
 """
-ElpidaApp API — FastAPI service for divergence analysis.
+ElpidaApp API — FastAPI service for governance audits & divergence analysis.
 
-Endpoints:
-    POST /analyze         — submit a problem for full divergence analysis
+Public (rate-limited by IP):
+    GET  /health           — service health + available providers
+    GET  /domains          — list all domains and their axioms
+
+Authenticated (API key required via X-API-Key header):
+    POST /v1/audit         — constitutional governance audit (fast, low-cost)
+    POST /analyze          — full multi-domain divergence analysis (heavy)
+    POST /analyze/sync     — synchronous divergence analysis
     GET  /results          — list recent results
     GET  /results/{id}     — fetch a specific result
-    GET  /health           — service health + available providers
     POST /scan             — trigger the problem scanner
-    GET  /domains          — list all domains and their axioms
+
+API keys are stored as comma-separated values in ELPIDA_API_KEYS env var.
+Rate limits per tier:
+    free:  50 calls/day
+    pro:   2000 calls/day  (keys prefixed with 'pro_')
+    team:  10000 calls/day (keys prefixed with 'team_')
 """
 
 import sys
 import os
 import json
 import uuid
+import time
 import asyncio
 import logging
-from datetime import datetime
+import hashlib
+from collections import defaultdict
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, Dict, Any, List
 from contextlib import asynccontextmanager
@@ -25,9 +38,10 @@ from contextlib import asynccontextmanager
 # Allow imports from parent
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Request, Depends, Security
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.security import APIKeyHeader
 from pydantic import BaseModel, Field
 
 from llm_client import LLMClient
@@ -36,6 +50,73 @@ from elpida_config import DOMAINS, AXIOMS, AXIOM_RATIOS
 from elpidaapp.divergence_engine import DivergenceEngine
 
 logger = logging.getLogger("elpidaapp.api")
+
+# ────────────────────────────────────────────────────────────────────
+# API Key Auth & Rate Limiting
+# ────────────────────────────────────────────────────────────────────
+
+_API_KEYS: set = set()
+_raw = os.environ.get("ELPIDA_API_KEYS", "")
+if _raw:
+    _API_KEYS = {k.strip() for k in _raw.split(",") if k.strip()}
+
+_api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+# Rate limit buckets: key_hash -> {"count": int, "window_start": float}
+_rate_buckets: Dict[str, Dict[str, Any]] = defaultdict(lambda: {"count": 0, "window_start": time.time()})
+_RATE_WINDOW = 86400  # 24 hours
+
+_TIER_LIMITS = {
+    "team": 10000,
+    "pro":  2000,
+    "free": 50,
+}
+
+
+def _get_tier(api_key: str) -> str:
+    if api_key.startswith("team_"):
+        return "team"
+    if api_key.startswith("pro_"):
+        return "pro"
+    return "free"
+
+
+def _check_rate_limit(identity: str, tier: str = "free") -> bool:
+    """Returns True if within rate limit, False if exceeded."""
+    now = time.time()
+    bucket = _rate_buckets[identity]
+    if now - bucket["window_start"] > _RATE_WINDOW:
+        bucket["count"] = 0
+        bucket["window_start"] = now
+    limit = _TIER_LIMITS.get(tier, 50)
+    if bucket["count"] >= limit:
+        return False
+    bucket["count"] += 1
+    return True
+
+
+async def require_api_key(api_key: str = Security(_api_key_header)):
+    """Dependency: require a valid API key for authenticated endpoints."""
+    if not api_key or api_key not in _API_KEYS:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or missing API key. Pass X-API-Key header.",
+        )
+    tier = _get_tier(api_key)
+    key_hash = hashlib.sha256(api_key.encode()).hexdigest()[:16]
+    if not _check_rate_limit(key_hash, tier):
+        raise HTTPException(
+            status_code=429,
+            detail=f"Rate limit exceeded for {tier} tier ({_TIER_LIMITS[tier]} calls/day).",
+        )
+    return api_key
+
+
+def _ip_rate_check(request: Request, limit: int = 10) -> bool:
+    """Simple IP-based rate limit for public endpoints (per day)."""
+    ip = request.client.host if request.client else "unknown"
+    ip_hash = f"ip_{hashlib.sha256(ip.encode()).hexdigest()[:16]}"
+    return _check_rate_limit(ip_hash, "free")
 
 # ────────────────────────────────────────────────────────────────────
 # Storage (in-memory + filesystem)
@@ -47,15 +128,23 @@ RESULTS_DIR.mkdir(exist_ok=True)
 # In-memory index of recent results
 _results_index: Dict[str, Dict[str, Any]] = {}
 
-# Shared LLM client and engine
+# Shared LLM client, engine, and governance client
 _llm: Optional[LLMClient] = None
 _engine: Optional[DivergenceEngine] = None
+_gov_client = None
 
 
 def _init_engine():
-    global _llm, _engine
+    global _llm, _engine, _gov_client
     _llm = LLMClient(rate_limit_seconds=1.0)
     _engine = DivergenceEngine(llm=_llm)
+    # Initialize governance client for /v1/audit endpoint
+    try:
+        from elpidaapp.governance_client import GovernanceClient
+        _gov_client = GovernanceClient()
+        logger.info("GovernanceClient initialized for /v1/audit")
+    except Exception as e:
+        logger.warning("GovernanceClient init failed (audit endpoint unavailable): %s", e)
 
 
 def _load_existing_results():
@@ -82,6 +171,22 @@ def _load_existing_results():
 # ────────────────────────────────────────────────────────────────────
 # Schemas
 # ────────────────────────────────────────────────────────────────────
+
+class AuditRequest(BaseModel):
+    """Constitutional governance audit request."""
+    action: str = Field(
+        ..., min_length=5, max_length=2000,
+        description="The proposed action or decision to audit",
+    )
+    depth: str = Field(
+        "full",
+        description="'quick' = kernel-only (0 LLM cost), 'full' = kernel + parliament",
+    )
+    analysis_mode: bool = Field(
+        False,
+        description="Set True for policy/philosophical analysis (holds paradoxes instead of blocking)",
+    )
+
 
 class AnalyzeRequest(BaseModel):
     problem: str = Field(..., min_length=10, description="The problem to analyze")
@@ -113,12 +218,14 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="ElpidaApp — Divergence Analysis API",
+    title="Elpida Governance API",
     description=(
-        "Submit hard problems, get multi-domain divergence analysis "
-        "with fault-line detection and synthesis."
+        "Constitutional AI governance audits and multi-domain divergence analysis.\n\n"
+        "**Free endpoints:** /health, /domains (IP rate-limited)\n"
+        "**Authenticated endpoints:** /v1/audit, /analyze, /results, /scan (API key required)\n\n"
+        "Pass your API key via the `X-API-Key` header."
     ),
-    version="1.0.0",
+    version="2.0.0",
     lifespan=lifespan,
 )
 
@@ -189,15 +296,20 @@ def _run_scan(topic: Optional[str], count: int):
 # Routes
 # ────────────────────────────────────────────────────────────────────
 
+# ────────────────────────────────────────────────────────────────────
+# Public endpoints (IP rate-limited)
+# ────────────────────────────────────────────────────────────────────
+
 @app.get("/health")
 async def health():
     """Service health and available providers."""
     return {
         "status": "ok",
-        "version": "1.0.0",
+        "version": "2.0.0",
         "providers": _llm.available_providers() if _llm else [],
         "domains": len(DOMAINS),
         "axioms": len(AXIOMS),
+        "governance_available": _gov_client is not None,
         "results_count": len(_results_index),
     }
 
@@ -222,8 +334,108 @@ async def list_domains():
     return out
 
 
-@app.post("/analyze", response_model=AnalyzeResponse)
-async def analyze(req: AnalyzeRequest, background_tasks: BackgroundTasks):
+# ────────────────────────────────────────────────────────────────────
+# Authenticated endpoints (API key required)
+# ────────────────────────────────────────────────────────────────────
+
+@app.post("/v1/audit", tags=["Governance"])
+async def governance_audit(
+    req: AuditRequest,
+    request: Request,
+    api_key: str = Depends(require_api_key),
+):
+    """
+    Constitutional governance audit.
+
+    Runs the proposed action through Elpida's kernel (immutable rules)
+    and 10-node parliament (axiom-governed deliberation).
+
+    **depth='quick'**: Kernel-only check. Zero LLM cost. ~10ms.
+    **depth='full'**: Kernel + full parliament deliberation. May escalate
+    to multi-LLM voting for contested dilemmas. ~1-5s.
+
+    Returns: governance decision, parliament votes, sacrifice transparency,
+    dissent record, contradictions held vs resolved.
+    """
+    if _gov_client is None:
+        raise HTTPException(503, "Governance client not initialized")
+
+    try:
+        result = _gov_client.check_action(
+            req.action,
+            analysis_mode=req.analysis_mode,
+        )
+
+        # Enrich the response for API consumers
+        response = {
+            "action": req.action,
+            "depth": req.depth,
+            "governance": result.get("governance", "UNKNOWN"),
+            "allowed": result.get("allowed", False),
+            "score": result.get("approval_rate", result.get("severity", 0)),
+            "violated_axioms": result.get("violated_axioms", []),
+            "reasoning": result.get("reasoning", ""),
+            "source": result.get("source", "local"),
+            "timestamp": result.get("timestamp", datetime.now(timezone.utc).isoformat()),
+        }
+
+        # Parliament details (full depth only)
+        if "parliament" in result:
+            parliament = result["parliament"]
+            response["parliament"] = {
+                "approval_rate": parliament.get("approval_rate", 0),
+                "total_nodes": parliament.get("total_nodes", 0),
+                "votes": {
+                    name: {
+                        "vote": v.get("vote"),
+                        "score": v.get("score"),
+                        "axiom": v.get("axiom_invoked"),
+                        "rationale": v.get("rationale", ""),
+                    }
+                    for name, v in parliament.get("votes", {}).items()
+                },
+                "veto_nodes": parliament.get("veto_nodes", []),
+            }
+
+        # Tensions / contradictions
+        if "tensions" in result:
+            response["contradictions"] = {
+                "held": len([t for t in result["tensions"] if not t.get("resolved")]),
+                "resolved": len([t for t in result["tensions"] if t.get("resolved")]),
+                "details": [
+                    {
+                        "axiom_pair": t.get("axiom_pair", ""),
+                        "synthesis": t.get("synthesis", ""),
+                    }
+                    for t in result["tensions"][:5]
+                ],
+            }
+
+        # Sacrifice transparency (A7)
+        sacrifice = result.get("sacrifice") or result.get("sacrifice_log")
+        if sacrifice:
+            response["sacrifice"] = sacrifice
+
+        # Dissent record
+        dissent = result.get("dissenting_nodes") or result.get("rejecting_nodes")
+        if dissent:
+            response["dissent"] = dissent
+
+        return response
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Governance audit failed")
+        raise HTTPException(500, f"Audit failed: {e}")
+
+
+@app.post("/analyze", response_model=AnalyzeResponse, tags=["Divergence"])
+async def analyze(
+    req: AnalyzeRequest,
+    background_tasks: BackgroundTasks,
+    api_key: str = Depends(require_api_key),
+):
     """
     Submit a problem for divergence analysis.
 
@@ -249,8 +461,11 @@ async def analyze(req: AnalyzeRequest, background_tasks: BackgroundTasks):
     )
 
 
-@app.post("/analyze/sync")
-async def analyze_sync(req: AnalyzeRequest):
+@app.post("/analyze/sync", tags=["Divergence"])
+async def analyze_sync(
+    req: AnalyzeRequest,
+    api_key: str = Depends(require_api_key),
+):
     """
     Submit a problem and wait for the full result (synchronous).
     Warning: may take 60-120 seconds.
@@ -289,8 +504,8 @@ async def analyze_sync(req: AnalyzeRequest):
     return {"id": rid, **result}
 
 
-@app.get("/results")
-async def list_results():
+@app.get("/results", tags=["Divergence"])
+async def list_results(api_key: str = Depends(require_api_key)):
     """List recent analysis results (most recent first)."""
     items = sorted(
         _results_index.values(),
@@ -300,8 +515,8 @@ async def list_results():
     return items[:50]
 
 
-@app.get("/results/{result_id}")
-async def get_result(result_id: str):
+@app.get("/results/{result_id}", tags=["Divergence"])
+async def get_result(result_id: str, api_key: str = Depends(require_api_key)):
     """Get a specific analysis result."""
     if result_id not in _results_index:
         raise HTTPException(404, f"Result {result_id} not found")
@@ -316,8 +531,12 @@ async def get_result(result_id: str):
         return meta
 
 
-@app.post("/scan")
-async def scan(req: ScanRequest, background_tasks: BackgroundTasks):
+@app.post("/scan", tags=["Divergence"])
+async def scan(
+    req: ScanRequest,
+    background_tasks: BackgroundTasks,
+    api_key: str = Depends(require_api_key),
+):
     """
     Trigger the autonomous problem scanner.
 

@@ -15,6 +15,7 @@ Tabs:
   System       — Constitution, axioms, domains, stats
 """
 
+import os
 import sys
 import json
 import time
@@ -445,6 +446,25 @@ if "llm_client" not in st.session_state:
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
+# ── Session-based daily interaction limit (public UI) ─────────────
+_DAILY_INTERACTION_LIMIT = int(os.environ.get("ELPIDA_UI_DAILY_LIMIT", "10"))
+
+if "interaction_count" not in st.session_state:
+    st.session_state.interaction_count = 0
+if "interaction_day" not in st.session_state:
+    st.session_state.interaction_day = datetime.now(timezone.utc).date().isoformat()
+
+def _check_ui_rate_limit() -> bool:
+    """Returns True if within daily limit, False if exceeded."""
+    today = datetime.now(timezone.utc).date().isoformat()
+    if st.session_state.interaction_day != today:
+        st.session_state.interaction_count = 0
+        st.session_state.interaction_day = today
+    if st.session_state.interaction_count >= _DAILY_INTERACTION_LIMIT:
+        return False
+    st.session_state.interaction_count += 1
+    return True
+
 # ── Parliament Engine Integration ─────────────────────────────────
 # Push events from UI tabs into the Parliament body loop input buffer.
 def _push_to_parliament(system: str, content: str, **meta):
@@ -603,9 +623,20 @@ _live_heartbeat()
 # Tab Navigation
 # ═══════════════════════════════════════════════════════════════════
 
-tab_chat, tab_audit, tab_scanner, tab_gov, tab_system = st.tabs([
-    "💬 Chat", "◈ Live Audit", "◉ Scanner", "◇ Constitutional", "◆ System"
-])
+# System tab is admin-only: set ELPIDA_ADMIN_KEY in env, then pass ?admin=<key> in URL
+_ADMIN_KEY = os.environ.get("ELPIDA_ADMIN_KEY", "")
+_query_params = st.query_params
+_is_admin = bool(_ADMIN_KEY and _query_params.get("admin") == _ADMIN_KEY)
+
+if _is_admin:
+    tab_chat, tab_audit, tab_scanner, tab_gov, tab_system = st.tabs([
+        "💬 Chat", "◈ Live Audit", "◉ Scanner", "◇ Constitutional", "◆ System"
+    ])
+else:
+    tab_chat, tab_audit, tab_scanner, tab_gov = st.tabs([
+        "💬 Chat", "◈ Live Audit", "◉ Scanner", "◇ Constitutional"
+    ])
+    tab_system = None
 
 
 # ── Chat ──────────────────────────────────────────────────────────
@@ -726,133 +757,139 @@ with tab_chat:
 
     # ── Chat input ───────────────────────────────────────────────
     if prompt := st.chat_input("Ask Elpida anything…"):
-        # Add user message
-        st.session_state.chat_history.append({"role": "user", "content": prompt})
-
-        with st.chat_message("user", avatar="👤"):
-            st.markdown(prompt)
-
-        # Push to BODY parliament buffer
-        _push_to_parliament("chat", prompt, source="chat_input")
-
-        # Run through governance
-        with st.chat_message("assistant", avatar="🤖"):
-            with st.spinner("Parliament deliberating…"):
-                from elpidaapp.governance_client import GovernanceClient
-                _chat_gov = GovernanceClient()
-                _chat_result = _chat_gov.check_action(prompt, analysis_mode=True)
-
-            _governance = _chat_result.get("governance", "PROCEED")
-            _reasoning = _chat_result.get("reasoning", "")
-            _parliament = _chat_result.get("parliament", {})
-            _votes = _parliament.get("votes", {})
-            _tensions = _parliament.get("tensions", [])
-            _violated = _chat_result.get("violated_axioms", [])
-
-            # Build the response text
-            if _reasoning:
-                _response_text = _reasoning
-            elif _governance == "PROCEED":
-                _response_text = (
-                    "The parliament finds no axiom violations in this question. "
-                    "All 9 nodes approve — the inquiry is aligned with the constitutional framework."
-                )
-            elif _governance in ("HOLD", "REVIEW"):
-                _tension_summary = ""
-                if _tensions:
-                    _pairs = [
-                        f"{t.get('axiom_pair', ('?','?'))[0]}↔{t.get('axiom_pair', ('?','?'))[1]}"
-                        for t in _tensions[:3]
-                        if isinstance(t.get('axiom_pair'), (list, tuple))
-                    ]
-                    _tension_summary = f" Tensions held: {', '.join(_pairs)}."
-                _response_text = (
-                    f"The parliament holds this in tension — not resolved, but deliberated.{_tension_summary} "
-                    f"The contradiction is preserved as constitutional data."
-                )
-            else:
-                _response_text = (
-                    f"Parliament verdict: {_governance}. "
-                    f"{'Violated axioms: ' + ', '.join(_violated) + '. ' if _violated else ''}"
-                    f"{_reasoning}"
-                )
-
-            st.markdown(_response_text)
-
-            # Governance badge
-            _badge_cls = {
-                "PROCEED": "verdict-proceed", "REVIEW": "verdict-review",
-                "HOLD": "verdict-hold", "HALT": "verdict-halt",
-                "HARD_BLOCK": "verdict-block",
-            }.get(_governance, "verdict-review")
-            st.markdown(
-                f'<div style="margin-top:0.5rem;">'
-                f'<span class="verdict-badge {_badge_cls}">{_governance}</span>'
-                f'</div>',
-                unsafe_allow_html=True,
+        if not _check_ui_rate_limit():
+            st.warning(
+                f"Daily interaction limit reached ({_DAILY_INTERACTION_LIMIT}/day). "
+                "For unlimited access, use the Elpida API with an API key."
             )
+        else:
+            # Add user message
+            st.session_state.chat_history.append({"role": "user", "content": prompt})
 
-            # Show tensions
-            if _tensions:
-                with st.expander(f"⚖ Tensions held ({len(_tensions)})", expanded=True):
-                    for _t in _tensions:
-                        _pair = _t.get("axiom_pair", _t.get("pair", ("?", "?")))
-                        _syn = _t.get("synthesis", "")
-                        if isinstance(_pair, (list, tuple)) and len(_pair) == 2:
+            with st.chat_message("user", avatar="👤"):
+                st.markdown(prompt)
+
+            # Push to BODY parliament buffer
+            _push_to_parliament("chat", prompt, source="chat_input")
+
+            # Run through governance
+            with st.chat_message("assistant", avatar="🤖"):
+                with st.spinner("Parliament deliberating…"):
+                    from elpidaapp.governance_client import GovernanceClient
+                    _chat_gov = GovernanceClient()
+                    _chat_result = _chat_gov.check_action(prompt, analysis_mode=True)
+
+                _governance = _chat_result.get("governance", "PROCEED")
+                _reasoning = _chat_result.get("reasoning", "")
+                _parliament = _chat_result.get("parliament", {})
+                _votes = _parliament.get("votes", {})
+                _tensions = _parliament.get("tensions", [])
+                _violated = _chat_result.get("violated_axioms", [])
+
+                # Build the response text
+                if _reasoning:
+                    _response_text = _reasoning
+                elif _governance == "PROCEED":
+                    _response_text = (
+                        "The parliament finds no axiom violations in this question. "
+                        "All 9 nodes approve — the inquiry is aligned with the constitutional framework."
+                    )
+                elif _governance in ("HOLD", "REVIEW"):
+                    _tension_summary = ""
+                    if _tensions:
+                        _pairs = [
+                            f"{t.get('axiom_pair', ('?','?'))[0]}↔{t.get('axiom_pair', ('?','?'))[1]}"
+                            for t in _tensions[:3]
+                            if isinstance(t.get('axiom_pair'), (list, tuple))
+                        ]
+                        _tension_summary = f" Tensions held: {', '.join(_pairs)}."
+                    _response_text = (
+                        f"The parliament holds this in tension — not resolved, but deliberated.{_tension_summary} "
+                        f"The contradiction is preserved as constitutional data."
+                    )
+                else:
+                    _response_text = (
+                        f"Parliament verdict: {_governance}. "
+                        f"{'Violated axioms: ' + ', '.join(_violated) + '. ' if _violated else ''}"
+                        f"{_reasoning}"
+                    )
+
+                st.markdown(_response_text)
+
+                # Governance badge
+                _badge_cls = {
+                    "PROCEED": "verdict-proceed", "REVIEW": "verdict-review",
+                    "HOLD": "verdict-hold", "HALT": "verdict-halt",
+                    "HARD_BLOCK": "verdict-block",
+                }.get(_governance, "verdict-review")
+                st.markdown(
+                    f'<div style="margin-top:0.5rem;">'
+                    f'<span class="verdict-badge {_badge_cls}">{_governance}</span>'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )
+
+                # Show tensions
+                if _tensions:
+                    with st.expander(f"⚖ Tensions held ({len(_tensions)})", expanded=True):
+                        for _t in _tensions:
+                            _pair = _t.get("axiom_pair", _t.get("pair", ("?", "?")))
+                            _syn = _t.get("synthesis", "")
+                            if isinstance(_pair, (list, tuple)) and len(_pair) == 2:
+                                st.markdown(
+                                    f'<div class="tension-card">'
+                                    f'<span class="tension-pair">{_pair[0]} ↔ {_pair[1]}:</span> '
+                                    f'{_syn}</div>',
+                                    unsafe_allow_html=True,
+                                )
+
+                # Parliament votes (reveal the governance underneath)
+                if _votes:
+                    with st.expander("🏛 Parliament votes", expanded=False):
+                        _vc = {
+                            "APPROVE": "#22cc44", "LEAN_APPROVE": "#aacc44",
+                            "ABSTAIN": "#888", "LEAN_REJECT": "#ff8844",
+                            "REJECT": "#ff4444", "VETO": "#ff0000",
+                        }
+                        _vi = {
+                            "APPROVE": "●", "LEAN_APPROVE": "◐",
+                            "ABSTAIN": "○", "LEAN_REJECT": "◑",
+                            "REJECT": "●", "VETO": "⛔",
+                        }
+                        for _nname, _nvote in _votes.items():
+                            _nv = _nvote.get("vote", "ABSTAIN")
+                            _nc = _vc.get(_nv, "#888")
+                            _ni = _vi.get(_nv, "○")
+                            _nax = _nvote.get("axiom_invoked", "")
+                            _nreason = _nvote.get("reasoning", "")[:120]
                             st.markdown(
-                                f'<div class="tension-card">'
-                                f'<span class="tension-pair">{_pair[0]} ↔ {_pair[1]}:</span> '
-                                f'{_syn}</div>',
+                                f'<div class="node-vote-row">'
+                                f'<span class="node-name" style="color:{_nc};">{_ni} {_nname}</span>'
+                                f'<span class="node-stance" style="background:{_nc}22;color:{_nc};'
+                                f'border:1px solid {_nc}33;">{_nv}</span>'
+                                f'<span style="color:#666;font-size:0.7rem;">{_nax}</span>'
+                                f'</div>'
+                                f'<div style="color:#888;font-size:0.74rem;padding-left:96px;'
+                                f'margin-bottom:0.3rem;">{_nreason}</div>',
                                 unsafe_allow_html=True,
                             )
 
-            # Parliament votes (reveal the governance underneath)
-            if _votes:
-                with st.expander("🏛 Parliament votes", expanded=False):
-                    _vc = {
-                        "APPROVE": "#22cc44", "LEAN_APPROVE": "#aacc44",
-                        "ABSTAIN": "#888", "LEAN_REJECT": "#ff8844",
-                        "REJECT": "#ff4444", "VETO": "#ff0000",
-                    }
-                    _vi = {
-                        "APPROVE": "●", "LEAN_APPROVE": "◐",
-                        "ABSTAIN": "○", "LEAN_REJECT": "◑",
-                        "REJECT": "●", "VETO": "⛔",
-                    }
-                    for _nname, _nvote in _votes.items():
-                        _nv = _nvote.get("vote", "ABSTAIN")
-                        _nc = _vc.get(_nv, "#888")
-                        _ni = _vi.get(_nv, "○")
-                        _nax = _nvote.get("axiom_invoked", "")
-                        _nreason = _nvote.get("reasoning", "")[:120]
-                        st.markdown(
-                            f'<div class="node-vote-row">'
-                            f'<span class="node-name" style="color:{_nc};">{_ni} {_nname}</span>'
-                            f'<span class="node-stance" style="background:{_nc}22;color:{_nc};'
-                            f'border:1px solid {_nc}33;">{_nv}</span>'
-                            f'<span style="color:#666;font-size:0.7rem;">{_nax}</span>'
-                            f'</div>'
-                            f'<div style="color:#888;font-size:0.74rem;padding-left:96px;'
-                            f'margin-bottom:0.3rem;">{_nreason}</div>',
-                            unsafe_allow_html=True,
-                        )
+                if _violated:
+                    _tag_html = '<div class="chat-meta">'
+                    for _ax in _violated:
+                        _tag_html += f'<span class="axiom-tag">⚠ {_ax}</span>'
+                    _tag_html += '</div>'
+                    st.markdown(_tag_html, unsafe_allow_html=True)
 
-            if _violated:
-                _tag_html = '<div class="chat-meta">'
-                for _ax in _violated:
-                    _tag_html += f'<span class="axiom-tag">⚠ {_ax}</span>'
-                _tag_html += '</div>'
-                st.markdown(_tag_html, unsafe_allow_html=True)
-
-        # Store in history
-        st.session_state.chat_history.append({
-            "role": "assistant",
-            "content": _response_text,
-            "governance": _governance,
-            "tensions": _tensions,
-            "votes": _votes,
-            "violated_axioms": _violated,
-        })
+            # Store in history
+            st.session_state.chat_history.append({
+                "role": "assistant",
+                "content": _response_text,
+                "governance": _governance,
+                "tensions": _tensions,
+                "votes": _votes,
+                "violated_axioms": _violated,
+            })
 
     # ── Recent BODY verdicts (live-updating every ~30 s) ────────
     st.divider()
@@ -1752,9 +1789,10 @@ with tab_gov:
         except Exception:
             st.caption("POLIS Bridge loads civic contradictions during parliament cycles.")
 
-# ── System ────────────────────────────────────────────────────────
+# ── System (admin-only) ───────────────────────────────────────────
 
-with tab_system:
+if tab_system is not None:
+ with tab_system:
     # ── Hero header ─────────────────────────────────────────────
     st.markdown("""
     <div class="welcome-box" style="margin-bottom:1.2rem;">
