@@ -528,6 +528,15 @@ class ConvergenceGate:
             # Call LLM to write the actual world broadcast text
             d15_text, pipeline_s, pipeline_stages = self._synthesize_d15(broadcast)
 
+            # ARCHITECTURAL DECISION (Architect ruling, 2026-03-03):
+            # D15 verdict is independent of Parliament governance verdict.
+            # Parliament governs internal action (PROCEED/HALT).
+            # D15 governs external expression (broadcast when convergence
+            # is genuine). The convergence gate's own checks (axiom match,
+            # coherence, consonance, cooldown, approval_rate) serve as the
+            # "instinct's parliament" — values embedded in mathematical
+            # physics, not in deliberation.
+            # Anti-spam: 50-cycle cooldown + A0 rate limiter (every 5th).
             governance_meta = {
                 "governance": "PROCEED",
                 "parliament": {

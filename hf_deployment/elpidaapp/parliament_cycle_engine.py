@@ -1602,11 +1602,15 @@ class ParliamentCycleEngine:
         """
         Check if MIND and BODY have converged on the same axiom.
 
-        D15 fires when:
+        D15 fires when (ALL conditions, sequential gate):
           1. MIND dominant axiom cluster matches BODY dominant axiom
           2. MIND coherence ≥ 0.85
-          3. BODY approval_rate ≥ 0.50
+          3. BODY approval_rate ≥ 0.15  (BODY_APPROVAL_THRESHOLD)
           4. Cooldown since last D15 ≥ 50 cycles
+          5. Consonance with A6 anchor ≥ 0.4 (A0 EXEMPT)
+
+        A0 convergence broadcasts every 5th occurrence only
+        (rate limiter inside ConvergenceGate.check_and_fire).
 
         This is A16 (Convergence Validity):
         "Convergence of different starting points proves validity

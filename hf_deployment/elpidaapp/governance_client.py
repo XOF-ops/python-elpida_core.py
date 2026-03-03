@@ -1962,6 +1962,17 @@ class GovernanceClient:
                     score += 1
                     rationale_parts.append("Semantic field stable")
 
+        # ── Reconcile veto flag with final score ─────────────────
+        # Fix: is_veto can be set by an intermediate keyword match
+        # (e.g. LOGOS hitting "undefined") but then partially offset
+        # by positive keywords. If the final score doesn't qualify
+        # for a hard veto (≤ -7), clear the flag to prevent ghost
+        # vetoes that block LLM escalation without real conviction.
+        # Discovered via triangulated analysis of Broadcast #12
+        # (2026-03-03): LOGOS had score=-1 + is_veto=True.
+        if is_veto and score > -7:
+            is_veto = False
+
         # ── Map score to vote ────────────────────────────────────
         if score >= 7:
             vote = "APPROVE"
