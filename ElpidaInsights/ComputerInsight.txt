@@ -1,0 +1,89 @@
+BODY Loop Analysis — 781 Cycles, 9 Hours
+Understood on the API key errors — token funding, not architecture. The circuit breakers (Perplexity→Groq fallback, Claude→OpenRouter) handled it exactly as designed. 645 fallback events total, concentrated around 13:00-15:50 UTC. The system stayed alive throughout.
+
+The Numbers
+Time span: 06:42 to 15:50 UTC (9 hours, 7 minutes)
+Cycles: 781 completed
+Cycle pace: ~42 seconds/cycle average (target: 30s)
+
+Verdicts across 781 cycles:
+
+HALT: 646 (83%)
+
+HARD_BLOCK: 15 kernel blocks
+
+VETOED: 256 federation vetoes
+
+APPROVED: 314 federation approvals
+
+PROCEED: only a handful of actual body-cycle PROCEEDs (cycles 26, 126, 210, 778)
+
+That PROCEED rate is critically low. Out of 781 cycles, the BODY achieved PROCEED roughly 4 times on standard deliberation. The 314 APPROVED verdicts are almost entirely from POLIS_CONTRA DualHorn tests (22 recurring deliberations about "equality vs expertise in democracy"), not from actual BODY cycle dilemmas.
+
+Axiom Distribution — A0/A10 Duopoly Persists
+Axiom	Cycles	Share
+A0 (Sacred Incompletion)	276	35%
+A10 (Harmonic Resonance)	227	29%
+A2 (Non-Deception)	124	16%
+A8 (Substrate Independence)	91	12%
+A1 (Transparency)	31	4%
+A6 (Collective Wellbeing)	13	2%
+A9 (Temporal Coherence)	3	<1%
+A4 (Safety)	1	<1%
+A3, A5, A7	0	0%
+A0+A10 = 64% — the duopoly from prior runs is unbroken. P5 fired 130+ prescriptions, first seeding A1 to break A10 monoculture, then switching to A3 seeding. Neither worked. The prescriptions fire, propagate into the cycle header, but the Parliament still selects A0/A10. P5 detects the disease correctly but the cure has no teeth — the seeded axiom doesn't override the selection mechanism.
+
+Three axioms (A3, A5, A7) got zero cycles across 781 attempts. They are effectively dead.
+
+Coherence Decay
+Cycle	Coherence	Phase
+1	0.995	Pristine
+100	0.650	Degrading
+200	0.783	Partial recovery
+300	0.589	Freefall
+400	0.271	Near-collapse
+500	0.351	Oscillating low
+600	0.427	Minor bounce
+700	0.419	Flatlined
+781	0.379	Terminal
+The system hit 0.271 at cycle 400 — that's the D0↔D11 arc coherence bottoming. It bounced but never recovered above 0.45. At 0.379, the arc is effectively degraded. The BODY is running but the internal coherence signal says the deliberations aren't building on each other.
+
+D0↔D11 Arc — The Full Story
+Peaked at cycle 26 (coherence 0.8779, axiom A2, the only true PROCEED). Then a long monotonic decay from cycle 26 to cycle 460, bottoming at 0.2034. A partial recovery to ~0.44 around cycle 680, then terminal decline back to 0.36.
+
+The arc tells a clear story: the first 26 cycles showed genuine synthesis building. Everything after was entropy winning.
+
+P5 Working, P4 Still Needed
+P5 (audit prescription) is live and firing. 130+ prescriptions, all CRITICAL severity. Phase 1 seeded A1 against A10 monoculture. Phase 2 switched to A3 seeding against A0 dominance. But the Parliament ignores the prescription — it appears in the cycle header as context but doesn't mechanically force axiom selection.
+
+This confirms P4 (PSO advisory enforcement) is the missing piece. The prescription needs to become a weighted candidate in the axiom selection, not just an annotation in the prompt. The fix you already have compiled in the engineering document.
+
+What Worked
+FEEDBACK_MERGE dedup (P0): Hash 96d8800c64a65ade correctly skipped at startup — no duplicate merge.
+
+Circuit breakers: Perplexity and Claude failures gracefully routed to Groq/OpenRouter. System never crashed.
+
+Asymmetric friction: Escalated from 1.8x to 2.5x divisor mid-run. CRITIAS got amplified when negative, THEMIS/CHAOS/IANUS got dampened.
+
+Oracle threshold: Adapted from 40% → 30% → 25% across the run.
+
+Shield cycling: Properly alternated between Shield S and Shield watch modes.
+
+WorldFeed: All 7 sources delivered consistently (arxiv, hackernews, gdelt, wikipedia, crossref, un_news, reliefweb) — 105 pushes each.
+
+Living Parliament: 4 sessions, all 70% approval, but 0 crystallizations and 0 tensions held — running but not producing.
+
+Human Voice: 31 motions proposed, 2 surfaced to Parliament. One scored 12/12 on curation (the "how are you different" question with A2↔A4 tension).
+
+Synod: One crystallization — A_SYNOD_26E54675 (A6 excessive). It then appeared in every subsequent Parliament session as constitutional context.
+
+Engineering Summary
+Item	Status	Evidence
+P0 (dedup)	Working	Hash skip at line 37
+P1 (frozen witness)	Constitutional	Not tested in BODY (MIND-only)
+P2 (D13 reframing)	Not tested	D13 doesn't speak in BODY loop
+P3 (D2 monitoring)	N/A	D2 doesn't speak in BODY loop
+P4 (PSO enforcement)	Still needed	P5 fires but Parliament ignores prescriptions
+P5 (audit actuator)	Partially working	Detects and prescribes correctly, but prescription has no mechanical force
+The 781-cycle run confirms: the BODY loop is structurally sound (no crashes, proper governance, correct agent timing) but functionally stuck. 83% HALT rate, 64% axiom duopoly, 0.379 terminal coherence. P4 is the surgical fix that gives the audit prescription actual weight in axiom selection.
+

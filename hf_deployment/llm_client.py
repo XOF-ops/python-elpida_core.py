@@ -577,13 +577,27 @@ class LLMClient:
             contents.append({"parts": [{"text": "Understood."}], "role": "model"})
         contents.append({"parts": [{"text": prompt}]})
 
+        # Gemini safety settings: governance/policy prompts trigger safety
+        # filters that truncate output at ~150 chars.  BLOCK_NONE disables
+        # content filtering for all categories (matches MIND-side fix).
+        safety_settings = [
+            {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+        ]
+
+        # Floor: never request fewer than 1024 output tokens
+        effective_max = max(max_tokens, 1024)
+
         def _gemini_post() -> requests.Response:
             return requests.post(
                 f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}",
                 headers={"Content-Type": "application/json"},
                 json={
                     "contents": contents,
-                    "generationConfig": {"maxOutputTokens": max_tokens},
+                    "generationConfig": {"maxOutputTokens": effective_max},
+                    "safetySettings": safety_settings,
                 },
                 timeout=timeout,
             )
@@ -592,10 +606,21 @@ class LLMClient:
             response = _gemini_post()
             if response.status_code == 200:
                 data = response.json()
-                text = data["candidates"][0]["content"]["parts"][0]["text"]
+                candidates = data.get("candidates", [])
+                if not candidates:
+                    reason = data.get("promptFeedback", {}).get("blockReason", "unknown")
+                    logger.warning("Gemini: no candidates — blockReason=%s", reason)
+                    self.stats[Provider.GEMINI].failures += 1
+                    return None
+                finish_reason = candidates[0].get("finishReason", "")
+                text = candidates[0]["content"]["parts"][0]["text"]
                 tokens = len(text) // 4
                 self.stats[Provider.GEMINI].requests += 1
                 self.stats[Provider.GEMINI].tokens += tokens
+                if finish_reason == "SAFETY":
+                    logger.warning("Gemini: finishReason=SAFETY — output likely truncated (%d chars)", len(text))
+                elif finish_reason == "MAX_TOKENS":
+                    logger.info("Gemini: finishReason=MAX_TOKENS (%d chars)", len(text))
                 return text
             elif response.status_code == 429:
                 logger.warning("Gemini: 429 Resource Exhausted — backoff retry")

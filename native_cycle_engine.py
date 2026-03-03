@@ -305,6 +305,12 @@ class NativeCycleEngine:
         # Restore cumulative Kaya count from persisted Ark state
         self._kaya_count = self.ark_curator._kaya_count
 
+        # P6: Domain diversity tracker — prevents any single domain from
+        # absorbing all cycles.  D6 appears in all 5 rhythms and gets
+        # friction boost, causing 4→6→9 growth while D1/D4/D5 vanish.
+        from collections import deque
+        self._recent_domains: deque = deque(maxlen=15)
+
         # IMMUTABLE KERNEL: K1-K7 safety rules (ported from BODY)
         # Runs BEFORE any insight is stored. Hard-coded Python checks.
         self.kernel_blocks = 0
@@ -1517,16 +1523,41 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
         # Weighted selection based on hunger (domains not recently called)
         # A0 DISSONANCE SAFEGUARD: If friction-domain boost is active,
         # multiply selection weight for friction domains (D3, D6, D10, D11).
+        # P6 DIVERSITY FIX: Domains appearing 4+ times in last 15 selections
+        # get their weight halved per excess occurrence.  This prevents D6
+        # (eligible in all 5 rhythms + friction boost) from absorbing cycles
+        # while D1/D4/D5 vanish.
+        # P7 PROVIDER DIVERSITY: If a provider has handled 7+ of last 15
+        # domains, its domains get a 0.5× penalty.  Prevents Claude (D0,
+        # D6, D10, D11) from reaching 58%+ concentration.
         import random
         friction = self.ark_curator.get_friction_boost()
-        if friction and any(d in candidates for d in friction):
-            # Weighted selection: friction domains get boosted probability
-            domain_weights = []
-            for d in candidates:
-                domain_weights.append(friction.get(d, 1.0))
-            next_domain = random.choices(candidates, weights=domain_weights, k=1)[0]
-        else:
-            next_domain = random.choice(candidates)
+
+        # P7: count recent provider usage
+        recent_providers = []
+        for rd in self._recent_domains:
+            rd_cfg = _CFG_DOMAINS.get(str(rd), {})
+            recent_providers.append(rd_cfg.get("provider", "unknown"))
+
+        domain_weights = []
+        for d in candidates:
+            w = friction.get(d, 1.0) if friction else 1.0
+            # P6 dampener: penalise over-represented domains
+            recent_count = self._recent_domains.count(d)
+            if recent_count >= 4:
+                excess = recent_count - 3
+                w *= max(0.15, 1.0 / (1 + excess))  # floor at 0.15 to keep non-zero
+            # P7 dampener: penalise over-concentrated providers
+            d_provider = _CFG_DOMAINS.get(str(d), {}).get("provider", "unknown")
+            provider_count = recent_providers.count(d_provider)
+            if provider_count >= 7:
+                w *= 0.5  # halve weight for over-concentrated provider
+            domain_weights.append(w)
+
+        next_domain = random.choices(candidates, weights=domain_weights, k=1)[0]
+
+        # Track domain selection for P6 diversity
+        self._recent_domains.append(next_domain)
         
         # Track emergence cluster
         self._emergence_cluster.append(next_domain)

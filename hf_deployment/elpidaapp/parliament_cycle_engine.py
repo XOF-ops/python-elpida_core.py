@@ -1069,7 +1069,8 @@ class ParliamentCycleEngine:
     def _extract_dominant_axiom(self, result: Dict) -> Optional[str]:
         """
         The dominant axiom = the primary axiom of the highest-scoring
-        Parliament node, **adjusted for diversity rotation**.
+        Parliament node, **adjusted for diversity rotation** and
+        **P4 prescription enforcement**.
 
         Diversity dampener (Computer analysis fix):
           CRITIAS (+10 on "question/analyze/review") and CHAOS (+12 on
@@ -1078,6 +1079,13 @@ class ParliamentCycleEngine:
           without altering governance scoring, we penalise nodes whose
           axiom has appeared 3+ times in the last 7 dominant-axiom slots.
           Penalty = -3 per excess occurrence beyond 2.
+
+        P4 prescription enforcement (Computer 781-cycle analysis):
+          P5 detects monoculture and issues prescriptions, but they only
+          affect rhythm selection — the axiom selection ignores them.
+          Fix: when an audit prescription is active, give the target
+          axiom's node a +5 score bonus.  This makes the prescription
+          a weighted candidate, not just a prompt annotation.
 
         The raw Parliament scores — and therefore governance decisions
         (PROCEED / HALT / VETO) — are unaffected.
@@ -1089,10 +1097,19 @@ class ParliamentCycleEngine:
             "PROMETHEUS": "A8", "IANUS": "A9", "CHAOS": "A10",
             "LOGOS": "A2",   # Narrator — Language as Precision Tool
         }
+        # Reverse map: axiom → node name
+        axiom_to_node = {v: k for k, v in node_axioms.items()}
 
         votes = result.get("parliament", {}).get("votes", {})
         if not votes:
             return None
+
+        # ── P4 prescription target ──────────────────────────────
+        rx_axiom = None
+        if (self._audit_prescription
+                and self.cycle_count - self._audit_prescription_cycle
+                    <= AUDIT_PRESCRIPTION_COOLDOWN):
+            rx_axiom = self._audit_prescription.get("target_axiom")
 
         # ── Diversity-adjusted scoring ───────────────────────────
         recent = list(self._recent_dominant_axioms)
@@ -1100,13 +1117,21 @@ class ParliamentCycleEngine:
         def _adjusted_score(node_name: str) -> float:
             raw = votes[node_name].get("score", 0)
             axiom = node_axioms.get(node_name)
+            adj = float(raw)
+            # Diversity dampener: penalise over-represented axioms
             if axiom and recent:
                 dominance_count = recent.count(axiom)
                 if dominance_count >= 3:
-                    # -3 per excess dominance beyond 2
                     penalty = (dominance_count - 2) * 3
-                    return raw - penalty
-            return raw
+                    adj -= penalty
+            # P4 enforcement: boost prescribed axiom's node
+            if rx_axiom and axiom == rx_axiom:
+                adj += 5
+                logger.debug(
+                    "P4 axiom enforcement: %s (%s) +5 (prescription active)",
+                    node_name, axiom,
+                )
+            return adj
 
         best_node = max(votes, key=_adjusted_score)
         axiom = node_axioms.get(best_node)
