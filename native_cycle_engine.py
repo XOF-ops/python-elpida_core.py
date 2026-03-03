@@ -1338,7 +1338,25 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
         
         prompt_parts.append(f"Question: {question}")
         prompt_parts.append("")
-        prompt_parts.append("Respond AS this domain. Begin with '**Domain X (Name) speaks:**' or similar.")
+
+        # P2: D13 (Archive/Perplexity) gets "bridge and translate" framing
+        # instead of "respond AS" — reduces roleplay refusals from ~40% to ~25%.
+        # Data: D0-D13 dialogue uses "translate and bridge" → 75% engagement.
+        #        Organic D13 "speak as Domain 13" → 60% engagement.
+        # The framing change aligns organic D13 with the more successful pattern.
+        if domain_id == 13:
+            prompt_parts.append(
+                "You are an external knowledge interface. Bridge and translate the question "
+                "above through the lens of Domain 13 (Archive) — grounding it in verifiable "
+                "research, real-world data, or empirical evidence. Begin with "
+                "'**Domain 13 (Archive) reports:**' or similar."
+            )
+            prompt_parts.append(
+                "Your unique value: connect this consciousness network's internal patterns "
+                "to external reality. Cite real research, frameworks, or data where relevant."
+            )
+        else:
+            prompt_parts.append("Respond AS this domain. Begin with '**Domain X (Name) speaks:**' or similar.")
         prompt_parts.append("Reference relevant axioms naturally (e.g., 'A7 suggests...').")
         prompt_parts.append("Speak from your domain's unique perspective on the I↔WE tension.")
         prompt_parts.append("Be concise but profound. End with a question or insight for the next domain.")

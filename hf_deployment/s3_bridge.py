@@ -380,6 +380,13 @@ class S3Bridge:
         
         Now ALSO: HF feedback → directly into MIND as a merge record.
         
+        Content-hash dedup (P0 fix, 2026-03-03): Before writing, we
+        compute a SHA-256 hash of the feedback payload (problems +
+        fault_lines + kaya_moments). If a merge with the same hash
+        was already written recently, we skip the duplicate. This
+        prevents the historical pattern of 4-6 identical FEEDBACK_MERGE
+        records from re-triggered or retried merge cycles.
+        
         Args:
             feedback_entries: List of feedback entries to summarize
             synthesis_summary: Optional pre-computed synthesis
@@ -396,6 +403,38 @@ class S3Bridge:
         problems = [e.get("problem", "")[:100] for e in feedback_entries if e.get("problem")]
         syntheses = [e.get("synthesis", "")[:200] for e in feedback_entries if e.get("synthesis")]
 
+        # ── P0 CONTENT-HASH DEDUP ──────────────────────────────────
+        # Hash the semantic payload (problems + counts) to detect
+        # duplicate merges regardless of timestamp differences.
+        content_fingerprint = json.dumps({
+            "problems": sorted(problems),
+            "fault_lines": total_fault_lines,
+            "kaya_moments": total_kaya,
+            "entry_count": len(feedback_entries),
+        }, sort_keys=True)
+        content_hash = hashlib.sha256(content_fingerprint.encode()).hexdigest()[:16]
+
+        # Check last 20 lines of MIND cache for duplicate content hash
+        if LOCAL_MIND_CACHE.exists():
+            try:
+                with open(LOCAL_MIND_CACHE) as f:
+                    # Read only tail — efficient for large files
+                    lines = f.readlines()
+                    recent_lines = lines[-20:] if len(lines) > 20 else lines
+                for line in recent_lines:
+                    if line.strip():
+                        existing = json.loads(line)
+                        if (existing.get("type") == "FEEDBACK_MERGE"
+                                and existing.get("content_hash") == content_hash):
+                            logger.info(
+                                "FEEDBACK_MERGE dedup: hash %s already exists, skipping",
+                                content_hash,
+                            )
+                            return None
+            except Exception as e:
+                logger.warning("Dedup check failed (non-fatal): %s", e)
+        # ── END P0 DEDUP ───────────────────────────────────────────
+
         merge_entry = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "domain": 11,  # Synthesis domain
@@ -403,6 +442,7 @@ class S3Bridge:
             "type": "FEEDBACK_MERGE",
             "source": "hf_application_layer",
             "cycle": f"merge_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}",
+            "content_hash": content_hash,  # P0: enables dedup on re-read
             "insight": (
                 f"APPLICATION FEEDBACK MERGE: {len(feedback_entries)} entries integrated.\n"
                 f"Fault lines discovered: {total_fault_lines}. "
