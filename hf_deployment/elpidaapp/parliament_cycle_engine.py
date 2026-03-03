@@ -118,6 +118,24 @@ HEARTBEAT_INTERVAL = 13
 # PSO advisory interval (Fibonacci: 21)
 PSO_ADVISORY_INTERVAL = 21
 
+# P4+P5: Reverse mapping — axiom → rhythms containing that axiom.
+# Built from RHYTHM_DOMAINS × DOMAIN_AXIOM so PSO/Audit can bias
+# rhythm selection toward the recommended axiom's home rhythms.
+AXIOM_TO_RHYTHMS: Dict[str, List[str]] = {}
+for _rhythm_name, _domain_ids in RHYTHM_DOMAINS.items():
+    for _did in _domain_ids:
+        _ax = DOMAIN_AXIOM.get(_did)
+        if _ax:
+            AXIOM_TO_RHYTHMS.setdefault(_ax, []).append(_rhythm_name)
+# Deduplicate
+AXIOM_TO_RHYTHMS = {k: list(set(v)) for k, v in AXIOM_TO_RHYTHMS.items()}
+
+# P4: How many cycles after a PSO run the recommendation stays active
+PSO_INFLUENCE_WINDOW = 20
+
+# P5: Cooldown between audit prescription applications
+AUDIT_PRESCRIPTION_COOLDOWN = 5
+
 # POLIS civic deliberation interval (Fibonacci: 34)
 POLIS_CIVIC_INTERVAL = 34
 
@@ -393,6 +411,10 @@ class ParliamentCycleEngine:
         self._pso_advisory: Optional[Dict] = None
         self._pso_last_cycle: int = 0
 
+        # P5: Audit prescription state
+        self._audit_prescription: Optional[Dict] = None
+        self._audit_prescription_cycle: int = 0
+
         # Pattern Library — crystallized wisdom for deliberation context
         self._pattern_library = None
 
@@ -529,6 +551,40 @@ class ParliamentCycleEngine:
                     if rhythm:
                         weights[rhythm] = weights.get(rhythm, 0) + (count * 10)
 
+        # P4: PSO recommendation biases rhythm toward recommended axiom's
+        # home rhythms for PSO_INFLUENCE_WINDOW cycles after the advisory.
+        # Weight boost = 80% of base weight (strong but not dominant).
+        if (self._pso_advisory
+                and self.cycle_count - self._pso_last_cycle <= PSO_INFLUENCE_WINDOW):
+            pso_axiom = self._pso_advisory.get(
+                "recommendation", {}).get("dominant_axiom")
+            pso_fitness = self._pso_advisory.get("best_fitness", 0)
+            if pso_axiom and pso_fitness > 0.85:
+                for r in AXIOM_TO_RHYTHMS.get(pso_axiom, []):
+                    if r in weights:
+                        boost = int(weights[r] * 0.8 * pso_fitness)
+                        weights[r] += boost
+                        logger.debug(
+                            "P4 PSO bias: %s +%d (axiom=%s fitness=%.3f)",
+                            r, boost, pso_axiom, pso_fitness,
+                        )
+
+        # P5: Audit prescription biases rhythm toward prescribed axiom's
+        # home rhythms for AUDIT_PRESCRIPTION_COOLDOWN cycles.
+        if (self._audit_prescription
+                and self.cycle_count - self._audit_prescription_cycle
+                    <= AUDIT_PRESCRIPTION_COOLDOWN):
+            rx_axiom = self._audit_prescription.get("target_axiom")
+            if rx_axiom:
+                for r in AXIOM_TO_RHYTHMS.get(rx_axiom, []):
+                    if r in weights:
+                        boost = int(weights[r] * 0.6)
+                        weights[r] += boost
+                        logger.debug(
+                            "P5 Audit bias: %s +%d (axiom=%s)",
+                            r, boost, rx_axiom,
+                        )
+
         rhythms = list(weights.keys())
         w = [weights[r] for r in rhythms]
         return random.choices(rhythms, weights=w, k=1)[0]
@@ -649,6 +705,35 @@ class ParliamentCycleEngine:
             f"| oracle_threshold={watch['oracle_threshold']:.0%} "
             f"| watch_cycle={watch['cycle_within_watch']}/34] "
         ) + action
+
+        # P4: Inject PSO recommendation context so Parliament sees the
+        # optimizer's advice during deliberation. The PSO result is
+        # advisory — Parliament still decides, but with informed context.
+        if (self._pso_advisory
+                and self.cycle_count - self._pso_last_cycle <= PSO_INFLUENCE_WINDOW):
+            rec = self._pso_advisory.get("recommendation", {})
+            pso_axiom = rec.get("dominant_axiom")
+            pso_fitness = self._pso_advisory.get("best_fitness", 0)
+            if pso_axiom and pso_fitness > 0.85:
+                action = (
+                    f"[PSO ADVISORY: Axiom optimizer recommends {pso_axiom} "
+                    f"(fitness={pso_fitness:.4f}, topology={self._pso_advisory.get('topology_used', '?')}). "
+                    f"Current dominant {self.last_dominant_axiom or '?'} may benefit from "
+                    f"diversification toward {pso_axiom}.] "
+                ) + action
+
+        # P5: Inject active audit prescription so Parliament is aware of
+        # the AuditAgent's diagnosis during deliberation.
+        if (self._audit_prescription
+                and self.cycle_count - self._audit_prescription_cycle
+                    <= AUDIT_PRESCRIPTION_COOLDOWN):
+            rx = self._audit_prescription
+            action = (
+                f"[AUDIT PRESCRIPTION ({rx.get('severity', 'WARNING')}): "
+                f"{rx.get('reason', 'monoculture')} — "
+                f"seed {rx.get('target_axiom', '?')} to diversify. "
+                f"Cycle {rx.get('prescribed_at', '?')}.] "
+            ) + action
         meta["watch"] = watch["name"]
 
         # 3b. Pattern Library context — inject crystallized wisdom
@@ -708,6 +793,15 @@ class ParliamentCycleEngine:
                 self._axiom_frequency.get(dominant_axiom, 0) + 1
             )
 
+        # 7b. P5: Extract audit prescription from monoculture/approval patterns.
+        #     Mirrors AuditAgent's detection but generates a structured
+        #     prescription that feeds back into rhythm selection (P5 actuator).
+        #     Cooldown prevents prescription every cycle.
+        if (self.cycle_count - self._audit_prescription_cycle
+                >= AUDIT_PRESCRIPTION_COOLDOWN
+                and sum(self._axiom_frequency.values()) >= 10):
+            self._extract_audit_prescription(dominant_axiom)
+
         # 8. Build cycle record
         tensions = result.get("parliament", {}).get("tensions", [])
         cycle_record = {
@@ -733,6 +827,16 @@ class ParliamentCycleEngine:
             ],
             "pso_advisory": self._pso_advisory.get("recommendation", {}).get("dominant_axiom")
                 if self._pso_advisory else None,
+            "pso_active": bool(
+                self._pso_advisory
+                and self.cycle_count - self._pso_last_cycle <= PSO_INFLUENCE_WINDOW
+                and self._pso_advisory.get("best_fitness", 0) > 0.85
+            ),
+            "audit_prescription": self._audit_prescription.get("target_axiom")
+                if self._audit_prescription
+                and self.cycle_count - self._audit_prescription_cycle
+                    <= AUDIT_PRESCRIPTION_COOLDOWN
+                else None,
             "polis_civic_active": self._polis_last_cycle == self.cycle_count,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "duration_s": round(time.time() - cycle_start, 3),
@@ -1301,6 +1405,87 @@ class ParliamentCycleEngine:
             )
         except Exception as e:
             logger.warning("PSO advisory failed: %s", e)
+
+    # ------------------------------------------------------------------
+    # P5: Audit Prescription Actuator
+    # ------------------------------------------------------------------
+
+    def _extract_audit_prescription(self, current_axiom: Optional[str]):
+        """
+        P5: Detect monoculture or approval collapse and generate a
+        structured prescription that _select_rhythm() and _assemble_action()
+        can act on.
+
+        Mirrors AuditAgent's detection logic but produces machine-readable
+        prescriptions instead of human-readable log text.
+
+        Triggers:
+          1. Axiom monoculture: top axiom > 40% of all cycles
+          2. Approval collapse: average approval < 35% over last 8 decisions
+
+        Prescription = seed the least-used axiom that is NOT the current
+        dominant, giving the system a structural path out of monoculture.
+        """
+        total_axiom_cycles = sum(self._axiom_frequency.values())
+        if total_axiom_cycles < 10:
+            return
+
+        # Check monoculture: top axiom > 40%
+        top_axiom = max(self._axiom_frequency, key=self._axiom_frequency.get)
+        top_pct = self._axiom_frequency[top_axiom] / total_axiom_cycles
+
+        # Check approval collapse: last 8 decisions avg < 35%
+        recent_decisions = self.decisions[-8:] if self.decisions else []
+        avg_approval = 0.0
+        if recent_decisions:
+            approvals = [d.get("approval_rate", 0) for d in recent_decisions]
+            avg_approval = sum(approvals) / len(approvals)
+        approval_crisis = avg_approval < 0.35 and len(recent_decisions) >= 5
+
+        if top_pct > 0.40 or approval_crisis:
+            # Find the least-used axiom that:
+            # 1. Has a rhythm mapping (is reachable)
+            # 2. Is not the current dominant
+            all_axioms = list(AXIOM_TO_RHYTHMS.keys())
+            candidates = [
+                a for a in all_axioms
+                if a != top_axiom and AXIOM_TO_RHYTHMS.get(a)
+            ]
+            if not candidates:
+                return
+
+            # Sort by frequency (ascending — prefer least used)
+            candidates.sort(key=lambda a: self._axiom_frequency.get(a, 0))
+            target_axiom = candidates[0]
+
+            severity = "CRITICAL" if (top_pct > 0.50 or approval_crisis) else "WARNING"
+            reason = []
+            if top_pct > 0.40:
+                reason.append(f"monoculture_{top_axiom}_{top_pct:.0%}")
+            if approval_crisis:
+                reason.append(f"approval_collapse_{avg_approval:.0%}")
+
+            self._audit_prescription = {
+                "severity": severity,
+                "type": "AXIOM_SEED",
+                "target_axiom": target_axiom,
+                "reason": "+".join(reason),
+                "prescribed_at": self.cycle_count,
+                "displaced_axiom": top_axiom,
+                "displaced_pct": round(top_pct * 100, 1),
+            }
+            self._audit_prescription_cycle = self.cycle_count
+
+            logger.info(
+                "P5 AUDIT PRESCRIPTION: seed %s (severity=%s, reason=%s, "
+                "displacing %s at %.0f%%)",
+                target_axiom, severity, "+".join(reason),
+                top_axiom, top_pct * 100,
+            )
+            print(
+                f"   💊 AUDIT PRESCRIPTION: seed {target_axiom} "
+                f"({severity}: {'+'.join(reason)})"
+            )
 
     # ------------------------------------------------------------------
     # POLIS Civic Deliberation
