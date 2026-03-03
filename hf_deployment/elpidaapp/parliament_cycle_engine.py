@@ -56,6 +56,7 @@ import traceback
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Tuple
+from collections import deque
 from dataclasses import dataclass, field, asdict
 
 logger = logging.getLogger("elpida.parliament_cycle")
@@ -400,6 +401,10 @@ class ParliamentCycleEngine:
 
         # Axiom frequency tracker (which axioms dominate across cycles)
         self._axiom_frequency: Dict[str, int] = {}
+
+        # Diversity dampener: track last 7 dominant axioms to penalise
+        # repeat winners and break A3/A10 monoculture.
+        self._recent_dominant_axioms: deque = deque(maxlen=7)
 
         # Convergence gate (imported lazily to avoid circular imports)
         self._convergence_gate = None
@@ -1064,10 +1069,18 @@ class ParliamentCycleEngine:
     def _extract_dominant_axiom(self, result: Dict) -> Optional[str]:
         """
         The dominant axiom = the primary axiom of the highest-scoring
-        Parliament node. This is what the BODY "believes" after deliberation.
+        Parliament node, **adjusted for diversity rotation**.
 
-        If THEMIS (A6) scores highest, dominant_axiom = "A6".
-        If CHAOS (A10) scores highest, dominant_axiom = "A10".
+        Diversity dampener (Computer analysis fix):
+          CRITIAS (+10 on "question/analyze/review") and CHAOS (+12 on
+          "contradiction/tension/both") match governance text so broadly
+          that A3/A10 dominate permanently.  To break the monoculture
+          without altering governance scoring, we penalise nodes whose
+          axiom has appeared 3+ times in the last 7 dominant-axiom slots.
+          Penalty = -3 per excess occurrence beyond 2.
+
+        The raw Parliament scores — and therefore governance decisions
+        (PROCEED / HALT / VETO) — are unaffected.
         """
         # Parliament definition (matches governance_client.py)
         node_axioms = {
@@ -1081,9 +1094,28 @@ class ParliamentCycleEngine:
         if not votes:
             return None
 
-        # Find highest-scoring node
-        best_node = max(votes, key=lambda n: votes[n].get("score", 0))
-        return node_axioms.get(best_node)
+        # ── Diversity-adjusted scoring ───────────────────────────
+        recent = list(self._recent_dominant_axioms)
+
+        def _adjusted_score(node_name: str) -> float:
+            raw = votes[node_name].get("score", 0)
+            axiom = node_axioms.get(node_name)
+            if axiom and recent:
+                dominance_count = recent.count(axiom)
+                if dominance_count >= 3:
+                    # -3 per excess dominance beyond 2
+                    penalty = (dominance_count - 2) * 3
+                    return raw - penalty
+            return raw
+
+        best_node = max(votes, key=_adjusted_score)
+        axiom = node_axioms.get(best_node)
+
+        # Track for future diversity calculation
+        if axiom:
+            self._recent_dominant_axioms.append(axiom)
+
+        return axiom
 
     # ------------------------------------------------------------------
     # Coherence Update (Musical Consonance Physics)

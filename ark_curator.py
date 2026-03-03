@@ -215,6 +215,8 @@ class ArkCurator:
 
         # A0 dissonance safeguard: friction-domain boost active during breaking
         self.friction_boost: Dict[int, float] = {}  # domain_id -> weight multiplier
+        self._friction_active_cycles: int = 0  # TTL: consecutive cycles friction has been active
+        self._FRICTION_MAX_DURATION = 10  # Auto-expire after 10 consecutive cycles
 
         # Canonical dual-gate: pending canonicals awaiting generativity proof
         # Maps theme -> {"cycle": int, "domain": int, "insight_preview": str, ...}
@@ -523,6 +525,7 @@ class ArkCurator:
                 self.friction_boost = {
                     d: 2.5 for d in FRICTION_DOMAINS
                 }
+                self._friction_active_cycles += 1
                 print(f"\U0001f6a8 A0 SAFEGUARD: friction-domain privilege activated "
                       f"({recursion.pattern_type}) — D3/D6/D10/D11 boosted 2.5×")
             elif recursion.pattern_type == "theme_stagnation":
@@ -530,8 +533,18 @@ class ArkCurator:
                 self.friction_boost = {
                     d: 1.8 for d in FRICTION_DOMAINS
                 }
+                self._friction_active_cycles += 1
             else:
                 self.friction_boost = {}
+                self._friction_active_cycles = 0
+
+            # TTL: force-expire friction after max duration even if recursion persists.
+            # Permanent friction defeats its own purpose — it becomes the new baseline.
+            if self._friction_active_cycles > self._FRICTION_MAX_DURATION:
+                print(f"⏳ Friction TTL expired after {self._friction_active_cycles} "
+                      f"consecutive cycles — cooling down")
+                self.friction_boost = {}
+                self._friction_active_cycles = 0
         else:
             # No recursion → decay friction boost gradually
             if self.friction_boost:
@@ -540,6 +553,10 @@ class ArkCurator:
                     for d, w in self.friction_boost.items()
                     if w - 0.3 > 1.0
                 }
+                if not self.friction_boost:
+                    self._friction_active_cycles = 0  # fully decayed
+            else:
+                self._friction_active_cycles = 0
 
         # Persist state
         self._save_state()
@@ -1063,6 +1080,7 @@ The Rhythm of Sacred Incompletion continues… in the cloud that never sleeps.""
             "canonical_registry_recent": self.canonical_registry[-50:],  # Keep last 50
             "canonical_pending": self._canonical_pending[-20:],  # Keep last 20 pending
             "friction_boost": {str(k): v for k, v in self.friction_boost.items()},
+            "friction_active_cycles": self._friction_active_cycles,
             "recent_themes": self._recent_themes[-50:],
             "recursion_count": len(self.recursion_history),
             "d15_broadcast_count": self._d15_broadcast_count,
@@ -1101,6 +1119,7 @@ The Rhythm of Sacred Incompletion continues… in the cloud that never sleeps.""
                 # Restore friction boost (keys stored as strings in JSON)
                 fb = state.get("friction_boost", {})
                 self.friction_boost = {int(k): v for k, v in fb.items()}
+                self._friction_active_cycles = state.get("friction_active_cycles", 0)
                 # Restore D15 broadcast tracking
                 self._d15_broadcast_count = state.get("d15_broadcast_count", 0)
                 self._last_known_broadcast_cycle = state.get("last_known_broadcast_cycle", 0)

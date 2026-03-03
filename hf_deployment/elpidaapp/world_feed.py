@@ -110,7 +110,11 @@ GDELT_DOC = (
     "https://api.gdeltproject.org/api/v2/doc/doc"
     "?query={query}&mode=ArtList&maxrecords=5&format=json"
 )
-WIKIPEDIA_FEED = "https://en.wikipedia.org/w/api.php?action=query&list=recentchanges&rcnamespace=0&rclimit=10&rcprop=title|comment|timestamp&format=json"
+WIKIPEDIA_FEED = (
+    "https://en.wikipedia.org/w/api.php?action=query&list=recentchanges"
+    "&rcnamespace=0&rclimit=20&rcprop=title|comment|timestamp|flags"
+    "&rcshow=!bot&rctype=edit&format=json"
+)
 
 # GDELT topic queries → governance dilemmas
 GDELT_QUERIES = [
@@ -484,6 +488,22 @@ class BBCNewsFeed:
 class WikipediaCurrentEvents:
     """Fetch Wikipedia recent significant changes as contextual events."""
 
+    # Bot/tool comments and low-signal edit patterns to skip.
+    # These flood the Parliament with noise that dilutes governance input.
+    _NOISE_PATTERNS = re.compile(
+        r"Cat-a-lot|WPCleaner|AWB|AutoWikiBrowser|"
+        r"Reverted edits|Undid revision|"
+        r"Moving .* to Category|"
+        r"Changing stub|stub sorting|"
+        r"typo|ce per MOS|"
+        r"tag:? ?visual.?edit|"
+        r"Redirected page to",
+        re.IGNORECASE,
+    )
+
+    # Minimum combined text length to be considered signal
+    _MIN_TEXT_LENGTH = 30
+
     def fetch(self, seen: Set[str]) -> List[Dict]:
         events = []
         raw = _http_get(WIKIPEDIA_FEED)
@@ -503,9 +523,16 @@ class WikipediaCurrentEvents:
 
             if not title or item_id in seen:
                 continue
+
+            # ── Noise filter ─────────────────────────────────────
+            combined = f"{title}: {comment}" if comment else title
+            if len(combined) < self._MIN_TEXT_LENGTH:
+                continue
+            if self._NOISE_PATTERNS.search(comment):
+                continue
+
             seen.add(item_id)
 
-            combined = f"{title}: {comment}" if comment else title
             content = _frame_as_tension(combined, domain="Current Events")
             events.append({
                 "system": _route_system(combined),
