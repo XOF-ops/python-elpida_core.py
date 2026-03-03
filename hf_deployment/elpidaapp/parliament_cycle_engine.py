@@ -963,13 +963,13 @@ class ParliamentCycleEngine:
         Parliament node. This is what the BODY "believes" after deliberation.
 
         If THEMIS (A6) scores highest, dominant_axiom = "A6".
-        If CHAOS (A9) scores highest, dominant_axiom = "A9".
+        If CHAOS (A10) scores highest, dominant_axiom = "A10".
         """
         # Parliament definition (matches governance_client.py)
         node_axioms = {
             "HERMES": "A1", "MNEMOSYNE": "A0", "CRITIAS": "A3",
             "TECHNE": "A4", "KAIROS": "A5", "THEMIS": "A6",
-            "PROMETHEUS": "A8", "IANUS": "A9", "CHAOS": "A9",
+            "PROMETHEUS": "A8", "IANUS": "A9", "CHAOS": "A10",
             "LOGOS": "A2",   # Narrator — Language as Precision Tool
         }
 

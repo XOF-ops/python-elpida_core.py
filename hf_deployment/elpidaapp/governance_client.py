@@ -383,7 +383,7 @@ _PARLIAMENT = {
     },
     "CHAOS": {
         "role": "VOID",
-        "primary": "A9",        # Contradiction as Data
+        "primary": "A10",       # Paradox as Fuel (Meta-Reflection)
         "supporting": ["A8"],   # Epistemic Humility
         "philosophy": "I contradict, therefore we encompass.",
         "layer": 4,
@@ -424,7 +424,7 @@ _NODE_LLM: Dict[str, str] = {
     "THEMIS":    "gemini",      # A6  — Collective governance → broad tuning
     "PROMETHEUS":"perplexity",  # A8  — Epistemic humility → grounded in reality
     "IANUS":     "groq",        # A9  — Temporal checkpoints = fast gating
-    "CHAOS":     "claude",      # A9  — Contradiction-holding = Claude's strength
+    "CHAOS":     "claude",      # A10 — Contradiction-holding = Claude's strength
     "LOGOS":     "mistral",     # A2  — Semantic precision = Mistral's strength
 }
 

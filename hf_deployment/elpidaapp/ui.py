@@ -1555,8 +1555,8 @@ with tab_gov:
             "color": "#ff4488",
             "myth": "Two-faced god of thresholds. Temporal coherence — past and future must align.",
         },
-        "CHAOS — A9 · Void · Unresolvable Space": {
-            "name": "CHAOS", "axiom": "A9", "role": "Void",
+        "CHAOS — A10 · Void · Paradox as Fuel": {
+            "name": "CHAOS", "axiom": "A10", "role": "Void",
             "color": "#ff44ff",
             "myth": "The primordial void. Holds the space where governance has no answer yet.",
         },
@@ -1972,7 +1972,7 @@ and vote. The governance outcome is the collective resolution of their tensions.
             "THEMIS":     {"role": "Judge",         "axiom": "A6", "myth": "Goddess of divine law. Collective wellbeing is the tuning fork of all decisions.", "color": "#ffcc00"},
             "PROMETHEUS": {"role": "Synthesiser",   "axiom": "A8", "myth": "The fire-stealer. Epistemic humility — the gift of unknown ratios that cannot be calculated.", "color": "#ff6644"},
             "IANUS":      {"role": "Gatekeeper",    "axiom": "A9", "myth": "Two-faced god of thresholds. Temporal coherence — past and future must align.", "color": "#ff4488"},
-            "CHAOS":      {"role": "Void",          "axiom": "A9", "myth": "The primordial void. Holds the space where governance has no answer yet.", "color": "#ff44ff"},
+            "CHAOS":      {"role": "Void",          "axiom": "A10", "myth": "The primordial void. Holds the space where governance has no answer yet.", "color": "#ff44ff"},
         }
 
         _row1 = ["HERMES", "MNEMOSYNE", "CRITIAS"]

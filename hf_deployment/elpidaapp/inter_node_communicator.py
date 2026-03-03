@@ -268,7 +268,7 @@ PARLIAMENT_NODES = {
     "THEMIS":     {"role": "JUDGE",        "axiom": "A6"},
     "PROMETHEUS": {"role": "SYNTHESIZER",  "axiom": "A8"},
     "IANUS":      {"role": "GATEKEEPER",   "axiom": "A9"},
-    "CHAOS":      {"role": "VOID",         "axiom": "A9"},
+    "CHAOS":      {"role": "VOID",         "axiom": "A10"},
 }
 
 

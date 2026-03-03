@@ -27,7 +27,7 @@ Node → Primary Axiom (HF Parliament):
   THEMIS    → A6  (Collective / governance)
   PROMETHEUS→ A8  (Epistemic humility)
   IANUS     → A9  (Temporal coherence)
-  CHAOS     → A9  (Contradiction / void)
+  CHAOS     → A10 (Paradox as Fuel / void)
   LOGOS     → A2  (Naming / semantic precision)
 """
 

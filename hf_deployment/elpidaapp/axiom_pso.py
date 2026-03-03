@@ -163,7 +163,7 @@ PARLIAMENT_NODES = [
     ("THEMIS",     "A6"),
     ("PROMETHEUS", "A8"),
     ("IANUS",      "A9"),
-    ("CHAOS",      "A9"),
+    ("CHAOS",      "A10"),
 ]
 
 
