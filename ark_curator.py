@@ -463,12 +463,19 @@ class ArkCurator:
         self._adjust_rhythm_weights(rhythm_dist, avg_coherence, self.cadence.dominant_pattern)
 
         # --- Adjust breath interval ---
-        # If D0 is dominating (>50%), widen the breath
+        # D0 at 18/55 = 32.7% was not triggering widening at 50% threshold.
+        # Lower to 30% and raise ceiling to 5 so other domains get airtime.
         d0_ratio = domain_dist.get(0, 0) / max(len(domains_used), 1)
-        if d0_ratio > 0.5:
-            self.cadence.breath_interval_base = min(4, self.cadence.breath_interval_base + 1)
-        elif d0_ratio < 0.25:
+        if d0_ratio > 0.30:
+            self.cadence.breath_interval_base = min(5, self.cadence.breath_interval_base + 1)
+        elif d0_ratio < 0.20:
             self.cadence.breath_interval_base = max(2, self.cadence.breath_interval_base - 1)
+
+        # When recursion is active, ensure breath is wide enough
+        # to let non-D0 voices break the pattern.
+        recursion = self.detect_recursion(recent_insights)
+        if recursion.detected:
+            self.cadence.breath_interval_base = max(3, self.cadence.breath_interval_base)
 
         # --- Check pending canonicals for generativity (Gate B) ---
         self._check_generativity(recent_insights)

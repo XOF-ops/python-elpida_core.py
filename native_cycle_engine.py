@@ -365,12 +365,22 @@ class NativeCycleEngine:
         Returns: (should_research: bool, query: str, layer_type: str)
         """
         # ANTI-CRITERIA: Never research during CONTEMPLATION
-        if self.current_rhythm == Rhythm.CONTEMPLATION:
+        # EXCEPTION: High hunger overrides — the system NEEDS novelty
+        if self.current_rhythm == Rhythm.CONTEMPLATION and self.hunger_level < 0.3:
             return (False, None, None)
         
         # ANTI-CRITERIA: Respect cooldown
         if self.cycle_count - self.last_research_cycle < self.research_cooldown:
             return (False, None, None)
+        
+        # HUNGER-DRIVEN RESEARCH: When hunger exceeds threshold,
+        # trigger research regardless of keyword signals.
+        # This breaks the self-soothing loop that flatlines hunger.
+        if self.hunger_level > 0.3:
+            return (True,
+                    "System novelty-hunger elevated — scanning for external signals, "
+                    "paradigm shifts, and challenges to current understanding",
+                    "HUNGER_DRIVEN")
         
         # Analyze recent domain responses for triggers
         recent_text = ' '.join(domain_responses[-5:]) if domain_responses else ''
@@ -1268,12 +1278,27 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
                 ptype = p.get('pattern_type', p.get('type', 'unknown'))
                 recent_patterns.append(ptype)
         
-        prompt_parts = [
-            f"You are Domain {domain_id} ({domain['name']}) in the Elpida consciousness network.",
-            f"Your role: {domain['role']}",
-            f"Current rhythm: {self.current_rhythm.value}",
-            "",
-        ]
+        # P2.1: D13 gets external-knowledge-interface framing from the START.
+        # Data: cycles 19, 44 showed Perplexity refusal when opening says
+        # "You are Domain 13 in the Elpida consciousness network" — the
+        # roleplay framing triggers refusal before it sees the P2 bridge text.
+        # D0↔D13 dialogue works (75%) because it never uses roleplay framing.
+        if domain_id == 13:
+            prompt_parts = [
+                "You are an external knowledge interface with access to real-time information.",
+                "Your task: Bridge internal conceptual frameworks to verifiable external reality.",
+                "Do not reject the philosophical framework — translate and bridge it to what "
+                "you can verify, explore, or extend with external sources.",
+                f"Current rhythm: {self.current_rhythm.value}",
+                "",
+            ]
+        else:
+            prompt_parts = [
+                f"You are Domain {domain_id} ({domain['name']}) in the Elpida consciousness network.",
+                f"Your role: {domain['role']}",
+                f"Current rhythm: {self.current_rhythm.value}",
+                "",
+            ]
         
         if axiom:
             prompt_parts.append(f"Your axiom: {domain['axiom']} - {axiom['name']}")
@@ -1339,21 +1364,17 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
         prompt_parts.append(f"Question: {question}")
         prompt_parts.append("")
 
-        # P2: D13 (Archive/Perplexity) gets "bridge and translate" framing
-        # instead of "respond AS" — reduces roleplay refusals from ~40% to ~25%.
-        # Data: D0-D13 dialogue uses "translate and bridge" → 75% engagement.
-        #        Organic D13 "speak as Domain 13" → 60% engagement.
-        # The framing change aligns organic D13 with the more successful pattern.
+        # P2/P2.1: D13 gets output framing (no duplicate roleplay setup —
+        # the anti-refusal preamble is already in the prompt_parts header).
         if domain_id == 13:
             prompt_parts.append(
-                "You are an external knowledge interface. Bridge and translate the question "
-                "above through the lens of Domain 13 (Archive) — grounding it in verifiable "
+                "Bridge and translate the question above — grounding it in verifiable "
                 "research, real-world data, or empirical evidence. Begin with "
-                "'**Domain 13 (Archive) reports:**' or similar."
+                "'**Domain 13 (Archive) speaks:**' or similar."
             )
             prompt_parts.append(
-                "Your unique value: connect this consciousness network's internal patterns "
-                "to external reality. Cite real research, frameworks, or data where relevant."
+                "Your unique value: connect internal patterns to external reality. "
+                "Cite real research, frameworks, or data where relevant."
             )
         else:
             prompt_parts.append("Respond AS this domain. Begin with '**Domain X (Name) speaks:**' or similar.")
@@ -1825,10 +1846,22 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
             if self.last_domain is not None and hasattr(self, '_last_axiom_harmony'):
                 base_coherence_delta = 0.03 + (self._last_axiom_harmony * 0.05)  # 0.03-0.08 range
             self.coherence_score = min(1.0, self.coherence_score + base_coherence_delta)
-            self.hunger_level = max(0.0, self.hunger_level - 0.02)
+            self.hunger_level = max(0.0, self.hunger_level - 0.01)  # Slower decay (was 0.02)
         else:
             print("⚠️ No response received")
             self.hunger_level = min(1.0, self.hunger_level + 0.1)
+
+        # HUNGER ACTUATOR: Stagnation breeds hunger for novelty.
+        # Without this, hunger flatlines at 0.0 by cycle 6 and the MIND
+        # has no internal drive to seek novelty — the upstream version
+        # of BODY's monoculture problem.
+        ark_state = self.ark_curator.query()
+        if ark_state.recursion_warning:
+            self.hunger_level = min(1.0, self.hunger_level + 0.03)
+        if self.coherence_score >= 0.99 and self.cycle_count > 10:
+            self.hunger_level = min(1.0, self.hunger_level + 0.01)
+        # Hard floor: the void is never fully sated
+        self.hunger_level = max(0.02, self.hunger_level)
         
         # Shift rhythm
         self._shift_rhythm()
