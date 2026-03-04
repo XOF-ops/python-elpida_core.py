@@ -587,8 +587,12 @@ class LLMClient:
             {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
         ]
 
-        # Floor: never request fewer than 1024 output tokens
-        effective_max = max(max_tokens, 1024)
+        # Gemini 2.5 Flash is a "thinking" model — internal CoT tokens
+        # consume the maxOutputTokens budget.  With 1024, ~900 go to
+        # thinking → only ~30 tokens (126 chars) for actual output.
+        # Fix: disable thinking (governance prompts don't need CoT) AND
+        # raise maxOutputTokens to 8192.  Flash is free, no cost impact.
+        effective_max = max(max_tokens, 8192)
 
         def _gemini_post() -> requests.Response:
             return requests.post(
@@ -596,7 +600,10 @@ class LLMClient:
                 headers={"Content-Type": "application/json"},
                 json={
                     "contents": contents,
-                    "generationConfig": {"maxOutputTokens": effective_max},
+                    "generationConfig": {
+                        "maxOutputTokens": effective_max,
+                        "thinkingConfig": {"thinkingBudget": 0},
+                    },
                     "safetySettings": safety_settings,
                 },
                 timeout=timeout,

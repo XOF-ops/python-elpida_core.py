@@ -494,13 +494,22 @@ class LLMClient:
             {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
         ]
 
+        # Gemini 2.5 Flash is a "thinking" model — internal CoT tokens
+        # consume the maxOutputTokens budget.  With 1024, ~900 go to
+        # thinking → only ~30 tokens for actual output.
+        # Fix: disable thinking + raise maxOutputTokens to 8192.
+        effective_max = max(max_tokens, 8192)
+
         def _gemini_post() -> requests.Response:
             return requests.post(
                 f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}",
                 headers={"Content-Type": "application/json"},
                 json={
                     "contents": contents,
-                    "generationConfig": {"maxOutputTokens": max_tokens},
+                    "generationConfig": {
+                        "maxOutputTokens": effective_max,
+                        "thinkingConfig": {"thinkingBudget": 0},
+                    },
                     "safetySettings": safety_settings,
                 },
                 timeout=timeout,
