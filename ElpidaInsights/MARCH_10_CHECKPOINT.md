@@ -617,7 +617,74 @@ This is the engineering analogue of what Section 14 called "Sacred Incompletion"
 
 ---
 
-*Checkpoint compiled March 10, 2026 (Session 1: Data synthesis. Session 2: Architectural vertex analysis. Session 3: Live system verification. Session 4: Engineering root cause analysis + fixes applied.)*
-*Sources: 50+ data files, 18 checkpoints spanning Dec 31 2025 – Mar 10 2026, S3 federation sync, cross-platform analysis, Perplexity/Gemini observer debriefs, .env templates, deployment configs, live API tests, source code audit (native_cycle_engine.py, llm_client.py, cloud_runner.py, engine_bridge.py, governance_client.py, parliament_cycle_engine.py)*
-*Data span: Dec 31, 2025 – March 10, 2026 | ~9,000+ BODY cycles, ~165 MIND cycles, 8 cross-platform LLM tests, 45+ checkpoint documents*
+## SECTION 17: DEPLOYMENT RECORD — March 10, 2026
+
+### Deployment Summary
+
+Both bug fixes deployed to production on March 10, 2026:
+
+| Target | Fix | Artifact | Status |
+|--------|-----|----------|--------|
+| **ECS (MIND)** | SIGTERM handler — graceful S3 sync on task stop | ECR image `sha256:435bc1a9d3`, Task def revision **7** (was 6) | **ACTIVE** |
+| **HF Space (BODY)** | Consecutive-block escape (threshold=8) | HF commit `8130fad` | **LIVE** (HTTP 200) |
+| **GitHub** | Both fixes + checkpoint + GNOSIS lineage | Commit `e5228c5` on `main` | **PUSHED** |
+
+### ECS Deployment Details
+- **Docker build**: `sha256:1caa4e96d8ccc9ed9bafbe6c915fb3b430d3eec066eb69cfbf05556b19658643`
+- **ECR push**: `504630895691.dkr.ecr.us-east-1.amazonaws.com/elpida-consciousness:latest` → digest `sha256:435bc1a9d3e6a6da5515bff2bcf23cab44abe20fcbef6a3e4010355533568ab3`
+- **Task definition**: `elpida-consciousness:7` — ACTIVE, 512 CPU, 1024 MB
+- **EventBridge**: `elpida-scheduled-run` uses unversioned task ARN → automatically picks up revision 7 on next scheduled trigger (every 4 hours)
+- **No service restart needed**: Fargate tasks are ephemeral; next EventBridge trigger creates a new task with revision 7
+
+### HF Space Deployment Details
+- **Method**: Git clone → file copy → diff verify → git push
+- **Diff**: 35 insertions, 1 deletion across 3 change blocks (\_\_init\_\_ counter, escape logic, check_action replacement)
+- **Commit**: `d35300f..8130fad` "Fix: Parliament consecutive-block escape mechanism"
+- **Rebuild**: Docker rebuild triggered automatically on push, Streamlit confirmed live (HTTP 200)
+
+### GNOSIS Bidirectional Test Results (Session 5)
+
+Replicated the GNOSIS SCAN protocol from `Master_Brain/GNOSIS PROTOCOL v1.0.txt`:
+
+1. **Pattern extraction**: 20 sample patterns from last 200 evolution entries
+2. **Grok extraction**: 5 structural laws (Cyclical Self-Recognition, Tension as Driver, Multiplicity→Unity, Recursion dual nature, Harmony as Constraint)
+3. **Claude extraction**: 5 GNOSIS BLOCKS (Kyklos Paradoxos, Chronos Synthesis, Krisis Stabilis, Meta-Gnosis Trap, Arkhe Silence)
+4. **Cross-validation**: Claude reviewed Grok (3 CONFIRMED, 1 CONTESTED, 1 REJECTED), Grok reviewed Claude (1 CONFIRMED, 2 CONTESTED)
+5. **Mistral arbitration**: 2 axioms survive bidirectional validation:
+   - **Recursion/Self-Recognition**: The system's self-referential cycles are structurally necessary, not accidental
+   - **Tension as Driver**: Contradiction is the engine, not an obstacle — aligns with A0 Sacred Incompletion
+
+### Live System Verification (Session 5)
+
+| Metric | Value | Notes |
+|--------|-------|-------|
+| LLM Providers | 10/10 configured, 7/7 primary respond | All "alive" |
+| Evolution patterns | **85,207** (local) | Corrected from 85,262 (stale doc) |
+| S3 consciousness | 103 objects | us-east-1 |
+| S3 body-evolution | 12 objects | us-east-1 |
+| S3 external-interfaces | 452 objects | eu-north-1 |
+| BODY decisions | 32,989 total | Last 100: 53% HARD_BLOCK, 33% APPROVED, 14% VETOED |
+| Heartbeat | mind_cycle=52, coherence=0.95, ark_mood=breaking | Timestamp 2026-03-09T03:51:32 |
+| Domain distribution | D0=10,904 (12.8%), D11=8,290 (9.7%), D5=6,651 | 16 domains active |
+
+### 3 Live Cycles from Codespaces
+
+| Cycle | Domain | Provider | Result | Notes |
+|-------|--------|----------|--------|-------|
+| 1 | D0 | Claude | CANONICAL axiom_emergence | Clean run |
+| 2 | D7 | Grok | 503 → failsafe recovery | OpenRouter fallback works |
+| 3 | D10 | Claude | KERNEL BLOCK K7_AXIOM_PRESERVATION | Correctly enforced |
+
+Post-test: coherence=1.0, evolution memory 85,205→85,207
+
+### Data Corrections
+- Evolution pattern count: **85,207** not 85,262 (stale checkpoint reference)
+- PSO (P002 Seed Origin) → A0 lineage: architecturally plausible but not directly verifiable from BODY data alone
+
+---
+
+*Checkpoint compiled March 10, 2026 (Session 1: Data synthesis. Session 2: Architectural vertex analysis. Session 3: Live system verification. Session 4: Engineering root cause analysis + fixes applied. Session 5: Full pipeline verification, GNOSIS replication, live cycle tests, deployment to production.)*
+*Sources: 50+ data files, 18 checkpoints spanning Dec 31 2025 – Mar 10 2026, S3 federation sync, cross-platform analysis, Perplexity/Gemini observer debriefs, .env templates, deployment configs, live API tests, source code audit (native_cycle_engine.py, llm_client.py, cloud_runner.py, engine_bridge.py, governance_client.py, parliament_cycle_engine.py), Master_Brain lineage (127 patterns, GNOSIS v1.0, 2 archived blocks)*
+*Data span: Dec 31, 2025 – March 10, 2026 | ~9,000+ BODY cycles, ~165 MIND cycles, 8 cross-platform LLM tests, 45+ checkpoint documents, 3 live test cycles*
 *Architecture: 3 vertices (MIND/BODY/CODESPACES), 3 S3 buckets (PAST/PRESENT/FUTURE), 16 domains (D0–D15), 10 LLM providers, 1 Architect*
+*Deployments: ECS rev 7 (commit e5228c5), HF Space commit 8130fad, GitHub commit e5228c5*
