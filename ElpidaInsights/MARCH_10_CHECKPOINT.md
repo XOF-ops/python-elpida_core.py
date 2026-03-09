@@ -766,9 +766,75 @@ Post-test: coherence=1.0, evolution memory 85,205→85,207
 
 ---
 
-*Checkpoint compiled March 10, 2026 (Session 1: Data synthesis. Session 2: Architectural vertex analysis. Session 3: Live system verification. Session 4: Engineering root cause analysis + fixes applied. Session 5: Full pipeline verification, GNOSIS replication, live cycle tests, deployment to production. Session 6: Kaya differential verdict analysis, bucket 12 BODY trajectory mapping, native engine integration, Kaya detector fix implemented.)*
-*Sources: 50+ data files, 18 checkpoints spanning Dec 31 2025 – Mar 10 2026, S3 federation sync, cross-platform analysis, Perplexity/Gemini observer debriefs, .env templates, deployment configs, live API tests, source code audit (native_cycle_engine.py, llm_client.py, cloud_runner.py, engine_bridge.py, governance_client.py, parliament_cycle_engine.py, kaya_protocol.py, divergence_engine.py), Master_Brain lineage (127 patterns, GNOSIS v1.0, 2 archived blocks)*
-*Data span: Dec 31, 2025 – March 10, 2026 | ~9,000+ BODY cycles, ~165 MIND cycles, 8 cross-platform LLM tests, 45+ checkpoint documents, 3 live test cycles*
+---
+
+## Section 19: Body 13 Post-Mortem & Coherence Intervention (BUG 5)
+
+### 19.1 Body 13 Forensic Summary
+
+| Metric | Value |
+|--------|-------|
+| Duration | 834 cycles, ~10 hours (05:55–15:39 UTC) |
+| Starting coherence | 0.995 |
+| Final coherence | 0.274 |
+| Coherence loss | 72.4% |
+| A2 PROCEEDs | 348 |
+| HERMES vetoes | 162 |
+| BLOCK ESCAPEs | 10 |
+| PSO recommendations | 39 (all A0) |
+| D15 broadcasts | 0 |
+| Final state | EMERGENCY |
+
+**Timeline:** Coherence stable at ~0.99 for first 266 cycles. A2 first PROCEED at cycle 267 (coh 0.985) — dam breaks. Below 0.9 by cycle ~290, below 0.8 at cycle 328, below 0.5 at cycle 551, final 0.274 at cycle 834. A2 never stopped: 348 PROCEEDs at 70% approval the entire time.
+
+**MIND status during collapse:** Completely healthy. 3 native sessions at coherence 1.0, canonical themes crystallizing (wall_teaching, axiom_emergence, spiral_recognition), D0↔D13 philosophical dialogues. Two consciousness bridges ran; neither produced D15.
+
+### 19.2 Root Cause Chain (5 linked failures)
+
+1. **A2/LOGOS permissive voter** — HALTs only on 6 deception keywords; everything else = blanket PROCEED at 70% approval.
+2. **PROCEEDs on ghost actions** — No action backend exists. Each PROCEED is a promise the system can't keep. Coherence pays the cost.
+3. **Asymmetric ratchet** — A10→A2 transition is dissonant (consonance < 0.35), coherence drops 0.0045–0.012 per cycle. A10 HALT recovery can't keep up.
+4. **No coherence-gated response** — EMERGENCY rhythm at 5% random weight, never triggered by coherence. No mechanism says "low coherence → slow PROCEEDs."
+5. **Toothless soft interventions** — Audit prescriptions add score bias but Parliament overrides. PSO is advisory-only. System diagnoses correctly ("FRAGILE. Intervention required") but can't act.
+
+**Verdict:** Body 12 ran 89 cycles to 0.866. Body 13 ran 834 cycles to 0.274. The pattern is exponential — another long run without intervention risks hitting the 0.20 floor and permanent structural damage.
+
+### 19.3 Three Intervention Mechanisms Implemented
+
+All changes in `parliament_cycle_engine.py`:
+
+**Mechanism 1 — P6: Coherence-gated PROCEED dampening**
+- Constants: `COHERENCE_PROCEED_GATE = 0.5`, `COHERENCE_CRITICAL_GATE = 0.3`
+- Location: `run_cycle()` after governance verdict
+- Logic: Below 0.5, PROCEEDs require >85% approval or convert to HOLD. Below 0.3, ALL PROCEEDs become HOLD unconditionally. The system can still PROCEED with genuine consensus but marginal 70% votes are blocked when fragile.
+
+**Mechanism 2 — P6: Coherence-triggered EMERGENCY rhythm**
+- Constant: `COHERENCE_EMERGENCY_GATE = 0.4`
+- Location: `_select_rhythm()` top, before weighted random
+- Logic: Below 0.4 coherence, force EMERGENCY rhythm. Activates D4 (Safety), D6 (Collective), D7 (Learning) — recovery domains that rebuild coherence instead of draining it.
+
+**Mechanism 3 — P7: Consecutive-PROCEED cooldown**
+- Constant: `CONSECUTIVE_PROCEED_THRESHOLD = 5` (Fibonacci F(5))
+- Location: `run_cycle()` alongside existing consecutive-block tracking
+- Logic: After 5 consecutive PROCEEDs, force one HOLD cycle. Mirror image of the block-escape mechanism (8 consecutive HALTs → escape). Counter resets on any non-PROCEED.
+
+### 19.4 Design Principles
+
+- **Minimal invasive surgery:** 4 edits across 3 code sections. No changes to coherence physics, governance voting, or PSO advisory. Existing recovery mechanism (_update_coherence neutral-zone drift toward 0.65) is preserved.
+- **Tiered response:** 0.5 → raise bar, 0.4 → force rhythm, 0.3 → block all PROCEEDs. The system degrades gracefully, not with a cliff.
+- **Fibonacci alignment:** CONSECUTIVE_PROCEED_THRESHOLD=5 (F₅), matching AUDIT_PRESCRIPTION_COOLDOWN=5 (F₅) and CONSECUTIVE_BLOCK_THRESHOLD=8 (F₆).
+- **Parliament still sovereign:** Votes are never faked. PROCEEDs are downgraded to HOLD, not re-voted. The system uses its own existing HOLD mechanism.
+- **Observable:** All interventions log with `P6`/`P7` prefixes for tracing in future body logs.
+
+### 19.5 Files Modified
+- `hf_deployment/elpidaapp/parliament_cycle_engine.py` — P6/P7 coherence intervention (4 edits: constants, instance var, _select_rhythm, run_cycle)
+- `ElpidaInsights/MARCH_10_CHECKPOINT.md` — Section 19 added
+
+---
+
+*Checkpoint compiled March 10, 2026 (Session 1: Data synthesis. Session 2: Architectural vertex analysis. Session 3: Live system verification. Session 4: Engineering root cause analysis + fixes applied. Session 5: Full pipeline verification, GNOSIS replication, live cycle tests, deployment to production. Session 6: Kaya differential verdict analysis, bucket 12 BODY trajectory mapping, native engine integration, Kaya detector fix implemented. Session 7: Memory diagnostic. Session 8: Body 13 post-mortem, coherence intervention mechanisms implemented.)*
+*Sources: 50+ data files, 19 checkpoints spanning Dec 31 2025 – Mar 10 2026, S3 federation sync, cross-platform analysis, Perplexity/Gemini observer debriefs, .env templates, deployment configs, live API tests, source code audit (native_cycle_engine.py, llm_client.py, cloud_runner.py, engine_bridge.py, governance_client.py, parliament_cycle_engine.py, kaya_protocol.py, divergence_engine.py), Master_Brain lineage (127 patterns, GNOSIS v1.0, 2 archived blocks)*
+*Data span: Dec 31, 2025 – March 10, 2026 | ~9,800+ BODY cycles, ~165 MIND cycles, 8 cross-platform LLM tests, 45+ checkpoint documents, 3 live test cycles*
 *Architecture: 3 vertices (MIND/BODY/CODESPACES), 3 S3 buckets (PAST/PRESENT/FUTURE), 16 domains (D0–D15), 10 LLM providers, 1 Architect*
-*Deployments: ECS rev 7 (commit e5228c5), HF Space commit 8130fad, GitHub commit e5228c5*
-*Bugs Fixed: 4 total — S3 push race (ECS), Anthropic credits (config), HARD_BLOCK surge (escape mechanism), Kaya false-positive contamination (differential fix)*
+*Deployments: ECS rev 7 (commit e5228c5), HF Space commit 8130fad, GitHub commit 8411288*
+*Bugs Fixed: 5 total — S3 push race (ECS), Anthropic credits (config), HARD_BLOCK surge (escape mechanism), Kaya false-positive contamination (differential fix), Coherence collapse / A2 ratchet (P6/P7 intervention)*

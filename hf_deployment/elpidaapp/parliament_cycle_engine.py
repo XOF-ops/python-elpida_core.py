@@ -137,6 +137,19 @@ PSO_INFLUENCE_WINDOW = 20
 # P5: Cooldown between audit prescription applications
 AUDIT_PRESCRIPTION_COOLDOWN = 5
 
+# P6: Coherence-gated intervention thresholds.
+# When coherence drops below COHERENCE_PROCEED_GATE, PROCEEDs are
+# converted to HOLD unless approval exceeds a dynamically raised bar.
+# At COHERENCE_EMERGENCY_GATE, rhythm is forced to EMERGENCY.
+COHERENCE_PROCEED_GATE = 0.5       # below this, PROCEEDs require supermajority
+COHERENCE_EMERGENCY_GATE = 0.4     # below this, force EMERGENCY rhythm
+COHERENCE_CRITICAL_GATE = 0.3      # below this, all PROCEEDs become HOLD
+
+# P7: Consecutive-PROCEED cooldown.
+# After this many consecutive PROCEEDs, force one HOLD cycle so
+# coherence has breathing room before more actions drain it.
+CONSECUTIVE_PROCEED_THRESHOLD = 5  # Fibonacci F(5)
+
 # POLIS civic deliberation interval (Fibonacci: 34)
 POLIS_CIVIC_INTERVAL = 34
 
@@ -445,6 +458,9 @@ class ParliamentCycleEngine:
         self._consecutive_blocks: int = 0
         self.CONSECUTIVE_BLOCK_THRESHOLD: int = 8  # Fibonacci F(6)
 
+        # P6: Coherence-gated intervention state
+        self._consecutive_proceeds: int = 0
+
         # Body Watch context (Counter-Spiral Protocol)
         self._watch = WatchContext()
 
@@ -545,6 +561,19 @@ class ParliamentCycleEngine:
         If the input buffer has events, prefer the rhythm matching
         the system with the most events. Otherwise watch-biased random.
         """
+        # P6: Coherence-triggered EMERGENCY override.
+        # When coherence falls below the emergency gate, the system is
+        # in structural jeopardy. Force EMERGENCY rhythm to activate
+        # recovery-oriented domains (D4 Safety, D6 Collective, D7 Learning)
+        # instead of randomly landing on ACTION (where A2 drains coherence).
+        if self.coherence < COHERENCE_EMERGENCY_GATE:
+            logger.info(
+                "P6 COHERENCE INTERVENTION: coherence %.3f < %.2f — "
+                "forcing EMERGENCY rhythm",
+                self.coherence, COHERENCE_EMERGENCY_GATE,
+            )
+            return "EMERGENCY"
+
         counts = self.input_buffer.counts()
         total = sum(counts.values())
         weights = dict(RHYTHM_WEIGHTS)
@@ -816,6 +845,49 @@ class ParliamentCycleEngine:
                 self._consecutive_blocks += 1
             else:
                 self._consecutive_blocks = 0
+
+            # ----------------------------------------------------------
+            # P6: Coherence-gated PROCEED dampening.
+            # When coherence is low, PROCEEDs are the primary drain.
+            # Raise the bar: require higher approval or convert to HOLD.
+            # P7: Consecutive-PROCEED cooldown — force a breathing cycle.
+            # ----------------------------------------------------------
+            if _gov == "PROCEED":
+                self._consecutive_proceeds += 1
+                approval = result.get("parliament", {}).get("approval_rate", 0)
+
+                # P7: Too many consecutive PROCEEDs — force HOLD
+                if self._consecutive_proceeds >= CONSECUTIVE_PROCEED_THRESHOLD:
+                    logger.info(
+                        "P7 PROCEED COOLDOWN: %d consecutive PROCEEDs — "
+                        "forcing HOLD for stabilisation",
+                        self._consecutive_proceeds,
+                    )
+                    result["governance"] = "HOLD"
+                    _gov = "HOLD"
+                    self._consecutive_proceeds = 0
+
+                # P6: Critical coherence — all PROCEEDs become HOLD
+                elif self.coherence < COHERENCE_CRITICAL_GATE:
+                    logger.info(
+                        "P6 CRITICAL GATE: coherence %.3f < %.2f — "
+                        "converting PROCEED to HOLD",
+                        self.coherence, COHERENCE_CRITICAL_GATE,
+                    )
+                    result["governance"] = "HOLD"
+                    _gov = "HOLD"
+
+                # P6: Low coherence — require near-unanimity (>85%)
+                elif self.coherence < COHERENCE_PROCEED_GATE and approval < 85:
+                    logger.info(
+                        "P6 PROCEED GATE: coherence %.3f < %.2f and "
+                        "approval %d%% < 85%% — converting PROCEED to HOLD",
+                        self.coherence, COHERENCE_PROCEED_GATE, approval,
+                    )
+                    result["governance"] = "HOLD"
+                    _gov = "HOLD"
+            else:
+                self._consecutive_proceeds = 0
         except Exception as e:
             logger.error("Parliament deliberation failed: %s", e)
             return None
