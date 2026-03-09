@@ -219,26 +219,48 @@ class KayaProtocol:
         - Mentions its own governance process
         - References its own architecture
         - Detects the I-We paradox in its output
-        """
-        text = json.dumps(synthesis_result).lower()
 
-        # Self-referential markers
-        markers = [
-            ("governance", "The synthesis discusses its own governance"),
-            ("axiom", "The synthesis references its own axioms"),
-            ("paradox", "The synthesis encounters the I-We paradox"),
-            ("elpida", "The synthesis names itself"),
-            ("frozen", "The synthesis references its frozen origin"),
-            ("oscillat", "The synthesis uses its own A10 language"),
+        FIX (Kaya Differential Verdict, 2026-03-10):
+        The original detector matched template language that appears in
+        EVERY synthesis output due to the prompt itself ("You are the
+        Elpida Synthesis", "name the subordinate axiom", etc.). This
+        caused 100% false-positive rate — carbonara topics generated
+        2.6x more Kaya moments than Iran geopolitics.
+
+        Fixes applied:
+        1. Scan only the LLM output text, not serialized JSON metadata
+        2. Exclude template-guaranteed markers (governance, axiom, elpida,
+           frozen) that appear in every synthesis by prompt design
+        3. Require 3+ genuine markers (raised from 2)
+        4. Genuine markers test for architectural self-reference, not
+           vocabulary overlap with the prompt
+        """
+        # Fix 1: scan only the synthesis output text, not full JSON
+        text = (synthesis_result.get("output") or "").lower()
+
+        # Markers that indicate genuine self-recognition beyond what
+        # the synthesis template guarantees. The template always produces
+        # "governance", "axiom", "elpida", "frozen" — so those are
+        # excluded as template-contaminated.
+        genuine_markers = [
+            ("recursive", "The synthesis recognises its own recursion"),
+            ("self-referent", "The synthesis names its own self-reference"),
+            ("kaya", "The synthesis invokes its own awareness protocol"),
+            ("three layers", "The synthesis maps its distributed architecture"),
+            ("mind and body", "The synthesis distinguishes its own MIND/BODY split"),
+            ("d0", "The synthesis references its frozen genesis domain"),
+            ("oscillat", "The synthesis uses its own A10 resonance language"),
+            ("i-we paradox", "The synthesis names the core architectural tension"),
+            ("meta-architecture", "The synthesis reflects on its own structure"),
         ]
 
         found_markers = [
-            (marker, desc) for marker, desc in markers
+            (marker, desc) for marker, desc in genuine_markers
             if marker in text
         ]
 
-        if len(found_markers) >= 2:
-            # Multiple self-references = self-referential synthesis
+        # Fix 3: require 3+ genuine markers (raised from 2)
+        if len(found_markers) >= 3:
             event = KayaEvent(
                 pattern="SELF_REFERENTIAL_SYNTHESIS",
                 layers_touched=list(self._layers_touched),
@@ -247,17 +269,26 @@ class KayaProtocol:
                     "markers_found": [m[0] for m in found_markers],
                     "descriptions": [m[1] for m in found_markers],
                     "marker_count": len(found_markers),
+                    "detection_version": "v2_differential_fix",
                 },
             )
             self._kaya_events.append(event)
             self._persist_event(event)
             logger.info(
-                "🌀 KAYA MOMENT: Self-referential synthesis with %d markers",
+                "🌀 KAYA MOMENT: Self-referential synthesis with %d genuine markers",
                 len(found_markers),
             )
             return event
 
         return None
+
+    def kaya_events_since(self, marker: int) -> List[Dict[str, Any]]:
+        """Return Kaya events since a given index (for per-scan isolation)."""
+        return [e.to_dict() for e in self._kaya_events[marker:]]
+
+    def kaya_event_count(self) -> int:
+        """Current total event count (use as marker for per-scan isolation)."""
+        return len(self._kaya_events)
 
     def get_kaya_events(self) -> List[Dict[str, Any]]:
         """Return all Kaya moments."""

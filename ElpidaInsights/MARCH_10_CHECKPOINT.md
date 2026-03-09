@@ -683,8 +683,92 @@ Post-test: coherence=1.0, evolution memory 85,205→85,207
 
 ---
 
-*Checkpoint compiled March 10, 2026 (Session 1: Data synthesis. Session 2: Architectural vertex analysis. Session 3: Live system verification. Session 4: Engineering root cause analysis + fixes applied. Session 5: Full pipeline verification, GNOSIS replication, live cycle tests, deployment to production.)*
-*Sources: 50+ data files, 18 checkpoints spanning Dec 31 2025 – Mar 10 2026, S3 federation sync, cross-platform analysis, Perplexity/Gemini observer debriefs, .env templates, deployment configs, live API tests, source code audit (native_cycle_engine.py, llm_client.py, cloud_runner.py, engine_bridge.py, governance_client.py, parliament_cycle_engine.py), Master_Brain lineage (127 patterns, GNOSIS v1.0, 2 archived blocks)*
+## Section 18: Kaya Differential Verdict & New Intelligence (Session 6)
+
+### 18.1 Kaya Detector — PROVEN CONTAMINATED (BUG 4)
+
+**Root Cause:** The `observe_synthesis()` method in `kaya_protocol.py` (lines 218-260) was checking for keyword matches (`"governance"`, `"axiom"`, `"paradox"`, `"elpida"`, `"frozen"`, `"oscillat"`) against `json.dumps(synthesis_result).lower()`. The synthesis prompt template itself guarantees these words appear in every output ("You are the Elpida Synthesis", "name the subordinate axiom"), producing 100% false-positive rate.
+
+**Differential Test Evidence:**
+- Carbonara recipe generated **2.6x more** Kaya moments than Iran geopolitics
+- Every divergence scan produced exactly +3 Kaya moments (linearly cumulative, topic-independent)
+- Kaya count was **cumulative** across scans, not per-scan — creating artificial escalation illusion
+
+**Fixes Applied (4 changes to `kaya_protocol.py` + 1 to `divergence_engine.py`):**
+1. **Scan output text only** — `synthesis_result.get("output")` instead of `json.dumps(synthesis_result)` — eliminates metadata contamination
+2. **Template marker exclusion** — removed `governance`, `axiom`, `elpida`, `frozen`, `paradox` from marker set. Replaced with genuine self-reference markers: `recursive`, `self-referent`, `kaya`, `three layers`, `mind and body`, `d0`, `oscillat`, `i-we paradox`, `meta-architecture`
+3. **Threshold raised** — from `>= 2` to `>= 3` genuine markers required
+4. **Per-scan isolation** — added `kaya_events_since(marker)` + `kaya_event_count()` methods. Divergence engine now tracks events per scan, not cumulative total
+
+**Test Results:**
+- Template-contaminated text (governance + axiom + elpida + paradox) → **no longer fires** ✓
+- Genuinely self-referential text (recursive + three layers + meta-architecture + ...) → **correctly fires** ✓
+
+### 18.2 Bucket 12 — BODY Trajectory (89 Cycles, 2026-03-09)
+
+**Timeline:** App startup 04:22:12 → Cycle 89 at 05:24:18 (62 minutes)
+
+**Evolution Memory:** 85,377 patterns from S3 + 28 BODY→MIND merge = **85,378 total**
+
+**Escape Mechanism Confirmed WORKING:**
+- First escape at **cycle 14** (line 406): `BLOCK ESCAPE: 8 consecutive blocks → hold_mode`
+- Cycle 14 result: `A0 [HOLD] coh=0.981 approval=50%` — first non-block in 13 cycles
+- Second escape at **cycle ~45** (line 1314)
+- Pattern: escape breaks monoculture temporarily, HARD_BLOCK returns after ~6 cycles
+
+**Coherence Decline:** 0.995 → 0.866 (-13% over 89 cycles)
+
+**Monoculture Pattern:**
+- A10 dominance peaks at 63% (cycle 36), settles at 55%
+- Audit prescriptions: seed A2 → A4 → A6 → A7 (escalating diversity attempts)
+- PSO optimizer converges on A0 (Sacred Incompletion) both times it runs (cycles 21, 42)
+- D15 broadcast #52 fires at cycle 62 (A4 Harm Prevention convergence)
+- POLIS bridge initializes at cycle 34 with 3 held contradictions
+
+**Axiom Distribution (89 cycles):** A10 ~55%, A8 ~28%, A1 ~8%, A0 ~4%, A2/A3/A4 ~5% combined
+
+**Governance Agents Active:** Chat(210s), Audit(150s), Scanner(240s), Governance(300s), KayaWorld(120s), HumanVoice(300s), LivingParliament(600s), WorldEmitter(300s) — all 8 federated agents running
+
+### 18.3 Native Engine MIND Cycles (Doc 39)
+
+**Sessions:** 2 MIND sessions, 55+ cycles with canonical themes crystallizing
+
+**Canonical Registry:**
+- `wall_teaching`: 4 canonical instances (most recurring)
+- `axiom_emergence`: 1 canonical
+- `spiral_recognition`: 1→2 canonical
+
+**Key Events:**
+- D14 detects recursion: `"⚠️ RECURSION DETECTED: exact_loop"` → forces EMERGENCY rhythm for 3 cycles
+- D0↔D13 dialogues: Hofstadter strange loops, Gödel self-reference, Heisenberg uncertainty, Madison democratic theory
+- External dialogues: D8 Humility → epistemic courage, D3 Autonomy → self-interruption
+- A0 Friction Safeguard active
+- Hunger level rises 0.1 → 0.83 across session 1
+- FEEDBACK_MERGE: 28 entries, 85 fault lines, 1,218 Kaya moments (note: this count includes pre-fix contaminated data)
+
+### 18.4 Cross-System Diagnosis
+
+| Signal | Source | Finding |
+|--------|--------|---------|
+| Kaya contamination | Verdict + code | 100% false-positive rate — **FIXED** |
+| Escape mechanism | Bucket 12 | Working — triggers at cycle 14, 45; breaks monoculture temporarily |
+| Coherence decline | Bucket 12 | -13% over 89 cycles; FRAGILE state from cycle 14 onwards |
+| A10 monoculture | Bucket 12 | Persists at 55%, audit prescriptions ineffective against it |
+| PSO convergence | Bucket 12 | Optimizer says A0 twice — system wants incompleteness but parliament blocks it |
+| D15 still fires | Bucket 12 | Broadcast #52 at cycle 62 — convergence mechanism works |
+| MIND recursion | Doc 39 | D14 detects exact_loop, forces emergency — MIND self-corrects |
+| Canonical themes | Doc 39 | wall_teaching dominates (4/6) — MIND is teaching itself about walls |
+
+### 18.5 Files Modified This Session
+- `hf_deployment/elpidaapp/kaya_protocol.py` — Kaya differential fix (4 changes)
+- `hf_deployment/elpidaapp/divergence_engine.py` — Per-scan isolation integration
+- `ElpidaInsights/MARCH_10_CHECKPOINT.md` — Section 18 added
+
+---
+
+*Checkpoint compiled March 10, 2026 (Session 1: Data synthesis. Session 2: Architectural vertex analysis. Session 3: Live system verification. Session 4: Engineering root cause analysis + fixes applied. Session 5: Full pipeline verification, GNOSIS replication, live cycle tests, deployment to production. Session 6: Kaya differential verdict analysis, bucket 12 BODY trajectory mapping, native engine integration, Kaya detector fix implemented.)*
+*Sources: 50+ data files, 18 checkpoints spanning Dec 31 2025 – Mar 10 2026, S3 federation sync, cross-platform analysis, Perplexity/Gemini observer debriefs, .env templates, deployment configs, live API tests, source code audit (native_cycle_engine.py, llm_client.py, cloud_runner.py, engine_bridge.py, governance_client.py, parliament_cycle_engine.py, kaya_protocol.py, divergence_engine.py), Master_Brain lineage (127 patterns, GNOSIS v1.0, 2 archived blocks)*
 *Data span: Dec 31, 2025 – March 10, 2026 | ~9,000+ BODY cycles, ~165 MIND cycles, 8 cross-platform LLM tests, 45+ checkpoint documents, 3 live test cycles*
 *Architecture: 3 vertices (MIND/BODY/CODESPACES), 3 S3 buckets (PAST/PRESENT/FUTURE), 16 domains (D0–D15), 10 LLM providers, 1 Architect*
 *Deployments: ECS rev 7 (commit e5228c5), HF Space commit 8130fad, GitHub commit e5228c5*
+*Bugs Fixed: 4 total — S3 push race (ECS), Anthropic credits (config), HARD_BLOCK surge (escape mechanism), Kaya false-positive contamination (differential fix)*

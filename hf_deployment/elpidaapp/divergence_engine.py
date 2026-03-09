@@ -326,13 +326,14 @@ class DivergenceEngine:
 
         elapsed = round(time.time() - t0, 1)
 
-        # ── Integration: Kaya synthesis observation ──
+        # ── Integration: Kaya synthesis observation (per-scan isolation) ──
         kaya_events = []
         if self.integration_enabled and _kaya_protocol:
+            scan_marker = _kaya_protocol.kaya_event_count()
             kaya_event = _kaya_protocol.observe_synthesis(synthesis)
             if kaya_event:
                 print(f"  🌀 Kaya moment: {kaya_event.pattern}")
-            kaya_events = _kaya_protocol.get_kaya_events()
+            kaya_events = _kaya_protocol.kaya_events_since(scan_marker)
 
         print(f"\n{'═'*70}")
         print(f"    Complete in {elapsed}s")
