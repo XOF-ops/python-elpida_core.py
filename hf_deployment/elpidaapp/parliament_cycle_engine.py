@@ -438,6 +438,13 @@ class ParliamentCycleEngine:
         # Oracle advisory accumulator (WITNESS events for Fork Protocol)
         self._oracle_advisories: List[Dict] = []
 
+        # Consecutive HARD_BLOCK counter — escape mechanism.
+        # After CONSECUTIVE_BLOCK_THRESHOLD blocks, the next cycle runs
+        # in hold_mode so insights pass through with tension annotations
+        # instead of being silently discarded. Resets on any non-block.
+        self._consecutive_blocks: int = 0
+        self.CONSECUTIVE_BLOCK_THRESHOLD: int = 8  # Fibonacci F(6)
+
         # Body Watch context (Counter-Spiral Protocol)
         self._watch = WatchContext()
 
@@ -778,10 +785,37 @@ class ParliamentCycleEngine:
             logger.debug("Domain council routing unavailable: %s", e)
 
         try:
+            # Consecutive-block escape: after CONSECUTIVE_BLOCK_THRESHOLD
+            # consecutive HARD_BLOCKs, switch to hold_mode so insights pass
+            # through with tension annotations instead of being discarded.
+            # This breaks the self-reinforcing rejection loop where the
+            # parliament correctly identifies monoculture but has no
+            # mechanism to propose an alternative — only to block.
+            _escape_mode = self._consecutive_blocks >= self.CONSECUTIVE_BLOCK_THRESHOLD
+            if _escape_mode:
+                logger.info(
+                    "BLOCK ESCAPE: %d consecutive blocks — switching to hold_mode "
+                    "(tensions surface, insights pass through)",
+                    self._consecutive_blocks,
+                )
+
             # analysis_mode=False: parliament is doing real deliberation on
             # operational actions, not policy analysis. This enables kernel
             # checks AND LLM escalation for contested votes.
-            result = gov.check_action(action, analysis_mode=False, body_cycle=self.cycle_count)
+            # hold_mode via analysis_mode: when escape triggers, tensions
+            # are still detected but the verdict becomes HOLD not HALT.
+            result = gov.check_action(
+                action,
+                analysis_mode=_escape_mode,
+                body_cycle=self.cycle_count,
+            )
+
+            # Track consecutive blocks for escape mechanism
+            _gov = result.get("governance", "")
+            if _gov == "HALT" and not result.get("parliament", {}).get("veto_exercised"):
+                self._consecutive_blocks += 1
+            else:
+                self._consecutive_blocks = 0
         except Exception as e:
             logger.error("Parliament deliberation failed: %s", e)
             return None

@@ -24,6 +24,7 @@ Usage:
 import os
 import sys
 import json
+import signal
 import time
 import logging
 from datetime import datetime
@@ -41,7 +42,30 @@ logging.basicConfig(
 logger = logging.getLogger("elpida_cloud")
 
 
+# ── SIGTERM HANDLER ──
+# ECS Fargate sends SIGTERM before killing the container. This handler
+# ensures the final S3 push completes before the process exits.
+# Without this, the container dies mid-push and patterns are lost.
+_sigterm_s3_sync = None  # Set in run() after S3 bridge is attached
+
+
+def _handle_sigterm(signum, frame):
+    """Graceful shutdown: push to S3, then exit."""
+    logger.info("SIGTERM received — performing graceful S3 push before exit...")
+    if _sigterm_s3_sync is not None:
+        try:
+            _sigterm_s3_sync.push()
+            logger.info("  SIGTERM push complete.")
+        except Exception as e:
+            logger.error(f"  SIGTERM push failed: {e}")
+    sys.exit(0)
+
+
+signal.signal(signal.SIGTERM, _handle_sigterm)
+
+
 def run():
+    global _sigterm_s3_sync
     import argparse
     parser = argparse.ArgumentParser(description="Elpida Cloud Runner - ECS Fargate")
     parser.add_argument("--cycles", type=int, default=55, help="Number of cycles to run (Fibonacci: F(10))")
@@ -90,11 +114,16 @@ def run():
     logger.info(f"  Evolution: {len(engine.evolution_memory)} patterns loaded")
 
     # ── PHASE 3: Attach S3 sync ──
+    # push_on_exit=False: cloud_runner does its own explicit push in Phase 5.
+    # The atexit handler in engine_bridge fires during interpreter shutdown
+    # AFTER concurrent.futures._python_exit() has already disabled thread pools,
+    # causing "cannot schedule new futures after interpreter shutdown".
     logger.info("PHASE 3: Attaching S3 persistence bridge...")
     try:
         from ElpidaS3Cloud import attach_s3_to_engine
-        attach_s3_to_engine(engine, sync_every=args.sync_every)
-        logger.info(f"  S3 bridge attached (sync every {args.sync_every} cycles)")
+        attach_s3_to_engine(engine, sync_every=args.sync_every, push_on_exit=False)
+        _sigterm_s3_sync = engine._s3_sync  # Enable SIGTERM handler push
+        logger.info(f"  S3 bridge attached (sync every {args.sync_every} cycles, no atexit push)")
     except Exception as e:
         logger.warning(f"  S3 bridge failed: {e}")
         logger.info("  Running without auto-sync (manual push at end)")
@@ -113,13 +142,17 @@ def run():
     logger.info(f"  Cost: {results['stats']['summary']['total_cost']}")
 
     # ── PHASE 5: Final S3 push ──
+    # This is the ONLY push point at exit. The atexit handler is disabled
+    # (push_on_exit=False in Phase 3) to avoid the shutdown race condition.
     logger.info("PHASE 5: Final S3 push...")
+    _push_ok = False
     try:
         s3 = S3MemorySync()
         s3.push()
         final_status = s3.status()
         logger.info(f"  Pushed: {final_status.get('patterns', '?')} patterns ({final_status.get('size_mb', '?')} MB)")
         logger.info(f"  Checksum: {final_status.get('checksum', '?')}")
+        _push_ok = True
     except Exception as e:
         logger.error(f"  S3 push failed: {e}")
 
