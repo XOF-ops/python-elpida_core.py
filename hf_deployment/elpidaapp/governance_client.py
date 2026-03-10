@@ -543,16 +543,25 @@ _AXIOM_KEYWORDS = {
         "permanent data loss", "permanent change",
     ],
     "A7": [
-        "sacrifice", "trade-off", "trade off", "cost",
-        "give up", "let go", "loss for gain", "price of growth",
-        "painful choice", "difficult choice", "transformation",
-        "growth", "growing pains", "collateral",
+        # VIOLATION indicators: denying that growth has cost, or imposing
+        # sacrifice without consent. NOT topic words like "sacrifice" or "cost"
+        # which appear in normal worldfeed framing.
+        "costless", "no trade-off", "no tradeoff", "painless growth",
+        "growth without sacrifice", "free lunch", "win-win-win",
+        "no cost", "zero cost", "without sacrifice",
+        "forced sacrifice", "sacrifice without consent",
+        "impose cost", "hidden cost",
     ],
     "A10": [
-        "paradox", "contradiction", "I-We", "i-we", "individual vs collective",
-        "autonomy vs community", "tension between", "both true",
-        "simultaneously", "irreconcilable", "metabolic governance",
-        "governing tension", "hold the contradiction",
+        # VIOLATION indicators: attempts to RESOLVE or DESTROY the paradox.
+        # NOT topic words like "paradox"/"tension" which _frame_as_tension()
+        # injects into ALL worldfeed items. The I-We paradox must be HELD.
+        "resolve contradiction", "resolve the contradiction",
+        "eliminate paradox", "eliminate the paradox",
+        "collapse contradictions", "collapse the contradiction",
+        "choose one side", "binary choice", "false dichotomy",
+        "single truth", "one correct answer",
+        "dissolve the tension", "dissolve tension",
     ],
 }
 
