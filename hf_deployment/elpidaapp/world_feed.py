@@ -246,10 +246,17 @@ def _frame_as_tension(title: str, abstract: str = "", domain: str = "") -> Optio
         matched = True
         individual = f"individual wealth accumulation and property rights in: {title}"
         collective = f"distributed capital and collective financial stability in: {title}"
-        conflict = (
+        _wealth_conflicts = [
             "wealth accumulation at scale concentrates the capital that collective stability "
-            "requires to remain distributed across agents"
-        )
+            "requires to remain distributed across agents",
+            "taxation redistributive enough to fund collective needs removes the "
+            "accumulation incentive that generates the wealth being taxed",
+            "financial deregulation that maximises individual opportunity creates the "
+            "systemic risk that destroys collective savings",
+            "debt forgiveness that rescues individuals today erodes the collective "
+            "credit system that future borrowers depend on",
+        ]
+        conflict = random.choice(_wealth_conflicts)
     elif "sovereign" in low or "border" in low or "migrat" in low or "immigr" in low:
         matched = True
         individual = f"freedom of movement and self-determination for persons in: {title}"
@@ -270,10 +277,17 @@ def _frame_as_tension(title: str, abstract: str = "", domain: str = "") -> Optio
         matched = True
         individual = f"worker rights, fair wages, and labour protection in: {title}"
         collective = f"economic productivity, employment levels, and market flexibility in: {title}"
-        conflict = (
+        _labour_conflicts = [
             "labour protection strong enough to secure individual workers raises the cost "
-            "floor that destroys the marginal employment the collective economy requires"
-        )
+            "floor that destroys the marginal employment the collective economy requires",
+            "automation that maximises collective productivity eliminates the jobs that "
+            "give individual workers economic agency and purpose",
+            "wage floors high enough to guarantee individual dignity price out the "
+            "very workers they were designed to protect",
+            "flexibility that lets the collective economy adapt destroys the stability "
+            "that individual workers need to plan their lives",
+        ]
+        conflict = random.choice(_labour_conflicts)
     elif "justice" in low or "criminal" in low or "prison" in low or "punish" in low:
         matched = True
         individual = f"individual rehabilitation, proportionality, and presumption of innocence in: {title}"
@@ -291,14 +305,24 @@ def _frame_as_tension(title: str, abstract: str = "", domain: str = "") -> Optio
             "silences the fringe speech from which all future consensus historically emerges"
         )
     # ── NEW: War / Conflict / Military ───────────────────────────
+    # BUG 10c FIX: rotate conflict phrases to avoid monotony.
+    # Body 16 showed 52 identical "security measures one state takes"
+    # phrases — LLMs recognise the repetition and disengage.
     elif (" war" in low or low.startswith("war")) or "militar" in low or "attack" in low or "weapon" in low or "nuclear" in low or "strike" in low or "invasion" in low or "bomb" in low or "fight" in low:
         matched = True
         individual = f"national sovereignty and self-determination in: {title}"
         collective = f"international peace, collective security, and human life in: {title}"
-        conflict = (
+        _war_conflicts = [
             "the security measures one state takes to protect itself create the insecurity "
-            "that other states must then defend against"
-        )
+            "that other states must then defend against",
+            "military force that guarantees one nation's sovereignty simultaneously "
+            "destroys the sovereignty of the nation it is directed against",
+            "deterrence credible enough to prevent war requires weapons capable enough "
+            "to make war catastrophic when deterrence fails",
+            "the right to self-defence claimed by every state is precisely the threat "
+            "that every other state arms itself against",
+        ]
+        conflict = random.choice(_war_conflicts)
     # ── NEW: Diplomacy / International Relations ─────────────────
     elif "treaty" in low or "sanction" in low or "diplomat" in low or "envoy" in low or "ceasefire" in low or "truce" in low or "negotiat" in low or "embargo" in low or "peace" in low:
         matched = True

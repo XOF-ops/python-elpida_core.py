@@ -448,6 +448,12 @@ class AuditAgent(_BaseAgent):
                     )
 
         # Approval pattern audit on recent decisions
+        # BUG 10 FIX: Log approval audits as diagnostics ONLY — never push
+        # to Parliament. When the AuditAgent pushed "CRITICAL: approval is -14%"
+        # as a deliberation item, LLMs saw a broken system and voted HALT,
+        # further depressing approval → doom loop.  P5 prescriptions already
+        # consume approval data from cycle records; Parliament must not
+        # self-diagnose via the same content it votes on.
         if len(decisions) >= 5:
             recent = decisions[-8:]
             approval_vals = [d.get("approval_rate", 0) for d in recent]
@@ -456,23 +462,11 @@ class AuditAgent(_BaseAgent):
             veto_rate = veto_ct / len(recent) * 100
             if avg_approval < 0.45 or veto_rate > 25:
                 status = "CRITICAL" if avg_approval < 0.35 else "WARNING"
-                action_text = (
-                    "Immediate review of input diversity required."
-                    if avg_approval < 0.35
-                    else "Monitor for next 5 cycles before escalating."
+                logger.info(
+                    "AUDIT DIAGNOSTIC [%s]: approval=%.0f%% veto=%.0f%% "
+                    "(logged only — not pushed to Parliament)",
+                    status, avg_approval * 100, veto_rate,
                 )
-                try:
-                    text = _AUDIT_TEMPLATES[2].format(
-                        n=len(recent), approve_pct=avg_approval * 100,
-                        veto_pct=veto_rate, status=status, action=action_text,
-                    )
-                    items.append(text)
-                except (KeyError, IndexError):
-                    items.append(
-                        f"AUDIT [{status}]: Low approval {avg_approval:.0%} "
-                        f"and {veto_rate:.0f}% veto rate in last {len(recent)} cycles. "
-                        f"{action_text}"
-                    )
 
         if not items:
             # Heartbeat audit when nothing alarming
@@ -649,7 +643,12 @@ class GovernanceAgent(_BaseAgent):
 
         items = []
 
-        # 1. Health report
+        # 1. Health report — BUG 10 FIX: log as diagnostic only.
+        #    "GOVERNANCE HEALTH REPORT: FRAGILE" pushed to Parliament caused
+        #    LLMs to vote HALT on the system's own health status.
+        #    81 instances in Body 16 — each one telling the jury the
+        #    patient is dying, which the jury then confirms by voting HALT.
+        #    P5 prescriptions already handle health monitoring.
         approval_vals = [d.get("approval_rate", 0) for d in decisions[-10:]]
         avg_approval = sum(approval_vals) / len(approval_vals) if approval_vals else 0
         health_score = (coh + avg_approval) / 2
@@ -659,28 +658,11 @@ class GovernanceAgent(_BaseAgent):
             "WATCH" if health_score > 0.50 else
             "FRAGILE"
         )
-        attention_map = {
-            "EXCELLENT": "Continue current watch rhythm. No intervention needed.",
-            "GOOD": "Monitor coherence for sustained stability.",
-            "WATCH": f"Axiom diversity recommended. Seed {_least_frequent_ax(freq)} inputs.",
-            "FRAGILE": "Intervention required. Diversify inputs across all 4 channels urgently.",
-        }
-        try:
-            text = _GOVERNANCE_TEMPLATES[2].format(
-                watch=watch, cycle_within=watch_cycle,
-                coh=coh, approval=avg_approval * 100,
-                d15=d15, ratified=ratified_n,
-                pending=len(pending),
-                health=health,
-                attention=attention_map[health],
-            )
-            items.append(text)
-        except (KeyError, IndexError):
-            items.append(
-                f"GOVERNANCE HEALTH [{watch} watch, cycle {watch_cycle}/34]: "
-                f"Coherence={coh:.3f} | Approval={avg_approval:.0%} | "
-                f"D15={d15} | Status={health}."
-            )
+        logger.info(
+            "GOV DIAGNOSTIC [%s watch, cycle %d/34]: coh=%.3f approval=%.0f%% "
+            "health=%s (logged only — not pushed to Parliament)",
+            watch, watch_cycle, coh, avg_approval * 100, health,
+        )
 
         # 2. Constitutional axiom review (if any ratified)
         store = getattr(self._engine, "_get_constitutional_store", lambda: None)()
