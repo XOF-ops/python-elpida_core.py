@@ -278,7 +278,10 @@ class NativeCycleEngine:
 
         # Domain 15: Reality-Parliament Interface state
         self.d15_broadcast_cooldown = D15_BROADCAST_COOLDOWN
-        self.d15_last_broadcast_cycle = 0
+        # BUG 12: Initialize so the first broadcast isn't cooldown-blocked.
+        # D15's own criteria (domain convergence, buffer depth ≥3, Ark gate)
+        # already provide quality gating — no artificial warmup needed.
+        self.d15_last_broadcast_cycle = -D15_BROADCAST_COOLDOWN
         self.d15_broadcast_buffer = []  # Accumulate recent insights for threshold evaluation
         self.d15_broadcast_count = 0    # Total broadcasts made
         self._kaya_count = 0            # Cumulative D12 Kaya resonance events
