@@ -504,6 +504,8 @@ class ArkCurator:
             self.recursion_history.append(recursion)
             # Breaking intervention: shift mood and weights
             self.cadence.cadence_mood = "breaking"
+            # Elevate D15 threshold — require 3+ criteria instead of 2
+            self.cadence.broadcast_threshold = max(self.cadence.broadcast_threshold, 3)
             # Boost ACTION and reduce whatever is dominant
             dominant_rhythm = max(self.cadence.rhythm_weights, key=self.cadence.rhythm_weights.get)
             stolen = min(10, self.cadence.rhythm_weights[dominant_rhythm] - 10)
@@ -830,9 +832,19 @@ class ArkCurator:
         text = (insight.get("insight") or "").lower()
         coherence = insight.get("coherence", 0.5)
 
-        # Suppress broadcast during recursion-breaking
+        # During recursion-breaking: don't blanket-block D15.
+        # Instead, allow canonical and high-coherence patterns through
+        # while D15's elevated threshold (3+ criteria) filters the rest.
         if self.cadence.cadence_mood == "breaking":
-            return False, "Ark is in recursion-breaking mode — broadcasts suppressed until pattern stabilizes"
+            # Canonical insights transcend breaking mood
+            for theme, signals in CANONICAL_SIGNALS.items():
+                if sum(1 for s in signals if s in text) >= 2:
+                    return True, f"Canonical theme '{theme}' transcends breaking mood — broadcast-worthy"
+            # High coherence signals the pattern has stabilised despite recursion
+            if coherence >= 0.9 and len(self._recent_themes) >= 5:
+                return True, "Breaking mood — high coherence pattern permitted at elevated threshold"
+            # Non-canonical, non-high-coherence: defer to D15 with elevated threshold
+            return True, "Breaking mood — D15 elevated threshold applies"
 
         # Suppress if recent broadcast (defers to D15 cooldown but adds persistence perspective)
         if self.cadence.broadcast_threshold >= 4:
