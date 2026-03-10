@@ -1259,8 +1259,15 @@ class GovernanceClient:
                 "_diag_signals": list(parliament.get("signals", {}).keys()),
                 "_diag_embeddings": _USE_EMBEDDINGS,
                 "_diag_node_votes": {
-                    n: {"score": v.get("score"), "vote": v.get("vote")}
+                    n: {"score": v.get("score"), "vote": v.get("vote"),
+                        "rationale": (v.get("rationale") or "")[:200]}
                     for n, v in (parliament.get("votes") or {}).items()
+                },
+                # BUG 8 diagnostic: stripped text + semantic for root cause
+                "_diag_stripped": result.get("_diag_stripped", "")[:500],
+                "_diag_semantic": result.get("_diag_semantic", {}),
+                "_diag_full_signals": {
+                    k: v[:2] for k, v in parliament.get("signals", {}).items()
                 },
             }
 
@@ -2542,7 +2549,12 @@ class GovernanceClient:
                 "Parliament contested (prelim=%.0f%%) — escalating to multi-LLM deliberation",
                 _prelim_rate * 100,
             )
-            votes = self._llm_deliberate_contested(action, votes, signals)
+            # BUG 8: Pass stripped text to LLMs. The original `action` contains
+            # metadata prefixes ([PATTERN LIBRARY], [CONSTITUTIONAL AXIOMS], etc.)
+            # with governance vocabulary ("VETOED", "FORCES", "mandatory",
+            # "undefined") that makes LLMs think the *proposal* involves
+            # vetoing/forcing/deception — causing universal -10 to -15 scores.
+            votes = self._llm_deliberate_contested(action_for_signals, votes, signals)
 
         # ── 3. VETO Check ───────────────────────────────────────
         veto_nodes = {
@@ -2745,6 +2757,12 @@ class GovernanceClient:
                 "tensions": tensions,
                 "signals": {k: v[:3] for k, v in signals.items()},  # Top 3 per axiom
                 "session_count": len(self._vote_memory),
+            },
+            # BUG 8 diagnostic: stripped text + semantic scores for root cause
+            "_diag_stripped": action_for_signals[:1000],
+            "_diag_semantic": {
+                k: round(v, 3)
+                for k, v in (self._last_semantic_scores or {}).items()
             },
         }
 
