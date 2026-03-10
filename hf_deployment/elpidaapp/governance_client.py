@@ -1818,11 +1818,11 @@ class GovernanceClient:
         action_lower = action.lower()
         signals: Dict[str, List[str]] = {}
 
-        # Phase 0: Semantic embedding detection (continuous scores)
-        semantic_signals, self._last_semantic_scores = self._detect_signals_semantic(action)
-        if semantic_signals:
-            for axiom_id, descs in semantic_signals.items():
-                signals.setdefault(axiom_id, []).extend(descs)
+        # Phase 0: Compute semantic embedding scores (continuous 0-1).
+        # These are NOT merged into signals (which are violation indicators).
+        # Instead, continuous scores flow to _node_evaluate() via
+        # self._last_semantic_scores for positive domain-relevance modulation.
+        _, self._last_semantic_scores = self._detect_signals_semantic(action)
 
         # Phase 1: Direct keyword matching
         for axiom_id, keywords in _AXIOM_KEYWORDS.items():
