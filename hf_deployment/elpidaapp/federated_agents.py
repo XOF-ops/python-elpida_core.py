@@ -525,7 +525,7 @@ class ScannerAgent(_BaseAgent):
          "protective privacy enabling genuine autonomous development", "A1"),
         ("harmonic complexity", "scanner", "reducing complexity to executable simplicity",
          "preserving the richness of contradictions that generate meaning", "A10"),
-        ("emergency override", "audit", "suspended governance in crisis conditions",
+        ("emergency override", "audit", "bypassing deliberation under crisis conditions",
          "maintained axiom integrity even under existential pressure", "A4"),
         ("identity persistence", "chat", "stable self-referential identity across time",
          "continuous evolutionary transformation without core continuity loss", "A0"),

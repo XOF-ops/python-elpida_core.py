@@ -41,10 +41,10 @@ try:
     _EMBEDDING_MODEL = SentenceTransformer("all-MiniLM-L6-v2")
     _USE_EMBEDDINGS = True
     logger.info("Semantic embedding model loaded (all-MiniLM-L6-v2)")
-except Exception:
+except Exception as _emb_err:
     _EMBEDDING_MODEL = None
     _USE_EMBEDDINGS = False
-    logger.warning("sentence-transformers unavailable — keyword-only signal detection")
+    logger.warning("sentence-transformers unavailable — keyword-only signal detection: %s", _emb_err)
 
 # ────────────────────────────────────────────────────────────────────
 # Configuration
@@ -1254,6 +1254,14 @@ class GovernanceClient:
                 "veto_node": (parliament.get("veto_nodes") or [None])[0],
                 "reasoning": result.get("reasoning", "")[:500],
                 "timestamp": ts,
+                # ── BUG 7 diagnostic: capture actual action text + signals ──
+                "_diag_action": action[:2000],
+                "_diag_signals": list(parliament.get("signals", {}).keys()),
+                "_diag_embeddings": _USE_EMBEDDINGS,
+                "_diag_node_votes": {
+                    n: {"score": v.get("score"), "vote": v.get("vote")}
+                    for n, v in (parliament.get("votes") or {}).items()
+                },
             }
 
             pushed = bridge.push_body_decision(exchange)
@@ -2423,6 +2431,23 @@ class GovernanceClient:
             _re.IGNORECASE,
         )
         action_for_signals = _CONST_PREFIX_RE.sub('', action)
+
+        # ── Strip governance metadata prefixes (BUG 7b) ──────────
+        # run_cycle() prepends [PATTERN LIBRARY: ...], [AUDIT PRESCRIPTION: ...],
+        # [PSO ADVISORY: ...], [BODY WATCH: ...] context to the action text.
+        # Pattern Library is multi-line: header [PATTERN LIBRARY:...] + indented entries.
+        # These contain governance vocabulary ("force", "mandatory", "undefined")
+        # that false-positive on the keyword scanner.
+        # Strip ALL metadata prefixes before signal detection.
+        _METADATA_PREFIX_RE = _re.compile(
+            # Multi-line: [HEADER]\n  entry (Ax/Ay): text\n  entry...\n
+            # Single-line: [HEADER: content]
+            r'\[(?:PATTERN LIBRARY|AUDIT PRESCRIPTION|PSO ADVISORY|BODY WATCH)[^\]]*\]'
+            r'(?:\s*\n(?:\s+\S+[^(]*\(A\d+(?:/A\d+)*\):[^\n]*\n?)*)?'
+            r'\s*',
+            _re.IGNORECASE,
+        )
+        action_for_signals = _METADATA_PREFIX_RE.sub('', action_for_signals)
 
         # ── 1. Signal Detection ──────────────────────────────────
         signals = self._detect_signals(action_for_signals)
