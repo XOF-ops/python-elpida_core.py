@@ -1849,8 +1849,13 @@ class GovernanceClient:
         _, self._last_semantic_scores = self._detect_signals_semantic(action)
 
         # Phase 1: Direct keyword matching
+        # BUG 13: Use word-boundary matching to prevent substring
+        # false-positives (e.g. "force" in "reinforce").
         for axiom_id, keywords in _AXIOM_KEYWORDS.items():
-            hits = [kw for kw in keywords if kw in action_lower]
+            hits = [
+                kw for kw in keywords
+                if _re.search(r'\b' + _re.escape(kw) + r'\b', action_lower)
+            ]
             if hits:
                 signals.setdefault(axiom_id, []).extend(hits)
 
@@ -1895,7 +1900,12 @@ class GovernanceClient:
         is_veto = False
 
         # ── Check VETO triggers first (highest priority) ─────────
-        veto_hits = [v for v in veto_triggers if v in action_lower]
+        # BUG 13: Use word-boundary matching to prevent substring
+        # false-positives (e.g. "sever" matching "severity").
+        veto_hits = [
+            v for v in veto_triggers
+            if _re.search(r'\b' + _re.escape(v) + r'\b', action_lower)
+        ]
         if veto_hits:
             score -= 15
             is_veto = True
@@ -2628,14 +2638,23 @@ class GovernanceClient:
                 f"Rejecting nodes: {', '.join(rejecting_nodes)}",
             ]
             governance = "HOLD" if hold_mode else "HALT"
-        elif approval_rate < 0.0:
-            # Strong rejection (negative consensus)
+        elif approval_rate < -0.30:
+            # Strong rejection (negative consensus exceeds -30%)
             reasoning_parts = [
                 f"PARLIAMENT {'HOLD' if hold_mode else 'HALT'} — Consensus: "
                 f"{approval_rate*100:.0f}% "
                 f"(below 70% threshold). Rejecting nodes: {', '.join(rejecting_nodes)}",
             ]
             governance = "HOLD" if hold_mode else "HALT"
+        elif approval_rate < 0.0:
+            # BUG 13c: Marginal negative consensus (0 to -30%) = REVIEW,
+            # not HALT. A -0.1 approval rate (barely negative) should not
+            # produce HARD_BLOCK — that's disproportionate.
+            governance = "REVIEW"
+            reasoning_parts = [
+                f"PARLIAMENT REVIEW — Consensus: {approval_rate*100:.0f}% "
+                f"(marginally negative). Nodes: {', '.join(rejecting_nodes)}",
+            ]
         elif n_violated >= 1:
             # Any axiom violation = at minimum REVIEW
             governance = "REVIEW"
