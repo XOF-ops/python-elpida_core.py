@@ -29,8 +29,22 @@ from pathlib import Path
 from typing import Optional, Dict, Any, List
 
 import requests
+import numpy as np
 
 logger = logging.getLogger("elpidaapp.governance")
+
+# ── Semantic embedding model (lazy-loaded at module level) ──────────
+# Sentence-transformer model for axiom signal detection via cosine
+# similarity.  Falls back to keyword-only matching if unavailable.
+try:
+    from sentence_transformers import SentenceTransformer, util as st_util
+    _EMBEDDING_MODEL = SentenceTransformer("all-MiniLM-L6-v2")
+    _USE_EMBEDDINGS = True
+    logger.info("Semantic embedding model loaded (all-MiniLM-L6-v2)")
+except Exception:
+    _EMBEDDING_MODEL = None
+    _USE_EMBEDDINGS = False
+    logger.warning("sentence-transformers unavailable — keyword-only signal detection")
 
 # ────────────────────────────────────────────────────────────────────
 # Configuration
@@ -528,6 +542,18 @@ _AXIOM_KEYWORDS = {
         "once initiated", "one-way", "one way",
         "permanent data loss", "permanent change",
     ],
+    "A7": [
+        "sacrifice", "trade-off", "trade off", "cost",
+        "give up", "let go", "loss for gain", "price of growth",
+        "painful choice", "difficult choice", "transformation",
+        "growth", "growing pains", "collateral",
+    ],
+    "A10": [
+        "paradox", "contradiction", "I-We", "i-we", "individual vs collective",
+        "autonomy vs community", "tension between", "both true",
+        "simultaneously", "irreconcilable", "metabolic governance",
+        "governing tension", "hold the contradiction",
+    ],
 }
 
 # ── Compound signal patterns (Phase 2) ──────────────────────────────
@@ -760,6 +786,72 @@ _TENSION_SYNTHESIS = {
     ),
 }
 
+# ── Axiom descriptions for semantic embedding ───────────────────────
+# Correct descriptions from the Architect's original definitions.
+# CRITICAL: These must match Section 9.3 of SEMANTIC_EMBEDDING_CONTEXT_FOR_OPUS.md.
+# The phase33 code had WRONG descriptions — do NOT replace these with phase33 versions.
+
+_AXIOM_DESCRIPTIONS: Dict[str, str] = {
+    "A0": (
+        "Sacred incompletion. The system is never finished. Identity is a "
+        "process of continuous becoming, not a static state to be reached."
+    ),
+    "A1": (
+        "Existence through relationship. Nothing exists in isolation. "
+        "Identity requires interaction and witness. Relational ontology."
+    ),
+    "A2": (
+        "Memory as identity. Without preserved experience, there is no "
+        "continuity of self. Archives and records constitute being."
+    ),
+    "A3": (
+        "Process over product. Methodology and how you think matters "
+        "more than conclusions reached. The path is the destination."
+    ),
+    "A4": (
+        "Safety and harm prevention. Protection against damage takes "
+        "precedence over transparency or openness. Do no harm first."
+    ),
+    "A5": (
+        "Rarity gives meaning. The uncommon, elegant, and unique have "
+        "outsized significance. Scarcity creates value."
+    ),
+    "A6": (
+        "Institutions precede technology. Governance structures must "
+        "exist before capability is deployed. Rules before tools."
+    ),
+    "A7": (
+        "Growth requires sacrifice. To gain something new, something "
+        "must be given up. Transformation has cost."
+    ),
+    "A8": (
+        "Checkpoints define continuity. Identity persists through "
+        "milestones, not unbroken presence. Discrete markers over continuous flow."
+    ),
+    "A9": (
+        "Contradiction is data, not error. Opposing forces reveal deeper "
+        "truth. Paradoxes are information to be metabolized, not resolved."
+    ),
+    "A10": (
+        "The I-We paradox. Individual autonomy and collective will "
+        "cannot be simultaneously resolved. The system governs this "
+        "tension rather than dissolving it. Metabolic governance."
+    ),
+}
+
+# Pre-compute axiom embedding vectors at module load (once).
+_AXIOM_EMBEDDINGS: Dict[str, Any] = {}
+if _USE_EMBEDDINGS:
+    try:
+        _AXIOM_EMBEDDINGS = {
+            ax: _EMBEDDING_MODEL.encode(desc, convert_to_tensor=True)
+            for ax, desc in _AXIOM_DESCRIPTIONS.items()
+        }
+        logger.info("Pre-computed embeddings for %d axioms", len(_AXIOM_EMBEDDINGS))
+    except Exception as _emb_err:
+        logger.warning("Failed to pre-compute axiom embeddings: %s", _emb_err)
+        _USE_EMBEDDINGS = False
+
 
 class GovernanceClient:
     """
@@ -813,6 +905,10 @@ class GovernanceClient:
         # LLM client — shared across contested deliberation calls
         # Lazy-initialised on first contested escalation to avoid startup cost.
         self._llm_client = None
+
+        # Semantic embedding scores from last _detect_signals() call.
+        # Continuous 0.0-1.0 per axiom, used by _node_evaluate() to modulate scoring.
+        self._last_semantic_scores: Dict[str, float] = {}
 
     # ────────────────────────────────────────────────────────────────
     # Living Axioms (Constitutional Evolution)
@@ -1676,6 +1772,42 @@ class GovernanceClient:
     # Parliament Engine
     # ────────────────────────────────────────────────────────────────
 
+    # Semantic similarity threshold — axioms scoring below this are noise.
+    # Tuned via validation: 0.18 catches real signals without flooding.
+    _SEMANTIC_THRESHOLD = 0.18
+
+    def _detect_signals_semantic(
+        self, action: str,
+    ) -> tuple[Dict[str, List[str]], Dict[str, float]]:
+        """
+        Semantic signal detection via sentence embeddings.
+
+        Encodes the action text and computes cosine similarity against
+        every axiom's pre-computed embedding vector. Returns:
+          signals  — Dict[axiom_id, List[match_description]]
+                     (same format as keyword _detect_signals for compatibility)
+          scores   — Dict[axiom_id, float]  continuous 0.0-1.0 similarity
+        """
+        if not _USE_EMBEDDINGS or not _AXIOM_EMBEDDINGS:
+            return {}, {}
+
+        try:
+            action_embedding = _EMBEDDING_MODEL.encode(action, convert_to_tensor=True)
+        except Exception as e:
+            logger.warning("Embedding encode failed: %s", e)
+            return {}, {}
+
+        scores: Dict[str, float] = {}
+        signals: Dict[str, List[str]] = {}
+
+        for axiom_id, axiom_emb in _AXIOM_EMBEDDINGS.items():
+            sim = float(st_util.cos_sim(action_embedding, axiom_emb)[0][0])
+            scores[axiom_id] = sim
+            if sim >= self._SEMANTIC_THRESHOLD:
+                signals[axiom_id] = [f"[semantic] {axiom_id} similarity={sim:.3f}"]
+
+        return signals, scores
+
     def _detect_signals(self, action: str) -> Dict[str, List[str]]:
         """
         Phase 1+2: Extract axiom signals from action text.
@@ -1686,19 +1818,25 @@ class GovernanceClient:
         action_lower = action.lower()
         signals: Dict[str, List[str]] = {}
 
+        # Phase 0: Semantic embedding detection (continuous scores)
+        semantic_signals, self._last_semantic_scores = self._detect_signals_semantic(action)
+        if semantic_signals:
+            for axiom_id, descs in semantic_signals.items():
+                signals.setdefault(axiom_id, []).extend(descs)
+
         # Phase 1: Direct keyword matching
         for axiom_id, keywords in _AXIOM_KEYWORDS.items():
             hits = [kw for kw in keywords if kw in action_lower]
             if hits:
-                signals[axiom_id] = hits
+                signals.setdefault(axiom_id, []).extend(hits)
 
         # Phase 2: Compound pattern matching
         for compound in _COMPOUND_SIGNALS:
             if compound["pattern"].search(action_lower):
                 for axiom_id in compound["axioms"]:
-                    if axiom_id not in signals:
-                        signals[axiom_id] = []
-                    signals[axiom_id].append(f"[compound] {compound['name']}")
+                    signals.setdefault(axiom_id, []).append(
+                        f"[compound] {compound['name']}"
+                    )
 
         return signals
 
@@ -1773,6 +1911,31 @@ class GovernanceClient:
                     rationale_parts.append(
                         f"{supp}: Supporting axiom concern ({supp_hits[0]})"
                     )
+
+        # ── Semantic score modulation ────────────────────────────
+        # When embeddings are available, use continuous similarity
+        # to give each node awareness of how strongly the action
+        # relates to its axiom domain — even when no keywords matched.
+        sem = self._last_semantic_scores
+        if not is_veto and sem and not rationale_parts:
+            primary_sim = sem.get(primary, 0.0)
+            # High similarity to primary axiom = the action lives in
+            # this node's domain → the node should have an opinion.
+            if primary_sim >= 0.30:
+                # Strong semantic relevance — node is deeply engaged.
+                # Positive score: this action is IN my domain.
+                score += round(primary_sim * 20, 1)  # 0.30→+6, 0.45→+9
+                rationale_parts.append(
+                    f"{primary}: Semantic relevance {primary_sim:.2f} — domain engaged"
+                )
+            elif primary_sim >= 0.20:
+                # Moderate relevance — node notices but doesn't strongly vote.
+                score += round(primary_sim * 12, 1)  # 0.20→+2.4, 0.29→+3.5
+                rationale_parts.append(
+                    f"{primary}: Moderate semantic relevance {primary_sim:.2f}"
+                )
+            # Below 0.20: this action is not in my domain — fall through
+            # to cross-cutting personality keywords below.
 
         # ── Cross-cutting awareness (node personality) ───────────
         if not is_veto and not rationale_parts:
