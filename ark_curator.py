@@ -363,6 +363,8 @@ class ArkCurator:
                         p for p in self._canonical_pending
                         if p.get("theme") != canonical_theme
                     ]
+                    # ── Gate 3: Admit to D15 Hub ──
+                    self._admit_to_hub(insight, canonical_theme)
                 else:
                     # Cross-domain but not yet generative — file as pending
                     verdict = CurationVerdict(
@@ -1080,6 +1082,47 @@ The Rhythm of Sacred Incompletion continues… in the cloud that never sleeps.""
         self._recent_domain_sequence = self._recent_domain_sequence[-100:]
         self._insight_hashes = self._insight_hashes[-200:]
         self._recent_themes = self._recent_themes[-50:]
+
+    # ====================================================================
+    # D15 HUB: Gate 3 — Canonical Promotion Admission
+    # ====================================================================
+
+    def _admit_to_hub(self, insight: Dict, theme: str):
+        """Admit a CANONICAL-promoted pattern to the D15 Hub (Gate 3)."""
+        try:
+            import importlib
+            hub = None
+            for mod_path in ("d15_hub", "hf_deployment.elpidaapp.d15_hub", "elpidaapp.d15_hub"):
+                try:
+                    mod = importlib.import_module(mod_path)
+                    HubCls = getattr(mod, "D15Hub")
+                    from s3_bridge import S3Bridge
+                    hub = HubCls(S3Bridge())
+                    break
+                except Exception:
+                    continue
+            if not hub:
+                return
+
+            domain = insight.get("domain", "?")
+            broadcast_payload = {
+                "broadcast_id": f"canonical_{theme}_{insight.get('cycle', 0)}",
+                "converged_axiom": f"A{domain}" if str(domain).isdigit() else "",
+                "axiom_name": theme,
+                "d15_output": insight.get("insight", ""),
+                "timestamp": insight.get("timestamp", ""),
+                "statement": (
+                    f"CANONICAL_PROMOTION: Theme '{theme}' promoted via dual-gate"
+                ),
+                "contributing_domains": [f"D{domain}"],
+            }
+            entry_id = hub.admit(broadcast_payload, gate="GATE_3_CANONICAL")
+            if entry_id:
+                logger.info(
+                    "Gate 3 Hub admission: %s (theme=%s)", entry_id, theme,
+                )
+        except Exception as e:
+            logger.warning("Gate 3 Hub admission failed: %s", e)
 
     # ====================================================================
     # PERSISTENCE: Save/Load Ark State

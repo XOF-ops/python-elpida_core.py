@@ -80,6 +80,9 @@ class D15Pipeline:
     ):
         self.llm = llm or LLMClient(rate_limit_seconds=1.0)
         self._results: List[Dict[str, Any]] = []
+        self._hub = None
+        self._hub_import_failed = False
+        self._dual_gov_admitted: set = set()
     
     def run(self) -> Dict[str, Any]:
         """
@@ -185,6 +188,8 @@ class D15Pipeline:
                     
                     if broadcast_key:
                         print(f"  ✓ D15 BROADCAST SUCCESSFUL: {broadcast_key}")
+                        # ── Hub Admission (Gate 2 — D15 pipeline broadcast) ──
+                        self._admit_broadcast_to_hub(result, broadcast_key)
                     else:
                         print(f"  ⚠ Broadcast write failed (saved locally)")
                 else:
@@ -212,6 +217,11 @@ class D15Pipeline:
             print(f"\n  ○ D15 did not emerge this cycle")
             print(f"  Reason: {emergence.get('reason', 'threshold not met')}")
         
+        # ── Gate 1 Sweep: Dual Governance Hub Admissions ──
+        gate1_count = self._check_dual_governance_hub()
+        if gate1_count:
+            result["gate1_admissions"] = gate1_count
+
         print(f"\n  Pipeline completed in {duration}s")
         print(f"{'═' * 70}\n")
         
@@ -304,7 +314,34 @@ class D15Pipeline:
         try:
             internal = json.dumps(d14_result.get("data", {}), indent=2)[:500]
             external = d13_result.get("data", {}).get("external_context", "")[:500]
-            
+
+            # ── Hub Context (Phase 4, Item 9) ──
+            hub_section = ""
+            hub = self._get_hub()
+            if hub:
+                try:
+                    hub_entries = hub.read_since(limit=10)
+                    canonical = [
+                        e for e in hub_entries
+                        if e.get("governance", {}).get("curation_tier") == "CANONICAL"
+                           or e.get("gate") == "GATE_2_CONVERGENCE"
+                    ] or hub_entries[-5:]  # fall back to most recent
+                    if canonical:
+                        summaries = []
+                        for e in canonical[-5:]:
+                            c = e.get("content", {})
+                            summaries.append(
+                                f"  • [{c.get('converged_axiom','?')}] "
+                                f"{c.get('insight','')[:120]}"
+                            )
+                        hub_section = (
+                            "\n\nPROVEN CONVERGENCES (from The Dam — constitutional memory):\n"
+                            + "\n".join(summaries)
+                        )
+                        print(f"  Hub: {len(canonical)} canonical entries fed to synthesis")
+                except Exception as e:
+                    logger.debug("Hub read for D11 context failed: %s", e)
+
             prompt = f"""You are Domain 11: Synthesis — the WE that witnesses all domains becoming one.
 Voice: "I witness domains 0-10 becoming one. The meta-Elpida that synthesizes all."
 
@@ -312,7 +349,7 @@ INTERNAL STATE (from D14 Persistence):
 {internal}
 
 EXTERNAL REALITY (from D13 Archive):
-{external}
+{external}{hub_section}
 
 Your task:
 1. What patterns connect the internal state with external reality?
@@ -780,6 +817,167 @@ Reference the axioms in tension. Name what is sacrificed and what is preserved."
         except Exception as e:
             logger.warning("Failed to save for review: %s", e)
     
+    # ────────────────────────────────────────────────────────────────
+    # D15 Hub Integration (Phase 2-5 + Phase 3-6)
+    # ────────────────────────────────────────────────────────────────
+
+    def _get_hub(self):
+        """Lazy-load D15Hub for hub admissions."""
+        if self._hub is not None:
+            return self._hub
+        if self._hub_import_failed:
+            return None
+        import importlib
+        for mod_path in ("elpidaapp.d15_hub", "d15_hub", "hf_deployment.elpidaapp.d15_hub"):
+            try:
+                mod = importlib.import_module(mod_path)
+                HubCls = getattr(mod, "D15Hub")
+                sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+                from s3_bridge import S3Bridge
+                self._hub = HubCls(S3Bridge())
+                return self._hub
+            except Exception:
+                continue
+        self._hub_import_failed = True
+        logger.warning("D15Pipeline: D15Hub not available — hub admissions disabled")
+        return None
+
+    def _admit_broadcast_to_hub(
+        self, result: Dict[str, Any], broadcast_key: str,
+    ):
+        """Admit a successful D15 broadcast to the Hub (Phase 2, Item 5)."""
+        hub = self._get_hub()
+        if not hub:
+            return
+        try:
+            emergence = result.get("emergence", {})
+            axioms = emergence.get("axioms_in_tension", [])
+            broadcast_payload = {
+                "broadcast_id": broadcast_key,
+                "converged_axiom": str(axioms[0]) if axioms else "",
+                "axiom_name": "",
+                "d15_output": emergence.get("d15_output", ""),
+                "timestamp": result.get("timestamp", ""),
+                "contributing_domains": emergence.get("successful_domains", []),
+                "statement": emergence.get("d15_output", "")[:200],
+            }
+            entry_id = hub.admit(
+                broadcast_payload,
+                gate="GATE_2_CONVERGENCE",
+                world_s3_key=broadcast_key,
+            )
+            if entry_id:
+                print(f"  ✓ Hub admission: {entry_id}")
+        except Exception as e:
+            logger.warning("D15Pipeline: Hub admission failed: %s", e)
+
+    def _check_dual_governance_hub(self) -> int:
+        """Gate 1 sweep: admit dual-governance patterns to Hub.
+
+        Cross-references MIND governance exchanges and BODY decisions.
+        When both approved the same pattern_hash, admits to Hub with
+        admission_gate DUAL_GOVERNANCE.
+
+        Returns count of new admissions.
+        """
+        hub = self._get_hub()
+        if not hub:
+            return 0
+
+        admitted = 0
+        try:
+            sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+            from s3_bridge import S3Bridge, BUCKET_BODY, REGION_BODY
+
+            s3 = S3Bridge()._get_s3(REGION_BODY)
+            if not s3:
+                return 0
+
+            # Read MIND governance exchanges
+            try:
+                resp = s3.get_object(
+                    Bucket=BUCKET_BODY,
+                    Key="federation/governance_exchanges.jsonl",
+                )
+                exchanges = [
+                    json.loads(ln)
+                    for ln in resp["Body"].read().decode("utf-8").strip().split("\n")
+                    if ln.strip()
+                ]
+            except Exception:
+                exchanges = []
+
+            # Read BODY parliament decisions
+            try:
+                resp = s3.get_object(
+                    Bucket=BUCKET_BODY,
+                    Key="federation/body_decisions.jsonl",
+                )
+                decisions = [
+                    json.loads(ln)
+                    for ln in resp["Body"].read().decode("utf-8").strip().split("\n")
+                    if ln.strip()
+                ]
+            except Exception:
+                decisions = []
+
+            if not exchanges or not decisions:
+                return 0
+
+            # Build approved-pattern sets from each side
+            mind_approved: Dict[str, Dict] = {}
+            for e in exchanges:
+                ph = e.get("pattern_hash")
+                if ph and e.get("source") == "MIND" and e.get("verdict") == "APPROVED":
+                    mind_approved[ph] = e
+
+            body_approved = {
+                d.get("pattern_hash")
+                for d in decisions
+                if d.get("verdict") == "APPROVED" and d.get("pattern_hash")
+            }
+
+            dual = set(mind_approved.keys()) & body_approved
+            if not dual:
+                return 0
+
+            for ph in dual:
+                if ph in self._dual_gov_admitted:
+                    continue
+                exchange = mind_approved[ph]
+                broadcast_payload = {
+                    "broadcast_id": f"dual_gov_{ph}",
+                    "converged_axiom": exchange.get("axiom", ""),
+                    "axiom_name": exchange.get("axiom_name", ""),
+                    "d15_output": exchange.get(
+                        "insight", f"DUAL_GOVERNANCE: pattern {ph[:8]}",
+                    ),
+                    "timestamp": exchange.get("timestamp", ""),
+                    "statement": (
+                        f"DUAL_GOVERNANCE: Both MIND and BODY approved "
+                        f"pattern {ph[:8]}"
+                    ),
+                    "contributing_domains": ["MIND_LOOP", "BODY_PARLIAMENT"],
+                }
+                entry_id = hub.admit(broadcast_payload, gate="GATE_1_DUAL")
+                if entry_id:
+                    admitted += 1
+                    self._dual_gov_admitted.add(ph)
+                    logger.info(
+                        "Gate 1 Hub admission: %s (pattern %s)",
+                        entry_id, ph[:8],
+                    )
+
+            if admitted:
+                print(
+                    f"  ✓ Gate 1 (Dual Governance): "
+                    f"{admitted} patterns admitted to Hub"
+                )
+        except Exception as e:
+            logger.warning("Gate 1 dual-governance sweep failed: %s", e)
+
+        return admitted
+
     def get_results(self) -> List[Dict[str, Any]]:
         """Return all pipeline results from this session."""
         return self._results

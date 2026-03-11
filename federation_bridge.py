@@ -105,6 +105,9 @@ class FederationHeartbeat:
     kernel_blocks_total: int = 0                # Total kernel blocks since boot
     dominant_axiom: str = ""                    # Primary axiom of current domain (for D15 convergence)
     kaya_moments: int = 0                       # Cumulative D12 Kaya resonance events
+    hub_entry_count: int = 0                    # Total entries in D15 Hub (The Dam)
+    hub_canonical_count: int = 0                # CANONICAL entries in Hub
+    hub_last_admission: str = ""                # Timestamp of last Hub admission
     federation_version: str = "1.0.0"          # This protocol version
     timestamp: str = ""
 
@@ -260,6 +263,20 @@ class FederationBridge:
             ark_state = self.ark_curator.query()
             recursion = ark_state.recursion_warning
 
+        # D15 Hub stats (read manifest from BODY bucket if available)
+        _hub_entries = 0
+        _hub_canonical = 0
+        _hub_last = ""
+        try:
+            _hub_manifest = self._read_from_body("d15_hub/manifest.json")
+            if _hub_manifest:
+                _hm = json.loads(_hub_manifest)
+                _hub_entries = _hm.get("entry_count", 0)
+                _hub_canonical = _hm.get("tier_distribution", {}).get("CANONICAL", 0) if isinstance(_hm.get("tier_distribution"), dict) else 0
+                _hub_last = _hm.get("last_updated", "")
+        except Exception:
+            pass  # Hub not yet initialized — no stats
+
         hb = FederationHeartbeat(
             mind_cycle=cycle,
             mind_epoch=datetime.now(timezone.utc).isoformat(),
@@ -274,6 +291,9 @@ class FederationBridge:
             kernel_blocks_total=self.kernel_blocks,
             dominant_axiom=dominant_axiom or "",
             kaya_moments=kaya_moments,
+            hub_entry_count=_hub_entries,
+            hub_canonical_count=_hub_canonical,
+            hub_last_admission=_hub_last,
         )
 
         # Save locally
@@ -536,6 +556,17 @@ class FederationBridge:
             logger.debug("Pushed to s3://%s/%s", self._body_bucket, key)
         except Exception as e:
             logger.warning("Failed to push to BODY bucket: %s", e)
+
+    def _read_from_body(self, key: str) -> Optional[str]:
+        """Read a full object from the BODY bucket. Returns None on failure."""
+        s3 = self._get_s3()
+        if not s3:
+            return None
+        try:
+            response = s3.get_object(Bucket=self._body_bucket, Key=key)
+            return response["Body"].read().decode("utf-8")
+        except Exception:
+            return None
 
     def _append_to_body(self, key: str, line: str):
         """Append a line to a JSONL file in the BODY bucket."""

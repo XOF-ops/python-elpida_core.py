@@ -138,6 +138,7 @@ class ConvergenceGate:
         self._stagnation_flags: list = []  # axioms flagged as stagnant
         # D15 Hub (The Dam) — lazy-loaded on first fire
         self._hub = None
+        self._hub_import_failed = False  # sentinel: don't retry failed imports
 
     def check_and_fire(
         self,
@@ -579,18 +580,34 @@ class ConvergenceGate:
         """Lazy-load the D15Hub on first use."""
         if self._hub is not None:
             return self._hub
+        if self._hub_import_failed:
+            return None
         if not self._s3:
             return None
-        try:
-            from d15_hub import D15Hub
-        except ImportError:
+        D15Hub = None
+        for mod_path in (
+            "elpidaapp.d15_hub",
+            "d15_hub",
+            "hf_deployment.elpidaapp.d15_hub",
+        ):
             try:
-                from hf_deployment.elpidaapp.d15_hub import D15Hub  # type: ignore
-            except ImportError:
-                logger.warning("D15Hub not available — convergence will still fire")
-                return None
-        self._hub = D15Hub(self._s3)
-        self._hub.initialize_hub()
+                import importlib
+                mod = importlib.import_module(mod_path)
+                D15Hub = mod.D15Hub
+                break
+            except (ImportError, AttributeError):
+                continue
+        if D15Hub is None:
+            self._hub_import_failed = True
+            logger.warning("D15Hub module not found — convergence will still fire without Hub admission")
+            return None
+        try:
+            self._hub = D15Hub(self._s3)
+            self._hub.initialize_hub()
+        except Exception as e:
+            self._hub_import_failed = True
+            logger.warning("D15Hub initialization failed: %s — convergence will still fire", e)
+            return None
         return self._hub
 
     def _admit_to_hub(

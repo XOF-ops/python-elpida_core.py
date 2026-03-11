@@ -974,6 +974,51 @@ class GovernanceClient:
         """Force-reload living_axioms.jsonl from disk."""
         self._load_living_axioms()
 
+    # ────────────────────────────────────────────────────────────────
+    # D15 Hub Precedent (Phase 4, Item 11)
+    # ────────────────────────────────────────────────────────────────
+
+    def _get_hub_precedent(self, action: str) -> str:
+        """Return a short summary of D15 Hub entries relevant to *action*.
+
+        Reads the 5 most recent canonical entries from the Hub and
+        returns a one-line digest that Parliament nodes can weigh
+        during deliberation.  Returns empty string if Hub is
+        unreachable or has no entries.
+        """
+        try:
+            import importlib
+            hub = None
+            for mod_path in (
+                "elpidaapp.d15_hub",
+                "d15_hub",
+                "hf_deployment.elpidaapp.d15_hub",
+            ):
+                try:
+                    mod = importlib.import_module(mod_path)
+                    HubCls = getattr(mod, "D15Hub")
+                    from s3_bridge import S3Bridge
+                    hub = HubCls(S3Bridge())
+                    break
+                except Exception:
+                    continue
+            if not hub:
+                return ""
+
+            entries = hub.read_since(limit=5)
+            if not entries:
+                return ""
+
+            parts = []
+            for e in entries[-5:]:
+                c = e.get("content", {})
+                axiom = c.get("converged_axiom", "?")
+                insight = c.get("insight", "")[:80]
+                parts.append(f"{axiom}: {insight}")
+            return "; ".join(parts)
+        except Exception:
+            return ""
+
     def is_remote_available(self) -> bool:
         """
         Check if the remote governance server is reachable.
@@ -1678,6 +1723,13 @@ class GovernanceClient:
                 f"[CONSTITUTIONAL AXIOMS ({len(living)} ratified): {axiom_context}] "
                 + action
             )
+
+        # Enrich with D15 Hub precedent (Phase 4, Item 11).
+        # Gives Parliament nodes constitutional memory context before voting.
+        hub_precedent = self._get_hub_precedent(action)
+        if hub_precedent:
+            action = f"[HUB PRECEDENT: {hub_precedent}] " + action
+
         return self._parliament_deliberate(action, hold_mode=hold_mode, body_cycle=body_cycle, no_llm=no_llm)
 
     # ────────────────────────────────────────────────────────────────

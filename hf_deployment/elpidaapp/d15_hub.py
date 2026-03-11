@@ -397,3 +397,50 @@ class D15Hub:
                 "reason": str(e),
                 "entry_count": self._local_count,
             }
+
+    # ─── Snapshots ───────────────────────────────────────────────
+
+    def create_snapshot(self) -> Optional[str]:
+        """Create a gzipped snapshot of all Hub entries + manifest.
+
+        Writes to ``d15_hub/snapshots/snapshot_YYYYMMDD_HHMMSS.json.gz``.
+
+        Returns:
+            S3 key of the snapshot, or None on failure.
+        """
+        import gzip
+
+        s3 = self._s3()
+        if not s3:
+            return None
+
+        bucket = self._bucket()
+        entries = self.read_since(limit=10_000)
+        st = self.status()
+
+        snapshot = {
+            "snapshot_version": HUB_VERSION,
+            "created": datetime.now(timezone.utc).isoformat(),
+            "manifest": st,
+            "entry_count": len(entries),
+            "entries": entries,
+        }
+
+        ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        key = f"{HUB_PREFIX}snapshots/snapshot_{ts}.json.gz"
+
+        try:
+            payload = gzip.compress(
+                json.dumps(snapshot, ensure_ascii=False).encode("utf-8"),
+            )
+            s3.put_object(
+                Bucket=bucket,
+                Key=key,
+                Body=payload,
+                ContentType="application/gzip",
+            )
+            logger.info("D15Hub snapshot: %s (%d entries)", key, len(entries))
+            return key
+        except Exception as e:
+            logger.error("D15Hub snapshot failed: %s", e)
+            return None
