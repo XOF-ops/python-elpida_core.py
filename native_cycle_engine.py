@@ -308,6 +308,8 @@ class NativeCycleEngine:
         self.d15_broadcast_count = self.ark_curator._d15_broadcast_count
         # Restore cumulative Kaya count from persisted Ark state
         self._kaya_count = self.ark_curator._kaya_count
+        # Restore Hub watermark so MIND doesn't re-read all entries on restart
+        self.d15_hub_watermark = self.ark_curator._d15_hub_watermark
 
         # P6: Domain diversity tracker — prevents any single domain from
         # absorbing all cycles.  D6 appears in all 5 rhythms and gets
@@ -779,6 +781,7 @@ Speak briefly. These are facts, not opinions.'''
         # Advance watermark only if integration succeeded
         if result and entries:
             self.d15_hub_watermark = entries[-1].get('timestamp')
+            self.ark_curator._d15_hub_watermark = self.d15_hub_watermark
 
         return result
     
