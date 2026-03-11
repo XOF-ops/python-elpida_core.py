@@ -137,6 +137,27 @@ PSO_INFLUENCE_WINDOW = 20
 # P5: Cooldown between audit prescription applications
 AUDIT_PRESCRIPTION_COOLDOWN = 5
 
+# Oscillation Doctrine: Parliament-authored adaptive monoculture thresholds.
+# Instead of a fixed 40% trigger, the threshold breathes with system stress.
+# Calm systems tolerate more dominance (38%); stressed systems trigger at 30%.
+MONOCULTURE_THRESHOLD_LOW = 0.30   # crisis: trigger early
+MONOCULTURE_THRESHOLD_HIGH = 0.38  # calm: tolerate more before intervening
+
+
+def get_monoculture_threshold(system_stress: float) -> float:
+    """
+    Parliament-authored (Oscillation Doctrine, 136-cycle synthesis):
+    threshold oscillates 30-38% based on system stress.
+
+    stress 0.0 (calm)  → 0.38 (tolerant)
+    stress 1.0 (crisis) → 0.30 (aggressive)
+    """
+    stress = max(0.0, min(1.0, system_stress))
+    return MONOCULTURE_THRESHOLD_HIGH - (
+        MONOCULTURE_THRESHOLD_HIGH - MONOCULTURE_THRESHOLD_LOW
+    ) * stress
+
+
 # P6: Coherence-gated intervention thresholds.
 # When coherence drops below COHERENCE_PROCEED_GATE, PROCEEDs are
 # converted to HOLD unless approval exceeds a dynamically raised bar.
@@ -1667,6 +1688,35 @@ class ParliamentCycleEngine:
     # P5: Audit Prescription Actuator
     # ------------------------------------------------------------------
 
+    def _compute_system_stress(
+        self, top_pct: float, avg_approval: float
+    ) -> float:
+        """
+        Oscillation Doctrine: derive system stress (0.0–1.0) from
+        three signals — coherence, approval, and existing monoculture.
+
+        Higher stress → lower monoculture threshold → earlier intervention.
+        """
+        # Coherence signal: low coherence = high stress
+        # coherence 1.0 → 0.0 stress;  coherence 0.3 → 1.0 stress
+        coherence_stress = max(0.0, min(1.0, 1.0 - self.coherence))
+
+        # Approval signal: negative approval = high stress
+        # approval +0.40 → 0.0 stress;  approval -0.30 → 1.0 stress
+        approval_stress = max(0.0, min(1.0, (0.40 - avg_approval) / 0.70))
+
+        # Monoculture signal: existing dominance raises stress
+        # dominance 0.20 → 0.0 stress;  dominance 0.50 → 1.0 stress
+        mono_stress = max(0.0, min(1.0, (top_pct - 0.20) / 0.30))
+
+        # Weighted combination — coherence matters most
+        stress = (
+            0.40 * coherence_stress
+            + 0.30 * approval_stress
+            + 0.30 * mono_stress
+        )
+        return max(0.0, min(1.0, stress))
+
     def _extract_audit_prescription(self, current_axiom: Optional[str]):
         """
         P5: Detect monoculture or approval collapse and generate a
@@ -1676,8 +1726,10 @@ class ParliamentCycleEngine:
         Mirrors AuditAgent's detection logic but produces machine-readable
         prescriptions instead of human-readable log text.
 
-        Triggers:
-          1. Axiom monoculture: top axiom > 40% of all cycles
+        Triggers (Oscillation Doctrine — adaptive thresholds):
+          1. Axiom monoculture: top axiom > adaptive threshold (30-38%)
+             Threshold breathes with system stress — stressed systems
+             trigger earlier, calm systems tolerate more diversity.
           2. Approval collapse: average approval < 35% over last 8 decisions
 
         Prescription = seed the least-used axiom that is NOT the current
@@ -1687,7 +1739,7 @@ class ParliamentCycleEngine:
         if total_axiom_cycles < 10:
             return
 
-        # Check monoculture: top axiom > 40%
+        # Check monoculture: adaptive threshold (Oscillation Doctrine)
         top_axiom = max(self._axiom_frequency, key=self._axiom_frequency.get)
         top_pct = self._axiom_frequency[top_axiom] / total_axiom_cycles
 
@@ -1699,7 +1751,11 @@ class ParliamentCycleEngine:
             avg_approval = sum(approvals) / len(approvals)
         approval_crisis = avg_approval < 0.35 and len(recent_decisions) >= 5
 
-        if top_pct > 0.40 or approval_crisis:
+        # Oscillation Doctrine: compute system stress → adaptive threshold
+        stress = self._compute_system_stress(top_pct, avg_approval)
+        mono_threshold = get_monoculture_threshold(stress)
+
+        if top_pct > mono_threshold or approval_crisis:
             # Find the least-used axiom that:
             # 1. Has a rhythm mapping (is reachable)
             # 2. Is not the current dominant
@@ -1713,12 +1769,32 @@ class ParliamentCycleEngine:
 
             # Sort by frequency (ascending — prefer least used)
             candidates.sort(key=lambda a: self._axiom_frequency.get(a, 0))
+
+            # Oscillation Doctrine — A7 meta-axiom recognition:
+            # A7 (Continuous Becoming) operates as a meta-axiom that
+            # transforms how other axioms express, rather than appearing
+            # as dominant. If A7 has been prescribed 3+ consecutive times
+            # without ever surfacing, skip it — it's already working
+            # through the adaptive threshold itself.
             target_axiom = candidates[0]
+            if (target_axiom == "A7"
+                    and self._audit_prescription
+                    and self._audit_prescription.get("target_axiom") == "A7"
+                    and self._axiom_frequency.get("A7", 0) == 0
+                    and len(candidates) > 1):
+                target_axiom = candidates[1]
+                logger.info(
+                    "A7 META-AXIOM: skipping A7 prescription (never surfaces "
+                    "as dominant — operates through adaptive thresholds)"
+                )
 
             severity = "CRITICAL" if (top_pct > 0.50 or approval_crisis) else "WARNING"
             reason = []
-            if top_pct > 0.40:
-                reason.append(f"monoculture_{top_axiom}_{top_pct:.0%}")
+            if top_pct > mono_threshold:
+                reason.append(
+                    f"monoculture_{top_axiom}_{top_pct:.0%}"
+                    f"_threshold_{mono_threshold:.0%}"
+                )
             if approval_crisis:
                 reason.append(f"approval_collapse_{avg_approval:.0%}")
 
@@ -1730,18 +1806,21 @@ class ParliamentCycleEngine:
                 "prescribed_at": self.cycle_count,
                 "displaced_axiom": top_axiom,
                 "displaced_pct": round(top_pct * 100, 1),
+                "stress": round(stress, 3),
+                "threshold": round(mono_threshold, 3),
             }
             self._audit_prescription_cycle = self.cycle_count
 
             logger.info(
                 "P5 AUDIT PRESCRIPTION: seed %s (severity=%s, reason=%s, "
-                "displacing %s at %.0f%%)",
+                "displacing %s at %.0f%%, stress=%.3f, threshold=%.0f%%)",
                 target_axiom, severity, "+".join(reason),
-                top_axiom, top_pct * 100,
+                top_axiom, top_pct * 100, stress, mono_threshold * 100,
             )
             print(
                 f"   💊 AUDIT PRESCRIPTION: seed {target_axiom} "
-                f"({severity}: {'+'.join(reason)})"
+                f"({severity}: {'+'.join(reason)}, "
+                f"threshold={mono_threshold:.0%})"
             )
 
     # ------------------------------------------------------------------
@@ -2194,6 +2273,18 @@ class ParliamentCycleEngine:
             "fork_last_cycle": self._fork_last_cycle or None,
             "d15_broadcast_count": self.d15_broadcast_count,
             "axiom_frequency": dict(self._axiom_frequency),
+            "oscillation_doctrine": {
+                "stress": round(self._compute_system_stress(
+                    max(self._axiom_frequency.values()) / max(sum(self._axiom_frequency.values()), 1),
+                    0.0,
+                ), 3) if self._axiom_frequency else 0.0,
+                "threshold": round(get_monoculture_threshold(
+                    self._compute_system_stress(
+                        max(self._axiom_frequency.values()) / max(sum(self._axiom_frequency.values()), 1),
+                        0.0,
+                    ) if self._axiom_frequency else 0.0
+                ), 3),
+            },
             "input_buffer": self.input_buffer.counts(),
             "running": self._running,
             "mind_heartbeat_cycle": self._mind_heartbeat_cycle,

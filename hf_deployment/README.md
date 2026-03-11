@@ -4,6 +4,7 @@ emoji: 🌀
 colorFrom: purple
 colorTo: blue
 sdk: docker
+suggested_hardware: cpu-upgrade
 pinned: false
 license: mit
 ---
