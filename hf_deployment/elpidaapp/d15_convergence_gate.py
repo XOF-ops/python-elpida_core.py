@@ -273,6 +273,10 @@ class ConvergenceGate:
         )
         self._fire_count += 1
 
+        # For harmonic convergence, the broadcast axiom is the BODY's
+        # live axiom (it's the one being actively deliberated).
+        converged_axiom = body_axiom
+
         # Stagnation tracking — detect Groundhog Day loops
         if converged_axiom == self._last_fired_axiom:
             self._consecutive_fires[converged_axiom] = (
@@ -295,10 +299,6 @@ class ConvergenceGate:
                 "CrystallizationHub should be triggered.",
                 converged_axiom, consec,
             )
-
-        # For harmonic convergence, the broadcast axiom is the BODY's
-        # live axiom (it's the one being actively deliberated).
-        converged_axiom = body_axiom
 
         broadcast = self._build_broadcast(
             axiom=converged_axiom,
