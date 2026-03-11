@@ -53,7 +53,7 @@ WATCH_INTERVAL_SECONDS = 4 * 60 * 60  # 14400 seconds
 
 # Canonical regions (matching s3_bridge.py)
 REGION_MIND  = os.environ.get("AWS_S3_REGION_MIND",  "us-east-1")
-REGION_BODY  = os.environ.get("AWS_S3_REGION_BODY",  "us-east-1")
+REGION_BODY  = os.environ.get("AWS_S3_REGION_BODY",  "eu-north-1")
 REGION_WORLD = os.environ.get("AWS_S3_REGION_WORLD", "eu-north-1")
 
 WORLD_PUBLIC_URL = f"https://{BUCKET_WORLD}.s3.{REGION_WORLD}.amazonaws.com/index.html"

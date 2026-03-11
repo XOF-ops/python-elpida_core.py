@@ -1529,8 +1529,9 @@ class ParliamentCycleEngine:
         s3 = self._get_s3()
         if s3:
             try:
-                s3._get_s3("us-east-1").put_object(
-                    Bucket="elpida-body-evolution",
+                from s3_bridge import REGION_BODY, BUCKET_BODY
+                s3._get_s3(REGION_BODY).put_object(
+                    Bucket=BUCKET_BODY,
                     Key="federation/body_heartbeat.json",
                     Body=json.dumps(heartbeat, indent=2).encode("utf-8"),
                     ContentType="application/json",

@@ -220,7 +220,7 @@ class FederationBridge:
                 import boto3
                 self._s3_client = boto3.client(
                     "s3",
-                    region_name=os.environ.get("AWS_DEFAULT_REGION", "us-east-1"),
+                    region_name=os.environ.get("AWS_S3_REGION_BODY", "eu-north-1"),
                 )
             except Exception as e:
                 logger.warning("S3 client init failed: %s", e)

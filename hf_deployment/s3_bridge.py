@@ -48,7 +48,7 @@ BUCKET_BODY = os.environ.get("AWS_S3_BUCKET_BODY", "elpida-body-evolution")
 BUCKET_WORLD = os.environ.get("AWS_S3_BUCKET_WORLD", "elpida-external-interfaces")
 
 REGION_MIND = os.environ.get("AWS_S3_REGION_MIND", "us-east-1")
-REGION_BODY = os.environ.get("AWS_S3_REGION_BODY", "us-east-1")
+REGION_BODY = os.environ.get("AWS_S3_REGION_BODY", "eu-north-1")
 REGION_WORLD = os.environ.get("AWS_S3_REGION_WORLD", "eu-north-1")
 
 # S3 keys
@@ -102,7 +102,7 @@ class S3Bridge:
         cache_dir = LOCAL_DIR / "cache"
         cache_dir.mkdir(parents=True, exist_ok=True)
 
-    def _get_s3(self, region: str = "us-east-1"):
+    def _get_s3(self, region: str = REGION_BODY):
         """Get or create an S3 client for a region."""
         if not HAS_BOTO3:
             return None
