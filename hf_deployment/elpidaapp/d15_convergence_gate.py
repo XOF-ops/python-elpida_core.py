@@ -136,6 +136,8 @@ class ConvergenceGate:
         self._consecutive_fires: Dict[str, int] = {}
         self._last_fired_axiom: Optional[str] = None
         self._stagnation_flags: list = []  # axioms flagged as stagnant
+        # D15 Hub (The Dam) — lazy-loaded on first fire
+        self._hub = None
 
     def check_and_fire(
         self,
@@ -272,6 +274,9 @@ class ConvergenceGate:
         # Write to WORLD bucket via S3Bridge
         s3_key = self._push_to_world(broadcast)
 
+        # Admit to D15 Hub (The Dam) — permanent constitutional memory
+        hub_entry_id = self._admit_to_hub(broadcast, s3_key)
+
         self._fire_log.append({
             "type": "D15_CONVERGENCE",
             "broadcast_id": broadcast["broadcast_id"],
@@ -279,6 +284,7 @@ class ConvergenceGate:
             "body_cycle": body_cycle,
             "mind_cycle": mind_heartbeat.get("mind_cycle"),
             "s3_key": s3_key,
+            "hub_entry_id": hub_entry_id,
             "timestamp": broadcast["timestamp"],
             "consecutive_fires": consec,
             "stagnation_detected": stagnation_detected,
@@ -569,9 +575,40 @@ class ConvergenceGate:
         """Return the log of all convergence events."""
         return list(self._fire_log)
 
+    def _get_hub(self):
+        """Lazy-load the D15Hub on first use."""
+        if self._hub is not None:
+            return self._hub
+        if not self._s3:
+            return None
+        try:
+            from d15_hub import D15Hub
+        except ImportError:
+            try:
+                from hf_deployment.elpidaapp.d15_hub import D15Hub  # type: ignore
+            except ImportError:
+                logger.warning("D15Hub not available — convergence will still fire")
+                return None
+        self._hub = D15Hub(self._s3)
+        self._hub.initialize_hub()
+        return self._hub
+
+    def _admit_to_hub(
+        self, broadcast: Dict, world_s3_key: Optional[str]
+    ) -> Optional[str]:
+        """Admit a convergence broadcast to the D15 Hub (The Dam)."""
+        hub = self._get_hub()
+        if not hub:
+            return None
+        try:
+            return hub.admit(broadcast, gate="GATE_2_CONVERGENCE", world_s3_key=world_s3_key)
+        except Exception as e:
+            logger.warning("D15Hub admission failed (non-critical): %s", e)
+            return None
+
     def stats(self) -> Dict[str, Any]:
         """Return convergence gate stats."""
-        return {
+        base = {
             "total_fires": self._fire_count,
             "a0_self_recognitions": sum(
                 1 for e in self._fire_log if e.get("type") == "A0_SELF_RECOGNITION"
@@ -580,6 +617,10 @@ class ConvergenceGate:
                 1 for e in self._fire_log if e.get("type") == "D15_CONVERGENCE"
             ),
         }
+        hub = self._get_hub()
+        if hub:
+            base["hub"] = hub.status()
+        return base
 
     def stagnation_status(self) -> Dict[str, Any]:
         """Return current stagnation state for CrystallizationHub polling."""
