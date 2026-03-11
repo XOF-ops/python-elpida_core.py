@@ -175,10 +175,11 @@ class D15Hub:
 
         ts = datetime.now(timezone.utc).isoformat()
 
-        # Build entry ID from content hash (deterministic, idempotent)
+        # Build entry ID from broadcast content (idempotent on retry)
         bid = broadcast.get("broadcast_id", "")
         axiom = broadcast.get("converged_axiom", "")
-        hash_input = f"{bid}:{axiom}:{ts}".encode()
+        broadcast_ts = broadcast.get("timestamp", ts)
+        hash_input = f"{bid}:{axiom}:{broadcast_ts}".encode()
         entry_id = hashlib.sha256(hash_input).hexdigest()[:16]
 
         # Extract content from broadcast
@@ -217,8 +218,9 @@ class D15Hub:
             },
         }
 
-        # Write entry as individual file
-        entry_key = f"{HUB_ENTRIES_PREFIX}{entry_id}.json"
+        # Write entry as individual file (timestamp prefix for lexicographic ordering)
+        ts_safe = ts.replace(":", "-").replace("+", "_")
+        entry_key = f"{HUB_ENTRIES_PREFIX}{ts_safe}_{entry_id}.json"
         bucket = self._bucket()
 
         try:
@@ -312,7 +314,6 @@ class D15Hub:
             for page in paginator.paginate(
                 Bucket=bucket,
                 Prefix=HUB_ENTRIES_PREFIX,
-                PaginationConfig={"MaxItems": limit * 2},
             ):
                 for obj in page.get("Contents", []):
                     key = obj["Key"]
@@ -334,11 +335,25 @@ class D15Hub:
         return entries[:limit]
 
     def read_entry(self, entry_id: str) -> Optional[Dict[str, Any]]:
-        """Read a single Hub entry by ID."""
+        """Read a single Hub entry by ID (searches entries prefix)."""
         s3 = self._s3()
         if not s3:
             return None
 
+        # Entry keys are timestamp-prefixed, so search by suffix
+        bucket = self._bucket()
+        try:
+            resp = s3.list_objects_v2(
+                Bucket=bucket, Prefix=HUB_ENTRIES_PREFIX, MaxKeys=500,
+            )
+            for obj in resp.get("Contents", []):
+                if obj["Key"].endswith(f"_{entry_id}.json"):
+                    raw = s3.get_object(Bucket=bucket, Key=obj["Key"])
+                    return json.loads(raw["Body"].read())
+        except Exception:
+            pass
+
+        # Fallback: try old-format key (pre-timestamp-prefix)
         key = f"{HUB_ENTRIES_PREFIX}{entry_id}.json"
         bucket = self._bucket()
 

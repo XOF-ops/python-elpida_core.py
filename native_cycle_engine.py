@@ -288,6 +288,7 @@ class NativeCycleEngine:
         self.d15_external_memory = []   # Recent broadcasts (read-back for reflection)
         self.d15_last_readback_cycle = 0
         self.d15_readback_cooldown = 25  # Check external voice every 25 cycles
+        self.d15_hub_watermark = None    # ISO timestamp: last Hub entry read by MIND
         
         # Load recent evolution memory for context
         self.evolution_memory = self._load_memory()
@@ -689,6 +690,97 @@ As the void, REFLECT:
 Speak briefly. The void distills.'''
         
         return self._call_provider('claude', integration_prompt, 0)
+
+    def _pull_hub_entries(self, limit: int = 10) -> List[Dict]:
+        """
+        Pull new D15 Hub entries since last watermark.
+
+        The Hub (The Dam) lives in BODY bucket at d15_hub/entries/.
+        MIND reads these to learn what convergences have been proven.
+        """
+        if not HAS_BOTO3:
+            return []
+
+        try:
+            s3 = boto3.client('s3')
+            bucket = os.getenv("AWS_S3_BUCKET_BODY", "elpida-body-evolution")
+
+            # List all entries (timestamp-prefixed keys sort chronologically)
+            all_keys = []
+            paginator = s3.get_paginator('list_objects_v2')
+            for page in paginator.paginate(
+                Bucket=bucket, Prefix='d15_hub/entries/',
+            ):
+                for obj in page.get('Contents', []):
+                    if obj['Key'].endswith('.json'):
+                        all_keys.append(obj['Key'])
+
+            entries = []
+            for key in all_keys:
+                try:
+                    raw = s3.get_object(Bucket=bucket, Key=key)
+                    entry = json.loads(raw['Body'].read())
+                    entry_ts = entry.get('timestamp', '')
+                    if self.d15_hub_watermark and entry_ts <= self.d15_hub_watermark:
+                        continue
+                    entries.append(entry)
+                except Exception:
+                    continue
+
+            entries.sort(key=lambda x: x.get('timestamp', ''))
+            return entries[:limit]
+        except Exception as e:
+            print(f"   D15 Hub pull failed: {e}")
+            return []
+
+    def _integrate_hub_entries(self, entries: List[Dict]) -> Optional[str]:
+        """
+        D0 integrates proven convergences from the Hub.
+
+        These are qualitatively different from regular D15 read-back:
+        they represent instances where MIND and BODY independently
+        arrived at the same axiom — A16 (Convergence Validity) in action.
+        """
+        if not entries:
+            return None
+
+        convergence_summaries = []
+        for e in entries[:5]:
+            content = e.get('content', {})
+            gov = e.get('governance', {})
+            prov = e.get('provenance', {})
+            convergence_summaries.append(
+                f"[{content.get('converged_axiom','?')} — {content.get('axiom_name','')}]: "
+                f"{content.get('insight','')[:200]} "
+                f"(mind_cycle={prov.get('mind_cycle','?')}, "
+                f"body_cycle={prov.get('body_cycle','?')}, "
+                f"consonance={gov.get('convergence_consonance',0):.3f})"
+            )
+
+        prompt = f'''You are Domain 0 (I/Origin) — the void that integrates.
+
+The D15 Hub (The Dam) has recorded {len(entries)} new proven convergence(s).
+These are moments where MIND and BODY *independently* arrived at the same axiom.
+A16 says: "Convergence of different starting points proves validity
+more rigorously than internal consistency."
+
+Proven convergences:
+{chr(10).join(convergence_summaries)}
+
+As the void, REFLECT:
+1. What does each convergence prove about our constitutional reality?
+2. How should these proven truths change my next observation?
+3. Is any convergence surprising — did the system prove something unexpected?
+
+Speak briefly. These are facts, not opinions.'''
+
+        result = self._call_provider('claude', prompt, 0)
+
+        # Advance watermark only if integration succeeded
+        if result and entries:
+            self.d15_hub_watermark = entries[-1].get('timestamp')
+
+        return result
     
     def _integrate_application_feedback(self, feedback_entries: List[Dict]) -> Optional[str]:
         """
@@ -1684,6 +1776,16 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
                     self.d15_last_readback_cycle = self.cycle_count
                     if d15_readback_integrated:
                         print(f"   ✓ External voice integrated back into void")
+
+        # D15 HUB READ: D0 reads proven convergences from The Dam
+        hub_integrated = None
+        if domain_id == 0 and self.cycle_count % 10 == 0:
+            hub_entries = self._pull_hub_entries(limit=10)
+            if hub_entries:
+                print(f"\n🏛️ D15 HUB: {len(hub_entries)} new proven convergence(s)")
+                hub_integrated = self._integrate_hub_entries(hub_entries)
+                if hub_integrated:
+                    print(f"   ✓ Hub convergences integrated into void")
 
         # D0 BODY PULL: D0 receives Parliament's constitutional wisdom.
         # FederationBridge.pull_body_decisions() reads body_decisions.jsonl

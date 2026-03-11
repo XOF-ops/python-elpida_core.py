@@ -1459,6 +1459,17 @@ class ParliamentCycleEngine:
     # Heartbeat Emission
     # ------------------------------------------------------------------
 
+    def _get_hub_status(self) -> Optional[Dict]:
+        """Get D15 Hub status from the convergence gate (non-fatal)."""
+        gate = self._get_convergence_gate()
+        if gate is None:
+            return None
+        try:
+            stats = gate.stats()
+            return stats.get("hub")
+        except Exception:
+            return None
+
     def _emit_heartbeat(self, rhythm: str, dominant_axiom: Optional[str],
                         result: Dict):
         """
@@ -1501,8 +1512,10 @@ class ParliamentCycleEngine:
             ),
             "fork_last_cycle": self._fork_last_cycle or None,
             "polis_civic_active": self._polis_last_cycle == self.cycle_count,
+            # D15 Hub (The Dam) status
+            "hub": self._get_hub_status(),
             "timestamp": datetime.now(timezone.utc).isoformat(),
-            "federation_version": "1.1.0",
+            "federation_version": "1.2.0",
         }
 
         # Write locally
