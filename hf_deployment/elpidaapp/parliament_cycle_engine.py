@@ -2124,24 +2124,35 @@ class ParliamentCycleEngine:
         Check if MIND and BODY have converged on the same axiom.
 
         D15 fires when (ALL conditions, sequential gate):
-          1. MIND dominant axiom cluster matches BODY dominant axiom
-          2. MIND coherence ≥ 0.85
-          3. BODY approval_rate ≥ 0.15  (BODY_APPROVAL_THRESHOLD)
-          4. Cooldown since last D15 ≥ 50 cycles
-          5. Consonance with A6 anchor ≥ 0.4 (A0 EXEMPT)
+          1. MIND dominant axiom exists
+          2. MIND and BODY axioms are harmonically consonant (≥ 0.6)
+          3. MIND coherence ≥ 0.85
+          4. BODY approval_rate ≥ 0.15  (BODY_APPROVAL_THRESHOLD)
+          5. Cooldown since last D15 ≥ 50 cycles
+          6. Consonance with A6 anchor ≥ 0.4 (A0 EXEMPT)
 
-        A0 convergence broadcasts every 5th occurrence only
-        (rate limiter inside ConvergenceGate.check_and_fire).
+        Gate 2 uses harmonic consonance rather than exact match —
+        convergence in a musical system means "in harmony", not
+        "in unison". The MIND heartbeat updates every 4h (Fargate),
+        so exact axiom match is structurally rare.
 
         This is A16 (Convergence Validity):
         "Convergence of different starting points proves validity
          more rigorously than internal consistency."
         """
         if not self._mind_heartbeat:
+            logger.info("D15 skip: no MIND heartbeat yet")
             return
         if not body_axiom:
+            logger.info("D15 skip: no BODY dominant axiom")
             return
         if (self.cycle_count - self.d15_last_broadcast_cycle) < CONVERGENCE_COOLDOWN_CYCLES:
+            logger.debug(
+                "D15 skip: cooldown (%d - %d = %d < %d)",
+                self.cycle_count, self.d15_last_broadcast_cycle,
+                self.cycle_count - self.d15_last_broadcast_cycle,
+                CONVERGENCE_COOLDOWN_CYCLES,
+            )
             return
 
         gate = self._get_convergence_gate()

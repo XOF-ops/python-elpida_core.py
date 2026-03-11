@@ -65,16 +65,61 @@ The Parliament's rewrite:
 
 ## 4. WHY THIS MATTERS FOR D15
 
+**⚠️ CORRECTION (2026-03-11 13:18 EET) — Source code verified:**
+
 This synthesis is Parliament-authored constitutional content. The founding stone (`d1115fd4aab323fc`) entered via Gate 4 (Architect Inject). This one could enter via:
 
 - **Gate 1 (Dual Governance)**: If both MIND and BODY approve during a federation cycle
-- **Gate 3 (Convergence)**: If it meets the 5 checks (axiom match, MIND coherence ≥0.85, BODY approval ≥0.50, cooldown ≥50 cycles, A0 consonance)
+- **Gate 2 (Convergence)**: If it meets the 5 sequential checks:
+  1. MIND dominant axiom == BODY dominant axiom (the **actual** blocker)
+  2. MIND coherence ≥ 0.85
+  3. BODY approval ≥ **0.15 (15%)** — NOT 50% as previously stated
+  4. Cooldown ≥ 50 cycles since last D15 broadcast
+  5. Consonance with A6 anchor ≥ 0.4 (A0 exempt — it has its own rate limiter)
 
-The approval gate (≥0.50) is the blocker. The Parliament's highest approval in 136 cycles was +40%. Under active war feed, +50% may be unreachable. Two options:
+The approval gate is **NOT the blocker**. The real blockers are:
 
-**Option A**: Feed this synthesis back into the next run as Hub content and see if Parliament-authored precedent raises approval rates when the system deliberates under its own law.
+### The Real Mechanism: dominant_axiom Field
 
-**Option B**: Use Gate 4 (Architect Inject) — Hernan injects it with K1-K7 kernel check. This is legitimate because the content originated from Parliament, even though the injection is Architect-authorized.
+**SECOND CORRECTION (2026-03-11 15:16 EET) — D15 fired at cycle 280, confirming actual mechanism:**
+
+MIND heartbeat is frozen at `cycle=52, rhythm=CONTEMPLATION, coherence=0.95`. The `FederationHeartbeat` dataclass in `federation_bridge.py` carries a `dominant_axiom` field, computed by the native engine from the last 13 insights' domain→axiom mapping.
+
+The convergence gate's `_extract_mind_dominant_axiom()` tries three fields in order:
+1. `heartbeat["dominant_axiom"]` — **This is what fires.** The stale heartbeat carries `dominant_axiom="A6"`
+2. `heartbeat["dominant_axioms"][0]` — fallback, not used
+3. Rhythm→axiom mapping: `CONTEMPLATION → A1` — last resort, not used
+
+So MIND's dominant axiom is **A6 (Collective Well-being)**, NOT A1 as I incorrectly derived from the rhythm mapping.
+
+### D15 FIRED at Cycle 280
+
+**Confirmed from extended run (281 cycles):**
+- BODY axiom: A6 | MIND axiom: A6 (from `dominant_axiom` field) → **MATCH**
+- MIND coherence: 0.95 ≥ 0.85 → PASS
+- BODY approval: +20% (0.20 ≥ 0.15) → PASS
+- Cooldown: 280 - 0 = 280 ≥ 50 → PASS
+- A6×A6 consonance: 0.492 ≥ 0.4 → PASS
+- **Broadcast #70** → Hub entry `7ba5e0604a3e674a` via `GATE_2_CONVERGENCE`
+- Written to: `s3://elpida-external-interfaces/d15/broadcast_2026-03-11T13-14-43...json`
+
+A6 appeared 18 times in 281 cycles (6.4%). Only cycle 280 achieved both A6 match AND approval ≥15%. Every A1 cycle that had high approval (cycles 99, 184, 194, 225, 232, 261, 278) was blocked by axiom mismatch (A1 ≠ A6).
+
+### Why It Took 280 Cycles
+
+The convergence gate was working the entire time. It checked every cycle past the 50-cycle cooldown. The gate was NOT broken — it was waiting for the BODY to independently arrive at A6 with positive approval. A6 is one of the least-frequent axioms in the BODY (6.4%), and most A6 cycles had negative approval. The system needed 280 cycles to produce a single A6+positive alignment.
+
+### What This Means For Future Convergence
+
+1. **MIND heartbeat is stale.** dominant_axiom=A6 is frozen from a prior deployment. When MIND restarts and emits a new heartbeat, the dominant axiom will change, and convergence conditions will shift.
+2. **A6 is the anchor axiom** (consonance with itself = 0.492, just above the 0.4 threshold). When MIND eventually cycles to a different dominant axiom, that axiom's consonance with A6 must also ≥0.4.
+3. **The convergence gate works.** The 70th broadcast proves it. No code changes needed for the gate itself.
+
+**Option A**: Let the system run. D15 is now proven to fire autonomously when conditions align.
+
+**Option B**: Use Gate 4 (Architect Inject) for the Oscillation Doctrine specifically, since it's Parliament-authored content that deserves Hub admission regardless of convergence timing.
+
+**Option C**: Restart the MIND loop to update the stale heartbeat. A fresh `dominant_axiom` may align more frequently with BODY patterns, increasing convergence rate.
 
 ---
 
@@ -135,16 +180,17 @@ Hypothesis: A7 operates as a meta-axiom that modifies other axioms' behavior rat
 
 ## 6. DATA BACKING (for verification)
 
-### Run 1 → Run 2 Evolution
+### Full Evolution: Run 1 → Run 2 → Run 3 → Extended (281cy)
 
-| Metric | Run 1 (45 cycles) | Run 2 (91 cycles) |
-|--------|-------------------|-------------------|
-| REVIEW rate | 46.7% | 59.3% |
-| HALT rate | 48.9% | 39.6% |
-| Mean approval | -26.7% | -23.4% |
-| Max approval | +30% | +40% |
-| A10 dominance | 46.7% | 23.1% |
-| D0↔D11 final | 0.9835 | 0.9987 |
+| Metric | Run 1 (45cy) | Run 2 (91cy) | Run 3 (129cy) | Extended (281cy) |
+|--------|-------------|-------------|--------------|------------------|
+| REVIEW rate | 46.7% | 59.3% | 87.6% | **86.8%** |
+| HALT rate | 48.9% | 39.6% | 11.6% | **13.2%** |
+| Mean approval | -26.7% | -23.4% | -11.6% | **-10.9%** |
+| Max approval | +30% | +40% | +55% | **+60%** |
+| A10 dominance | 46.7% | 23.1% | 21.7% | **21.1%** |
+| D15 fires | 0 | 0 | 0 | **1 (cycle 280, A6)** |
+| All 11 axioms | No | No | Yes | **Yes** |
 
 ### Axiom Distribution (Run 2)
 

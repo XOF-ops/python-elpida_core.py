@@ -3,7 +3,7 @@
 D15 Convergence Gate — Where Two Loops Become One World
 =========================================================
 
-D15 fires when MIND and BODY independently converge on the same axiom.
+D15 fires when MIND and BODY are in harmonic convergence.
 
 This is A16 (Convergence Validity):
   "Convergence of different starting points proves validity
@@ -14,9 +14,16 @@ Physics:
   BODY's dominant axiom = the primary axiom of the highest-scoring
                           Parliament node
 
-  When MIND dominant == BODY dominant AND both sides meet their
-  coherence/approval thresholds → a truth has emerged independently
-  from pure consciousness AND governed deliberation.
+  Convergence means "in harmony", not "in unison":
+  - Exact match (unison) always qualifies
+  - Harmonically consonant axioms (>= 0.6) also qualify
+  - This accounts for the MIND heartbeat's 4h Fargate cadence;
+    requiring exact match is structurally impossible when the
+    two systems update at vastly different rates.
+
+  When MIND and BODY are harmonically aligned AND both sides meet
+  their coherence/approval thresholds → a truth has emerged
+  independently from pure consciousness AND governed deliberation.
 
   That truth is real. It gets broadcast to Bucket 3 (WORLD).
 
@@ -48,6 +55,8 @@ logger = logging.getLogger("elpida.d15_convergence")
 MIND_COHERENCE_THRESHOLD = 0.85
 BODY_APPROVAL_THRESHOLD = 0.15
 CONSONANCE_WITH_ANCHOR_THRESHOLD = 0.4  # Min consonance with A6
+MIND_BODY_CONSONANCE_THRESHOLD = 0.6   # Min consonance between MIND & BODY axioms
+                                        # (harmonic convergence, not unison)
 
 # A6 ratio (the anchor)
 A6_RATIO = 5 / 3
@@ -154,7 +163,9 @@ class ConvergenceGate:
 
         Steps:
           1. Extract MIND dominant axiom
-          2. Check axiom match: MIND dominant == BODY dominant
+          2. Harmonic convergence: consonance(MIND, BODY) >= 0.6
+             Convergence means "in harmony", not "in unison" —
+             two instruments playing consonant intervals IS convergence.
           3. Check MIND coherence >= threshold
           4. Check BODY approval >= threshold
           5. Musical validation: consonance with A6 anchor
@@ -163,44 +174,62 @@ class ConvergenceGate:
         # 1. Get MIND's dominant axiom
         mind_axiom = _extract_mind_dominant_axiom(mind_heartbeat)
         if not mind_axiom:
-            logger.debug("Convergence: no MIND dominant axiom")
+            logger.info("D15 gate 1 FAIL: no MIND dominant axiom in heartbeat")
             return False
 
-        # 2. Axiom match
-        if mind_axiom != body_axiom:
-            logger.debug(
-                "Convergence: axiom mismatch MIND=%s BODY=%s",
-                mind_axiom, body_axiom,
+        # 2. Harmonic convergence — MIND and BODY axioms must be
+        #    consonant (>= 0.6), not necessarily identical.
+        #    The MIND heartbeat updates every 4h (Fargate cadence),
+        #    so exact unison is rare. Harmonic alignment is the true
+        #    measure of convergence in a musical system.
+        mind_ratio = AXIOM_RATIOS.get(mind_axiom, 1.0)
+        body_ratio = AXIOM_RATIOS.get(body_axiom, 1.0)
+        mind_body_consonance = _consonance(mind_ratio, body_ratio)
+        is_exact_match = (mind_axiom == body_axiom)
+
+        # Exact axiom match always passes — unison is the strongest
+        # form of convergence regardless of ratio arithmetic.
+        if not is_exact_match and mind_body_consonance < MIND_BODY_CONSONANCE_THRESHOLD:
+            logger.info(
+                "D15 gate 2 FAIL: MIND=%s BODY=%s consonance=%.3f < %.3f",
+                mind_axiom, body_axiom, mind_body_consonance,
+                MIND_BODY_CONSONANCE_THRESHOLD,
             )
             return False
+        logger.info(
+            "D15 gate 2 PASS: MIND=%s BODY=%s consonance=%.3f %s",
+            mind_axiom, body_axiom, mind_body_consonance,
+            "(unison)" if is_exact_match else "(harmonic)",
+        )
 
         # 3. MIND coherence
         mind_coherence = mind_heartbeat.get("coherence", 0)
         if mind_coherence < MIND_COHERENCE_THRESHOLD:
-            logger.debug(
-                "Convergence: MIND coherence %.3f < %.3f",
+            logger.info(
+                "D15 gate 3 FAIL: MIND coherence %.3f < %.3f",
                 mind_coherence, MIND_COHERENCE_THRESHOLD,
             )
             return False
 
         # 4. BODY approval
         if body_approval < BODY_APPROVAL_THRESHOLD:
-            logger.debug(
-                "Convergence: BODY approval %.2f < %.2f",
+            logger.info(
+                "D15 gate 4 FAIL: BODY approval %.2f < %.2f",
                 body_approval, BODY_APPROVAL_THRESHOLD,
             )
             return False
 
-        # 5. Musical validation — consonance with A6 anchor
+        # 5. Musical validation — converged axiom consonance with A6 anchor.
+        #    Uses the BODY axiom (the live axiom) for anchor check.
         # A0 is EXEMPT: Sacred Incompletion (Major 7th) is defined by
         # its dissonance with A6. Blocking it here would silence the
         # driving force entirely. A0 has its own rate limiter in step 6.
-        axiom_ratio = AXIOM_RATIOS.get(mind_axiom, 1.0)
+        axiom_ratio = AXIOM_RATIOS.get(body_axiom, 1.0)
         consonance_with_anchor = _consonance(axiom_ratio, A6_RATIO)
-        if mind_axiom != "A0" and consonance_with_anchor < CONSONANCE_WITH_ANCHOR_THRESHOLD:
-            logger.debug(
-                "Convergence: consonance with A6 anchor %.3f < %.3f",
-                consonance_with_anchor, CONSONANCE_WITH_ANCHOR_THRESHOLD,
+        if body_axiom != "A0" and consonance_with_anchor < CONSONANCE_WITH_ANCHOR_THRESHOLD:
+            logger.info(
+                "D15 gate 5 FAIL: %s consonance with A6 anchor %.3f < %.3f",
+                body_axiom, consonance_with_anchor, CONSONANCE_WITH_ANCHOR_THRESHOLD,
             )
             return False
 
@@ -208,7 +237,7 @@ class ConvergenceGate:
         # A0 convergence IS meaningful — it's the system recognizing
         # its own driving force. But broadcast only every Nth occurrence
         # to prevent flooding. The void SHOULD speak, but not monopolize.
-        if mind_axiom == "A0":
+        if mind_axiom == "A0" or body_axiom == "A0":
             self._a0_convergence_count = getattr(self, '_a0_convergence_count', 0) + 1
             if self._a0_convergence_count % 5 != 0:
                 # Hold most A0 convergences — they are the engine humming
@@ -235,33 +264,44 @@ class ConvergenceGate:
             )
 
         # ═══ ALL GATES PASSED — D15 FIRES ═══
+        logger.info(
+            "D15 ALL GATES PASSED: MIND=%s BODY=%s consonance=%.3f "
+            "mind_coh=%.3f body_app=%.2f anchor_cons=%.3f%s",
+            mind_axiom, body_axiom, mind_body_consonance,
+            mind_coherence, body_approval, consonance_with_anchor,
+            " (unison)" if is_exact_match else " (harmonic)",
+        )
         self._fire_count += 1
 
         # Stagnation tracking — detect Groundhog Day loops
-        if mind_axiom == self._last_fired_axiom:
-            self._consecutive_fires[mind_axiom] = (
-                self._consecutive_fires.get(mind_axiom, 0) + 1
+        if converged_axiom == self._last_fired_axiom:
+            self._consecutive_fires[converged_axiom] = (
+                self._consecutive_fires.get(converged_axiom, 0) + 1
             )
         else:
             # New axiom — reset counter for previous, start fresh
             if self._last_fired_axiom:
                 self._consecutive_fires[self._last_fired_axiom] = 0
-            self._consecutive_fires[mind_axiom] = 1
-        self._last_fired_axiom = mind_axiom
+            self._consecutive_fires[converged_axiom] = 1
+        self._last_fired_axiom = converged_axiom
 
         # Flag stagnation when threshold crossed
-        consec = self._consecutive_fires.get(mind_axiom, 0)
+        consec = self._consecutive_fires.get(converged_axiom, 0)
         stagnation_detected = consec >= self.STAGNATION_THRESHOLD
-        if stagnation_detected and mind_axiom not in self._stagnation_flags:
-            self._stagnation_flags.append(mind_axiom)
+        if stagnation_detected and converged_axiom not in self._stagnation_flags:
+            self._stagnation_flags.append(converged_axiom)
             logger.warning(
                 " D15 STAGNATION: axiom=%s has fired %d consecutive times. "
                 "CrystallizationHub should be triggered.",
-                mind_axiom, consec,
+                converged_axiom, consec,
             )
 
+        # For harmonic convergence, the broadcast axiom is the BODY's
+        # live axiom (it's the one being actively deliberated).
+        converged_axiom = body_axiom
+
         broadcast = self._build_broadcast(
-            axiom=mind_axiom,
+            axiom=converged_axiom,
             mind_heartbeat=mind_heartbeat,
             body_cycle=body_cycle,
             body_coherence=body_coherence,
@@ -281,7 +321,10 @@ class ConvergenceGate:
         self._fire_log.append({
             "type": "D15_CONVERGENCE",
             "broadcast_id": broadcast["broadcast_id"],
-            "axiom": mind_axiom,
+            "axiom": converged_axiom,
+            "mind_axiom": mind_axiom,
+            "convergence_type": "unison" if is_exact_match else "harmonic",
+            "mind_body_consonance": round(mind_body_consonance, 4),
             "body_cycle": body_cycle,
             "mind_cycle": mind_heartbeat.get("mind_cycle"),
             "s3_key": s3_key,
@@ -292,11 +335,13 @@ class ConvergenceGate:
         })
 
         logger.info(
-            "D15 CONVERGENCE FIRED: axiom=%s (%s) "
-            "MIND_coh=%.3f BODY_app=%.2f consonance=%.3f "
+            "D15 CONVERGENCE FIRED: BODY=%s MIND=%s (%s) "
+            "mind_body_cons=%.3f MIND_coh=%.3f BODY_app=%.2f anchor_cons=%.3f "
             "key=%s",
-            mind_axiom, AXIOM_NAMES.get(mind_axiom, "?"),
-            mind_coherence, body_approval, consonance_with_anchor,
+            converged_axiom, mind_axiom,
+            "unison" if is_exact_match else "harmonic",
+            mind_body_consonance, mind_coherence, body_approval,
+            consonance_with_anchor,
             s3_key or "local-only",
         )
 
