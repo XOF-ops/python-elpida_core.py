@@ -417,7 +417,7 @@ class ParliamentCycleEngine:
 
         # Diversity dampener: track last 7 dominant axioms to penalise
         # repeat winners and break A3/A10 monoculture.
-        self._recent_dominant_axioms: deque = deque(maxlen=7)
+        self._recent_dominant_axioms: deque = deque(maxlen=12)
 
         # Convergence gate (imported lazily to avoid circular imports)
         self._convergence_gate = None
@@ -683,6 +683,52 @@ class ParliamentCycleEngine:
                 f"  [MIND STATE]: rhythm={mind_rhythm}, "
                 f"coherence={mind_coherence}, canonical={mind_canonical}"
             )
+
+        # ── Internal structural signals ──────────────────────────
+        # When Parliament gets ONLY external world-feed (war, politics),
+        # approval collapses.  Internal signals (D0↔D11 arc, Hub entries,
+        # Kaya cross-layer resonance) produce the highest approval spikes.
+        # Guarantee Parliament always sees at least one structural signal.
+        structural = []
+
+        # D0↔D11 arc — the organism's own learning trajectory
+        try:
+            from elpidaapp.domain_0_11_connector_body import get_body_connector
+            arc = get_body_connector()
+            structural.append(f"  [INTERNAL ARC]: {arc.synthesis_summary()}")
+        except Exception:
+            pass
+
+        # Hub canonical entries — The Dam's constitutional memory
+        try:
+            hub = self._get_hub() if hasattr(self, '_get_hub') else None
+            if hub:
+                recent_entries = hub.read_entries(limit=3)
+                if recent_entries:
+                    summaries = "; ".join(
+                        f"{e.get('axioms', ['?'])[0]}: {e.get('text', '')[:80]}"
+                        for e in recent_entries[:2]
+                    )
+                    structural.append(
+                        f"  [HUB MEMORY ({len(recent_entries)} entries)]: {summaries}"
+                    )
+        except Exception:
+            pass
+
+        # Active prescription — surface as structural awareness
+        if (self._audit_prescription
+                and self.cycle_count - self._audit_prescription_cycle
+                    <= AUDIT_PRESCRIPTION_COOLDOWN):
+            rx = self._audit_prescription
+            structural.append(
+                f"  [STRUCTURAL HEALTH]: {rx.get('displaced_axiom', '?')} "
+                f"at {rx.get('displaced_pct', '?')}% dominance — "
+                f"prescription: diversify toward {rx.get('target_axiom', '?')}"
+            )
+
+        if structural:
+            parts.append("  --- Internal Structural Signals ---")
+            parts.extend(structural)
 
         action = "\n".join(parts)
         meta = {
@@ -1220,27 +1266,61 @@ class ParliamentCycleEngine:
         # ── Diversity-adjusted scoring ───────────────────────────
         recent = list(self._recent_dominant_axioms)
 
+        # P5+: Determine prescription strength from severity
+        rx_severity = None
+        rx_consecutive = 0
+        if rx_axiom and self._audit_prescription:
+            rx_severity = self._audit_prescription.get("severity", "WARNING")
+            # How many cycles has this prescription been active?
+            rx_consecutive = (self.cycle_count
+                              - self._audit_prescription.get("prescribed_at", self.cycle_count))
+
         def _adjusted_score(node_name: str) -> float:
             raw = votes[node_name].get("score", 0)
             axiom = node_axioms.get(node_name)
             adj = float(raw)
             # Diversity dampener: penalise over-represented axioms
+            # Steeper penalty: -5 per excess (was -3), wider window (12 slots)
             if axiom and recent:
                 dominance_count = recent.count(axiom)
                 if dominance_count >= 3:
-                    penalty = (dominance_count - 2) * 3
+                    penalty = (dominance_count - 2) * 5
                     adj -= penalty
             # P4 enforcement: boost prescribed axiom's node
+            # Dynamic bonus: WARNING=+5, CRITICAL=+10, CRITICAL+3cycles=+15
             if rx_axiom and axiom == rx_axiom:
-                adj += 5
+                if rx_severity == "CRITICAL" and rx_consecutive >= 3:
+                    bonus = 15
+                elif rx_severity == "CRITICAL":
+                    bonus = 10
+                else:
+                    bonus = 5
+                adj += bonus
                 logger.debug(
-                    "P4 axiom enforcement: %s (%s) +5 (prescription active)",
-                    node_name, axiom,
+                    "P4 axiom enforcement: %s (%s) +%d (prescription %s, age %d)",
+                    node_name, axiom, bonus, rx_severity, rx_consecutive,
                 )
             return adj
 
         best_node = max(votes, key=_adjusted_score)
         axiom = node_axioms.get(best_node)
+
+        # P5+: Forced diversity — if CRITICAL prescription has persisted
+        # for 5+ cycles and the winning axiom is STILL the displaced one,
+        # override to the prescribed axiom. The organism must diversify.
+        if (rx_axiom and rx_severity == "CRITICAL" and rx_consecutive >= 5
+                and axiom == self._audit_prescription.get("displaced_axiom")):
+            axiom = rx_axiom
+            logger.info(
+                "P5+ FORCED DIVERSITY: %s prescribed for %d cycles, "
+                "overriding %s monoculture",
+                rx_axiom, rx_consecutive,
+                self._audit_prescription.get("displaced_axiom"),
+            )
+            print(
+                f"   ⚡ FORCED DIVERSITY: {rx_axiom} overrides "
+                f"{self._audit_prescription.get('displaced_axiom')} monoculture"
+            )
 
         # Track for future diversity calculation
         if axiom:

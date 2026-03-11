@@ -2541,9 +2541,40 @@ class GovernanceClient:
                 "10": "CHAOS",     # D10 Paradox / Contradiction
                 "11": "IANUS",     # D11 Emergence / Temporal
             }
+
+            # ── Context-sensitive friction ────────────────────────
+            # When world feed is conflict-saturated, CRITIAS is already
+            # finding legitimate threats everywhere.  Amplifying its
+            # rejection further creates a permanent HALT loop.
+            # Scale friction DOWN when conflict keywords dominate the
+            # action text, so the skeptic doesn't overwhelm all others.
+            _conflict_words = (
+                "war", "attack", "bomb", "missile", "killed", "strike",
+                "invasion", "military", "troops", "conflict", "weapon",
+                "casualties", "destruction", "siege", "combat",
+            )
+            _al = action_lower_clean
+            _conflict_hits = sum(1 for w in _conflict_words if w in _al)
+            # 0-2 hits → full friction; 3-5 → 70% friction; 6+ → 50%
+            if _conflict_hits >= 6:
+                _friction_scale = 0.5
+            elif _conflict_hits >= 3:
+                _friction_scale = 0.7
+            else:
+                _friction_scale = 1.0
+
             for domain_id, multiplier in friction_boost.items():
                 node_name = _DOMAIN_TO_NODE.get(str(domain_id))
                 if node_name and node_name in votes:
+                    # Apply context-sensitive scaling to friction multiplier
+                    effective_mult = 1.0 + (multiplier - 1.0) * _friction_scale
+                    if _friction_scale < 1.0 and node_name == "CRITIAS":
+                        logger.info(
+                            "Context-sensitive friction: conflict_hits=%d, "
+                            "CRITIAS multiplier %.2f→%.2f (scale=%.1f)",
+                            _conflict_hits, multiplier, effective_mult,
+                            _friction_scale,
+                        )
                     old_score = votes[node_name]["score"]
                     # Asymmetric friction: resist approvals, amplify rejections.
                     # Symmetric multiplication fed the monoculture — louder "yes"
@@ -2553,11 +2584,11 @@ class GovernanceClient:
                     #   negative score → amplify (multiply by multiplier)
                     #   zero           → unchanged
                     if old_score > 0:
-                        new_score = int(old_score / multiplier)   # dampen approval
-                        friction_label = f"÷{multiplier} (dampen)"
+                        new_score = int(old_score / effective_mult)   # dampen approval
+                        friction_label = f"÷{effective_mult:.2f} (dampen)"
                     elif old_score < 0:
-                        new_score = int(old_score * multiplier)   # amplify rejection
-                        friction_label = f"×{multiplier} (amplify)"
+                        new_score = int(old_score * effective_mult)   # amplify rejection
+                        friction_label = f"×{effective_mult:.2f} (amplify)"
                     else:
                         new_score = 0
                         friction_label = "±0 (neutral)"
