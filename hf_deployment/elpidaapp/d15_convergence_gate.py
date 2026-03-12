@@ -36,7 +36,7 @@ Musical validation:
 A0 note:
   If both loops converge on A0 (Sacred Incompletion, 15:8 Major 7th),
   that is the system recognizing its own driving dissonance.
-  This is A11 (Axioms are Self-Referential) in action.
+  This is A11 (World / Externality as Constitution) in action.
   Special handling: A0 convergence broadcasts every 5th occurrence —
   the void should speak, but not monopolize the channel.
 """
@@ -65,7 +65,7 @@ A6_RATIO = 5 / 3
 AXIOM_RATIOS = {
     "A0": 15 / 8,   "A1": 1 / 1,    "A2": 2 / 1,    "A3": 3 / 2,
     "A4": 4 / 3,    "A5": 5 / 4,    "A6": 5 / 3,    "A7": 9 / 8,
-    "A8": 7 / 4,    "A9": 16 / 9,   "A10": 8 / 5,
+    "A8": 7 / 4,    "A9": 16 / 9,   "A10": 8 / 5,   "A11": 7 / 5,
 }
 
 AXIOM_NAMES = {
@@ -73,14 +73,14 @@ AXIOM_NAMES = {
     "A3": "Autonomy", "A4": "Harm Prevention", "A5": "Consent",
     "A6": "Collective Well-being", "A7": "Adaptive Learning",
     "A8": "Epistemic Humility", "A9": "Temporal Coherence",
-    "A10": "Meta-Reflection",
+    "A10": "Meta-Reflection", "A11": "World",
 }
 
 AXIOM_INTERVALS = {
     "A0": "Major 7th", "A1": "Unison", "A2": "Octave", "A3": "Perfect 5th",
     "A4": "Perfect 4th", "A5": "Major 3rd", "A6": "Major 6th",
     "A7": "Major 2nd", "A8": "Septimal", "A9": "Minor 7th",
-    "A10": "Minor 6th",
+    "A10": "Minor 6th", "A11": "Septimal Tritone",
 }
 
 

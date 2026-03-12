@@ -62,6 +62,7 @@ AXIOM_NAMES = {
     "A8": "Environmental Duty",
     "A9": "Temporal Coherence",
     "A10": "Paradox Engine",
+    "A11": "World",
 }
 
 ALL_AXIOMS = list(AXIOM_NAMES.keys())

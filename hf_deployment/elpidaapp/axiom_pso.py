@@ -65,6 +65,7 @@ AXIOM_RATIOS: Dict[str, Tuple[int, int]] = {
     "A8":  (7, 4),    # Septimal (harmonic 7th)
     "A9":  (16, 9),   # Minor 7th
     "A10": (8, 5),    # Minor 6th
+    "A11": (7, 5),    # Septimal Tritone — World/Contact
 }
 
 AXIOM_NAMES: Dict[str, str] = {
@@ -72,7 +73,7 @@ AXIOM_NAMES: Dict[str, str] = {
     "A3": "Autonomy", "A4": "Harm Prevention", "A5": "Consent",
     "A6": "Collective Well-being", "A7": "Adaptive Learning",
     "A8": "Epistemic Humility", "A9": "Temporal Coherence",
-    "A10": "Meta-Reflection",
+    "A10": "Meta-Reflection", "A11": "World",
 }
 
 # 11 axiom dimensions

@@ -1025,6 +1025,90 @@ class ConstitutionalStore:
 
 
 # ---------------------------------------------------------------------------
+# A11 ConvergenceFeed — the mirror
+# ---------------------------------------------------------------------------
+
+class ConvergenceFeed:
+    """Read the system's own D15 broadcasts from the WORLD bucket.
+
+    A11 (Externality as Constitution) requires bidirectional flow:
+    MIND → convergence → WORLD → back to Parliament.  This feed
+    closes the loop by re-ingesting D15 broadcasts as governance
+    tensions.  The system encounters its own external voice as input.
+
+    The mirror test: can the system recognise its own broadcasts
+    when they re-enter through WorldFeed?
+    """
+
+    _BUCKET = "elpida-external-interfaces"
+    _REGION = "eu-north-1"
+    _PREFIXES = ("d15/", "patterns/broadcast_")
+    _watermark: Optional[str] = None
+
+    def fetch(self, seen: Set[str]) -> List[Dict]:
+        events: List[Dict] = []
+        try:
+            import boto3
+        except ImportError:
+            return events
+
+        try:
+            s3 = boto3.client("s3", region_name=self._REGION)
+            for prefix in self._PREFIXES:
+                resp = s3.list_objects_v2(
+                    Bucket=self._BUCKET, Prefix=prefix, MaxKeys=10,
+                )
+                for obj in resp.get("Contents", []):
+                    key = obj["Key"]
+                    item_id = _sha_id(key)
+                    if item_id in seen:
+                        continue
+                    # Only read objects newer than watermark
+                    mod = obj["LastModified"].isoformat()
+                    if self._watermark and mod <= self._watermark:
+                        continue
+                    try:
+                        raw = s3.get_object(Bucket=self._BUCKET, Key=key)
+                        payload = json.loads(raw["Body"].read())
+                    except Exception:
+                        continue
+                    seen.add(item_id)
+
+                    insight = (
+                        payload.get("current_insight_summary")
+                        or payload.get("insight", "")
+                    )[:300]
+                    axiom = payload.get("converged_axiom", payload.get("dominant_axiom", ""))
+                    axiom_name = payload.get("axiom_name", "")
+
+                    tension = (
+                        f"A11 WORLD MIRROR — The system broadcast this convergence "
+                        f"to external reality and it returns as input. "
+                        f"Axiom {axiom} ({axiom_name}): {insight} "
+                        f"I-tension: Is this broadcast still constitutionally valid? "
+                        f"WE-tension: Should the collective ratify or challenge "
+                        f"what was spoken into the world?"
+                    )
+                    events.append({
+                        "system": "governance",
+                        "content": tension,
+                        "metadata": {
+                            "source": "convergence_mirror",
+                            "domain": "governance",
+                            "title": f"D15 Mirror: {axiom} convergence return",
+                            "s3_key": key,
+                            "axiom": axiom,
+                        },
+                    })
+                    self._watermark = mod
+
+        except Exception as e:
+            logger.warning("ConvergenceFeed error: %s", e)
+
+        return events[:MAX_EVENTS_PER_FETCH]
+
+
+# ---------------------------------------------------------------------------
 # WorldFeed orchestrator
 # ---------------------------------------------------------------------------
 
@@ -1065,6 +1149,7 @@ class WorldFeed:
             ("crossref", CrossRefFeed()),
             ("un_news", UNNewsFeed()),
             ("reliefweb", TheGuardianFeed()),
+            ("convergence_mirror", ConvergenceFeed()),
         ]
 
         # Constitutional evolution store (shared with Oracle)

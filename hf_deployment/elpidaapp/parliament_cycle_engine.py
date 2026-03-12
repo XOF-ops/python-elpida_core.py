@@ -95,7 +95,7 @@ RHYTHM_DOMAINS = {
 DOMAIN_AXIOM = {
     0: "A0", 1: "A1", 2: "A2", 3: "A3", 4: "A4", 5: "A5",
     6: "A6", 7: "A7", 8: "A8", 9: "A9", 10: "A10",
-    11: None, 12: None, 13: None, 14: "A0",
+    11: None, 12: None, 13: None, 14: "A0", 15: "A11",
 }
 
 # Musical ratios (from elpida_domains.json) for consonance calculation
@@ -111,6 +111,7 @@ AXIOM_RATIOS = {
     "A8": 7 / 4,    # Septimal — wild tone
     "A9": 16 / 9,   # Minor 7th — dissonance
     "A10": 8 / 5,   # Minor 6th
+    "A11": 7 / 5,   # Septimal Tritone — World/Contact
 }
 
 # Fibonacci heartbeat interval (same as MIND)

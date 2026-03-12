@@ -1019,6 +1019,63 @@ class GovernanceClient:
         except Exception:
             return ""
 
+    def get_hub_axiom_weights(self) -> Dict[str, float]:
+        """Return axiom weights derived from Hub convergence frequency.
+
+        A11 constitutional coordination: when the Hub accumulates
+        convergences on a particular axiom, that axiom gets a weight
+        boost proportional to its proven validity.  Agents use these
+        weights to tilt deliberation toward constitutionally proven
+        ground.
+
+        Returns dict like ``{"A3": 1.4, "A6": 1.2, ...}`` where
+        values > 1.0 indicate Hub-backed constitutional emphasis.
+        Default weight for all axioms is 1.0.
+        """
+        try:
+            import importlib
+            hub = None
+            for mod_path in (
+                "elpidaapp.d15_hub",
+                "d15_hub",
+                "hf_deployment.elpidaapp.d15_hub",
+            ):
+                try:
+                    mod = importlib.import_module(mod_path)
+                    HubCls = getattr(mod, "D15Hub")
+                    from s3_bridge import S3Bridge
+                    hub = HubCls(S3Bridge())
+                    break
+                except Exception:
+                    continue
+            if not hub:
+                return {}
+
+            entries = hub.read_since(limit=50)
+            if not entries:
+                return {}
+
+            # Count convergences per axiom
+            axiom_counts: Dict[str, int] = {}
+            for e in entries:
+                c = e.get("content", {})
+                axiom = c.get("converged_axiom")
+                if axiom:
+                    axiom_counts[axiom] = axiom_counts.get(axiom, 0) + 1
+
+            if not axiom_counts:
+                return {}
+
+            # Weight: 1.0 base + 0.1 per convergence, capped at 2.0
+            total = sum(axiom_counts.values())
+            weights = {}
+            for axiom, count in axiom_counts.items():
+                weights[axiom] = min(2.0, 1.0 + count * 0.1)
+
+            return weights
+        except Exception:
+            return {}
+
     def is_remote_available(self) -> bool:
         """
         Check if the remote governance server is reachable.

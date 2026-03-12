@@ -622,8 +622,10 @@ Speak briefly. Distill to essence.'''
         try:
             s3 = boto3.client('s3', region_name=EXTERNAL_BUCKET_REGION)
             
-            # Scan all 4 subdirectories for recent broadcasts
-            for subdir in ['synthesis', 'proposals', 'patterns', 'dialogues']:
+            # Scan all WORLD bucket subdirectories for broadcasts
+            # A11: World is readable — MIND sees everything in WORLD
+            for subdir in ['synthesis', 'proposals', 'patterns', 'dialogues',
+                           'd15', 'world_emissions']:
                 try:
                     resp = s3.list_objects_v2(
                         Bucket=EXTERNAL_BUCKET,
