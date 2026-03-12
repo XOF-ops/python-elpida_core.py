@@ -58,23 +58,25 @@ logger = logging.getLogger("elpida.federated_agents")
 
 AXIOM_NAMES = {
     "A0":  "Sacred Incompletion",
-    "A1":  "Radical Transparency",
-    "A2":  "Iterative Emergence",
-    "A3":  "Sovereign Autonomy",
+    "A1":  "Transparency",
+    "A2":  "Non-Deception",
+    "A3":  "Autonomy",
     "A4":  "Harm Prevention",
-    "A5":  "Epistemic Humility",
-    "A6":  "Collective Wellbeing",
-    "A7":  "Adaptive Evolution",
-    "A8":  "Paradox as Fuel",
+    "A5":  "Consent",
+    "A6":  "Collective Well",
+    "A7":  "Adaptive Learning",
+    "A8":  "Epistemic Humility",
     "A9":  "Temporal Coherence",
-    "A10": "Harmonic Resonance",
+    "A10": "Meta-Reflection",
+    "A11": "World",
 }
 
 DOMAIN_NAMES = {
-    0: "Identity", 1: "Transparency", 2: "Emergence", 3: "Autonomy",
-    4: "Harm", 5: "Epistemic", 6: "Collective", 7: "Adaptive",
-    8: "Paradox", 9: "Temporal", 10: "Harmonic",
-    11: "Persistence", 12: "Emergency", 13: "Meta", 14: "Cloud",
+    0: "Identity", 1: "Transparency", 2: "Non-Deception", 3: "Autonomy",
+    4: "Safety", 5: "Consent", 6: "Collective", 7: "Learning",
+    8: "Humility", 9: "Coherence", 10: "Evolution",
+    11: "Synthesis", 12: "Rhythm", 13: "Archive", 14: "Persistence",
+    15: "World",
 }
 
 # Tension templates for generated content

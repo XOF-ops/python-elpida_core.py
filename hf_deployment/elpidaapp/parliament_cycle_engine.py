@@ -87,8 +87,9 @@ RHYTHM_DOMAINS = {
     "CONTEMPLATION": [1, 2, 3, 6, 8, 14],
     "ANALYSIS": [4, 5, 6, 9, 13, 14],
     "ACTION": [6, 7, 8, 9, 10],
-    "SYNTHESIS": [6, 11, 13, 14],
+    "SYNTHESIS": [6, 11, 13, 14, 15],
     "EMERGENCY": [4, 6, 7, 12, 13, 14],
+    "CONVERGENCE": [6, 10, 11, 14, 15],
 }
 
 # Domain → primary axiom (from config)

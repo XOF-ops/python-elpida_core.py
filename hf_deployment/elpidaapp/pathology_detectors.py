@@ -51,17 +51,17 @@ DRIFT_CRITICAL_THRESHOLD = 0.35   # Critical drift — axiom meaning shifting
 
 # Axiom names for human-readable reports
 AXIOM_NAMES = {
-    "A0": "Emergent Existence",
+    "A0": "Sacred Incompletion",
     "A1": "Transparency",
     "A2": "Non-Deception",
     "A3": "Autonomy",
     "A4": "Harm Prevention",
-    "A5": "Consent/Identity",
-    "A6": "Collective Well-being",
+    "A5": "Consent",
+    "A6": "Collective Well",
     "A7": "Adaptive Learning",
-    "A8": "Environmental Duty",
+    "A8": "Epistemic Humility",
     "A9": "Temporal Coherence",
-    "A10": "Paradox Engine",
+    "A10": "Meta-Reflection",
     "A11": "World",
 }
 
