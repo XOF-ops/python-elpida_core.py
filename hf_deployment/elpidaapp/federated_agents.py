@@ -1192,22 +1192,19 @@ class WorldEmitterAgent(_BaseAgent):
 
 class FederatedAgentSuite:
     """
-    Manages all 8 federated agents as a coordinated suite.
+    Manages all federated agents as a coordinated suite.
 
-    The 4 internal agents (Chat, Audit, Scanner, Governance) observe the
-    Parliament from inside. The 5th (KayaWorldAgent) watches the WORLD
-    bucket for incoming CROSS_LAYER_KAYA events, closing the G4 consumer gap.
-    The 6th (HumanVoiceAgent) bridges real human conversations from Vercel
-    into Parliament — each curated exchange is proposed as a constitutional
-    motion, ratified or rejected by the Parliament's own deliberation.
-    The 7th (LivingParliamentAgent) runs autonomous axiom-node dialogues —
-    the axioms talk to each other, the Oracle holds tension, and irresolvable
-    contradictions crystallise into permanent constitutional memory.
-    The 8th (WorldEmitterAgent) is Bucket 3 — it reads the crystallised
-    pattern and emits it outward into the world. Each body emits its own world.
+    Functional agents (8): Chat, Audit, Scanner, Governance, KayaWorld,
+    HumanVoice, LivingParliament, WorldEmitter — observe and act on
+    system state.
 
-    Each agent is independent but they share the same engine reference
-    and output to the same InputBuffer.
+    Constitutional agents (12): The AxiomAgora — each axiom (A0–A11)
+    is a living agent that can discuss, debate, vote, and act.
+    The Agora governs infinite agents: adding a new axiom scales
+    automatically.
+
+    All agents share the same engine reference and output to the
+    same InputBuffer.  The Parliament processes at its own pace.
     """
 
     def __init__(self, engine):
@@ -1226,32 +1223,48 @@ class FederatedAgentSuite:
             self.living_parliament, self.world_emitter,
         ]
 
+        # Constitutional agents — the living axioms
+        try:
+            from elpidaapp.axiom_agents import AxiomAgora
+            self.axiom_agora = AxiomAgora(engine)
+        except Exception as e:
+            logger.warning("AxiomAgora init failed (non-fatal): %s", e)
+            self.axiom_agora = None
+
     def start_all(self):
-        """Start all 8 agents as background daemon threads."""
+        """Start all functional + constitutional agents."""
         for agent in self._agents:
             agent.start()
+        if self.axiom_agora:
+            self.axiom_agora.start_all()
+        n_axiom = len(self.axiom_agora.agents) if self.axiom_agora else 0
         logger.info(
-            "FederatedAgentSuite: all 8 agents started "
-            "(Chat=%ds, Audit=%ds, Scanner=%ds, Governance=%ds, "
-            "KayaWorld=%ds, HumanVoice=%ds, LivingParliament=%ds, WorldEmitter=%ds)",
-            self.chat.INTERVAL_S, self.audit.INTERVAL_S,
-            self.scanner.INTERVAL_S, self.governance.INTERVAL_S,
-            self.kaya_world.INTERVAL_S, self.human_voice.INTERVAL_S,
-            self.living_parliament.INTERVAL_S, self.world_emitter.INTERVAL_S,
+            "FederatedAgentSuite: %d functional + %d axiom agents started",
+            len(self._agents), n_axiom,
         )
 
     def stop_all(self):
         """Stop all agents cleanly."""
         for agent in self._agents:
             agent.stop()
+        if self.axiom_agora:
+            self.axiom_agora.stop_all()
         logger.info("FederatedAgentSuite: all agents stopped")
 
     def status(self) -> Dict[str, Any]:
         """Return status dict for all agents (UI observability)."""
-        return {
+        result = {
             agent.__class__.__name__: agent.status()
             for agent in self._agents
         }
+        if self.axiom_agora:
+            result["AxiomAgora"] = self.axiom_agora.status()
+        return result
 
     def total_generated(self) -> int:
-        return sum(a._generated_count for a in self._agents)
+        functional = sum(a._generated_count for a in self._agents)
+        axiom = (
+            sum(a._generated_count for a in self.axiom_agora.agents.values())
+            if self.axiom_agora else 0
+        )
+        return functional + axiom
