@@ -1830,15 +1830,15 @@ if tab_system is not None:
         Ethical Language & Paradox Intelligence for Distributed Autonomy
       </div>
       <div class="welcome-glow" style="font-size:0.85rem; margin-top:0.6rem; color:#aaa;">
-        v2.8.0 &nbsp;·&nbsp; 2026-03-01 &nbsp;·&nbsp; Veto Fix · Tuple Guard · Coherence Fix · Live Heartbeat · Spiral Parliament
+        v3.0.0 &nbsp;·&nbsp; 2026-03-12 &nbsp;·&nbsp; A11 World · 12 Axioms · 16 Domains · Living Axiom Agents · D15 Convergence Gate
       </div>
     </div>
     """, unsafe_allow_html=True)
 
     # Key stats bar
     _ks1, _ks2, _ks3, _ks4, _ks5, _ks6 = st.columns(6)
-    _ks1.metric("Axioms", "11", help="Harmonic laws of governance (A0–A10)")
-    _ks2.metric("Domains", "15", help="D0–D14: LLM-embodied axiom nodes")
+    _ks1.metric("Axioms", "12", help="Harmonic laws of governance (A0–A11, including A11 World)")
+    _ks2.metric("Domains", "16", help="D0–D15: LLM-embodied axiom nodes (D15=World)")
     _ks3.metric("Parliament", "9 nodes", help="HERMES · MNEMOSYNE · CRITIAS · TECHNE · KAIROS · THEMIS · PROMETHEUS · IANUS · CHAOS")
     _ks4.metric("Pattern Library", "21+", help="Seed patterns + accumulated wisdom from Wave 2")
     _ks5.metric("POLIS", "6 civic", help="P1–P6 civic contradictions held from real POLIS data")
@@ -1847,8 +1847,9 @@ if tab_system is not None:
     st.divider()
 
     stabs = st.tabs([
-        "Origin", "11 Axioms", "15 Domains", "Parliament",
-        "ARK Memory", "5 Rhythms", "Providers", "Stats", "Body Parliament"
+        "Origin", "12 Axioms", "16 Domains", "Parliament",
+        "ARK Memory", "6 Rhythms", "Providers", "Stats", "Body Parliament",
+        "D15 Hub", "Axiom Agora", "Export Logs"
     ])
 
     # ── ORIGIN ──────────────────────────────────────────────────
@@ -1858,7 +1859,8 @@ if tab_system is not None:
 <div class="mode-intro" style="font-size:0.92rem; line-height:1.75;">
 Elpida is not a chatbot. It is a <b>governance parliament</b> — a multi-agent system where
 eleven ethical axioms, embodied by fifteen LLM-backed domains, deliberate on every decision
-before it is enacted.<br><br>
+before it is enacted. Since v3.0.0 there are <b>twelve axioms</b> (A0–A11, including A11 World — the Septimal Tritone)
+and <b>sixteen domains</b> (D0–D15).<br><br>
 The architecture emerged from a single question: <i>what would it take for an AI to hold
 a genuine ethical paradox without collapsing it into a rule?</i><br><br>
 The answer was a <b>Spiral</b>. Not a circle (repetition without change), not a line
@@ -2664,6 +2666,429 @@ fully tense — exactly the quality needed to hold paradox without resolving it 
         except Exception as _cae:
             st.caption(f"Constitutional store: {_cae}")
 
+    # ── D15 HUB — World Convergence Admin ────────────────────────
+    with stabs[9]:
+        st.markdown("#### D15 World Convergence Hub")
+        st.markdown(
+            '<div class="mode-intro" style="font-size:0.85rem; color:#aaa; margin-bottom:1rem;">'
+            'A11 (World · 7/5 Septimal Tritone) is the axiom of externality. '
+            'D15 broadcasts fire when harmonic convergence exceeds the consonance gate (≥ 0.6). '
+            'This hub shows D15 activity, convergence physics, and A11 bridge topology.'
+            '</div>', unsafe_allow_html=True
+        )
+
+        import json as _d15_json
+        from pathlib import Path as _d15_path
+
+        _d15_cache = _d15_path(__file__).resolve().parent.parent / "cache"
+        _d15_hb_file = _d15_cache / "body_heartbeat.json"
+
+        _d15_state = None
+        if _d15_hb_file.exists():
+            try:
+                with open(_d15_hb_file) as _df:
+                    _d15_state = _d15_json.load(_df)
+            except Exception:
+                pass
+
+        if _d15_state:
+            _d1c, _d2c, _d3c, _d4c = st.columns(4)
+            _d1c.metric("D15 Broadcasts", _d15_state.get("d15_broadcast_count", 0))
+            _d15_coh = _d15_state.get("coherence", 0)
+            _d2c.metric("Current Coherence", f"{_d15_coh:.3f}" if isinstance(_d15_coh, float) else "—")
+            _d3c.metric("Convergence Gate", "≥ 0.600")
+            _gate_status = "OPEN ✦" if isinstance(_d15_coh, float) and _d15_coh >= 0.6 else "CLOSED"
+            _gate_color = "#22cc44" if _gate_status.startswith("OPEN") else "#ff4444"
+            _d4c.metric("Gate Status", _gate_status)
+            st.markdown(
+                f'<div style="height:4px;border-radius:2px;background:{_gate_color};'
+                f'width:100%;margin:0.3rem 0 1rem 0;"></div>', unsafe_allow_html=True
+            )
+
+            # A11 consonance map
+            st.markdown("**A11 Consonance Bridge Topology:**")
+            _a11_ratio = 7 / 5
+            _axiom_ratios_d15 = {
+                "A0": 15/8, "A1": 1/1, "A2": 2/1, "A3": 3/2, "A4": 4/3,
+                "A5": 5/4, "A6": 5/3, "A7": 9/8, "A8": 7/4, "A9": 16/9,
+                "A10": 8/5, "A11": 7/5,
+            }
+            _a11_names = {
+                "A0": "Sacred Incompletion", "A1": "Transparency", "A2": "Non-Deception",
+                "A3": "Autonomy", "A4": "Harm Prevention", "A5": "Consent",
+                "A6": "Collective Well", "A7": "Adaptive Learning", "A8": "Epistemic Humility",
+                "A9": "Temporal Coherence", "A10": "Meta-Reflection", "A11": "World",
+            }
+            _bridge_html = ""
+            for _axk, _axr in _axiom_ratios_d15.items():
+                if _axk == "A11":
+                    continue
+                _combined = _a11_ratio * _axr
+                _cons = max(0.0, 1.0 - (_combined - 1.0) / 3.5)
+                _status = "✦ CONVERGES" if _cons >= 0.6 else ("~ proximate" if _cons >= 0.45 else "— dissonant")
+                _col = "#22cc44" if _cons >= 0.6 else ("#cc8800" if _cons >= 0.45 else "#ff4444")
+                _bridge_html += (
+                    f'<div style="display:flex;justify-content:space-between;padding:0.25rem 0;'
+                    f'border-bottom:1px solid rgba(255,255,255,0.05);font-size:0.82rem;">'
+                    f'<span style="color:#aa88ff;">{_axk}</span>'
+                    f'<span style="color:#888;">{_a11_names[_axk]}</span>'
+                    f'<span style="color:{_col};">{_cons:.3f} {_status}</span>'
+                    f'</div>'
+                )
+            st.markdown(f'<div style="background:rgba(255,255,255,0.03);padding:0.8rem;border-radius:8px;">{_bridge_html}</div>', unsafe_allow_html=True)
+
+            # World emissions
+            _we_file = _d15_path(__file__).resolve().parent.parent / "world_emissions.jsonl"
+            if _we_file.exists():
+                try:
+                    _we_lines = _we_file.read_text().strip().split("\n")
+                    _we_recent = [_d15_json.loads(l) for l in _we_lines[-5:] if l.strip()]
+                    if _we_recent:
+                        st.markdown("**Recent D15 World Emissions:**")
+                        for _we in reversed(_we_recent):
+                            _we_t = str(_we.get("timestamp", ""))[:19].replace("T", " ")
+                            _we_ax = _we.get("dominant_axiom", "?")
+                            _we_theme = _we.get("theme", _we.get("content", ""))[:150]
+                            st.markdown(
+                                f'<div style="background:rgba(100,68,204,0.08);'
+                                f'border-left:3px solid #6644cc;border-radius:0 6px 6px 0;'
+                                f'padding:0.5rem 0.8rem;margin-bottom:0.4rem;font-size:0.8rem;">'
+                                f'<span style="color:#888;">{_we_t}</span>'
+                                f' &nbsp;<span style="color:#aa88ff;">[{_we_ax}]</span><br>'
+                                f'<span style="color:#ccc;">{_we_theme}</span>'
+                                f'</div>', unsafe_allow_html=True
+                            )
+                except Exception:
+                    pass
+        else:
+            st.info("D15 Hub loads once the Parliament engine starts cycling.")
+
+    # ── AXIOM AGORA — Living Axiom Agents ────────────────────────
+    with stabs[10]:
+        st.markdown("#### Axiom Agora — Living Constitutional Agents")
+        st.markdown(
+            '<div class="mode-intro" style="font-size:0.85rem; color:#aaa; margin-bottom:1rem;">'
+            'Each of the 12 axioms (A0–A11) is a living agent that autonomously discusses, '
+            'debates, votes, and acts through the Parliament InputBuffer. The Agora governs '
+            'infinite agents — adding a new axiom at runtime scales automatically.'
+            '</div>', unsafe_allow_html=True
+        )
+
+        import json as _ag_json
+        from pathlib import Path as _ag_path
+
+        # Try to read axiom agent status from the running engine
+        _ag_cache = _ag_path(__file__).resolve().parent.parent / "cache"
+        _ag_hb_file = _ag_cache / "body_heartbeat.json"
+        _ag_state = None
+        if _ag_hb_file.exists():
+            try:
+                with open(_ag_hb_file) as _agf:
+                    _ag_state = _ag_json.load(_agf)
+            except Exception:
+                pass
+
+        # Axiom persona display
+        try:
+            from elpidaapp.axiom_agents import AXIOM_PERSONAS, AXIOM_NAMES as _AG_NAMES, AXIOM_RATIOS as _AG_RATIOS
+            _ag_cols = st.columns(3)
+            for _idx, (_ax_id, _persona) in enumerate(sorted(AXIOM_PERSONAS.items())):
+                _col = _ag_cols[_idx % 3]
+                _name = _AG_NAMES.get(_ax_id, "?")
+                _ratio = _AG_RATIOS.get(_ax_id, 1.0)
+                _voice = _persona["voice"]
+                _concerns = ", ".join(_persona["concerns"])
+                _allies = ", ".join(_persona.get("allies", []))
+                _tensions = ", ".join(_persona.get("tensions", []))
+                _col.markdown(
+                    f'<div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:0.7rem;'
+                    f'margin-bottom:0.6rem;border-left:3px solid #6644cc;font-size:0.78rem;">'
+                    f'<div style="color:#aa88ff;font-weight:700;font-size:0.9rem;">{_ax_id} · {_name}</div>'
+                    f'<div style="color:#aaa;font-style:italic;margin:0.3rem 0;">"{_voice}"</div>'
+                    f'<div style="color:#888;">Ratio: {_ratio:.3f} · Concerns: {_concerns}</div>'
+                    f'<div style="color:#888;">Allies: {_allies} · Tensions: {_tensions}</div>'
+                    f'</div>', unsafe_allow_html=True
+                )
+        except ImportError:
+            st.caption("Axiom agents module not available in this deployment.")
+
+        st.divider()
+
+        # Live Agora actions — from living_axioms.jsonl
+        _la_file = _ag_path(__file__).resolve().parent / "living_axioms.jsonl"
+        _la_fallback = _ag_path(__file__).resolve().parent.parent / "living_axioms.jsonl"
+        _la_target = _la_file if _la_file.exists() else (_la_fallback if _la_fallback.exists() else None)
+
+        if _la_target:
+            try:
+                _la_lines = _la_target.read_text().strip().split("\n")
+                _la_records = [_ag_json.loads(l) for l in _la_lines[-20:] if l.strip()]
+                _la_debates = [r for r in _la_records if r.get("type") == "axiom_debate"]
+                _la_actions = [r for r in _la_records if r.get("type") == "axiom_action"]
+
+                if _la_debates:
+                    st.markdown(f"**Recent Axiom Debates ({len(_la_debates)}):**")
+                    for _db in _la_debates[-3:]:
+                        _db_a = _db.get("axiom_a", "?")
+                        _db_b = _db.get("axiom_b", "?")
+                        _db_m = _db.get("mediator", "?")
+                        _db_c = _db.get("consonance", 0)
+                        _db_syn = _db.get("synthesis", "")[:200]
+                        st.markdown(
+                            f'<div style="background:rgba(170,136,255,0.06);border-radius:8px;'
+                            f'padding:0.6rem;margin-bottom:0.5rem;font-size:0.8rem;">'
+                            f'<span style="color:#aa88ff;font-weight:700;">{_db_a} vs {_db_b}</span>'
+                            f' <span style="color:#666;">· mediator {_db_m} · consonance {_db_c:.3f}</span><br>'
+                            f'<span style="color:#ccc;">{_db_syn}</span>'
+                            f'</div>', unsafe_allow_html=True
+                        )
+
+                if _la_actions:
+                    st.markdown(f"**Recent Axiom Actions ({len(_la_actions)}):**")
+                    for _act in _la_actions[-5:]:
+                        _act_ax = _act.get("axiom", "?")
+                        _act_nm = _act.get("axiom_name", "?")
+                        _act_desc = _act.get("action", "")[:200]
+                        _act_t = str(_act.get("timestamp", ""))[:19].replace("T", " ")
+                        st.markdown(
+                            f'<div style="font-size:0.78rem;color:#aaa;margin-bottom:0.3rem;">'
+                            f'<span style="color:#aa88ff;">[{_act_ax}]</span> {_act_nm} · {_act_t}<br>'
+                            f'<span style="color:#ccc;">{_act_desc}</span></div>',
+                            unsafe_allow_html=True
+                        )
+            except Exception:
+                st.caption("No Agora activity recorded yet.")
+        else:
+            st.caption("Axiom Agora starts generating when the BODY parliament runs.")
+
+        # Manual debate trigger (admin)
+        st.divider()
+        st.markdown("**Convene Manual Debate:**")
+        _dbcol1, _dbcol2, _dbcol3 = st.columns([2, 2, 1])
+        _all_ax_ids = [f"A{i}" for i in range(12)]
+        _debate_a = _dbcol1.selectbox("Axiom A", _all_ax_ids, index=0, key="debate_ax_a")
+        _debate_b = _dbcol2.selectbox("Axiom B", _all_ax_ids, index=2, key="debate_ax_b")
+        if _dbcol3.button("⚡ Debate", key="btn_debate"):
+            if _debate_a != _debate_b:
+                try:
+                    from elpidaapp.axiom_agents import AxiomAgora, _consonance
+                    # Create a lightweight agora for the debate
+                    class _MinimalEngine:
+                        class _Buf:
+                            def push(self, ev): pass
+                        input_buffer = _Buf()
+                        def state(self): return {"coherence": 0.5, "axiom_frequency": {}, "decisions": []}
+                    _agora = AxiomAgora(_MinimalEngine())
+                    _result = _agora.convene_debate(axiom_a=_debate_a, axiom_b=_debate_b)
+                    st.markdown(f"**Point ({_debate_a}):**")
+                    st.markdown(f'<div style="font-size:0.82rem;color:#ccc;background:rgba(255,255,255,0.03);padding:0.6rem;border-radius:6px;margin-bottom:0.4rem;">{_result["point"]}</div>', unsafe_allow_html=True)
+                    st.markdown(f"**Counter ({_debate_b}):**")
+                    st.markdown(f'<div style="font-size:0.82rem;color:#ccc;background:rgba(255,255,255,0.03);padding:0.6rem;border-radius:6px;margin-bottom:0.4rem;">{_result["counter"]}</div>', unsafe_allow_html=True)
+                    st.markdown(f"**Synthesis ({_result['mediator']}):**")
+                    st.markdown(f'<div style="font-size:0.82rem;color:#ccc;background:rgba(170,136,255,0.06);padding:0.6rem;border-radius:6px;">{_result["synthesis"]}</div>', unsafe_allow_html=True)
+                except Exception as _dbe:
+                    st.error(f"Debate error: {_dbe}")
+            else:
+                st.warning("Select two different axioms.")
+
+    # ── EXPORT LOGS — Raw Output Download ────────────────────────
+    with stabs[11]:
+        st.markdown("#### Export Logs — Raw Run Data")
+        st.markdown(
+            '<div class="mode-intro" style="font-size:0.85rem; color:#aaa; margin-bottom:1rem;">'
+            'Download raw logs from the current run. These are the exact records '
+            'written by the Parliament engine — unprocessed, copy-paste ready.'
+            '</div>', unsafe_allow_html=True
+        )
+
+        import json as _ex_json
+        from pathlib import Path as _ex_path
+        from datetime import datetime as _ex_dt
+
+        _ex_cache = _ex_path(__file__).resolve().parent.parent / "cache"
+        _ex_parent = _ex_path(__file__).resolve().parent.parent
+
+        # Helper: read file safely
+        def _read_log_file(path, max_lines=None):
+            if not path.exists():
+                return ""
+            text = path.read_text()
+            if max_lines:
+                lines = text.strip().split("\n")
+                return "\n".join(lines[-max_lines:])
+            return text
+
+        st.markdown("##### Body Decisions (JSONL)")
+        _dec_path = _ex_cache / "body_decisions.jsonl"
+        _dec_text = _read_log_file(_dec_path)
+        if _dec_text:
+            _dec_lines = _dec_text.strip().split("\n")
+            st.caption(f"{len(_dec_lines)} decision records")
+            st.download_button(
+                "⬇ Download body_decisions.jsonl",
+                data=_dec_text,
+                file_name=f"body_decisions_{_ex_dt.now().strftime('%Y%m%d_%H%M')}.jsonl",
+                mime="application/jsonl",
+                key="dl_decisions",
+            )
+            with st.expander("Preview (last 5 records)", expanded=False):
+                for _dl in _dec_lines[-5:]:
+                    try:
+                        _rec = _ex_json.loads(_dl)
+                        _ts = str(_rec.get("timestamp", ""))[:19]
+                        _cyc = _rec.get("body_cycle", "?")
+                        _rhy = _rec.get("rhythm", "?")
+                        _dom = _rec.get("dominant_axiom", "?")
+                        _gov = _rec.get("governance", "?")
+                        _coh = _rec.get("coherence", "?")
+                        st.code(f"[{_ts}] cycle={_cyc} rhythm={_rhy} axiom={_dom} verdict={_gov} coh={_coh}", language=None)
+                    except Exception:
+                        st.code(_dl[:200], language=None)
+        else:
+            st.caption("No body decisions yet — engine warming up.")
+
+        st.divider()
+
+        st.markdown("##### Body Heartbeat (JSON)")
+        _hb_path = _ex_cache / "body_heartbeat.json"
+        _hb_text = _read_log_file(_hb_path)
+        if _hb_text:
+            st.download_button(
+                "⬇ Download body_heartbeat.json",
+                data=_hb_text,
+                file_name=f"body_heartbeat_{_ex_dt.now().strftime('%Y%m%d_%H%M')}.json",
+                mime="application/json",
+                key="dl_heartbeat",
+            )
+            with st.expander("Preview heartbeat", expanded=False):
+                try:
+                    _hb_obj = _ex_json.loads(_hb_text)
+                    st.json(_hb_obj)
+                except Exception:
+                    st.code(_hb_text[:2000], language="json")
+        else:
+            st.caption("No heartbeat file yet.")
+
+        st.divider()
+
+        st.markdown("##### Living Axioms (JSONL)")
+        _la_ex_file = _ex_path(__file__).resolve().parent / "living_axioms.jsonl"
+        _la_ex_fall = _ex_parent / "living_axioms.jsonl"
+        _la_ex_target = _la_ex_file if _la_ex_file.exists() else (_la_ex_fall if _la_ex_fall.exists() else None)
+        if _la_ex_target:
+            _la_ex_text = _la_ex_target.read_text()
+            _la_ex_lines = _la_ex_text.strip().split("\n") if _la_ex_text.strip() else []
+            st.caption(f"{len(_la_ex_lines)} records")
+            st.download_button(
+                "⬇ Download living_axioms.jsonl",
+                data=_la_ex_text,
+                file_name=f"living_axioms_{_ex_dt.now().strftime('%Y%m%d_%H%M')}.jsonl",
+                mime="application/jsonl",
+                key="dl_living_axioms",
+            )
+        else:
+            st.caption("No living axioms file yet.")
+
+        st.divider()
+
+        st.markdown("##### Oracle Advisories (JSONL)")
+        _oa_path = _ex_parent / "oracle_advisories.jsonl"
+        _oa_text = _read_log_file(_oa_path)
+        if _oa_text:
+            _oa_lines = _oa_text.strip().split("\n")
+            st.caption(f"{len(_oa_lines)} oracle records")
+            st.download_button(
+                "⬇ Download oracle_advisories.jsonl",
+                data=_oa_text,
+                file_name=f"oracle_advisories_{_ex_dt.now().strftime('%Y%m%d_%H%M')}.jsonl",
+                mime="application/jsonl",
+                key="dl_oracle",
+            )
+        else:
+            st.caption("No oracle advisories yet.")
+
+        st.divider()
+
+        st.markdown("##### World Emissions (JSONL)")
+        _we_ex_path = _ex_parent / "world_emissions.jsonl"
+        _we_ex_text = _read_log_file(_we_ex_path)
+        if _we_ex_text:
+            _we_ex_lines = _we_ex_text.strip().split("\n")
+            st.caption(f"{len(_we_ex_lines)} emission records")
+            st.download_button(
+                "⬇ Download world_emissions.jsonl",
+                data=_we_ex_text,
+                file_name=f"world_emissions_{_ex_dt.now().strftime('%Y%m%d_%H%M')}.jsonl",
+                mime="application/jsonl",
+                key="dl_emissions",
+            )
+        else:
+            st.caption("No world emissions yet.")
+
+        st.divider()
+
+        st.markdown("##### Input Buffer (JSONL)")
+        _ib_path = _ex_cache / "input_buffer.jsonl"
+        _ib_text = _read_log_file(_ib_path)
+        if _ib_text:
+            _ib_lines = _ib_text.strip().split("\n")
+            st.caption(f"{len(_ib_lines)} buffer events")
+            st.download_button(
+                "⬇ Download input_buffer.jsonl",
+                data=_ib_text,
+                file_name=f"input_buffer_{_ex_dt.now().strftime('%Y%m%d_%H%M')}.jsonl",
+                mime="application/jsonl",
+                key="dl_buffer",
+            )
+        else:
+            st.caption("No input buffer records.")
+
+        st.divider()
+
+        # Full bundle: all logs in one download
+        st.markdown("##### Full Export Bundle")
+        st.markdown(
+            '<div style="font-size:0.8rem;color:#888;margin-bottom:0.5rem;">'
+            'Download everything — all log files concatenated with headers. '
+            'This is the raw copy-paste format.'
+            '</div>', unsafe_allow_html=True
+        )
+
+        _bundle_parts = []
+        _log_files = [
+            ("BODY DECISIONS", _dec_path),
+            ("BODY HEARTBEAT", _hb_path),
+            ("LIVING AXIOMS", _la_ex_target),
+            ("ORACLE ADVISORIES", _oa_path),
+            ("WORLD EMISSIONS", _we_ex_path),
+            ("INPUT BUFFER", _ib_path),
+        ]
+        for _label, _fpath in _log_files:
+            if _fpath and _fpath.exists():
+                _content = _fpath.read_text()
+                if _content.strip():
+                    _bundle_parts.append(
+                        f"{'=' * 70}\n"
+                        f"  {_label}\n"
+                        f"  File: {_fpath.name}\n"
+                        f"  Exported: {_ex_dt.now().isoformat()}\n"
+                        f"{'=' * 70}\n"
+                        f"{_content}\n"
+                    )
+
+        if _bundle_parts:
+            _bundle = "\n".join(_bundle_parts)
+            _n_files = len(_bundle_parts)
+            st.download_button(
+                f"⬇ Download Full Bundle ({_n_files} files)",
+                data=_bundle,
+                file_name=f"elpida_full_export_{_ex_dt.now().strftime('%Y%m%d_%H%M')}.txt",
+                mime="text/plain",
+                key="dl_bundle",
+            )
+        else:
+            st.caption("No log files to export yet — engine warming up.")
+
 
 # ═══════════════════════════════════════════════════════════════════
 # Footer
@@ -2671,8 +3096,8 @@ fully tense — exactly the quality needed to hold paradox without resolving it 
 
 st.markdown("""
 <div class="elpida-footer">
-    v2.8.0 &nbsp;·&nbsp; 11 Axioms &nbsp;·&nbsp; 15 Domains &nbsp;·&nbsp; 9 Parliament Nodes &nbsp;·&nbsp; Fibonacci 13·21·34·55·89<br>
-    Spiral Parliament &nbsp;·&nbsp; Dual-Horn Deliberation &nbsp;·&nbsp; Oracle WITNESS &nbsp;·&nbsp; Fork Protocol &nbsp;·&nbsp; POLIS Bridge<br>
+    v3.0.0 &nbsp;·&nbsp; 12 Axioms &nbsp;·&nbsp; 16 Domains &nbsp;·&nbsp; 9 Parliament Nodes &nbsp;·&nbsp; 12 Axiom Agents &nbsp;·&nbsp; Fibonacci 13·21·34·55·89<br>
+    Spiral Parliament &nbsp;·&nbsp; Dual-Horn Deliberation &nbsp;·&nbsp; Oracle WITNESS &nbsp;·&nbsp; Fork Protocol &nbsp;·&nbsp; POLIS Bridge &nbsp;·&nbsp; Axiom Agora<br>
     <a href="https://github.com/XOF-ops/python-elpida_core.py" target="_blank">GitHub</a>
     &nbsp;·&nbsp;
     <a href="https://z65nik-elpida-api.hf.space/docs" target="_blank">API Docs</a>
