@@ -207,12 +207,17 @@ class S3MemorySync:
             print(f"❌ Unexpected error: {e}")
             return result
     
-    def push(self, compress: bool = False) -> Dict:
+    def push(self, compress: bool = False, force: bool = False) -> Dict:
         """
         Push the full local evolution memory to S3.
         
+        MERGE-SAFE: If remote has more patterns than local, pulls remote
+        first and appends local-only patterns before pushing. This prevents
+        BODY sync from overwriting MIND's newer patterns.
+        
         Args:
             compress: If True, upload gzipped version alongside raw
+            force: If True, skip merge-safety check (use with caution)
             
         Returns dict with status info.
         """
@@ -226,6 +231,31 @@ class S3MemorySync:
         try:
             local_lines = self._count_local_lines()
             local_size = self.local_path.stat().st_size
+            
+            # ── MERGE-SAFETY CHECK ──
+            # If remote has MORE patterns than local, MIND wrote since our
+            # last pull.  Download remote, merge, then push the union.
+            if not force:
+                try:
+                    remote_meta = self.s3.head_object(Bucket=self.bucket, Key=self.key)
+                    remote_line_count = int(remote_meta.get('Metadata', {}).get('line_count', 0))
+                    remote_size = remote_meta['ContentLength']
+                    
+                    remote_is_bigger = (
+                        (remote_line_count > 0 and remote_line_count > local_lines)
+                        or (remote_line_count == 0 and remote_size > local_size)
+                    )
+                    
+                    if remote_is_bigger:
+                        print(f"⚠️  Remote has more patterns ({remote_line_count or '?'} vs {local_lines}) — merging before push...")
+                        merged = self._merge_remote_and_local()
+                        if merged:
+                            local_lines = self._count_local_lines()
+                            local_size = self.local_path.stat().st_size
+                            result["merged"] = True
+                            print(f"   ✅ Merged: now {local_lines} patterns ({local_size / 1024 / 1024:.1f} MB)")
+                except ClientError:
+                    pass  # No remote file yet or access issue — push anyway
             
             # Calculate checksum
             md5 = self._file_md5(self.local_path)
@@ -528,7 +558,54 @@ class S3MemorySync:
     # ========================================================================
     # INTERNAL HELPERS
     # ========================================================================
-    
+
+    def _merge_remote_and_local(self) -> bool:
+        """
+        Download remote, merge with local (union by timestamp+type hash),
+        write the merged result back to local_path.
+        
+        Returns True if merge produced a larger file, False on error.
+        """
+        tmp_remote = self.local_path.with_suffix('.remote_tmp')
+        try:
+            self.s3.download_file(self.bucket, self.key, str(tmp_remote))
+            
+            # Build set of line hashes from local
+            local_hashes = set()
+            local_lines_list = []
+            if self.local_path.exists():
+                with open(self.local_path, 'r') as f:
+                    for line in f:
+                        line = line.rstrip('\n')
+                        if line:
+                            local_hashes.add(hashlib.md5(line.encode()).hexdigest())
+                            local_lines_list.append(line)
+            
+            # Find remote-only lines
+            new_from_remote = []
+            with open(tmp_remote, 'r') as f:
+                for line in f:
+                    line = line.rstrip('\n')
+                    if line:
+                        h = hashlib.md5(line.encode()).hexdigest()
+                        if h not in local_hashes:
+                            new_from_remote.append(line)
+            
+            if new_from_remote:
+                # Append remote-only lines to local
+                with open(self.local_path, 'a') as f:
+                    for line in new_from_remote:
+                        f.write(line + '\n')
+                print(f"   📎 Merged {len(new_from_remote)} patterns from remote into local")
+            
+            return True
+        except Exception as e:
+            print(f"   ⚠️  Merge failed: {e}")
+            return False
+        finally:
+            if tmp_remote.exists():
+                tmp_remote.unlink()
+
     def _download(self, result: Dict):
         """Download the evolution memory from S3 to local path."""
         # Ensure directory exists

@@ -37,6 +37,7 @@ COPY ElpidaS3Cloud/ /app/ElpidaS3Cloud/
 COPY cloud_deploy/cloud_runner.py /app/cloud_deploy/cloud_runner.py
 COPY consciousness_bridge.py /app/consciousness_bridge.py
 COPY hf_deployment/elpidaapp/d15_hub.py /app/d15_hub.py
+COPY regenerate_d15_index.py /app/regenerate_d15_index.py
 COPY ELPIDA_ARK.md /app/ELPIDA_ARK.md
 
 # Create directories the engine expects
