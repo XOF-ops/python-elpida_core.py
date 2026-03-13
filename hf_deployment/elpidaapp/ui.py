@@ -623,8 +623,9 @@ _live_heartbeat()
 # Tab Navigation
 # ═══════════════════════════════════════════════════════════════════
 
-# System tab is admin-only: set ELPIDA_ADMIN_KEY in env, then pass ?admin=<key> in URL
-_ADMIN_KEY = os.environ.get("ELPIDA_ADMIN_KEY", "")
+# System tab is admin-only: set ELPIDA_ADMIN_KEY (or HF_SPACE_PASSWORD) in env,
+# then pass ?admin=<key> in URL
+_ADMIN_KEY = os.environ.get("ELPIDA_ADMIN_KEY") or os.environ.get("HF_SPACE_PASSWORD", "")
 _query_params = st.query_params
 _is_admin = bool(_ADMIN_KEY and _query_params.get("admin") == _ADMIN_KEY)
 
