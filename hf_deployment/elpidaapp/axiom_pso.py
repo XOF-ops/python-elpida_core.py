@@ -66,6 +66,9 @@ AXIOM_RATIOS: Dict[str, Tuple[int, int]] = {
     "A9":  (16, 9),   # Minor 7th
     "A10": (8, 5),    # Minor 6th
     "A11": (7, 5),    # Septimal Tritone — World/Contact
+    "A12": (11, 8),   # Undecimal Tritone — Eternal Creative Tension
+    "A13": (13, 8),   # Tridecimal Neutral 6th — The Archive Paradox
+    "A14": (7, 6),    # Septimal Minor 3rd — Selective Eternity
 }
 
 AXIOM_NAMES: Dict[str, str] = {
@@ -74,9 +77,11 @@ AXIOM_NAMES: Dict[str, str] = {
     "A6": "Collective Well-being", "A7": "Adaptive Learning",
     "A8": "Epistemic Humility", "A9": "Temporal Coherence",
     "A10": "Meta-Reflection", "A11": "World",
+    "A12": "Eternal Creative Tension", "A13": "The Archive Paradox",
+    "A14": "Selective Eternity",
 }
 
-# 11 axiom dimensions
+# 15 axiom dimensions (A0-A14)
 AXIOM_DIM = len(AXIOM_RATIOS)
 AXIOM_KEYS = list(AXIOM_RATIOS.keys())
 

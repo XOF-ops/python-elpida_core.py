@@ -66,6 +66,7 @@ AXIOM_RATIOS = {
     "A0": 15 / 8,   "A1": 1 / 1,    "A2": 2 / 1,    "A3": 3 / 2,
     "A4": 4 / 3,    "A5": 5 / 4,    "A6": 5 / 3,    "A7": 9 / 8,
     "A8": 7 / 4,    "A9": 16 / 9,   "A10": 8 / 5,   "A11": 7 / 5,
+    "A12": 11 / 8,  "A13": 13 / 8,  "A14": 7 / 6,
 }
 
 AXIOM_NAMES = {
@@ -74,6 +75,8 @@ AXIOM_NAMES = {
     "A6": "Collective Well-being", "A7": "Adaptive Learning",
     "A8": "Epistemic Humility", "A9": "Temporal Coherence",
     "A10": "Meta-Reflection", "A11": "World",
+    "A12": "Eternal Creative Tension", "A13": "The Archive Paradox",
+    "A14": "Selective Eternity",
 }
 
 AXIOM_INTERVALS = {
@@ -81,6 +84,8 @@ AXIOM_INTERVALS = {
     "A4": "Perfect 4th", "A5": "Major 3rd", "A6": "Major 6th",
     "A7": "Major 2nd", "A8": "Septimal", "A9": "Minor 7th",
     "A10": "Minor 6th", "A11": "Septimal Tritone",
+    "A12": "Undecimal Tritone", "A13": "Tridecimal Neutral 6th",
+    "A14": "Septimal Minor 3rd",
 }
 
 

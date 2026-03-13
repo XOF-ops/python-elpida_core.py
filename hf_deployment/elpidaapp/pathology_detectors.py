@@ -63,6 +63,9 @@ AXIOM_NAMES = {
     "A9": "Temporal Coherence",
     "A10": "Meta-Reflection",
     "A11": "World",
+    "A12": "Eternal Creative Tension",
+    "A13": "The Archive Paradox",
+    "A14": "Selective Eternity",
 }
 
 ALL_AXIOMS = list(AXIOM_NAMES.keys())

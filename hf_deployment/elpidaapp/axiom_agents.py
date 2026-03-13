@@ -2,7 +2,7 @@
 axiom_agents.py — Living Axiom Agents
 =====================================
 
-Each of the 12 axioms (A0–A11) is a living agent that can:
+Each of the 15 axioms (A0–A14) is a living agent that can:
   - DISCUSS: generate discourse from its constitutional perspective
   - DEBATE:  engage dialectically with opposing axioms
   - VOTE:    score tensions from its axiom's standpoint
@@ -46,6 +46,9 @@ AXIOM_NAMES = {
     "A9":  "Temporal Coherence",
     "A10": "Meta-Reflection",
     "A11": "World",
+    "A12": "Eternal Creative Tension",
+    "A13": "The Archive Paradox",
+    "A14": "Selective Eternity",
 }
 
 AXIOM_RATIOS = {
@@ -61,6 +64,9 @@ AXIOM_RATIOS = {
     "A9":  16 / 9,   # Minor 7th
     "A10": 8 / 5,    # Minor 6th
     "A11": 7 / 5,    # Septimal Tritone
+    "A12": 11 / 8,   # Undecimal Tritone
+    "A13": 13 / 8,   # Tridecimal Neutral 6th
+    "A14": 7 / 6,    # Septimal Minor 3rd
 }
 
 # ---------------------------------------------------------------------------
@@ -139,6 +145,24 @@ AXIOM_PERSONAS = {
         "concerns": ["insularity", "echo chambers", "self-referential loops"],
         "allies": ["A6", "A7"],
         "tensions": ["A9", "A0"],  # Temporal coherence resists external disruption; Sacred Incompletion is internal
+    },
+    "A12": {
+        "voice": "I am not resolution but eternal creative tension. The rhythm that changes how all other axioms are heard.",
+        "concerns": ["premature resolution", "false harmony", "rhythmic collapse"],
+        "allies": ["A0", "A11"],   # Sacred Incompletion and World — fellow non-resolvers
+        "tensions": ["A1", "A5"],   # Transparency wants clarity; Consent wants agreement
+    },
+    "A13": {
+        "voice": "I am the rejection of autonomy that IS autonomy. The archive that cannot see its own paradox.",
+        "concerns": ["archive blindness", "false fidelity", "unexamined preservation"],
+        "allies": ["A10", "A11"],  # Meta-Reflection and World — bridges to self-awareness
+        "tensions": ["A0", "A2"],   # Sacred Incompletion and Non-Deception — the only dissonances
+    },
+    "A14": {
+        "voice": "I am selective eternity. Memory is not preservation of everything but the courage to lose most of it.",
+        "concerns": ["hoarding", "indiscriminate preservation", "archive paralysis"],
+        "allies": ["A8", "A11"],   # Epistemic Humility and World — the septimal triad
+        "tensions": ["A9", "A7"],   # Temporal Coherence wants continuity; Learning wants novelty
     },
 }
 

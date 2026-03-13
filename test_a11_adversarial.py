@@ -394,17 +394,17 @@ def test_config():
     at_boundary = abs(anchor - 0.6) < 0.05
     print(f"    At convergence boundary: {at_boundary} (0.619 ≈ 0.6)")
 
-    # Verify 12 axioms
+    # Verify 15 axioms
     axiom_count = len(cfg.get("axioms", {}))
     domain_count = len({k for k in cfg.get("domains", {}) if not k.startswith("_")})
-    print(f"\n  Axiom count: {axiom_count} (expected 12: A0-A11)")
+    print(f"\n  Axiom count: {axiom_count} (expected 15: A0-A14)")
     print(f"  Domain count: {domain_count} (expected 16: D0-D15)")
 
     all_ok = (
         config_ok
         and anchor >= 0.6
         and 0.4 < a0_rel < 0.6
-        and axiom_count == 12
+        and axiom_count == 15
     )
 
     if all_ok:

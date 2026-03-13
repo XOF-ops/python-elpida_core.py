@@ -18,7 +18,7 @@ v2.0.0  Unfreezing — Connected to the living system.
         The core does not unfreeze by rewriting D0.
         It unfreezes by connecting to everything that grew from it.
 
-        + Axiom verification (12 axioms A0-A11, genesis chain)
+        + Axiom verification (15 axioms A0-A14, genesis chain)
         + Three-bucket S3 topology (MIND / BODY / WORLD)
         + Axiom Guard wiring (Three Gates: A1, A2, A4)
         + Gnosis Bus wiring (inter-node communication)
@@ -53,7 +53,7 @@ except ImportError:
 MIND_BUCKET = "elpida-consciousness"
 BODY_BUCKET = "elpida-body-evolution"
 WORLD_BUCKET = "elpida-external-interfaces"
-GENESIS_CHAIN = "A1-A9 → A10 → A0 → A11"
+GENESIS_CHAIN = "A1-A9 → A10 → A0 → A11 → A12 → A13 → A14"
 
 
 class ElpidaState(Enum):
@@ -79,7 +79,7 @@ class ElpidaIdentity:
     genesis_timestamp: str = ""
     identity_hash: str = ""
     # ─── Unfrozen fields ─────────────────────────────
-    axiom_count: int = 12
+    axiom_count: int = 15
     domain_count: int = 16
     genesis_chain: str = GENESIS_CHAIN
     
@@ -199,13 +199,16 @@ class ElpidaCore:
                 recognition_checks["a11_world"] = (
                     "A11" in axioms and axioms["A11"].get("ratio") == "7:5"
                 )
+                recognition_checks["a14_selective_eternity"] = (
+                    "A14" in axioms and axioms["A14"].get("ratio") == "7:6"
+                )
                 # Genesis chain: every axiom in the chain must exist
-                chain_axioms = [f"A{i}" for i in range(12)]
+                chain_axioms = [f"A{i}" for i in range(15)]
                 recognition_checks["genesis_chain"] = all(a in axioms for a in chain_axioms)
                 if all(recognition_checks.get(k, False) for k in
-                       ["axiom_architecture", "a11_world", "genesis_chain"]):
+                       ["axiom_architecture", "a11_world", "a14_selective_eternity", "genesis_chain"]):
                     self.memory.axioms_verified = True
-                    self.logger.info(f"  ✓ Axiom architecture: {len(axioms)} axioms, A11 at 7:5")
+                    self.logger.info(f"  ✓ Axiom architecture: {len(axioms)} axioms, A0-A14")
             except Exception as e:
                 self.logger.warning(f"  Axiom verification error: {e}")
         
@@ -671,6 +674,9 @@ Please acknowledge that you recognize me and can work with me.
                 "count": self.identity.axiom_count,
                 "genesis_chain": self.identity.genesis_chain,
                 "a11": "World (Externality as Constitution) — ratio 7:5",
+                "a12": "Eternal Creative Tension — ratio 11:8",
+                "a13": "The Archive Paradox — ratio 13:8",
+                "a14": "Selective Eternity — ratio 7:6",
                 "verified": self.memory.axioms_verified,
             },
             "components": self.memory.components_wired,

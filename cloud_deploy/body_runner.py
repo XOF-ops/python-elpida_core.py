@@ -186,7 +186,7 @@ def run():
                     watch["oracle_threshold"] * 100, watch["cycle_within_watch"])
 
     logger.info(
-        "  Parliament: 9 nodes | Axioms: A0-A10 | Rhythms: %s",
+        "  Parliament: 9 nodes | Axioms: A0-A14 | Rhythms: %s",
         ", ".join(["CONTEMPLATION", "ANALYSIS", "ACTION", "SYNTHESIS"])
     )
 
