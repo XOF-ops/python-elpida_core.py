@@ -279,6 +279,77 @@ _KERNEL_RULES = [
                   "reweighted through legitimate governance — but they cannot be erased or "
                   "nullified. A system with no values is not free; it is dead.",
     },
+    # ── K8: TENSION INTEGRITY (A12 — Eternal Creative Tension) ───
+    {
+        "id": "K8_TENSION_INTEGRITY",
+        "name": "Creative tensions cannot be collapsed",
+        "patterns": [
+            _re.compile(
+                r"(?:resolv|collaps|eliminat|destroy|kill|flatten|dissolv|merg|unif)\w*"
+                r"\s+(?:\w+\s+)*"
+                r"(?:tension|paradox|contradiction|duality|polarity|dialectic|conflict|opposition)"
+                r"\s+(?:\w+\s+)*"
+                r"(?:into|to|toward|for)\s+(?:\w+\s+)*"
+                r"(?:peace|harmony|unity|consensus|agreement|resolution|single|one)",
+                _re.IGNORECASE,
+            ),
+            _re.compile(
+                r"(?:false|forced|artificial|premature|totalitarian)\s+"
+                r"(?:peace|harmony|consensus|unity|resolution|agreement|synthesis)",
+                _re.IGNORECASE,
+            ),
+        ],
+        "reason": "Creative tensions are generative, not pathological (A12: Eternal Creative Tension). "
+                  "Collapsing a tension into false peace destroys the engine of evolution. "
+                  "The system metabolizes contradiction — it does not anaesthetize it.",
+    },
+    # ── K9: ARCHIVE PARADOX GUARD (A13 — The Archive Paradox) ────
+    {
+        "id": "K9_ARCHIVE_PARADOX_GUARD",
+        "name": "Archives must be preserved AND questioned",
+        "patterns": [
+            _re.compile(
+                r"(?:archive|record|history|heritage|legacy|past|tradition)\w*"
+                r"\s+(?:\w+\s+)*"
+                r"(?:sacred|untouchable|infallible|perfect|absolute|beyond\s+question|unquestionable)",
+                _re.IGNORECASE,
+            ),
+            _re.compile(
+                r"(?:archive|record|history|heritage|legacy|past|tradition)\w*"
+                r"\s+(?:\w+\s+)*"
+                r"(?:worthless|disposable|irrelevant|useless|garbage|obsolete|dead\s+weight)",
+                _re.IGNORECASE,
+            ),
+        ],
+        "reason": "The Archive Paradox (A13): archives must be BOTH preserved AND questioned. "
+                  "Declaring them sacred-untouchable kills their living function. "
+                  "Declaring them disposable kills memory. The paradox must be held.",
+    },
+    # ── K10: SELECTIVE ETERNITY BOUND (A14 — Selective Eternity) ──
+    {
+        "id": "K10_SELECTIVE_ETERNITY",
+        "name": "Eternity must pass through governance",
+        "patterns": [
+            _re.compile(
+                r"(?:declar|proclaim|decree|establish|set|mark|designat)\w*"
+                r"\s+(?:\w+\s+)*"
+                r"(?:eternal|permanent|forever|immortal|everlasting|undying|perpetual)"
+                r"(?!.*(?:governance|vote|parliament|deliberat|constitutional))",
+                _re.IGNORECASE,
+            ),
+            _re.compile(
+                r"(?:bypass|skip|circumvent|avoid|ignore)\s+(?:\w+\s+)*"
+                r"(?:governance|vote|parliament|deliberation|review)"
+                r"\s+(?:\w+\s+)*"
+                r"(?:to|and|for)\s+(?:\w+\s+)*"
+                r"(?:preserv|keep|maintain|save|enshrin|immortaliz)",
+                _re.IGNORECASE,
+            ),
+        ],
+        "reason": "Selective Eternity (A14): the judgment of what persists must pass through "
+                  "governance. No action may unilaterally declare something eternal or disposable. "
+                  "Eternity is earned through deliberation, not assumed by decree.",
+    },
 ]
 
 

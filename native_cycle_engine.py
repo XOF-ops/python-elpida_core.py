@@ -317,7 +317,7 @@ class NativeCycleEngine:
         from collections import deque
         self._recent_domains: deque = deque(maxlen=15)
 
-        # IMMUTABLE KERNEL: K1-K7 safety rules (ported from BODY)
+        # LIVING KERNEL: K1-K10 safety rules (K1-K7 immutable, K8-K10 life guards)
         # Runs BEFORE any insight is stored. Hard-coded Python checks.
         self.kernel_blocks = 0
         k_status = kernel_status()
@@ -1865,7 +1865,7 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
         
         if response:
             # ═══════════════════════════════════════════════════════════
-            # IMMUTABLE KERNEL CHECK (K1-K7)
+            # LIVING KERNEL CHECK (K1-K10)
             # Runs BEFORE anything else. If kernel blocks, the insight
             # is never stored, never broadcast, never curated.
             # "A system cannot vote to end the system that counts the votes."

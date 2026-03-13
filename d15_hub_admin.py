@@ -208,10 +208,10 @@ def cmd_inject(args):
         if block:
             print(f"  ✗ KERNEL BLOCK: {block['kernel_rule']}")
             print(f"    {block['reasoning']}")
-            print(f"\n  Even the Architect cannot violate K1-K7.")
+            print(f"\n  Even the Architect cannot violate K1-K10.")
             print(f"  This is A0 in action — sacred incompletion.\n")
             return
-        print(f"  ✓ Kernel check passed (K1-K7 clear)")
+        print(f"  ✓ Kernel check passed (K1-K10 clear)")
     else:
         print(f"  ⚠ Kernel check unavailable — proceeding with caution")
 

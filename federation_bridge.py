@@ -100,8 +100,8 @@ class FederationHeartbeat:
     pending_canonical_count: int = 0            # Number of PENDING CANONICAL
     recursion_warning: bool = False             # Ark recursion alert
     friction_boost: Dict[int, float] = field(default_factory=dict)  # Active friction domain boosts
-    kernel_version: str = "1.0.0"              # MIND kernel version
-    kernel_rules: int = 7                       # Number of kernel rules active
+    kernel_version: str = "2.0.0"              # MIND kernel version
+    kernel_rules: int = 10                      # Number of kernel rules active
     kernel_blocks_total: int = 0                # Total kernel blocks since boot
     dominant_axiom: str = ""                    # Primary axiom of current domain (for D15 convergence)
     kaya_moments: int = 0                       # Cumulative D12 Kaya resonance events
