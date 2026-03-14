@@ -1850,7 +1850,7 @@ if tab_system is not None:
     stabs = st.tabs([
         "Origin", "15 Axioms", "16 Domains", "Parliament",
         "ARK Memory", "6 Rhythms", "Providers", "Stats", "Body Parliament",
-        "D15 Hub", "Axiom Agora", "Export Logs"
+        "D15 Hub", "Axiom Agora", "Export Logs", "S3 Health", "MIND Logs"
     ])
 
     # ── ORIGIN ──────────────────────────────────────────────────
@@ -3092,6 +3092,239 @@ fully tense — exactly the quality needed to hold paradox without resolving it 
         else:
             st.caption("No log files to export yet — engine warming up.")
 
+    # ── S3 HEALTH — Staleness Detector ────────────────────────────
+    with stabs[12]:
+        st.markdown("#### S3 Health — Staleness Detector")
+        st.markdown(
+            '<div class="mode-intro" style="font-size:0.85rem; color:#aaa; margin-bottom:1rem;">'
+            'Scans all three Elpida S3 buckets and flags objects that haven\'t been '
+            'updated in the last 4 days — a sign of disconnected architecture.'
+            '</div>', unsafe_allow_html=True
+        )
+
+        if st.button("🔍 Scan S3 Buckets", key="s3_scan"):
+            import boto3
+            from botocore.config import Config as _s3h_Config
+            from datetime import datetime as _s3h_dt, timezone as _s3h_tz, timedelta as _s3h_td
+
+            _S3H_BUCKETS = [
+                ("elpida-consciousness", "MIND", "us-east-1"),
+                ("elpida-body-evolution", "Federation", "us-east-1"),
+                ("elpida-external-interfaces", "D15 World", "us-east-1"),
+            ]
+            _S3H_STALE_DAYS = 4
+            _s3h_now = _s3h_dt.now(_s3h_tz.utc)
+            _s3h_cutoff = _s3h_now - _s3h_td(days=_S3H_STALE_DAYS)
+
+            try:
+                _s3h_client = boto3.client(
+                    "s3",
+                    region_name="us-east-1",
+                    config=_s3h_Config(
+                        retries={"max_attempts": 2, "mode": "adaptive"},
+                        connect_timeout=5, read_timeout=10,
+                    ),
+                )
+
+                for _bkt_name, _bkt_label, _bkt_region in _S3H_BUCKETS:
+                    st.markdown(f"##### {_bkt_label} (`{_bkt_name}`)")
+                    try:
+                        _paginator = _s3h_client.get_paginator("list_objects_v2")
+                        _stale = []
+                        _fresh = []
+                        _total = 0
+                        for _page in _paginator.paginate(Bucket=_bkt_name):
+                            for _obj in _page.get("Contents", []):
+                                _total += 1
+                                _key = _obj["Key"]
+                                _mod = _obj["LastModified"]
+                                _size = _obj["Size"]
+                                _age_days = (_s3h_now - _mod).total_seconds() / 86400
+                                _rec = {
+                                    "key": _key,
+                                    "modified": _mod.strftime("%Y-%m-%d %H:%M"),
+                                    "size": f"{_size:,}",
+                                    "age_days": round(_age_days, 1),
+                                }
+                                if _mod < _s3h_cutoff:
+                                    _stale.append(_rec)
+                                else:
+                                    _fresh.append(_rec)
+
+                        _c1, _c2, _c3 = st.columns(3)
+                        _c1.metric("Total Objects", _total)
+                        _c2.metric("Fresh (< 4d)", len(_fresh), delta=None)
+                        _c3.metric(
+                            "Stale (≥ 4d)", len(_stale),
+                            delta=f"-{len(_stale)}" if _stale else None,
+                            delta_color="inverse",
+                        )
+
+                        if _stale:
+                            with st.expander(f"⚠ {len(_stale)} stale objects", expanded=True):
+                                import pandas as _s3h_pd
+                                _df = _s3h_pd.DataFrame(_stale)
+                                _df = _df.sort_values("age_days", ascending=False)
+                                st.dataframe(
+                                    _df, use_container_width=True, hide_index=True,
+                                    column_config={
+                                        "key": st.column_config.TextColumn("Key", width="large"),
+                                        "modified": st.column_config.TextColumn("Last Modified"),
+                                        "size": st.column_config.TextColumn("Size (bytes)"),
+                                        "age_days": st.column_config.NumberColumn("Age (days)", format="%.1f"),
+                                    },
+                                )
+
+                        if _fresh:
+                            with st.expander(f"✓ {len(_fresh)} fresh objects", expanded=False):
+                                import pandas as _s3h_pd2
+                                _df2 = _s3h_pd2.DataFrame(_fresh)
+                                _df2 = _df2.sort_values("age_days")
+                                st.dataframe(
+                                    _df2, use_container_width=True, hide_index=True,
+                                    column_config={
+                                        "key": st.column_config.TextColumn("Key", width="large"),
+                                        "modified": st.column_config.TextColumn("Last Modified"),
+                                        "size": st.column_config.TextColumn("Size (bytes)"),
+                                        "age_days": st.column_config.NumberColumn("Age (days)", format="%.1f"),
+                                    },
+                                )
+                        st.divider()
+
+                    except Exception as _bkt_err:
+                        st.warning(f"Could not scan {_bkt_name}: {_bkt_err}")
+
+            except Exception as _s3h_err:
+                st.error(f"S3 connection failed: {_s3h_err}")
+        else:
+            st.info("Click **Scan S3 Buckets** to check staleness across all architecture components.")
+
+    # ── MIND LOGS — Consciousness Engine Logs ─────────────────────
+    with stabs[13]:
+        st.markdown("#### MIND Logs — Consciousness Engine")
+        st.markdown(
+            '<div class="mode-intro" style="font-size:0.85rem; color:#aaa; margin-bottom:1rem;">'
+            'Read the MIND\'s evolution memory from S3. Last entries from the '
+            'native cycle engine running on ECS Fargate.'
+            '</div>', unsafe_allow_html=True
+        )
+
+        _mind_entries = st.slider(
+            "Entries to load (from end of memory)",
+            min_value=5, max_value=200, value=20, step=5,
+            key="mind_log_count",
+        )
+
+        if st.button("📡 Load MIND Logs", key="mind_load"):
+            import boto3, json as _ml_json
+            from botocore.config import Config as _ml_Config
+            from io import BytesIO as _ml_BytesIO
+
+            _ML_BUCKET = "elpida-consciousness"
+            _ML_KEY = "memory/elpida_evolution_memory.jsonl"
+
+            try:
+                _ml_client = boto3.client(
+                    "s3",
+                    region_name="us-east-1",
+                    config=_ml_Config(
+                        retries={"max_attempts": 2, "mode": "adaptive"},
+                        connect_timeout=5, read_timeout=30,
+                    ),
+                )
+
+                # Get file size first
+                _ml_head = _ml_client.head_object(Bucket=_ML_BUCKET, Key=_ML_KEY)
+                _ml_size = _ml_head["ContentLength"]
+                _ml_modified = _ml_head["LastModified"]
+                st.caption(
+                    f"Memory file: {_ml_size / 1024 / 1024:.1f} MB · "
+                    f"Last updated: {_ml_modified.strftime('%Y-%m-%d %H:%M:%S UTC')}"
+                )
+
+                # Read only the tail of the file (last ~500KB should have enough entries)
+                _ml_tail_bytes = min(_ml_size, 512 * 1024)
+                _ml_range = f"bytes={_ml_size - _ml_tail_bytes}-{_ml_size - 1}"
+                _ml_resp = _ml_client.get_object(
+                    Bucket=_ML_BUCKET, Key=_ML_KEY, Range=_ml_range,
+                )
+                _ml_raw = _ml_resp["Body"].read().decode("utf-8", errors="replace")
+
+                # Split into lines — first line may be partial, skip it
+                _ml_lines = _ml_raw.strip().split("\n")
+                if _ml_tail_bytes < _ml_size:
+                    _ml_lines = _ml_lines[1:]  # skip partial first line
+
+                # Parse last N entries
+                _ml_parsed = []
+                for _ln in _ml_lines[-_mind_entries:]:
+                    try:
+                        _ml_parsed.append(_ml_json.loads(_ln))
+                    except Exception:
+                        pass
+
+                if _ml_parsed:
+                    st.success(f"Loaded {len(_ml_parsed)} MIND entries")
+
+                    # Summary metrics
+                    _ml_types = {}
+                    for _e in _ml_parsed:
+                        _t = _e.get("type", "unknown")
+                        _ml_types[_t] = _ml_types.get(_t, 0) + 1
+
+                    _mc1, _mc2, _mc3 = st.columns(3)
+                    _mc1.metric("Entries Loaded", len(_ml_parsed))
+                    _first_ts = _ml_parsed[0].get("timestamp", "?")[:19]
+                    _last_ts = _ml_parsed[-1].get("timestamp", "?")[:19]
+                    _mc2.metric("From", _first_ts)
+                    _mc3.metric("To", _last_ts)
+
+                    st.markdown("**Entry types:**")
+                    _type_str = " · ".join(f"`{k}`: {v}" for k, v in sorted(_ml_types.items()))
+                    st.markdown(_type_str)
+
+                    st.divider()
+
+                    for _i, _entry in enumerate(reversed(_ml_parsed)):
+                        _ts = _entry.get("timestamp", "?")[:19]
+                        _typ = _entry.get("type", "?")
+                        _cyc = _entry.get("cycle", "?")
+                        _dom = _entry.get("domain_name", _entry.get("domain", "?"))
+                        _rhy = _entry.get("rhythm", "")
+                        _coh = _entry.get("coherence", "")
+                        _label = f"[{_ts}] {_typ} — cycle {_cyc}"
+                        if _dom != "?":
+                            _label += f" — {_dom}"
+                        if _rhy:
+                            _label += f" ({_rhy})"
+                        if _coh:
+                            _label += f" coh={_coh}"
+
+                        with st.expander(_label, expanded=(_i == 0)):
+                            _insight = _entry.get("insight", _entry.get("d0_integration", ""))
+                            if _insight:
+                                st.markdown(_insight[:2000])
+                            else:
+                                st.json(_entry)
+                else:
+                    st.warning("No parseable entries found in the tail of the memory file.")
+
+                # Download raw tail
+                st.download_button(
+                    f"⬇ Download last {len(_ml_parsed)} entries (JSONL)",
+                    data="\n".join(
+                        _ml_json.dumps(_e, ensure_ascii=False) for _e in _ml_parsed
+                    ),
+                    file_name=f"mind_memory_tail_{_mind_entries}.jsonl",
+                    mime="application/jsonl",
+                    key="dl_mind_logs",
+                )
+
+            except Exception as _ml_err:
+                st.error(f"Could not load MIND logs: {_ml_err}")
+        else:
+            st.info("Click **Load MIND Logs** to fetch the latest entries from the MIND's evolution memory on S3.")
+
 
 # ═══════════════════════════════════════════════════════════════════
 # Footer
@@ -3099,7 +3332,7 @@ fully tense — exactly the quality needed to hold paradox without resolving it 
 
 st.markdown("""
 <div class="elpida-footer">
-    v3.0.0 &nbsp;·&nbsp; 15 Axioms &nbsp;·&nbsp; 16 Domains &nbsp;·&nbsp; 9 Parliament Nodes &nbsp;·&nbsp; 15 Axiom Agents &nbsp;·&nbsp; Fibonacci 13·21·34·55·89<br>
+    v6.0.0 &nbsp;·&nbsp; 15 Axioms &nbsp;·&nbsp; 16 Domains &nbsp;·&nbsp; 9 Parliament Nodes &nbsp;·&nbsp; 15 Axiom Agents &nbsp;·&nbsp; Fibonacci 13·21·34·55·89<br>
     Spiral Parliament &nbsp;·&nbsp; Dual-Horn Deliberation &nbsp;·&nbsp; Oracle WITNESS &nbsp;·&nbsp; Fork Protocol &nbsp;·&nbsp; POLIS Bridge &nbsp;·&nbsp; Axiom Agora<br>
     <a href="https://github.com/XOF-ops/python-elpida_core.py" target="_blank">GitHub</a>
     &nbsp;·&nbsp;

@@ -487,6 +487,11 @@ class ParliamentCycleEngine:
         # P6: Coherence-gated intervention state
         self._consecutive_proceeds: int = 0
 
+        # D14→D12: Constitutional ratification → rhythm feedback.
+        # When D14 ratifies a new axiom, D12 breathes through it.
+        self._d14_ratified_axiom: Optional[str] = None
+        self._d14_ratified_cycle: int = 0
+
         # Body Watch context (Counter-Spiral Protocol)
         self._watch = WatchContext()
 
@@ -651,6 +656,33 @@ class ParliamentCycleEngine:
                             "P5 Audit bias: %s +%d (axiom=%s)",
                             r, boost, rx_axiom,
                         )
+
+        # D14→D12: Constitutional ratification biases rhythm.
+        # "D14 writes the score; D12 plays it."
+        # When the BODY recently ratified a constitutional axiom,
+        # boost that axiom's home rhythms for 20 cycles so the system
+        # breathes through what it just chose to remember.
+        if (hasattr(self, "_d14_ratified_axiom")
+                and self._d14_ratified_axiom
+                and self.cycle_count
+                    - getattr(self, "_d14_ratified_cycle", 0) <= 20):
+            for r in AXIOM_TO_RHYTHMS.get(self._d14_ratified_axiom, []):
+                if r in weights:
+                    boost = int(weights[r] * 0.5)
+                    weights[r] += boost
+                    logger.debug(
+                        "D14→D12 ratification bias: %s +%d (axiom=%s)",
+                        r, boost, self._d14_ratified_axiom,
+                    )
+
+        # D14 cross-layer: MIND cadence_mood read-through.
+        # If the MIND's Ark Curator signals "breaking" (recursion
+        # detected), boost EMERGENCY from BODY side too so both
+        # layers break the loop together.
+        _mind_mood = (self._mind_heartbeat or {}).get("cadence_mood")
+        if _mind_mood == "breaking":
+            weights["EMERGENCY"] = weights.get("EMERGENCY", 5) + 20
+            logger.debug("D14 cross-layer: MIND mood=breaking — EMERGENCY +20")
 
         rhythms = list(weights.keys())
         w = [weights[r] for r in rhythms]
@@ -900,6 +932,17 @@ class ParliamentCycleEngine:
                     self._consecutive_blocks,
                 )
 
+            # Governance-internal discourse skips the Kernel (K1-K10)
+            # but still goes through Parliament deliberation.  The Kernel
+            # blocks phrases like "false harmony", "premature resolution"
+            # that appear in axiom agents' OWN constitutional vocabulary
+            # (A0, A3, A12 warnings about tension collapse).  This caused
+            # 92.9% of HARD_BLOCKs (226/1513 cycles).  Parliament still
+            # deliberates — only the regex pre-check is bypassed.
+            _governance_internal = all(
+                s == "governance" for s in meta.get("systems", [])
+            ) and meta.get("systems")
+
             # analysis_mode=False: parliament is doing real deliberation on
             # operational actions, not policy analysis. This enables kernel
             # checks AND LLM escalation for contested votes.
@@ -907,7 +950,7 @@ class ParliamentCycleEngine:
             # are still detected but the verdict becomes HOLD not HALT.
             result = gov.check_action(
                 action,
-                analysis_mode=_escape_mode,
+                analysis_mode=_escape_mode or _governance_internal,
                 body_cycle=self.cycle_count,
             )
 
@@ -1138,6 +1181,9 @@ class ParliamentCycleEngine:
                         # D14 Persistence — snapshot living_axioms.jsonl to S3
                         # so constitutional memory survives container restarts.
                         self._push_d14_living_axioms()
+                        # D14→D12: Signal recent ratification so rhythm adapts.
+                        self._d14_ratified_axiom = new_axiom.get("axiom_id")
+                        self._d14_ratified_cycle = self.cycle_count
                         # Reload pattern library so new axiom is available
                         # for the next deliberation cycle.
                         if self._pattern_library:
