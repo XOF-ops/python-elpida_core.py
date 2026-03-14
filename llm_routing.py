@@ -153,7 +153,7 @@ LLM_ROUTING = {
     # Cerebras - Temporal coherence, wafer-scale continuity
     9: {
         "provider": "cerebras",
-        "model": "qwen3-235b-a22b",
+        "model": "qwen-3-235b-a22b-instruct-2507",
         "role": "Coherence - Temporal continuity without fragmentation",
         "prompt_style": "temporal",
         "max_tokens": 500,

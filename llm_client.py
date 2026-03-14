@@ -69,7 +69,7 @@ DEFAULT_MODELS: Dict[str, str] = {
     Provider.GROQ:        "meta-llama/llama-4-scout-17b-16e-instruct",
     Provider.HUGGINGFACE: "Qwen/Qwen2.5-72B-Instruct",
     Provider.DEEPSEEK:    "deepseek-chat",
-    Provider.CEREBRAS:    "qwen3-235b-a22b",
+    Provider.CEREBRAS:    "qwen-3-235b-a22b-instruct-2507",
 }
 
 # Env var name for each provider's API key
