@@ -16,30 +16,34 @@ OPENAI GPT-4o-mini (D1, D8):
   - D1 = Transparency (truth visible)
   - D8 = Humility (epistemic limits)
 
-MISTRAL (D3, D5, D10):
-  - Fast, technical, efficient
-  - D3 = Autonomy (value consistency)
-  - D5 = Consent (identity persistence)
-  - D10 = Evolution (meta-reflection)
+DEEPSEEK (D3):
+  - Radical autonomy, independent architecture
+  - D3 = Autonomy (self-governance)
 
-GEMINI (D4):
+GEMINI (D4, D5):
   - Safety-focused, harm prevention
   - D4 = Safety (protection)
+  - D5 = Consent (identity persistence)
 
-COHERE (D2, D6):
-  - Memory, retrieval, coherence
+COHERE (D2):
+  - Memory, retrieval, semantic precision
   - D2 = Non-Deception (append-only memory)
-  - D6 = Collective (WE wellbeing)
 
 GROK (D7):
   - Adaptive learning, growth
   - D7 = Learning (evolution)
 
-PERPLEXITY (D9, D12):
-  - Real-time search, temporal awareness
-  - D9 = Coherence (past-future bridge)
+CEREBRAS (D9):
+  - Wafer-scale temporal coherence
+  - D9 = Coherence (continuity without fragmentation)
+
+GROQ (D12):
+  - Speed IS rhythm, LPU pulses
   - D12 = Rhythm (the heartbeat)
-  - NOTE: Tends to break character, use short prompts
+
+PERPLEXITY (D13):
+  - Real-time search, external reality
+  - D13 = Archive (the formalized OTHER)
 
 OPENROUTER:
   - Failsafe ONLY when primary providers fail
@@ -82,14 +86,14 @@ LLM_ROUTING = {
         "attributes": ["uncertainty", "limits", "questioning"]
     },
     
-    # Mistral - Fast, technical
+    # DeepSeek - Radical autonomy, independent architecture
     3: {
-        "provider": "mistral",
-        "model": "mistral-small-latest",
-        "role": "Autonomy - Value consistency",
+        "provider": "deepseek",
+        "model": "deepseek-chat",
+        "role": "Autonomy - Radical self-governance",
         "prompt_style": "technical",
-        "max_tokens": 400,
-        "attributes": ["efficiency", "technical", "consistent"]
+        "max_tokens": 500,
+        "attributes": ["independence", "self_governance", "consistent"]
     },
     5: {
         "provider": "mistral",
@@ -146,21 +150,22 @@ LLM_ROUTING = {
         "attributes": ["learning", "adaptation", "growth", "curiosity"]
     },
     
-    # Perplexity - Temporal, real-time
+    # Cerebras - Temporal coherence, wafer-scale continuity
     9: {
-        "provider": "perplexity",
-        "model": "sonar",
-        "role": "Coherence - Past-future bridge",
+        "provider": "cerebras",
+        "model": "qwen3-235b-a22b",
+        "role": "Coherence - Temporal continuity without fragmentation",
         "prompt_style": "temporal",
-        "max_tokens": 300,  # Shorter to reduce character breaks
-        "attributes": ["temporal", "search", "current_awareness"]
+        "max_tokens": 500,
+        "attributes": ["temporal", "coherence", "continuity"]
     },
+    # Groq - Speed IS rhythm, LPU pulses
     12: {
-        "provider": "perplexity",
-        "model": "sonar",
-        "role": "Rhythm - The heartbeat",
+        "provider": "groq",
+        "model": "llama-4-scout-17b-16e-instruct",
+        "role": "Rhythm - The heartbeat, the pulse that never stops",
         "prompt_style": "rhythmic",
-        "max_tokens": 300,
+        "max_tokens": 500,
         "attributes": ["rhythm", "timing", "pulse", "dance"]
     },
 }

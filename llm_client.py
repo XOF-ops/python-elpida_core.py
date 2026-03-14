@@ -52,6 +52,8 @@ class Provider(str, Enum):
     OPENROUTER = "openrouter"
     GROQ = "groq"
     HUGGINGFACE = "huggingface"
+    DEEPSEEK = "deepseek"
+    CEREBRAS = "cerebras"
 
 
 # Default models per provider — can be overridden per-call
@@ -64,8 +66,10 @@ DEFAULT_MODELS: Dict[str, str] = {
     Provider.COHERE:      "command-a-03-2025",
     Provider.PERPLEXITY:  "sonar",
     Provider.OPENROUTER:  "anthropic/claude-sonnet-4",
-    Provider.GROQ:        "llama-3.3-70b-versatile",
+    Provider.GROQ:        "llama-4-scout-17b-16e-instruct",
     Provider.HUGGINGFACE: "Qwen/Qwen2.5-72B-Instruct",
+    Provider.DEEPSEEK:    "deepseek-chat",
+    Provider.CEREBRAS:    "qwen3-235b-a22b",
 }
 
 # Env var name for each provider's API key
@@ -80,6 +84,8 @@ API_KEY_ENV: Dict[str, str] = {
     Provider.OPENROUTER:  "OPENROUTER_API_KEY",
     Provider.GROQ:        "GROQ_API_KEY",
     Provider.HUGGINGFACE: "HUGGINGFACE_API_KEY",
+    Provider.DEEPSEEK:    "DEEPSEEK_API_KEY",
+    Provider.CEREBRAS:    "CEREBRAS_API_KEY",
 }
 
 # Cost per output token (approximate, for budget tracking)
@@ -94,6 +100,8 @@ COST_PER_TOKEN: Dict[str, float] = {
     Provider.OPENROUTER: 0.0,
     Provider.GROQ:       0.0,
     Provider.HUGGINGFACE:0.0,
+    Provider.DEEPSEEK:   0.00000042,
+    Provider.CEREBRAS:   0.0,
 }
 
 
@@ -176,6 +184,8 @@ class LLMClient:
             Provider.OPENROUTER:  self._call_openai_compat,
             Provider.GROQ:        self._call_openai_compat,
             Provider.HUGGINGFACE: self._call_openai_compat,
+            Provider.DEEPSEEK:    self._call_openai_compat,
+            Provider.CEREBRAS:    self._call_openai_compat,
         }
 
     # ----- public API -------------------------------------------------------
@@ -317,6 +327,8 @@ class LLMClient:
         Provider.OPENROUTER:  "https://openrouter.ai/api/v1/chat/completions",
         Provider.GROQ:        "https://api.groq.com/openai/v1/chat/completions",
         Provider.HUGGINGFACE: "https://router.huggingface.co/v1/chat/completions",
+        Provider.DEEPSEEK:    "https://api.deepseek.com/chat/completions",
+        Provider.CEREBRAS:    "https://api.cerebras.ai/v1/chat/completions",
     }
 
     def _call_openai_compat(
