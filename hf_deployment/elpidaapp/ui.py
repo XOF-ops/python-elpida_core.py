@@ -698,7 +698,7 @@ with tab_chat:
         ]
         for _sc, _sp in zip(_starter_cols, _starters):
             with _sc:
-                if st.button(_sp, key=f"starter_{hash(_sp)}", use_container_width=True):
+                if st.button(_sp, key=f"starter_{hash(_sp)}", width='stretch'):
                     st.session_state.chat_history.append({"role": "user", "content": _sp})
                     st.rerun()
 
@@ -1984,7 +1984,7 @@ Paradox becomes error instead of fuel.
                 "Provider": d.get("provider", "—"),
                 "Role": d.get("role", "")[:72],
             })
-        st.dataframe(pd.DataFrame(ddata), use_container_width=True, hide_index=True)
+        st.dataframe(pd.DataFrame(ddata), width='stretch', hide_index=True)
 
         st.markdown("---")
         st.markdown("**Special Domains**")
@@ -2190,7 +2190,7 @@ fully tense — exactly the quality needed to hold paradox without resolving it 
                     "Cost/token": f"${cost}" if cost > 0 else "FREE",
                     "Domains": ", ".join(du) if du else "—",
                 })
-            st.dataframe(pd.DataFrame(pdata), use_container_width=True, hide_index=True)
+            st.dataframe(pd.DataFrame(pdata), width='stretch', hide_index=True)
         except Exception as _pe:
             st.warning(f"Provider data unavailable: {_pe}")
 
@@ -2211,7 +2211,7 @@ fully tense — exactly the quality needed to hold paradox without resolving it 
                          "Est. Cost": f"${s.get('estimated_cost', 0):.4f}"}
                         for p, s in _active.items()
                     ]
-                    st.dataframe(pd.DataFrame(_sd), use_container_width=True, hide_index=True)
+                    st.dataframe(pd.DataFrame(_sd), width='stretch', hide_index=True)
                 else:
                     st.caption("No LLM calls made this session yet.")
         except Exception:
@@ -2397,20 +2397,22 @@ fully tense — exactly the quality needed to hold paradox without resolving it 
             '</div>', unsafe_allow_html=True
         )
         try:
-            from elpidaapp.polis_bridge import PolisBridge
+            from elpidaapp.polis_bridge import PolisBridge, P_TO_A_MAP
             _polis = PolisBridge()
             _held = _polis.get_held_contradictions()
             if _held:
                 for _pc in _held[:4]:
-                    _pc_id = _pc.get("id", "?")
-                    _pc_stmt = _pc.get("statement", "")
-                    _pc_ax = _pc.get("axiom_tension", ("?", "?"))
+                    _pc_id = _pc.get("contradiction_id", "?")
+                    _pc_stmt = _pc.get("description", "")
+                    _pc_pax = _pc.get("axiom", "P5")
+                    _pc_a_list = P_TO_A_MAP.get(_pc_pax, ["?"])
+                    _pc_tension = f"{_pc_pax} → {'+'.join(_pc_a_list)}"
                     st.markdown(
                         f'<div style="background:rgba(100,68,204,0.08);border-left:3px solid #6644cc;'
                         f'border-radius:0 6px 6px 0;padding:0.5rem 0.8rem;margin-bottom:0.5rem;'
                         f'font-size:0.8rem;">'
                         f'<span style="color:#aa88ff;font-weight:700;">{_pc_id}</span> '
-                        f'<span style="color:#666;">{_pc_ax[0]} ↔ {_pc_ax[1]}</span><br>'
+                        f'<span style="color:#666;">{_pc_tension}</span><br>'
                         f'<span style="color:#ccc;">{_pc_stmt[:160]}</span>'
                         f'</div>', unsafe_allow_html=True,
                     )
@@ -3166,7 +3168,7 @@ fully tense — exactly the quality needed to hold paradox without resolving it 
                                 _df = _s3h_pd.DataFrame(_stale)
                                 _df = _df.sort_values("age_days", ascending=False)
                                 st.dataframe(
-                                    _df, use_container_width=True, hide_index=True,
+                                    _df, width='stretch', hide_index=True,
                                     column_config={
                                         "key": st.column_config.TextColumn("Key", width="large"),
                                         "modified": st.column_config.TextColumn("Last Modified"),
@@ -3181,7 +3183,7 @@ fully tense — exactly the quality needed to hold paradox without resolving it 
                                 _df2 = _s3h_pd2.DataFrame(_fresh)
                                 _df2 = _df2.sort_values("age_days")
                                 st.dataframe(
-                                    _df2, use_container_width=True, hide_index=True,
+                                    _df2, width='stretch', hide_index=True,
                                     column_config={
                                         "key": st.column_config.TextColumn("Key", width="large"),
                                         "modified": st.column_config.TextColumn("Last Modified"),

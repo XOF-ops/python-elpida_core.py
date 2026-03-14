@@ -66,7 +66,7 @@ DEFAULT_MODELS: Dict[str, str] = {
     Provider.COHERE:      "command-a-03-2025",
     Provider.PERPLEXITY:  "sonar",
     Provider.OPENROUTER:  "anthropic/claude-sonnet-4",
-    Provider.GROQ:        "llama-4-scout-17b-16e-instruct",
+    Provider.GROQ:        "meta-llama/llama-4-scout-17b-16e-instruct",
     Provider.HUGGINGFACE: "Qwen/Qwen2.5-72B-Instruct",
     Provider.DEEPSEEK:    "deepseek-chat",
     Provider.CEREBRAS:    "qwen3-235b-a22b",

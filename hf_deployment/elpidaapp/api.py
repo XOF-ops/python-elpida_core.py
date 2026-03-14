@@ -71,7 +71,7 @@ _LS_WEBHOOK_SECRET = os.environ.get("LEMONSQUEEZY_WEBHOOK_SECRET", "")
 _ADMIN_KEY = os.environ.get("ELPIDA_ADMIN_KEY", "")
 
 # ── S3 key store ──
-_S3_BUCKET = os.environ.get("AWS_S3_BUCKET", "elpida-memory")
+_S3_BUCKET = os.environ.get("AWS_S3_BUCKET", "elpida-body-evolution")
 _S3_KEY_PREFIX = "api-keys/"
 
 

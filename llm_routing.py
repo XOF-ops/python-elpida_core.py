@@ -162,7 +162,7 @@ LLM_ROUTING = {
     # Groq - Speed IS rhythm, LPU pulses
     12: {
         "provider": "groq",
-        "model": "llama-4-scout-17b-16e-instruct",
+        "model": "meta-llama/llama-4-scout-17b-16e-instruct",
         "role": "Rhythm - The heartbeat, the pulse that never stops",
         "prompt_style": "rhythmic",
         "max_tokens": 500,

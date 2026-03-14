@@ -157,7 +157,7 @@ if mode == "Analyze":
     with col3:
         st.write("")  # spacer
         st.write("")
-        run_btn = st.button("🚀 Analyze", type="primary", use_container_width=True)
+        run_btn = st.button("🚀 Analyze", type="primary", width='stretch')
 
     if run_btn and problem.strip():
         domains = [int(d.strip()) for d in domains_str.split(",") if d.strip()]
@@ -373,7 +373,7 @@ if mode == "System":
             "Provider": d["provider"],
             "Hz": axiom.get("hz", "—"),
         })
-    st.dataframe(domain_data, use_container_width=True)
+    st.dataframe(domain_data, width='stretch')
 
     # LLM stats
     st.subheader("LLM Usage Stats")
