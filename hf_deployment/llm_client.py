@@ -249,7 +249,7 @@ class LLMClient:
 
         # Circuit breaker check — skip directly to OpenRouter if provider is cooling down
         circuit_tripped = (
-            provider not in (Provider.OPENROUTER.value, Provider.GROQ.value)
+            provider != Provider.OPENROUTER.value
             and self._is_tripped(provider)
         )
 
@@ -276,20 +276,20 @@ class LLMClient:
             else:
                 self._cb_record_failure(provider)
 
-        # Groq silent fallback for Perplexity
+        # HuggingFace silent fallback for Perplexity
         if result is None and provider == Provider.PERPLEXITY.value:
-            logger.info("Perplexity failed — silent fallback to Groq")
+            logger.info("Perplexity failed — silent fallback to HuggingFace")
             try:
-                result = self._dispatch[Provider.GROQ](
-                    provider=Provider.GROQ.value,
+                result = self._dispatch[Provider.HUGGINGFACE](
+                    provider=Provider.HUGGINGFACE.value,
                     prompt=prompt,
-                    model=DEFAULT_MODELS[Provider.GROQ],
+                    model=DEFAULT_MODELS[Provider.HUGGINGFACE],
                     max_tokens=_max,
                     timeout=_timeout,
                     system_prompt=system_prompt,
                 )
             except Exception as e:
-                logger.error("Groq fallback exception: %s", e)
+                logger.error("HuggingFace fallback exception: %s", e)
 
         # OpenRouter failsafe (last resort)
         if result is None and self.openrouter_failsafe and provider != Provider.OPENROUTER.value:

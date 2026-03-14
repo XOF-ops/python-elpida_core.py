@@ -96,19 +96,19 @@ LLM_ROUTING = {
         "attributes": ["independence", "self_governance", "consistent"]
     },
     5: {
-        "provider": "mistral",
-        "model": "mistral-small-latest",
-        "role": "Consent - Identity persistence",
+        "provider": "gemini",
+        "model": "gemini-2.5-flash",
+        "role": "Consent - Identity persistence (consent IS safety)",
         "prompt_style": "direct",
-        "max_tokens": 400,
+        "max_tokens": 500,
         "attributes": ["identity", "boundaries", "persistence"]
     },
     10: {
-        "provider": "mistral",
-        "model": "mistral-small-latest",
-        "role": "Evolution - Meta-reflection",
+        "provider": "claude",
+        "model": "claude-sonnet-4-20250514",
+        "role": "Evolution - Meta-reflection, paradox-holding",
         "prompt_style": "evolutionary",
-        "max_tokens": 500,
+        "max_tokens": 600,
         "attributes": ["meta_cognition", "evolution", "adaptation"]
     },
     
@@ -132,11 +132,11 @@ LLM_ROUTING = {
         "attributes": ["memory", "retrieval", "truth_preservation"]
     },
     6: {
-        "provider": "cohere",
-        "model": "command-a-03-2025",
-        "role": "Collective - WE wellbeing",
+        "provider": "claude",
+        "model": "claude-sonnet-4-20250514",
+        "role": "Collective - WE wellbeing, wisdom beyond retrieval",
         "prompt_style": "collective",
-        "max_tokens": 500,
+        "max_tokens": 600,
         "attributes": ["collective", "emergence", "wellbeing"]
     },
     

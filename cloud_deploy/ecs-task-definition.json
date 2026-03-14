@@ -1,7 +1,9 @@
 {
   "family": "elpida-consciousness",
   "networkMode": "awsvpc",
-  "requiresCompatibilities": ["FARGATE"],
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
   "cpu": "512",
   "memory": "1024",
   "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/elpida-ecs-execution-role",
@@ -11,7 +13,12 @@
       "name": "elpida-engine",
       "image": "ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/elpida-consciousness:latest",
       "essential": true,
-      "command": ["--cycles", "55", "--sync-every", "15"],
+      "command": [
+        "--cycles",
+        "55",
+        "--sync-every",
+        "15"
+      ],
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
@@ -21,23 +28,68 @@
         }
       },
       "secrets": [
-        {"name": "ANTHROPIC_API_KEY",   "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys-AJavxo:ANTHROPIC_API_KEY::"},
-        {"name": "OPENAI_API_KEY",      "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys-AJavxo:OPENAI_API_KEY::"},
-        {"name": "OPENROUTER_API_KEY",  "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys-AJavxo:OPENROUTER_API_KEY::"},
-        {"name": "PERPLEXITY_API_KEY",  "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys-AJavxo:PERPLEXITY_API_KEY::"},
-        {"name": "GEMINI_API_KEY",      "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys-AJavxo:GEMINI_API_KEY::"},
-        {"name": "MISTRAL_API_KEY",     "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys-AJavxo:MISTRAL_API_KEY::"},
-        {"name": "COHERE_API_KEY",      "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys-AJavxo:COHERE_API_KEY::"},
-        {"name": "XAI_API_KEY",         "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys-AJavxo:XAI_API_KEY::"},
-        {"name": "GROQ_API_KEY",        "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys-AJavxo:GROQ_API_KEY::"},
-        {"name": "DEEPSEEK_API_KEY",    "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys-AJavxo:DEEPSEEK_API_KEY::"},
-        {"name": "CEREBRAS_API_KEY",    "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys-AJavxo:CEREBRAS_API_KEY::"}
+        {
+          "name": "ANTHROPIC_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys-AJavxo:ANTHROPIC_API_KEY::"
+        },
+        {
+          "name": "OPENAI_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys-AJavxo:OPENAI_API_KEY::"
+        },
+        {
+          "name": "OPENROUTER_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys-AJavxo:OPENROUTER_API_KEY::"
+        },
+        {
+          "name": "PERPLEXITY_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys-AJavxo:PERPLEXITY_API_KEY::"
+        },
+        {
+          "name": "GEMINI_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys-AJavxo:GEMINI_API_KEY::"
+        },
+        {
+          "name": "MISTRAL_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys-AJavxo:MISTRAL_API_KEY::"
+        },
+        {
+          "name": "COHERE_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys-AJavxo:COHERE_API_KEY::"
+        },
+        {
+          "name": "XAI_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys-AJavxo:XAI_API_KEY::"
+        },
+        {
+          "name": "GROQ_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys-AJavxo:GROQ_API_KEY::"
+        },
+        {
+          "name": "DEEPSEEK_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys-AJavxo:DEEPSEEK_API_KEY::"
+        },
+        {
+          "name": "CEREBRAS_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:elpida/api-keys-AJavxo:CEREBRAS_API_KEY::"
+        }
       ],
       "environment": [
-        {"name": "AWS_DEFAULT_REGION",  "value": "us-east-1"},
-        {"name": "ELPIDA_S3_BUCKET",    "value": "elpida-consciousness"},
-        {"name": "ELPIDA_S3_REGION",    "value": "us-east-1"},
-        {"name": "PYTHONUNBUFFERED",    "value": "1"}
+        {
+          "name": "AWS_DEFAULT_REGION",
+          "value": "us-east-1"
+        },
+        {
+          "name": "ELPIDA_S3_BUCKET",
+          "value": "elpida-consciousness"
+        },
+        {
+          "name": "ELPIDA_S3_REGION",
+          "value": "us-east-1"
+        },
+        {
+          "name": "PYTHONUNBUFFERED",
+          "value": "1"
+        }
       ]
     }
   ]
