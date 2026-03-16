@@ -2258,7 +2258,7 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
                 'emergency_override': emergency_override,
             },
             'domains_in_buffer': sorted(recent_domains),
-            'current_insight_summary': (current_insight.get('insight') or '')[:500],
+            'current_insight_summary': (current_insight.get('insight') or '')[:1000],
             'rhythm': self.current_rhythm.value,
         }
         return payload

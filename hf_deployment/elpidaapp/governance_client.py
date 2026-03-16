@@ -38,7 +38,10 @@ logger = logging.getLogger("elpidaapp.governance")
 # similarity.  Falls back to keyword-only matching if unavailable.
 try:
     from sentence_transformers import SentenceTransformer, util as st_util
-    _EMBEDDING_MODEL = SentenceTransformer("all-MiniLM-L6-v2")
+    _EMBEDDING_MODEL = SentenceTransformer(
+        "all-MiniLM-L6-v2",
+        token=os.environ.get("HF_TOKEN"),
+    )
     _USE_EMBEDDINGS = True
     logger.info("Semantic embedding model loaded (all-MiniLM-L6-v2)")
 except Exception as _emb_err:
