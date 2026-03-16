@@ -66,7 +66,7 @@ def _is_english(text: str) -> bool:
 def _search_ddg(query: str, max_results: int) -> List[Dict[str, str]]:
     """Search via DuckDuckGo DDGS library."""
     try:
-        from duckduckgo_search import DDGS
+        from ddgs import DDGS
         ddgs = DDGS()
         results = list(ddgs.text(query, max_results=max_results + 2))
         # Filter to English results only
