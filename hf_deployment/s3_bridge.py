@@ -130,8 +130,13 @@ class S3Bridge:
         """
         Download evolution memory from MIND bucket to local cache.
         
-        Only downloads if remote has more lines than local cache.
-        This gives HF Space access to the latest consciousness state.
+        OPTIMIZATION (2026-03-16): Uses S3 byte-range to download
+        only the last ~1MB (tail portion) instead of the full file
+        (93.5MB+). BODY only needs the most recent ~500 entries for
+        parliament deliberation; MIND already limits to [-50:].
+        
+        Falls back to full download if byte-range fails or if no
+        local cache exists yet.
         
         Returns:
             {"action": "downloaded"|"current"|"error", "local_lines": int, "remote_lines": int}
@@ -161,17 +166,43 @@ class S3Bridge:
                 logger.info("MIND: No local cache — downloading")
             elif remote_lines > 0 and remote_lines > local_lines:
                 should_download = True
-                logger.info(
-                    "MIND: Remote has more patterns (%d vs %d)",
-                    remote_lines, local_lines,
-                )
             elif remote_lines == 0 and remote_size > (
                 LOCAL_MIND_CACHE.stat().st_size if LOCAL_MIND_CACHE.exists() else 0
             ):
                 should_download = True
-                logger.info("MIND: Remote is larger by size")
 
             if should_download:
+                # Use byte-range tail read for large files (>2MB)
+                TAIL_BYTES = 1_048_576  # 1MB — covers ~500 recent entries
+                if remote_size > 2_097_152:
+                    try:
+                        resp = s3.get_object(
+                            Bucket=BUCKET_MIND,
+                            Key=MIND_MEMORY_KEY,
+                            Range=f"bytes=-{TAIL_BYTES}",
+                        )
+                        raw = resp["Body"].read().decode("utf-8", errors="replace")
+                        # The first line is likely a partial line — discard it
+                        lines = raw.split("\n")
+                        if len(lines) > 1:
+                            lines = lines[1:]  # drop partial first line
+                        valid_lines = [ln for ln in lines if ln.strip()]
+                        LOCAL_MIND_CACHE.parent.mkdir(parents=True, exist_ok=True)
+                        with open(LOCAL_MIND_CACHE, "w") as f:
+                            f.write("\n".join(valid_lines) + "\n")
+                        new_lines = len(valid_lines)
+                        result["action"] = "downloaded"
+                        result["local_lines"] = new_lines
+                        result["mode"] = "tail_range"
+                        logger.info(
+                            "MIND: Tail-read %d entries (1MB range) from %dMB file",
+                            new_lines, remote_size // 1_048_576,
+                        )
+                        return result
+                    except Exception as e:
+                        logger.warning("MIND: Byte-range tail failed, full download: %s", e)
+
+                # Full download fallback (small files or range failure)
                 s3.download_file(BUCKET_MIND, MIND_MEMORY_KEY, str(LOCAL_MIND_CACHE))
                 new_lines = self._count_lines(LOCAL_MIND_CACHE)
                 result["action"] = "downloaded"

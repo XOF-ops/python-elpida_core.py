@@ -2523,64 +2523,87 @@ fully tense — exactly the quality needed to hold paradox without resolving it 
             'in the architecture — two layers, one frequency.'
             '</div>', unsafe_allow_html=True
         )
-        try:
-            from app import get_kaya_detector
-            _kd = get_kaya_detector()
-            if _kd is not None:
-                _kds = _kd.status()
-                _kd1, _kd2, _kd3, _kd4 = st.columns(4)
-                _kd1.metric(
-                    "Detector",
-                    "✓ Running" if _kds.get("running") else "— Stopped",
+        # Read from cross-process-safe cache files written by KayaDetector
+        _kaya_cache_file = _bp_cache / "kaya_last_fired.json"
+        _kaya_events_dir = _bp_cache / "kaya_events"
+        _kaya_status = None
+        if _kaya_cache_file.exists():
+            try:
+                with open(_kaya_cache_file) as _kf:
+                    _kaya_status = json.load(_kf)
+            except Exception:
+                pass
+
+        if _kaya_status is not None:
+            _kd1, _kd2, _kd3, _kd4 = st.columns(4)
+            _kd1.metric("Detector", "✓ Active")
+            _kd_fire_count = _kaya_status.get("fire_count", 0)
+            _kd2.metric(
+                "Cross-Layer Events",
+                _kd_fire_count,
+                help="Total CROSS_LAYER_KAYA events fired (WORLD bucket + Parliament)"
+            )
+            _kd_coh = _bp_state.get("coherence", 0) if _bp_state else 0.0
+            _kd3.metric(
+                "BODY Coherence",
+                f"{_kd_coh:.3f}",
+                delta="near threshold" if _kd_coh >= 0.85 * 0.95 else "below threshold",
+                delta_color="normal" if _kd_coh >= 0.85 * 0.95 else "off",
+            )
+            _kd_kaya_moments = _kaya_status.get("last_kaya_moments", 0)
+            _kd4.metric(
+                "MIND Kaya Count",
+                _kd_kaya_moments,
+                help="Cumulative kaya_moments from MIND heartbeat"
+            )
+            _kd_last_fired = _kaya_status.get("fired_at")
+            if _kd_last_fired:
+                st.caption(
+                    f"Last Kaya event: Watch '{_kaya_status.get('watch', '?')}' "
+                    f"at {str(_kd_last_fired)[:19]}Z · "
+                    f"Threshold: coh ≥ 85% + MIND kaya delta ≥ 1"
                 )
-                _kd2.metric(
-                    "Cross-Layer Events",
-                    _kds.get("fire_count", 0),
-                    help="Total CROSS_LAYER_KAYA events fired (WORLD bucket + Parliament)"
-                )
-                _coh_now = _kds.get("body_coherence", 0.0)
-                _coh_thresh = _kds.get("body_coherence_threshold", 0.85)
-                _kd3.metric(
-                    "BODY Coherence",
-                    f"{_coh_now:.3f}",
-                    delta=f"{'near threshold' if _kds.get('near_threshold') else 'below threshold'}",
-                    delta_color="normal" if _kds.get("near_threshold") else "off",
-                )
-                _kd4.metric(
-                    "MIND Kaya Count",
-                    _kds.get("current_kaya_moments", 0),
-                    help="Cumulative kaya_moments from MIND heartbeat"
-                )
-                if _kds.get("last_fired_at"):
-                    st.caption(
-                        f"Last Kaya event: Watch '{_kds.get('last_fired_watch', '?')}' "
-                        f"at {_kds['last_fired_at'][:19]}Z · "
-                        f"Threshold: coh ≥ {_coh_thresh:.0%} + MIND kaya delta ≥ 1"
-                    )
-                else:
-                    st.caption(
-                        f"No cross-layer Kaya events yet. "
-                        f"Conditions: MIND kaya delta ≥ 1 + BODY coherence ≥ {_coh_thresh:.0%} "
-                        f"+ same 4h watch window."
-                    )
             else:
                 st.caption(
-                    "Kaya detector runs as a background thread in the Parliament engine process."
+                    "No cross-layer Kaya events yet. "
+                    "Conditions: MIND kaya delta ≥ 1 + BODY coherence ≥ 85% "
+                    "+ same 4h watch window."
                 )
-        except Exception:
-            # Cross-process — can't access in-process kaya detector from Streamlit subprocess
+
+            # Show recent Kaya events from local cache
+            if _kaya_events_dir.exists():
+                _kaya_files = sorted(_kaya_events_dir.glob("cross_layer_*.json"), reverse=True)[:5]
+                if _kaya_files:
+                    with st.expander(f"Recent Kaya Events ({min(len(_kaya_files), 5)} of {_kd_fire_count})", expanded=False):
+                        for _kf_path in _kaya_files:
+                            try:
+                                with open(_kf_path) as _kef:
+                                    _kaya_evt = json.load(_kef)
+                                _fired = str(_kaya_evt.get("fired_at", ""))[:19]
+                                _watch = _kaya_evt.get("watch", "?")
+                                _sig = _kaya_evt.get("significance", "")[:200]
+                                _mind_coh = _kaya_evt.get("trigger", {}).get("mind_coherence", 0)
+                                _body_coh_evt = _kaya_evt.get("body", {}).get("body_coherence", 0)
+                                st.markdown(
+                                    f"**#{_kaya_evt.get('event_number', '?')}** "
+                                    f"— {_watch} Watch · {_fired}Z\n\n"
+                                    f"MIND coh: {_mind_coh:.3f} · BODY coh: {_body_coh_evt:.3f}\n\n"
+                                    f"_{_sig}_"
+                                )
+                                st.divider()
+                            except Exception:
+                                pass
+        else:
             if _bp_state is not None:
                 _kd_coh = _bp_state.get("coherence", 0)
                 st.markdown(
                     f"**Current BODY coherence:** {_kd_coh:.3f} "
                     f"({'≥ 0.85 threshold' if _kd_coh >= 0.85 else 'below 0.85 threshold'})"
                 )
-                st.caption(
-                    "Kaya detector runs in the Parliament engine process. "
-                    "Cross-layer events are pushed to the WORLD S3 bucket when conditions align."
-                )
-            else:
-                st.caption("Kaya detector activates with the Parliament engine.")
+            st.caption(
+                "Kaya detector runs in the Parliament engine process. "
+                "Cross-layer events appear here once the first event fires."
+            )
 
         st.divider()
 

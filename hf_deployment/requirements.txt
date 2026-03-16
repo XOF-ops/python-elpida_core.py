@@ -26,3 +26,6 @@ pydantic>=2.0.0         # Data validation
 # ── Semantic embedding for axiom signal detection ──
 sentence-transformers>=2.2.0   # Parliament semantic signal detection
 numpy>=1.24.0                  # Required by sentence-transformers
+
+# ── Domain Internet Grounding (P4) ──
+duckduckgo_search>=7.0.0       # DuckDuckGo web search for domain grounding

@@ -453,7 +453,11 @@ class DivergenceEngine:
         axiom: Dict[str, Any],
         problem: str,
     ) -> str:
-        """Build an axiom-constraint prompt for a specific domain."""
+        """Build an axiom-constraint prompt for a specific domain.
+        
+        Includes live web context via DuckDuckGo grounding when available
+        (P4: Domain Internet Grounding, 2026-03-16).
+        """
         parts = [
             f"You are Domain {domain_id}: {domain['name']}.",
             f"Role: {domain.get('role', '')}",
@@ -467,6 +471,21 @@ class DivergenceEngine:
             parts.append(f"Musical ratio: {axiom.get('ratio', '')} = {axiom.get('interval', '')}")
             if axiom.get("insight"):
                 parts.append(f"Insight: {axiom['insight']}")
+
+        # P4: Domain Internet Grounding — inject live web context
+        try:
+            from elpidaapp.domain_grounding import (
+                ground_domain_query, DOMAIN_SEARCH_HINTS,
+            )
+            hints = DOMAIN_SEARCH_HINTS.get(domain_id)
+            if hints is not None:  # None means skip grounding for this domain
+                web_context = ground_domain_query(
+                    problem, domain['name'], domain_keywords=hints,
+                )
+                if web_context:
+                    parts.append(f"\n{web_context}")
+        except Exception:
+            pass  # Grounding is optional — never block domain queries
 
         parts.append(
             f"\n─── PROBLEM ───\n{problem}\n─── END ───\n"

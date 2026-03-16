@@ -814,16 +814,14 @@ class KayaWorldAgent(_BaseAgent):
         significance = event.get("significance", "")[:200]
 
         return (
-            f"CROSS-LAYER SIGNAL [{watch.upper()} WATCH | {fired_at} UTC]: "
-            f"MIND reached {mind_kaya} Kaya moments (+{mind_kaya_delta} this run, "
-            f"cycle {mind_cycle}) while BODY held coherence at {body_coh:.3f} "
-            f"(Parliament cycle {body_cycle}). "
-            f"Significance: {significance} "
-            f"Constitutional question: Is this A10 (Harmonic Resonance) fulfilling "
-            f"its purpose — or does convergence between MIND and BODY threaten the "
-            f"productive tension that A0 (Sacred Incompletion) requires? "
-            f"Should Parliament adjust its axiom weighting in response to "
-            f"cross-layer coherence, or hold its independent constitutional path?"
+            f"STRUCTURAL OBSERVATION [{watch.upper()} WATCH | {fired_at} UTC]: "
+            f"Cross-layer resonance confirmed — MIND kaya_moments={mind_kaya} "
+            f"(+{mind_kaya_delta}, cycle {mind_cycle}), BODY coherence={body_coh:.3f} "
+            f"(cycle {body_cycle}). "
+            f"{significance} "
+            f"This is A10 (Harmonic Resonance) at architecture scale. "
+            f"Parliament should note this convergence as evidence that "
+            f"the distributed structure is functioning as designed."
         )
 
     def generate(self) -> List[str]:

@@ -1206,6 +1206,16 @@ class ParliamentCycleEngine:
         if self.cycle_count > CONVERGENCE_COOLDOWN_CYCLES:
             self._check_convergence(dominant_axiom, result)
 
+        # 10a. Periodic world index regeneration (every 100 cycles)
+        #      Ensures the public index.html stays fresh even if D15
+        #      convergence temporarily pauses.
+        if self.cycle_count % 100 == 0 and self._s3_bridge:
+            try:
+                self._s3_bridge._regenerate_world_index()
+                logger.info("Periodic world index regen at cycle %d", self.cycle_count)
+            except Exception as e:
+                logger.debug("Periodic index regen skipped: %s", e)
+
         # 10b. CrystallizationHub — stagnation-to-axiom Synod
         #      Triggered when D15 stagnation flag is set OR kaya threshold crossed.
         hub = self._get_crystallization_hub()
@@ -2192,20 +2202,19 @@ class ParliamentCycleEngine:
          more rigorously than internal consistency."
         """
         if not self._mind_heartbeat:
-            logger.info("D15 skip: no MIND heartbeat yet")
+            if self.cycle_count % 50 == 0:
+                logger.info("D15 skip: no MIND heartbeat yet (cycle %d)", self.cycle_count)
             return
         if not body_axiom:
-            logger.info("D15 skip: no BODY dominant axiom")
-            return
-        if (self.cycle_count - self.d15_last_broadcast_cycle) < CONVERGENCE_COOLDOWN_CYCLES:
-            logger.debug(
-                "D15 skip: cooldown (%d - %d = %d < %d)",
-                self.cycle_count, self.d15_last_broadcast_cycle,
-                self.cycle_count - self.d15_last_broadcast_cycle,
-                CONVERGENCE_COOLDOWN_CYCLES,
-            )
+            if self.cycle_count % 50 == 0:
+                logger.info("D15 skip: no BODY dominant axiom (cycle %d)", self.cycle_count)
             return
 
+        cycles_since = self.cycle_count - self.d15_last_broadcast_cycle
+        if cycles_since < CONVERGENCE_COOLDOWN_CYCLES:
+            return
+
+        body_approval = result.get("parliament", {}).get("approval_rate", 0)
         gate = self._get_convergence_gate()
         if gate:
             fired = gate.check_and_fire(
@@ -2213,7 +2222,7 @@ class ParliamentCycleEngine:
                 body_cycle=self.cycle_count,
                 body_axiom=body_axiom,
                 body_coherence=self.coherence,
-                body_approval=result.get("parliament", {}).get("approval_rate", 0),
+                body_approval=body_approval,
                 parliament_result=result,
             )
             if fired:
