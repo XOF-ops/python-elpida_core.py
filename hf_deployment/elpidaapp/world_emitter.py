@@ -127,6 +127,12 @@ class WorldEmitter:
         # Reject anything with TEST in the id (case-insensitive)
         if "TEST" in axiom_id.upper():
             return False
+        # Filter low-severity fork entries — only emit forks with severity ≥ 0.75
+        # to prevent mechanical REMEDIATE loops from flooding the world page.
+        if entry.get("section") == "CONSTITUTIONAL_FORK":
+            fork_sev = entry.get("confidence", 0)
+            if fork_sev < 0.75:
+                return False
         # Reject entries with no nodes AND no synthesis AND zero rounds
         # (these are bootstrap placeholders, not real parliament crystallisations)
         nodes    = entry.get("nodes", [])

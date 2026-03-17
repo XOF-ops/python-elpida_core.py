@@ -208,6 +208,7 @@ class ForkProtocol:
         self._active: List[ForkDeclaration] = []
         self._resolved: List[ForkDeclaration] = []
         self._last_declaration_cycle: Dict[str, int] = {}  # axiom → cycle
+        self._last_remediate_severity: Dict[str, float] = {}  # axiom → severity at last REMEDIATE
         self._load_history()
 
     # ── History ───────────────────────────────────────────────────
@@ -228,6 +229,12 @@ class ForkProtocol:
                     existing = self._last_declaration_cycle.get(axiom, 0)
                     if cycle > existing:
                         self._last_declaration_cycle[axiom] = cycle
+                    # Track last REMEDIATE severity per axiom for baseline comparison
+                    if rec.get("outcome") == "REMEDIATE":
+                        sev = rec.get("severity", 0)
+                        prev = self._last_remediate_severity.get(axiom, 0)
+                        if cycle >= existing:  # most recent takes precedence
+                            self._last_remediate_severity[axiom] = sev
         except Exception as e:
             logger.warning("Fork history load failed: %s", e)
 
@@ -351,6 +358,17 @@ class ForkProtocol:
             logger.debug(
                 "Fork: %s cooldown (last=%d, now=%d, need=%d gap)",
                 axiom, last_cycle, current_cycle, FORK_COOLDOWN_CYCLES,
+            )
+            return None
+
+        # Check severity baseline — after REMEDIATE, severity must exceed
+        # the REMEDIATE baseline by ≥0.10 to declare again (prevents loops
+        # where accumulated drift keeps re-triggering identical forks).
+        baseline = self._last_remediate_severity.get(axiom)
+        if baseline is not None and severity <= baseline + 0.10:
+            logger.info(
+                "Fork: %s severity %.3f ≤ baseline %.3f + 0.10 — suppressed",
+                axiom, severity, baseline,
             )
             return None
 
@@ -578,6 +596,11 @@ class ForkProtocol:
         self._append_to_ledger(declaration)
         self._active.remove(declaration)
         self._resolved.append(declaration)
+
+        # Store severity baseline on REMEDIATE so future declarations
+        # must show worsening (prevents mechanical re-triggering).
+        if outcome == "REMEDIATE":
+            self._last_remediate_severity[declaration.axiom] = declaration.severity
 
         # Write to living_axioms.jsonl as crystallized fork knowledge
         axioms_path = Path(

@@ -456,7 +456,13 @@ class PathologyScanner:
 
         # Overall health = worst of all detectors
         severities = ["HEALTHY", "WARNING", "CRITICAL"]
-        zombie_severity = "CRITICAL" if zombie_report.get("zombies") else "HEALTHY"
+        zombie_count = len(zombie_report.get("zombies", []))
+        if zombie_count >= 2:
+            zombie_severity = "CRITICAL"
+        elif zombie_count == 1:
+            zombie_severity = "WARNING"
+        else:
+            zombie_severity = "HEALTHY"
         drift_severity = drift_report.get("severity", "HEALTHY")
 
         worst = max(

@@ -775,7 +775,7 @@ class KayaWorldAgent(_BaseAgent):
     Typically 0 new events per poll (events fire at most once per 4h watch).
     """
 
-    SYSTEM = "scanner"
+    SYSTEM = "kaya"
     INTERVAL_S = 120  # 2-minute poll
     _WATERMARK_FILE = Path(__file__).resolve().parent.parent / "cache" / "kaya_world_watermark.json"
 

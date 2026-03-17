@@ -352,6 +352,90 @@ class ConvergenceGate:
 
         return True
 
+    # ── Kaya-specific convergence path ────────────────────────────
+    def check_and_fire_kaya(
+        self,
+        mind_heartbeat: Dict[str, Any],
+        body_cycle: int,
+        body_axiom: str,
+        body_coherence: float,
+        body_approval: float,
+        parliament_result: Dict[str, Any],
+    ) -> bool:
+        """
+        Alternative convergence gate for Kaya (cross-layer resonance) events.
+
+        Kaya events prove MIND↔BODY resonance by definition (the detector
+        only fires when both loops are coherent). So we skip:
+          - Gate 1 (MIND dominant axiom) — Kaya itself is the proof
+          - Gate 4 (BODY approval) — Kaya resonance supersedes approval rate
+
+        We keep:
+          - Gate 3 (MIND coherence ≥ 0.85) — quality guard
+          - Gate 5 (A6 anchor consonance) — constitutional anchor
+          - Gate 6 (A0 rate limiter) — flood protection
+        """
+        # Gate 3: MIND coherence
+        mind_coherence = mind_heartbeat.get("coherence", 0)
+        if mind_coherence < MIND_COHERENCE_THRESHOLD:
+            logger.info(
+                "D15 kaya gate 3 FAIL: MIND coherence %.3f < %.3f",
+                mind_coherence, MIND_COHERENCE_THRESHOLD,
+            )
+            return False
+
+        # Gate 5: A6 anchor consonance (using body axiom)
+        if body_axiom and body_axiom != "A0":
+            axiom_ratio = AXIOM_RATIOS.get(body_axiom, 1.0)
+            consonance_with_anchor = _consonance(axiom_ratio, A6_RATIO)
+            if consonance_with_anchor < CONSONANCE_WITH_ANCHOR_THRESHOLD:
+                logger.info(
+                    "D15 kaya gate 5 FAIL: %s consonance with A6 anchor %.3f < %.3f",
+                    body_axiom, consonance_with_anchor, CONSONANCE_WITH_ANCHOR_THRESHOLD,
+                )
+                return False
+        else:
+            consonance_with_anchor = 1.0  # A0 exempt or no axiom
+
+        # ═══ KAYA GATES PASSED — D15 FIRES ═══
+        converged_axiom = body_axiom or "A6"
+        logger.info(
+            "D15 KAYA GATES PASSED: axiom=%s mind_coh=%.3f body_coh=%.3f anchor_cons=%.3f",
+            converged_axiom, mind_coherence, body_coherence, consonance_with_anchor,
+        )
+        self._fire_count += 1
+
+        broadcast = self._build_broadcast(
+            axiom=converged_axiom,
+            mind_heartbeat=mind_heartbeat,
+            body_cycle=body_cycle,
+            body_coherence=body_coherence,
+            body_approval=body_approval,
+            consonance_with_anchor=consonance_with_anchor,
+            parliament_result=parliament_result,
+        )
+
+        s3_key = self._push_to_world(broadcast)
+        hub_entry_id = self._admit_to_hub(broadcast, s3_key)
+
+        self._fire_log.append({
+            "type": "D15_KAYA_CONVERGENCE",
+            "broadcast_id": broadcast["broadcast_id"],
+            "axiom": converged_axiom,
+            "body_cycle": body_cycle,
+            "s3_key": s3_key,
+            "hub_entry_id": hub_entry_id,
+            "timestamp": broadcast["timestamp"],
+        })
+
+        logger.info(
+            "D15 KAYA CONVERGENCE FIRED: axiom=%s MIND_coh=%.3f anchor_cons=%.3f key=%s",
+            converged_axiom, mind_coherence, consonance_with_anchor,
+            s3_key or "local-only",
+        )
+
+        return True
+
     def _build_broadcast(
         self,
         axiom: str,

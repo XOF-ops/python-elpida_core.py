@@ -80,6 +80,7 @@ HF_SYSTEM_TO_RHYTHM = {
     "audit": "ANALYSIS",
     "scanner": "ACTION",
     "governance": "SYNTHESIS",
+    "kaya": "SYNTHESIS",
 }
 
 # Rhythm → domain IDs active (from elpida_domains.json)
@@ -283,6 +284,7 @@ class InputBuffer:
             "audit": [],
             "scanner": [],
             "governance": [],
+            "kaya": [],
         }
         self._max = max_per_system
 
@@ -2225,6 +2227,17 @@ class ParliamentCycleEngine:
                 body_approval=body_approval,
                 parliament_result=result,
             )
+            # If normal gate failed but Kaya events are pending,
+            # try the relaxed Kaya gate (skips MIND axiom + BODY approval).
+            if not fired and self.input_buffer.counts().get("kaya", 0) > 0:
+                fired = gate.check_and_fire_kaya(
+                    mind_heartbeat=self._mind_heartbeat,
+                    body_cycle=self.cycle_count,
+                    body_axiom=body_axiom,
+                    body_coherence=self.coherence,
+                    body_approval=body_approval,
+                    parliament_result=result,
+                )
             if fired:
                 self.d15_broadcast_count += 1
                 self.d15_last_broadcast_cycle = self.cycle_count
