@@ -1299,23 +1299,30 @@ class S3Bridge:
         all_items: List[Dict] = []
         for prefix, layer in [("synthesis/", "MIND"), ("d15/", "BODY")]:
             try:
+                # List ALL keys first (cheap), then sort by key descending
+                # (ISO-dated keys sort chronologically) and read only the
+                # newest ones.  The old code used MaxItems which returned
+                # the *oldest* N entries because S3 lists lexicographically.
+                keys: List[str] = []
                 paginator = s3.get_paginator("list_objects_v2")
                 for page in paginator.paginate(
                     Bucket=BUCKET_WORLD, Prefix=prefix,
-                    PaginationConfig={"MaxItems": limit * 2},
                 ):
                     for obj in page.get("Contents", []):
                         key = obj["Key"]
-                        if not key.endswith(".json") or key.endswith(".jsonl"):
-                            continue
-                        try:
-                            raw = s3.get_object(Bucket=BUCKET_WORLD, Key=key)
-                            entry = json.loads(raw["Body"].read().decode("utf-8"))
-                            entry["_s3_key"] = key
-                            entry["_layer"] = layer
-                            all_items.append(entry)
-                        except Exception:
-                            pass
+                        if key.endswith(".json") and not key.endswith(".jsonl"):
+                            keys.append(key)
+                # Sort descending = newest first, take only what we need
+                keys.sort(reverse=True)
+                for key in keys[: limit * 2]:
+                    try:
+                        raw = s3.get_object(Bucket=BUCKET_WORLD, Key=key)
+                        entry = json.loads(raw["Body"].read().decode("utf-8"))
+                        entry["_s3_key"] = key
+                        entry["_layer"] = layer
+                        all_items.append(entry)
+                    except Exception:
+                        pass
             except Exception as e:
                 logger.warning("Broadcast collect [%s] failed: %s", prefix, e)
 
