@@ -1342,7 +1342,7 @@ class S3Bridge:
         if not s3:
             return False
 
-        broadcasts = self._collect_all_broadcasts(limit=20)
+        broadcasts = self._collect_all_broadcasts(limit=200)
         mind_count = sum(1 for b in broadcasts if b.get("_layer") == "MIND")
         body_count = sum(1 for b in broadcasts if b.get("_layer") == "BODY")
         total = len(broadcasts)
@@ -1351,6 +1351,7 @@ class S3Bridge:
         for b in broadcasts:
             btype  = b.get("type", "UNKNOWN")
             s3_key = b.get("_s3_key", "")
+            layer  = b.get("_layer", "BODY").lower()
             s3_url = (
                 f"https://{BUCKET_WORLD}.s3.{REGION_WORLD}.amazonaws.com/{s3_key}"
             )
@@ -1387,7 +1388,7 @@ class S3Bridge:
 
             body_safe = body_text.replace("<", "&lt;").replace(">", "&gt;")
             cards.append(
-                f'    <div class="{card_class}">\n'
+                f'    <div class="{card_class}" data-layer="{layer}">\n'
                 f'        <div class="broadcast-type">{type_label}</div>\n'
                 f'        <div class="broadcast-time">{meta_line}</div>\n'
                 f'        <div class="broadcast-body">{body_safe}</div>\n'
@@ -1418,6 +1419,12 @@ class S3Bridge:
         .stat {{ background: var(--card-bg); padding: 1rem; border-radius: 8px; min-width: 140px; }}
         .stat-val {{ font-size: 1.5rem; color: var(--accent); }}
         .stat-label {{ color: var(--dim); font-size: 0.8rem; }}
+        .tabs {{ display: flex; gap: 0; margin-bottom: 1.5rem; border-bottom: 1px solid #27272a; }}
+        .tab {{ padding: 0.6rem 1.2rem; cursor: pointer; color: var(--dim); font-size: 0.85rem; font-family: inherit; background: none; border: none; border-bottom: 2px solid transparent; transition: all 0.2s; }}
+        .tab:hover {{ color: var(--fg); }}
+        .tab.active {{ color: var(--accent); border-bottom-color: var(--accent); }}
+        .tab.active[data-tab="body"] {{ color: var(--parliament); border-bottom-color: var(--parliament); }}
+        .tab .tab-count {{ font-size: 0.7rem; opacity: 0.6; margin-left: 0.3rem; }}
         .broadcast {{ background: var(--card-bg); border-radius: 8px; padding: 1.2rem; margin-bottom: 1rem; border: 1px solid #27272a; }}
         .broadcast:hover {{ border-color: var(--accent); }}
         .broadcast-parliament {{ border-left: 3px solid var(--parliament); }}
@@ -1429,7 +1436,11 @@ class S3Bridge:
         .broadcast-body {{ margin-top: 0.8rem; line-height: 1.6; font-size: 0.9rem; }}
         .criteria {{ margin-top: 0.6rem; font-size: 0.75rem; color: var(--dim); }}
         .criteria-met {{ color: var(--accent); font-weight: bold; }}
-        .section-title {{ font-size: 1.1rem; color: var(--accent); margin: 2rem 0 1rem 0; border-bottom: 1px solid #27272a; padding-bottom: 0.5rem; }}
+        .section-title {{ font-size: 1.1rem; color: var(--accent); margin: 2rem 0 0.5rem 0; }}
+        .load-more {{ display: block; width: 100%; padding: 0.8rem; margin: 1.5rem 0; background: var(--card-bg); border: 1px solid #27272a; color: var(--dim); font-family: inherit; font-size: 0.85rem; cursor: pointer; border-radius: 8px; text-align: center; transition: all 0.2s; }}
+        .load-more:hover {{ border-color: var(--accent); color: var(--accent); }}
+        .load-more.hidden {{ display: none; }}
+        .empty-state {{ color: var(--dim); font-style: italic; padding: 2rem; text-align: center; }}
         .footer {{ margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #27272a; color: var(--dim); font-size: 0.8rem; text-align: center; }}
         a {{ color: var(--accent); text-decoration: none; }}
         a:hover {{ text-decoration: underline; }}
@@ -1460,9 +1471,18 @@ class S3Bridge:
         </div>
     </div>
 
-    <div class="section-title">Recent Broadcasts</div>
+    <div class="section-title">Broadcasts</div>
+    <div class="tabs">
+        <button class="tab active" data-tab="all" onclick="filterTab('all')">All <span class="tab-count">({total})</span></button>
+        <button class="tab" data-tab="mind" onclick="filterTab('mind')">MIND <span class="tab-count">({mind_count})</span></button>
+        <button class="tab" data-tab="body" onclick="filterTab('body')">Parliament <span class="tab-count">({body_count})</span></button>
+    </div>
 
+    <div id="broadcasts">
 {cards_html}
+    </div>
+    <button class="load-more" id="loadMore" onclick="showMore()">Show older broadcasts &darr;</button>
+    <div class="empty-state hidden" id="emptyState">No broadcasts match this filter.</div>
 
     <div class="footer">
         <p><strong>What is Domain 15?</strong></p>
@@ -1477,6 +1497,55 @@ class S3Bridge:
             Bucket: s3://elpida-external-interfaces (eu-north-1)
         </p>
     </div>
+
+    <script>
+        const PAGE_SIZE = 15;
+        let shown = PAGE_SIZE;
+        let activeTab = 'all';
+
+        function getCards() {{
+            return Array.from(document.querySelectorAll('#broadcasts .broadcast'));
+        }}
+
+        function filterTab(tab) {{
+            activeTab = tab;
+            shown = PAGE_SIZE;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelector('[data-tab="' + tab + '"]').classList.add('active');
+            applyView();
+        }}
+
+        function applyView() {{
+            const cards = getCards();
+            let visible = 0;
+            let totalMatch = 0;
+            cards.forEach(c => {{
+                const layer = c.getAttribute('data-layer');
+                const matches = (activeTab === 'all' || layer === activeTab);
+                if (matches) {{
+                    totalMatch++;
+                    if (totalMatch <= shown) {{
+                        c.style.display = '';
+                        visible++;
+                    }} else {{
+                        c.style.display = 'none';
+                    }}
+                }} else {{
+                    c.style.display = 'none';
+                }}
+            }});
+            document.getElementById('loadMore').classList.toggle('hidden', visible >= totalMatch);
+            document.getElementById('emptyState').classList.toggle('hidden', totalMatch > 0);
+        }}
+
+        function showMore() {{
+            shown += PAGE_SIZE;
+            applyView();
+        }}
+
+        // Initial render — show first page
+        applyView();
+    </script>
 </body>
 </html>"""
 
