@@ -494,29 +494,13 @@ class S3Bridge:
         with open(LOCAL_MIND_CACHE, "a") as f:
             f.write(json.dumps(merge_entry) + "\n")
 
-        # Push updated file to MIND bucket
-        s3 = self._get_s3(REGION_MIND)
-        if s3:
-            try:
-                local_lines = self._count_lines(LOCAL_MIND_CACHE)
-                s3.upload_file(
-                    str(LOCAL_MIND_CACHE),
-                    BUCKET_MIND,
-                    MIND_MEMORY_KEY,
-                    ExtraArgs={
-                        "Metadata": {
-                            "line_count": str(local_lines),
-                            "upload_timestamp": datetime.now(timezone.utc).isoformat(),
-                            "source": "hf_feedback_merge",
-                        }
-                    },
-                )
-                logger.info(
-                    "BODY→MIND merge: %d entries merged, pushed to s3://%s/%s (%d total)",
-                    len(feedback_entries), BUCKET_MIND, MIND_MEMORY_KEY, local_lines,
-                )
-            except Exception as e:
-                logger.error("MIND push after merge failed: %s", e)
+        # Safe append: download latest S3 → append → upload (no stale-copy stomp)
+        success = self._safe_append_to_mind([merge_entry], "hf_feedback_merge")
+        if success:
+            logger.info(
+                "BODY→MIND merge: %d feedback entries merged via safe append",
+                len(feedback_entries),
+            )
 
         return merge_entry
 
@@ -1600,6 +1584,76 @@ class S3Bridge:
 
         return signature
 
+    def _safe_append_to_mind(self, new_entries: List[Dict[str, Any]], source: str):
+        """
+        Safely append entries to MIND S3 without overwriting Fargate data.
+
+        Downloads the CURRENT S3 version, appends new entries, then uploads.
+        This prevents the BODY from stomping over MIND data that was pushed
+        by Fargate between the BODY's last pull_mind() and this merge.
+
+        Also updates the local cache to stay in sync.
+        """
+        s3 = self._get_s3(REGION_MIND)
+        if not s3:
+            logger.warning("_safe_append_to_mind: no S3 client — entries written locally only")
+            return False
+
+        import tempfile
+        tmp_path = None
+        try:
+            # 1. Download the CURRENT S3 file to a temp location
+            tmp_fd, tmp_path = tempfile.mkstemp(suffix=".jsonl")
+            os.close(tmp_fd)
+            try:
+                s3.download_file(BUCKET_MIND, MIND_MEMORY_KEY, tmp_path)
+            except ClientError as e:
+                if e.response["Error"]["Code"] in ("404", "NoSuchKey"):
+                    # No file yet — start fresh
+                    with open(tmp_path, "w") as f:
+                        pass
+                else:
+                    raise
+
+            # 2. Append new entries
+            with open(tmp_path, "a") as f:
+                for entry in new_entries:
+                    f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+            # 3. Count lines for metadata
+            with open(tmp_path) as f:
+                line_count = sum(1 for line in f if line.strip())
+
+            # 4. Upload merged file
+            s3.upload_file(
+                tmp_path, BUCKET_MIND, MIND_MEMORY_KEY,
+                ExtraArgs={
+                    "Metadata": {
+                        "line_count": str(line_count),
+                        "upload_timestamp": datetime.now(timezone.utc).isoformat(),
+                        "source": source,
+                    }
+                },
+            )
+
+            # 5. Update local cache to match what we just uploaded
+            import shutil
+            LOCAL_MIND_CACHE.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(tmp_path, str(LOCAL_MIND_CACHE))
+
+            logger.info(
+                "%s: appended %d entries → s3://%s/%s (%d total)",
+                source, len(new_entries), BUCKET_MIND, MIND_MEMORY_KEY, line_count,
+            )
+            return True
+
+        except Exception as e:
+            logger.error("_safe_append_to_mind failed (%s): %s", source, e)
+            return False
+        finally:
+            if tmp_path and os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+
     def _merge_d15_to_mind(self, broadcast_entry: Dict[str, Any]):
         """
         Merge D15 broadcast summary back into MIND bucket.
@@ -1625,19 +1679,8 @@ class S3Bridge:
         with open(LOCAL_MIND_CACHE, "a") as f:
             f.write(json.dumps(merge_entry, ensure_ascii=False) + "\n")
 
-        # Push to MIND bucket
-        s3 = self._get_s3(REGION_MIND)
-        if s3:
-            try:
-                s3.upload_file(
-                    str(LOCAL_MIND_CACHE), BUCKET_MIND, MIND_MEMORY_KEY,
-                )
-                logger.info(
-                    "D15→MIND merge: broadcast %s recorded in evolution memory",
-                    broadcast_entry.get("broadcast_id", "?"),
-                )
-            except Exception as e:
-                logger.warning("D15→MIND merge failed: %s", e)
+        # Safe append: download latest S3 → append → upload (no stale-copy stomp)
+        self._safe_append_to_mind([merge_entry], "d15_broadcast_feedback")
 
     # ═══════════════════════════════════════════════════════════════
     # Full Bridge Status
