@@ -45,46 +45,6 @@ _S3_WATERMARK_KEY = "x/x_bridge_watermark.json"
 # ── Tweet limits ──────────────────────────────────────────────────────────────
 MAX_TWEET_LENGTH = 280
 
-# ── D15 tension transcript extraction ─────────────────────────────────────────
-# Each bullet looks like: • [A0↔A1]: <synthesis text>
-# Stop at: next bullet, double-newline (before "Parliament reasoning:"), or end
-_TENSION_BULLET_RE = re.compile(
-    r"•\s*\[.*?\]:\s*(.+?)(?=\n\s*•|\n\n|\Z)", re.DOTALL
-)
-
-
-def _extract_d15_synthesis(insight: str) -> str:
-    """Pull the richest synthesis from a tension transcript.
-
-    Returns the longest individual tension synthesis that contains
-    a Third Way or substantive resolution, stripping the system preamble.
-    Falls back to the original insight text (sans preamble) if no
-    bullet points are found.
-    """
-    if not insight:
-        return ""
-
-    # Try to extract individual tension syntheses
-    hits = _TENSION_BULLET_RE.findall(insight)
-    if hits:
-        # Filter out generic fallback tensions
-        _GENERIC = "both perspectives must be held, not resolved"
-        substantive = [h.strip() for h in hits if _GENERIC not in h]
-        pool = substantive or [h.strip() for h in hits]
-        # Pick the longest synthesis — it's usually the most substantive
-        best = max(pool, key=len)
-        # Remove leading "Tension between Ax and Ay — " prefix if present
-        best = re.sub(
-            r"^Tension between A\d+ and A\d+\s*[—–-]\s*", "", best
-        )
-        return best
-
-    # No bullets? Strip preamble and return raw text
-    stripped = re.sub(
-        r"^Parliament tensions this cycle:\s*", "", insight
-    ).strip()
-    return stripped or insight
-
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # XBridge — harvest, govern, store, post
@@ -161,62 +121,78 @@ class XBridge:
     # ── D15 harvester ──────────────────────────────────────────────────────────
 
     def _harvest_d15(self) -> List[Dict[str, Any]]:
-        """Read D15 Hub entries newer than our watermark."""
+        """Read D15 broadcast files from S3 WORLD bucket.
+
+        These broadcasts contain LLM-synthesized d15_output text —
+        the rich, tweet-worthy content written by Claude during the
+        D15 convergence gate pipeline.
+        """
         candidates = []
         try:
             d15_watermark = self._watermark.get("d15_last_timestamp", "")
 
-            hub = self._get_d15_hub()
-            if hub is None:
-                return []
+            import boto3
+            bucket = os.environ.get(
+                "AWS_S3_BUCKET_WORLD", "elpida-external-interfaces",
+            )
+            region = os.environ.get("AWS_S3_REGION_WORLD", "eu-north-1")
+            client = boto3.client("s3", region_name=region)
 
-            entries = hub.read_since(watermark=d15_watermark, limit=20)
-            for entry in entries:
-                content = entry.get("content", {})
-                governance = entry.get("governance", {})
-                provenance = entry.get("provenance", {})
+            resp = client.list_objects_v2(
+                Bucket=bucket,
+                Prefix="d15/broadcast_",
+                MaxKeys=200,
+            )
 
-                # Build tweet text from D15 convergence data
-                axiom = content.get("converged_axiom", "?")
-                axiom_name = content.get("axiom_name", "")
-                insight = content.get("insight", "")
-                consonance = governance.get("convergence_consonance", 0.0)
+            # Sort by key (timestamp-ordered filenames)
+            keys = sorted(
+                (o["Key"] for o in resp.get("Contents", [])),
+                reverse=False,
+            )
 
-                # Skip low-consonance entries — only genuine convergences
-                if consonance < 0.60:
+            for key in keys:
+                obj = client.get_object(Bucket=bucket, Key=key)
+                broadcast = json.loads(obj["Body"].read().decode())
+
+                ts = broadcast.get("timestamp", "")
+                if ts and ts <= d15_watermark:
                     continue
+
+                d15_output = broadcast.get("d15_output", "")
+                if not d15_output:
+                    continue
+
+                # Skip raw tension transcripts (LLM synthesis failed)
+                if d15_output.startswith("Parliament tensions"):
+                    continue
+
+                axioms = broadcast.get("axioms_in_tension", [])
+                axiom = axioms[0] if axioms else "?"
+                governance = broadcast.get("governance", {})
+                parliament = governance.get("parliament", {})
+                bid = broadcast.get("broadcast_id", "")
 
                 tweet_text = self._format_d15_tweet(
                     axiom=axiom,
-                    axiom_name=axiom_name,
-                    insight=insight,
-                    consonance=consonance,
+                    d15_output=d15_output,
                 )
 
-                candidate_id = self._candidate_id(
-                    f"d15:{entry.get('entry_id', '')}",
-                )
+                candidate_id = self._candidate_id(f"d15:{bid}")
 
                 candidates.append({
                     "candidate_id": candidate_id,
-                    "source": "d15_convergence",
+                    "source": "d15_broadcast",
                     "tweet_text": tweet_text,
                     "axiom": axiom,
-                    "axiom_name": axiom_name,
-                    "body_approval": governance.get("body_approval_rate", 0.0),
-                    "mind_coherence": governance.get("mind_coherence", 0.0),
-                    "consonance": consonance,
-                    "body_cycle": provenance.get("body_cycle"),
-                    "mind_cycle": provenance.get("mind_cycle"),
-                    "d15_entry_id": entry.get("entry_id", ""),
+                    "body_approval": parliament.get("approval_rate", 0.0),
+                    "broadcast_id": bid,
                     "harvested_at": datetime.now(timezone.utc).isoformat(),
                     "status": "pending_review",
                 })
 
-                # Update watermark to this entry's timestamp
-                entry_ts = entry.get("timestamp", "")
-                if entry_ts > d15_watermark:
-                    self._watermark["d15_last_timestamp"] = entry_ts
+                # Update watermark
+                if ts > d15_watermark:
+                    self._watermark["d15_last_timestamp"] = ts
 
         except Exception as e:
             logger.warning("[XBridge] D15 harvest failed: %s", e)
@@ -279,36 +255,30 @@ class XBridge:
     @staticmethod
     def _format_d15_tweet(
         axiom: str,
-        axiom_name: str,
-        insight: str,
-        consonance: float,
+        d15_output: str,
     ) -> str:
-        """Format a D15 convergence event as a tweet.
+        """Format a D15 broadcast as a tweet.
 
-        The insight field often contains the raw tension transcript:
-            Parliament tensions this cycle:
-              • [A0↔A1]: Description — synthesis...
-        We extract the best synthesis text and present that instead.
+        The d15_output is LLM-synthesized text from the convergence gate
+        pipeline — already polished, human-readable prose. We just need
+        to trim it to 280 chars.
         """
-        # ── Extract meaningful content from tension transcript ─────────
-        body = _extract_d15_synthesis(insight)
+        # Strip the "**D15 WORLD BROADCAST**" header if present
+        body = re.sub(
+            r"^\*{0,2}D15 WORLD BROADCAST\*{0,2}\s*", "", d15_output,
+        ).strip()
 
-        # ── Header / footer ────────────────────────────────────────────
-        header = f"Convergence: {axiom}"
-        if axiom_name:
-            header += f" — {axiom_name}"
+        if len(body) <= MAX_TWEET_LENGTH:
+            return body
 
-        footer = f"\n\n[consonance: {consonance:.2f}]"
-        body_budget = MAX_TWEET_LENGTH - len(header) - len(footer) - 2  # 2 for \n\n
-        if body_budget < 20:
-            body_budget = 20
-
-        full_len = len(body)
-        body = body[:body_budget]
-        if full_len > body_budget:
-            body = body[:body_budget - 1] + "\u2026"
-
-        return f"{header}\n\n{body}{footer}"
+        # Truncate at the last sentence boundary that fits
+        truncated = body[:MAX_TWEET_LENGTH - 1]
+        # Try to break at a sentence ending
+        for sep in (". ", ".\n", "? ", "! "):
+            last = truncated.rfind(sep)
+            if last > MAX_TWEET_LENGTH // 2:
+                return truncated[: last + 1].strip()
+        return truncated.rstrip() + "\u2026"
 
     @staticmethod
     def _format_emission_tweet(
@@ -537,25 +507,6 @@ class XBridge:
         except Exception as e:
             logger.error("[XBridge] Tweepy init failed: %s", e)
             return None
-
-    # ── D15 Hub access ─────────────────────────────────────────────────────────
-
-    def _get_d15_hub(self) -> Optional[Any]:
-        """Get D15Hub instance via engine or direct construction."""
-        if self._engine is not None:
-            gate = getattr(self._engine, "_convergence_gate", None)
-            if gate is not None:
-                return getattr(gate, "_hub", None)
-
-        # Direct construction fallback
-        try:
-            from elpidaapp.d15_hub import D15Hub
-            s3 = self._get_s3_bridge()
-            if s3:
-                return D15Hub(s3_bridge=s3)
-        except Exception:
-            pass
-        return None
 
     def _get_s3_bridge(self):
         """Get S3Bridge instance."""
