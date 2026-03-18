@@ -500,6 +500,9 @@ class ParliamentCycleEngine:
         # Constitutional evolution store (lazily loaded from world_feed)
         self._constitutional_store = None
 
+        # X Bridge — Phase 1 text-only X posting
+        self._x_bridge = None
+
     # ------------------------------------------------------------------
     # Lazy loaders
     # ------------------------------------------------------------------
@@ -531,6 +534,15 @@ class ParliamentCycleEngine:
             except Exception as e:
                 logger.warning("ConvergenceGate unavailable: %s", e)
         return self._convergence_gate
+
+    def _get_x_bridge(self):
+        if self._x_bridge is None:
+            try:
+                from elpidaapp.x_bridge import XBridge
+                self._x_bridge = XBridge(engine=self)
+            except Exception as e:
+                logger.debug("XBridge unavailable: %s", e)
+        return self._x_bridge
 
     def _get_constitutional_store(self):
         if self._constitutional_store is None:
@@ -1217,6 +1229,20 @@ class ParliamentCycleEngine:
                 logger.info("Periodic world index regen at cycle %d", self.cycle_count)
             except Exception as e:
                 logger.debug("Periodic index regen skipped: %s", e)
+
+        # 10c. X Bridge — harvest D15 + emission candidates every 50 cycles
+        if self.cycle_count % 50 == 0 and self.cycle_count > 0:
+            xb = self._get_x_bridge()
+            if xb:
+                try:
+                    stored = xb.harvest_candidates()
+                    if stored:
+                        logger.info(
+                            "XBridge: %d candidate(s) stored at cycle %d",
+                            len(stored), self.cycle_count,
+                        )
+                except Exception as e:
+                    logger.debug("XBridge harvest skipped: %s", e)
 
         # 10b. CrystallizationHub — stagnation-to-axiom Synod
         #      Triggered when D15 stagnation flag is set OR kaya threshold crossed.
