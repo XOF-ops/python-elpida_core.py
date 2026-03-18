@@ -25,6 +25,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -43,6 +44,41 @@ _S3_WATERMARK_KEY = "x/x_bridge_watermark.json"
 
 # ── Tweet limits ──────────────────────────────────────────────────────────────
 MAX_TWEET_LENGTH = 280
+
+# ── D15 tension transcript extraction ─────────────────────────────────────────
+# Each bullet looks like: • [A0↔A1]: <synthesis text>
+_TENSION_BULLET_RE = re.compile(
+    r"•\s*\[.*?\]:\s*(.+?)(?=\n\s*•|\Z)", re.DOTALL
+)
+
+
+def _extract_d15_synthesis(insight: str) -> str:
+    """Pull the richest synthesis from a tension transcript.
+
+    Returns the longest individual tension synthesis that contains
+    a Third Way or substantive resolution, stripping the system preamble.
+    Falls back to the original insight text (sans preamble) if no
+    bullet points are found.
+    """
+    if not insight:
+        return ""
+
+    # Try to extract individual tension syntheses
+    hits = _TENSION_BULLET_RE.findall(insight)
+    if hits:
+        # Pick the longest synthesis — it's usually the most substantive
+        best = max(hits, key=len).strip()
+        # Remove leading "Tension between Ax and Ay — " prefix if present
+        best = re.sub(
+            r"^Tension between A\d+ and A\d+\s*[—–-]\s*", "", best
+        )
+        return best
+
+    # No bullets? Strip preamble and return raw text
+    stripped = re.sub(
+        r"^Parliament tensions this cycle:\s*", "", insight
+    ).strip()
+    return stripped or insight
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -92,7 +128,14 @@ class XBridge:
             return []
 
         stored = []
+        seen_texts: set[str] = set()
         for candidate in candidates:
+            # Deduplicate identical tweet text within this batch
+            tweet_text = candidate.get("tweet_text", "")
+            if tweet_text in seen_texts:
+                continue
+            seen_texts.add(tweet_text)
+
             # Governance gate — A4 Safety veto
             if not self._governance_gate(candidate):
                 logger.info(
@@ -133,6 +176,10 @@ class XBridge:
                 axiom_name = content.get("axiom_name", "")
                 insight = content.get("insight", "")
                 consonance = governance.get("convergence_consonance", 0.0)
+
+                # Skip low-consonance entries — only genuine convergences
+                if consonance < 0.60:
+                    continue
 
                 tweet_text = self._format_d15_tweet(
                     axiom=axiom,
@@ -182,6 +229,11 @@ class XBridge:
 
             for emission in emissions:
                 axiom_id = emission.get("axiom_id", "?")
+
+                # Skip internal fork governance records — not tweet material
+                if axiom_id.startswith("FORK_"):
+                    continue
+
                 tension = emission.get("tension", "")
                 synthesis = emission.get("synthesis", "")
                 nodes = emission.get("nodes", [])
@@ -226,21 +278,28 @@ class XBridge:
         insight: str,
         consonance: float,
     ) -> str:
-        """Format a D15 convergence event as a tweet."""
-        # Header: axiom + consonance
+        """Format a D15 convergence event as a tweet.
+
+        The insight field often contains the raw tension transcript:
+            Parliament tensions this cycle:
+              • [A0↔A1]: Description — synthesis...
+        We extract the best synthesis text and present that instead.
+        """
+        # ── Extract meaningful content from tension transcript ─────────
+        body = _extract_d15_synthesis(insight)
+
+        # ── Header / footer ────────────────────────────────────────────
         header = f"Convergence: {axiom}"
         if axiom_name:
             header += f" — {axiom_name}"
 
-        # Body: insight (truncated to fit)
-        # Reserve space for header + footer
         footer = f"\n\n[consonance: {consonance:.2f}]"
         body_budget = MAX_TWEET_LENGTH - len(header) - len(footer) - 2  # 2 for \n\n
         if body_budget < 20:
             body_budget = 20
 
-        body = insight[:body_budget]
-        if len(insight) > body_budget:
+        body = body[:body_budget]
+        if len(body) < len(_extract_d15_synthesis(insight)):
             body = body[:body_budget - 1] + "\u2026"
 
         return f"{header}\n\n{body}{footer}"
