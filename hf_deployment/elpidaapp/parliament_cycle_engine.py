@@ -1950,9 +1950,9 @@ class ParliamentCycleEngine:
                 for da in drift.get("drifting_axioms", [])[:3]:
                     print(
                         f"       P055 DRIFT: {da.get('axiom', '?')} — "
-                        f"espoused={da.get('espoused', 0):.3f} "
-                        f"lived={da.get('lived', 0):.3f} "
-                        f"delta={da.get('delta', 0):+.3f}"
+                        f"espoused={da.get('espoused_weight', 0):.3f} "
+                        f"lived={da.get('lived_weight', 0):.3f} "
+                        f"delta={da.get('drift', 0):+.3f}"
                     )
             elif health == "WARNING":
                 print(

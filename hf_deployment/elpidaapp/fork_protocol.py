@@ -75,6 +75,11 @@ FORK_EVIDENCE_WINDOW = 100
 # Cool-down — minimum cycles between fork declarations for same axiom
 FORK_COOLDOWN_CYCLES = 200
 
+# Minimum evidence pieces to create a fork declaration.
+# Parliament consensus (9/14 domains): ≥3 establishes a stable pattern.
+# Prevents false positives on constitutionally rare axioms (A12-A14).
+FORK_MIN_EVIDENCE = 3
+
 # Maximum active fork declarations before requiring resolution
 MAX_ACTIVE_FORKS = 3
 
@@ -289,6 +294,9 @@ class ForkProtocol:
                         new_declarations.append(decl)
 
         # Source 2: P055 Cultural Drift → axiom meaning has shifted
+        # Distinguish DRIFT (axiom changed behavior) from
+        # UNDERREPRESENTATION (axiom is constitutionally rare).
+        # Only DRIFT triggers fork declarations — rarity is not violation.
         if pathology_report:
             drift = pathology_report.get("P055_cultural_drift", {})
             drift_kl = drift.get("kl_divergence", 0)
@@ -296,11 +304,24 @@ class ForkProtocol:
                 drifting = drift.get("drifting_axioms", [])
                 for da in drifting:
                     axiom = da.get("axiom", "")
-                    delta = abs(da.get("delta", 0))
+                    direction = da.get("direction", "")
+                    # Skip constitutionally rare axioms: if an axiom is
+                    # UNDER-REPRESENTED with near-zero lived weight, it
+                    # hasn't drifted — it was never dominant. Different
+                    # pathology, different response.
+                    if (direction == "UNDER-REPRESENTED"
+                            and da.get("lived_weight", 0) < 0.02):
+                        logger.debug(
+                            "Fork: %s skipped — constitutional rarity "
+                            "(lived=%.4f), not drift",
+                            axiom, da.get("lived_weight", 0),
+                        )
+                        continue
+                    per_axiom_drift = abs(da.get("drift", 0))
                     decl = self._try_declare(
                         axiom=axiom,
                         violation_type="DRIFT",
-                        severity=min(drift_kl + delta, 1.0),
+                        severity=min(drift_kl + per_axiom_drift, 1.0),
                         trigger_source="P055",
                         current_cycle=current_cycle,
                     )
@@ -379,6 +400,16 @@ class ForkProtocol:
 
         # Collect evidence from recent cycles
         evidence = self._collect_evidence(axiom, current_cycle)
+
+        # Evidence gate: require ≥FORK_MIN_EVIDENCE pieces before
+        # creating a declaration. Prevents false positives on axioms
+        # that are constitutionally rare (A12-A14 with evidence=0).
+        if len(evidence) < FORK_MIN_EVIDENCE:
+            logger.info(
+                "Fork: %s evidence=%d < %d minimum — suppressed",
+                axiom, len(evidence), FORK_MIN_EVIDENCE,
+            )
+            return None
 
         decl = ForkDeclaration(
             axiom=axiom,
