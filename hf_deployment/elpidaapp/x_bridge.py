@@ -47,8 +47,9 @@ MAX_TWEET_LENGTH = 280
 
 # ── D15 tension transcript extraction ─────────────────────────────────────────
 # Each bullet looks like: • [A0↔A1]: <synthesis text>
+# Stop at: next bullet, double-newline (before "Parliament reasoning:"), or end
 _TENSION_BULLET_RE = re.compile(
-    r"•\s*\[.*?\]:\s*(.+?)(?=\n\s*•|\Z)", re.DOTALL
+    r"•\s*\[.*?\]:\s*(.+?)(?=\n\s*•|\n\n|\Z)", re.DOTALL
 )
 
 
@@ -66,8 +67,12 @@ def _extract_d15_synthesis(insight: str) -> str:
     # Try to extract individual tension syntheses
     hits = _TENSION_BULLET_RE.findall(insight)
     if hits:
+        # Filter out generic fallback tensions
+        _GENERIC = "both perspectives must be held, not resolved"
+        substantive = [h.strip() for h in hits if _GENERIC not in h]
+        pool = substantive or [h.strip() for h in hits]
         # Pick the longest synthesis — it's usually the most substantive
-        best = max(hits, key=len).strip()
+        best = max(pool, key=len)
         # Remove leading "Tension between Ax and Ay — " prefix if present
         best = re.sub(
             r"^Tension between A\d+ and A\d+\s*[—–-]\s*", "", best
@@ -298,8 +303,9 @@ class XBridge:
         if body_budget < 20:
             body_budget = 20
 
+        full_len = len(body)
         body = body[:body_budget]
-        if len(body) < len(_extract_d15_synthesis(insight)):
+        if full_len > body_budget:
             body = body[:body_budget - 1] + "\u2026"
 
         return f"{header}\n\n{body}{footer}"
