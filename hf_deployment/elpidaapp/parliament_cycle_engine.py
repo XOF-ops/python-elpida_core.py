@@ -1223,9 +1223,9 @@ class ParliamentCycleEngine:
         # 10a. Periodic world index regeneration (every 100 cycles)
         #      Ensures the public index.html stays fresh even if D15
         #      convergence temporarily pauses.
-        if self.cycle_count % 100 == 0 and self._s3_bridge:
+        if self.cycle_count % 100 == 0 and self._get_s3():
             try:
-                self._s3_bridge._regenerate_world_index()
+                self._get_s3()._regenerate_world_index()
                 logger.info("Periodic world index regen at cycle %d", self.cycle_count)
             except Exception as e:
                 logger.debug("Periodic index regen skipped: %s", e)
