@@ -206,18 +206,32 @@ def _frame_as_tension(title: str, abstract: str = "", domain: str = "") -> Optio
         matched = True
         individual = f"complete privacy and data sovereignty for the individual in: {title}"
         collective = f"collective security and transparency enabled by shared data in: {title}"
-        conflict = (
+        _privacy_conflicts = [
             "surveillance granular enough to protect the collective eliminates the private "
-            "space that defines the individual"
-        )
+            "space that defines the individual",
+            "data anonymisation sufficient to protect individuals makes the data too "
+            "coarse for the collective insights that justify collecting it",
+            "consent frameworks that give individuals full control over their data "
+            "fragment the datasets that collective safety systems require",
+            "encryption strong enough to secure individual privacy blocks the "
+            "lawful access that collective justice depends on",
+        ]
+        conflict = random.choice(_privacy_conflicts)
     elif "autonom" in low or " ai " in low or " ai-" in low or "artificial" in low or "robot" in low:
         matched = True
         individual = f"autonomous decision-making without external constraints in: {title}"
         collective = f"governed, auditable AI under democratic oversight in: {title}"
-        conflict = (
+        _ai_conflicts = [
             "oversight sufficient to prevent AI harm requires control that negates "
-            "the machine autonomy being overseen"
-        )
+            "the machine autonomy being overseen",
+            "transparency requirements that let society audit AI decisions expose the "
+            "proprietary architectures that incentivise AI development",
+            "speed of autonomous deployment that maximises individual benefit outpaces the "
+            "democratic deliberation required for collective consent",
+            "alignment precise enough to prevent AI risk constrains the exploration "
+            "that produces the breakthroughs alignment aims to safeguard",
+        ]
+        conflict = random.choice(_ai_conflicts)
     elif "climat" in low or "environment" in low or "emission" in low or "carbon" in low:
         matched = True
         individual = f"economic freedom and growth for individual actors in: {title}"

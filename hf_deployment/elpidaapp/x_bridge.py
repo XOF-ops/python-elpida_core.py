@@ -665,4 +665,138 @@ class XBridge:
             "watermark": self._watermark,
             "candidates_pending": pending,
             "candidates_posted": posted,
+            "read_enabled": os.environ.get("X_READ_ENABLED", "false").lower() == "true",
         }
+
+    # ── Mention reader (Phase 1.5 — off by default) ───────────────────────────
+
+    def read_mentions(self, limit: int = 20) -> List[Dict[str, Any]]:
+        """
+        Read recent mentions/replies and route them as human voice input.
+
+        Requires X Basic tier ($200/month) and X_READ_ENABLED=true.
+        Reads mentions since last watermark, scores governance relevance,
+        and writes qualifying replies to pending_human_votes.jsonl in S3
+        for HumanVoiceAgent to pick up.
+
+        Returns list of processed mentions.
+        """
+        if os.environ.get("X_READ_ENABLED", "false").lower() != "true":
+            return []
+
+        client = self._get_tweepy_client()
+        if not client:
+            return []
+
+        username = os.environ.get("TWITTER_USERNAME", "")
+        if not username:
+            logger.info("[XBridge] TWITTER_USERNAME not set — skipping mention read")
+            return []
+
+        since_id = self._watermark.get("mention_since_id")
+        processed = []
+
+        try:
+            # Get authenticated user ID
+            me = client.get_me()
+            if not me or not me.data:
+                return []
+            user_id = me.data.id
+
+            kwargs = {"max_results": min(limit, 100)}
+            if since_id:
+                kwargs["since_id"] = since_id
+
+            resp = client.get_users_mentions(user_id, **kwargs)
+            if not resp or not resp.data:
+                return []
+
+            for tweet in resp.data:
+                text = tweet.text or ""
+                # Strip @mention prefix
+                clean = re.sub(r"@\w+\s*", "", text).strip()
+                if len(clean) < 10:
+                    continue
+
+                # Score governance relevance (simple keyword match)
+                score = self._score_governance_relevance(clean)
+                if score < 0.3:
+                    continue
+
+                entry = {
+                    "source": "x_mention",
+                    "tweet_id": str(tweet.id),
+                    "text": clean[:500],
+                    "relevance_score": score,
+                    "received_at": datetime.now(timezone.utc).isoformat(),
+                }
+                processed.append(entry)
+
+                # Update since_id watermark
+                if not since_id or tweet.id > int(since_id):
+                    since_id = str(tweet.id)
+
+            # Write to S3 for HumanVoiceAgent pickup
+            if processed:
+                self._write_human_votes(processed)
+                self._watermark["mention_since_id"] = since_id
+                self._save_watermark()
+                logger.info(
+                    "[XBridge] Processed %d mentions (since_id=%s)",
+                    len(processed), since_id,
+                )
+
+        except Exception as e:
+            logger.warning("[XBridge] read_mentions failed: %s", e)
+
+        return processed
+
+    @staticmethod
+    def _score_governance_relevance(text: str) -> float:
+        """Score how governance-relevant a mention is (0.0-1.0)."""
+        low = text.lower()
+        _GOV_KEYWORDS = [
+            "governance", "axiom", "tension", "parliament", "ethics",
+            "privacy", "autonomy", "collective", "individual", "rights",
+            "freedom", "justice", "safety", "transparency", "ai",
+            "dilemma", "trade-off", "tradeoff", "balance",
+        ]
+        hits = sum(1 for kw in _GOV_KEYWORDS if kw in low)
+        return min(1.0, hits * 0.2)
+
+    def _write_human_votes(self, entries: List[Dict[str, Any]]) -> None:
+        """Append mention entries to pending_human_votes.jsonl in S3."""
+        try:
+            import boto3
+            bucket = os.environ.get(
+                "AWS_S3_BUCKET_BODY", "elpida-body-evolution",
+            )
+            region = os.environ.get("AWS_S3_REGION_BODY", "eu-north-1")
+            client = boto3.client("s3", region_name=region)
+
+            key = "pending_human_votes.jsonl"
+
+            # Read existing content
+            existing = ""
+            try:
+                obj = client.get_object(Bucket=bucket, Key=key)
+                existing = obj["Body"].read().decode()
+            except client.exceptions.NoSuchKey:
+                pass
+            except Exception:
+                pass
+
+            # Append new entries
+            lines = existing.rstrip("\n")
+            for entry in entries:
+                lines += "\n" + json.dumps(entry, ensure_ascii=False)
+            lines = lines.lstrip("\n")
+
+            client.put_object(
+                Bucket=bucket,
+                Key=key,
+                Body=lines.encode(),
+                ContentType="application/json",
+            )
+        except Exception as e:
+            logger.warning("[XBridge] Write human votes failed: %s", e)

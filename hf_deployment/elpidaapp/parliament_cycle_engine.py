@@ -1243,6 +1243,16 @@ class ParliamentCycleEngine:
                         )
                 except Exception as e:
                     logger.debug("XBridge harvest skipped: %s", e)
+                # Read mentions (off by default, requires X_READ_ENABLED=true)
+                try:
+                    mentions = xb.read_mentions()
+                    if mentions:
+                        logger.info(
+                            "XBridge: %d mention(s) ingested at cycle %d",
+                            len(mentions), self.cycle_count,
+                        )
+                except Exception as e:
+                    logger.debug("XBridge mention read skipped: %s", e)
 
         # 10b. CrystallizationHub — stagnation-to-axiom Synod
         #      Triggered when D15 stagnation flag is set OR kaya threshold crossed.

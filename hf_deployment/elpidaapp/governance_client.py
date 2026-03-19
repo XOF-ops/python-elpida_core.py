@@ -1477,13 +1477,22 @@ class GovernanceClient:
         friction = hb.get("friction_boost", {})
 
         # Also: if recursion_warning is True but friction_boost is empty,
-        # apply default friction boosts to the friction domains
+        # apply rhythm-aware friction boosts via Oracle modulation
         if hb.get("recursion_warning") and not friction:
+            rhythm = hb.get("current_rhythm", "ANALYSIS")
+            _rhythm_multipliers = {
+                "CONTEMPLATION": 1.2,
+                "ANALYSIS":      1.4,
+                "ACTION":        1.6,
+                "SYNTHESIS":     1.1,
+                "EMERGENCY":     1.8,
+            }
+            base = _rhythm_multipliers.get(rhythm, 1.4)
             friction = {
-                "3": 1.5,   # D3 Autonomy
-                "6": 1.5,   # D6 Coherence
-                "10": 1.5,  # D10 Paradox
-                "11": 1.5,  # D11 Emergence
+                "3": base,   # D3 Autonomy
+                "6": base,   # D6 Coherence
+                "10": base,  # D10 Paradox
+                "11": base,  # D11 Emergence
             }
 
         return friction
@@ -1922,7 +1931,14 @@ class GovernanceClient:
             Oracle advisory dict with diagnostics and recommendation.
         """
         from .oracle import create_oracle
-        oracle = create_oracle(log_path=log_path)
+        oracle = create_oracle(
+            log_path=log_path,
+            embedding_model=_EMBEDDING_MODEL if _USE_EMBEDDINGS else None,
+        )
+        # Feed MIND rhythm to Oracle for rhythm-aware friction
+        hb = self.pull_mind_heartbeat()
+        if hb:
+            oracle.update_mind_rhythm(hb)
         advisory = oracle.adjudicate(dual_horn_result)
 
         self._log(
