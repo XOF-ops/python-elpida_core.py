@@ -642,9 +642,9 @@ class ParliamentCycleEngine:
         # Weight boost = 80% of base weight (strong but not dominant).
         if (self._pso_advisory
                 and self.cycle_count - self._pso_last_cycle <= PSO_INFLUENCE_WINDOW):
-            pso_axiom = self._pso_advisory.get(
-                "recommendation", {}).get("dominant_axiom")
-            pso_fitness = self._pso_advisory.get("best_fitness", 0)
+            rec = self._pso_advisory.get("recommendation", {})
+            pso_axiom = rec.get("dominant_axiom")
+            pso_fitness = rec.get("fitness", 0)
             if pso_axiom and pso_fitness > 0.85:
                 for r in AXIOM_TO_RHYTHMS.get(pso_axiom, []):
                     if r in weights:
@@ -872,11 +872,11 @@ class ParliamentCycleEngine:
                 and self.cycle_count - self._pso_last_cycle <= PSO_INFLUENCE_WINDOW):
             rec = self._pso_advisory.get("recommendation", {})
             pso_axiom = rec.get("dominant_axiom")
-            pso_fitness = self._pso_advisory.get("best_fitness", 0)
+            pso_fitness = rec.get("fitness", 0)
             if pso_axiom and pso_fitness > 0.85:
                 action = (
                     f"[PSO ADVISORY: Axiom optimizer recommends {pso_axiom} "
-                    f"(fitness={pso_fitness:.4f}, topology={self._pso_advisory.get('topology_used', '?')}). "
+                    f"(fitness={pso_fitness:.4f}, topology={rec.get('topology', '?')}). "
                     f"Current dominant {self.last_dominant_axiom or '?'} may benefit from "
                     f"diversification toward {pso_axiom}.] "
                 ) + action
@@ -1070,7 +1070,7 @@ class ParliamentCycleEngine:
             "pso_active": bool(
                 self._pso_advisory
                 and self.cycle_count - self._pso_last_cycle <= PSO_INFLUENCE_WINDOW
-                and self._pso_advisory.get("best_fitness", 0) > 0.85
+                and self._pso_advisory.get("recommendation", {}).get("fitness", 0) > 0.85
             ),
             "audit_prescription": self._audit_prescription.get("target_axiom")
                 if self._audit_prescription
@@ -1776,9 +1776,9 @@ class ParliamentCycleEngine:
             logger.info(
                 "PSO advisory: dominant=%s fitness=%.4f topology=%s converged_iter=%s",
                 rec.get("dominant_axiom"),
-                advisory.get("best_fitness", 0),
-                advisory.get("topology_used"),
-                advisory.get("converged_at"),
+                rec.get("fitness", 0),
+                rec.get("topology"),
+                advisory.get("convergence", {}).get("converged_at"),
             )
         except Exception as e:
             logger.warning("PSO advisory failed: %s", e)

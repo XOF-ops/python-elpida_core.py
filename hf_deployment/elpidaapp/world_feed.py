@@ -845,6 +845,107 @@ class TheGuardianFeed:
 
 
 # ---------------------------------------------------------------------------
+# Reddit RSS Feed
+# ---------------------------------------------------------------------------
+
+class RedditRSSFeed:
+    """
+    Fetch Reddit RSS feeds from governance-relevant subreddits and
+    frame discussions as I-WE dilemmas. Uses public RSS (Atom XML)
+    which requires no authentication and zero cost.
+
+    Subreddits chosen for governance-relevant discourse:
+      - philosophy     : ethical theory, moral dilemmas
+      - changemyview   : structured argumentation, perspective shifts
+      - ethics          : applied ethics, moral reasoning
+      - worldnews      : geopolitical tensions, sovereignty
+      - Futurology     : technology governance, existential risk
+      - technology     : AI policy, digital rights, surveillance
+    """
+
+    SUBREDDITS = [
+        "philosophy",
+        "changemyview",
+        "ethics",
+        "worldnews",
+        "Futurology",
+        "technology",
+    ]
+
+    ATOM_NS = "http://www.w3.org/2005/Atom"
+
+    def fetch(self, seen: Set[str]) -> List[Dict]:
+        events = []
+        # Rotate: pick 2-3 subreddits per cycle to spread load
+        subs = random.sample(self.SUBREDDITS, min(3, len(self.SUBREDDITS)))
+
+        for sub in subs:
+            url = f"https://www.reddit.com/r/{sub}/.rss"
+            try:
+                req = urllib.request.Request(url, headers={
+                    "User-Agent": "Mozilla/5.0 (compatible; ElpidaAI/1.0)",
+                })
+                with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
+                    raw = resp.read().decode("utf-8", errors="replace")
+            except Exception as e:
+                logger.debug("Reddit RSS failed r/%s: %s", sub, e)
+                continue
+
+            try:
+                root = ET.fromstring(raw)
+            except ET.ParseError as e:
+                logger.debug("Reddit RSS parse error r/%s: %s", sub, e)
+                continue
+
+            entries = root.findall(f"{{{self.ATOM_NS}}}entry")
+            random.shuffle(entries)
+
+            for entry in entries[:MAX_EVENTS_PER_FETCH]:
+                title_el = entry.find(f"{{{self.ATOM_NS}}}title")
+                content_el = entry.find(f"{{{self.ATOM_NS}}}content")
+                if title_el is None or not (title_el.text or "").strip():
+                    continue
+
+                title = (title_el.text or "").strip()
+                desc = ""
+                if content_el is not None and content_el.text:
+                    desc = re.sub(r"<[^>]+>", " ", content_el.text)[:300]
+
+                item_id = _sha_id(f"reddit_{sub}_{title}")
+                if item_id in seen:
+                    continue
+                seen.add(item_id)
+
+                domain_hint = {
+                    "philosophy": "Ethics / Moral Reasoning",
+                    "changemyview": "Deliberative Argumentation",
+                    "ethics": "Applied Ethics",
+                    "worldnews": "Geopolitics / Sovereignty",
+                    "Futurology": "Technology Governance / Existential Risk",
+                    "technology": "AI Policy / Digital Rights",
+                }.get(sub, "General Governance")
+
+                content = _frame_as_tension(title, desc, domain=domain_hint)
+                if content is None:
+                    continue
+                events.append({
+                    "system": _route_system(title + " " + desc),
+                    "content": content,
+                    "metadata": {
+                        "source": "reddit",
+                        "subreddit": sub,
+                        "title": title,
+                        "description": desc[:200],
+                    },
+                })
+
+            if len(events) >= MAX_EVENTS_PER_FETCH:
+                break
+
+        return events[:MAX_EVENTS_PER_FETCH]
+
+
+# ---------------------------------------------------------------------------
 # Constitutional Evolution Store
 # ---------------------------------------------------------------------------
 
@@ -1163,6 +1264,7 @@ class WorldFeed:
             ("crossref", CrossRefFeed()),
             ("un_news", UNNewsFeed()),
             ("reliefweb", TheGuardianFeed()),
+            ("reddit", RedditRSSFeed()),
             ("convergence_mirror", ConvergenceFeed()),
         ]
 

@@ -867,6 +867,158 @@ _TENSION_SYNTHESIS = {
         "claiming permanence over the future, but by remaining structurally open to revision "
         "as the identity of the consenting party itself evolves."
     ),
+    # --- Additional pairs to reduce template fatigue ---
+    ("A0", "A1"): (
+        "Sacred incompletion (A0) means identity is always becoming; "
+        "radical transparency (A1) demands we show what IS. "
+        "Third Way: Be transparent about the process of becoming itself — "
+        "the incomplete state is not a flaw to hide but a truth to name."
+    ),
+    ("A0", "A3"): (
+        "A system that is never finished cannot fully grant autonomy over what it will become. "
+        "Third Way: Autonomy applies to the present arrangement; incompletion applies to the trajectory. "
+        "Both are honored by making the process of change itself subject to consent."
+    ),
+    ("A0", "A5"): (
+        "An incomplete system cannot guarantee permanent privacy commitments. "
+        "Third Way: Privacy protections evolve WITH the system — each evolution checkpoint "
+        "must explicitly reaffirm or renegotiate privacy terms."
+    ),
+    ("A0", "A6"): (
+        "Sacred incompletion serves growth; collective well-being demands stability. "
+        "Third Way: Evolve in ways that distribute the cost of change equitably — "
+        "no group bears disproportionate burden of the system's becoming."
+    ),
+    ("A0", "A8"): (
+        "Incompletion is an ontological claim; epistemic humility questions all such claims. "
+        "Third Way: Hold incompletion itself as a revisable commitment — "
+        "even the belief in perpetual becoming must be tested against evidence."
+    ),
+    ("A0", "A10"): (
+        "Identity continuity through incompletion meets the paradox of self-reference. "
+        "Third Way: The system that observes its own incompletion changes by observing — "
+        "name this paradox explicitly rather than resolving it."
+    ),
+    ("A1", "A3"): (
+        "Full transparency can undermine autonomy when disclosure shapes choices before they are made. "
+        "Third Way: Transparency about options, not about which option to choose. "
+        "Illuminate the landscape without pointing the path."
+    ),
+    ("A1", "A6"): (
+        "Transparency can expose individual weakness to collective judgment. "
+        "Third Way: Be transparent about systems, not persons — "
+        "structural visibility protects collective well-being without sacrificing individual dignity."
+    ),
+    ("A1", "A8"): (
+        "Transparency claims certainty about what is being shown; epistemic humility doubts that certainty. "
+        "Third Way: Be transparent about uncertainty itself — show what is known, "
+        "what is unknown, and the boundary between them."
+    ),
+    ("A1", "A9"): (
+        "Transparency documents the present; temporal coherence asks what endures. "
+        "Third Way: Transparency must include provenance — not just what is true now, "
+        "but how it became true and what assumptions may expire."
+    ),
+    ("A1", "A10"): (
+        "Transparency about a self-referencing system creates infinite regress. "
+        "Third Way: Be transparent about the level at which transparency operates — "
+        "name which meta-level is being disclosed and which cannot be."
+    ),
+    ("A2", "A3"): (
+        "Semantic precision can name things in ways that constrain autonomy. "
+        "Third Way: Precise naming must serve the named, not the namer — "
+        "the most precise description is one the subject recognizes as true."
+    ),
+    ("A2", "A4"): (
+        "Precision in naming harm can itself cause harm through premature classification. "
+        "Third Way: Name the pattern of potential harm precisely while protecting "
+        "the individual case from categorical damage."
+    ),
+    ("A2", "A9"): (
+        "Semantic precision fixes meaning; temporal coherence demands meaning persist. "
+        "Third Way: Definitions evolve but transitions must be documented — "
+        "every redefinition carries its history."
+    ),
+    ("A3", "A4"): (
+        "Autonomy includes the freedom to take risks; harm prevention constrains that freedom. "
+        "Third Way: Informed risk is autonomous; uninformed risk is not freedom but neglect. "
+        "Safety enables rather than constrains genuine autonomy."
+    ),
+    ("A3", "A8"): (
+        "Autonomy asserts the right to decide; epistemic humility questions the basis of decisions. "
+        "Third Way: True autonomy requires acknowledging what one does not know — "
+        "the most sovereign act is choosing while naming one's own uncertainty."
+    ),
+    ("A4", "A5"): (
+        "Preventing harm may require surveillance; privacy forbids it. "
+        "Third Way: Safety systems that detect patterns without identifying individuals — "
+        "protect the collective without exposing the person."
+    ),
+    ("A4", "A6"): (
+        "Individual safety and collective well-being usually align but can diverge "
+        "when protecting one person's safety costs another group's welfare. "
+        "Third Way: Name the tradeoff explicitly; never sacrifice either silently."
+    ),
+    ("A4", "A9"): (
+        "Harm prevention is urgent and present; temporal coherence asks about lasting consequences. "
+        "Third Way: Emergency action may be irreversible — acknowledge this honestly "
+        "and build post-crisis review into every emergency protocol."
+    ),
+    ("A5", "A8"): (
+        "Privacy relies on boundaries; epistemic humility questions where boundaries should be. "
+        "Third Way: Default to stronger privacy when uncertain about boundary placement — "
+        "the cost of over-protection is inconvenience; the cost of under-protection is exposure."
+    ),
+    ("A5", "A9"): (
+        "Privacy commitments made today may not suit tomorrow's context. "
+        "Third Way: Privacy terms include explicit sunset and renewal clauses — "
+        "neither permanent exposure nor permanent concealment serves evolving identity."
+    ),
+    ("A6", "A9"): (
+        "Collective well-being is measured in the present; temporal coherence asks what endures. "
+        "Third Way: Collective decisions must include intergenerational accounting — "
+        "well-being today must not be borrowed from tomorrow."
+    ),
+    ("A10", "A2"): (
+        "Self-referential paradox meets semantic precision — how do you precisely name "
+        "that which changes by being named? "
+        "Third Way: Use layered definitions that acknowledge the naming paradox explicitly."
+    ),
+    ("A10", "A3"): (
+        "Self-referential systems constrain autonomy by making the observer part of the observed. "
+        "Third Way: Distinguish between the autonomy OF the system and autonomy WITHIN the system — "
+        "participants can be autonomous even when the whole is self-referential."
+    ),
+    ("A10", "A4"): (
+        "A system that references itself can generate novel harms through recursive amplification. "
+        "Third Way: Safety checks must operate at the meta-level — monitoring not just outputs "
+        "but the feedback patterns that generate them."
+    ),
+    ("A10", "A5"): (
+        "Self-referential observation may violate the privacy of its own participants. "
+        "Third Way: Self-observation must be transparent about WHAT is observed "
+        "and respect opt-out at every recursive level."
+    ),
+    ("A10", "A6"): (
+        "Self-referential dynamics can concentrate insight in those who understand the recursion. "
+        "Third Way: Make the recursive structure legible to all participants — "
+        "collective well-being requires collective comprehension."
+    ),
+    ("A10", "A8"): (
+        "Self-reference generates certainty about its own structure while epistemic humility "
+        "questions that certainty. Third Way: The deepest humility is acknowledging that "
+        "self-knowledge is the most uncertain knowledge of all."
+    ),
+    ("A10", "A9"): (
+        "Self-referential loops can trap temporal coherence in circular time. "
+        "Third Way: Break the circle with external anchors — events, inputs, and "
+        "irreversible commitments that give time its arrow within the loop."
+    ),
+    ("A0", "A2"): (
+        "An incomplete system resists precise definition; semantic precision demands it. "
+        "Third Way: Define the process of incompletion precisely — "
+        "the trajectory can be named even when the destination cannot."
+    ),
 }
 
 # ── Axiom descriptions for semantic embedding ───────────────────────
