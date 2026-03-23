@@ -890,6 +890,8 @@ class Oracle:
                 f"Horn 2: {bead.get('horn_2_contribution', '')[:100]}"
             ),
             "shared_ground": bead.get("shared_ground", []),
+            "nodes": bead.get("axioms_integrated", [])[:2],
+            "rounds_held": oracle_cycle,
             "status": "bead_crystallized",
             "ratified_at": bead.get("extracted_at", ""),
         }

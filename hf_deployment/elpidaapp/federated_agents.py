@@ -1164,10 +1164,13 @@ class WorldEmitterAgent(_BaseAgent):
                 return None
             lines = []
             for e in newly:
+                node_a = e['nodes'][0] if e.get('nodes') else '?'
+                node_b = e['nodes'][-1] if len(e.get('nodes', [])) > 1 else node_a
+                source = e.get('source', 'parliament')
+                label = 'BEAD' if 'bead' in source else 'CRYSTALLISATION'
                 lines.append(
-                    f"WORLD_EMISSION | {e['axiom_id']} | "
-                    f"{e['nodes'][0] if e['nodes'] else '?'} ↔ "
-                    f"{e['nodes'][-1] if len(e.get('nodes',[])) > 1 else '?'} | "
+                    f"WORLD_EMISSION | {label} | {e['axiom_id']} | "
+                    f"{node_a} ↔ {node_b} | "
                     f"rounds_held={e['rounds_held']}"
                 )
             return "\n".join(lines)
