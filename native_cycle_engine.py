@@ -230,7 +230,7 @@ class NativeCycleEngine:
     
     def __init__(self):
         # Unified LLM client handles all API keys, rate limiting, and stats
-        self.llm = _UnifiedLLMClient(rate_limit_seconds=1.5, default_max_tokens=700)
+        self.llm = _UnifiedLLMClient(rate_limit_seconds=1.5, default_max_tokens=1200)
         
         # Expose api_keys for backward compat (external peer calls, etc.)
         self.api_keys = self.llm.api_keys
@@ -1532,7 +1532,7 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
         
         # Gemini Flash is free — give it more room to avoid truncation
         # (observed in March 1 cycle data: cycles 11, 27, 31, 37)
-        max_tok = 1024 if provider == "gemini" else 700
+        max_tok = 1200 if provider == "gemini" else 1200
         response = self.llm.call(provider, prompt, max_tokens=max_tok)
 
         # Truncation detection: if response is suspiciously short for a
@@ -2258,7 +2258,7 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
                 'emergency_override': emergency_override,
             },
             'domains_in_buffer': sorted(recent_domains),
-            'current_insight_summary': (current_insight.get('insight') or '')[:1000],
+            'current_insight_summary': (current_insight.get('insight') or '')[:2000],
             'rhythm': self.current_rhythm.value,
         }
         return payload
