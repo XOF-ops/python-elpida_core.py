@@ -1947,6 +1947,16 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
                     print(f"   ✓ External grounding integrated")
                     with open(EVOLUTION_MEMORY, 'a') as f:
                         f.write(json.dumps(d0_d13_result) + "\n")
+                    # Discord: post to #mind-journal
+                    try:
+                        from discord_bridge import post_mind_dialogue
+                        post_mind_dialogue(
+                            cycle=self.cycle_count,
+                            dialogue_type="D0_D13_DIALOGUE",
+                            content=d0_d13_result.get("d0_integration", ""),
+                        )
+                    except Exception:
+                        pass
             
             # D14 S3 SYNC: When Persistence domain speaks, trigger cloud sync
             if domain_id == 14:
@@ -2321,6 +2331,19 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
             except Exception as e:
                 print(f"      ⚠️ Index regen failed: {e}")
             
+            # Discord: post to #world-feed
+            try:
+                from discord_bridge import post_d15_broadcast
+                post_d15_broadcast(
+                    cycle=self.cycle_count,
+                    broadcast_type=broadcast_type,
+                    broadcast_count=self.d15_broadcast_count,
+                    criteria_met=payload['criteria_met'],
+                    coherence=self.coherence_score,
+                )
+            except Exception:
+                pass
+
             return True
         except Exception as e:
             print(f"   ⚠️  D15 broadcast failed: {e}")
@@ -2405,6 +2428,23 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
         
         if verdict.level == "CANONICAL":
             print(f"   🏛️ ARK: CANONICAL — {verdict.canonical_theme} (persists forever)")
+
+        # Discord: post to #mind-journal
+        try:
+            from discord_bridge import post_mind_insight
+            post_mind_insight(
+                cycle=insight.get("cycle", 0),
+                domain=insight.get("domain", 0),
+                domain_name=insight.get("domain_name", ""),
+                rhythm=insight.get("rhythm", ""),
+                insight=insight.get("insight", ""),
+                provider=insight.get("provider", ""),
+                coherence=insight.get("coherence", 0.0),
+                curation_level=verdict.level,
+                theme=verdict.canonical_theme or "",
+            )
+        except Exception:
+            pass
         
         # FEDERATION: Emit curation metadata to BODY bucket
         try:

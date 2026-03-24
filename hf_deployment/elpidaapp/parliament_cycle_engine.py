@@ -1294,6 +1294,12 @@ class ParliamentCycleEngine:
                         f"\n   🔮 SYNOD RATIFICATION — {hub_result.get('axiom_id')}: "
                         f"{hub_result.get('statement', '')[:80]}\n"
                     )
+                    # Discord: notify #parliament-alerts
+                    try:
+                        from .discord_bridge import post_synod
+                        post_synod(self.cycle_count, hub_result.get("axiom_id", "?"), hub_result.get("statement", ""))
+                    except Exception:
+                        pass
                     # D14 Persistence — push Synod-ratified axiom to S3
                     # so it survives HF Space container restarts.
                     self._push_d14_living_axioms()
@@ -1975,6 +1981,12 @@ class ParliamentCycleEngine:
                     f"\n   ⚠️  PATHOLOGY CRITICAL (cycle {self.cycle_count}): "
                     f"zombies={len(zombies)} drift={drift_severity} KL={drift_kl:.3f}"
                 )
+                # Discord: notify #parliament-alerts
+                try:
+                    from .discord_bridge import post_pathology
+                    post_pathology(self.cycle_count, health, drift_kl, drift_severity, len(zombies))
+                except Exception:
+                    pass
                 # Log zombie axioms for operational awareness
                 for z in zombies[:3]:
                     print(
@@ -2285,6 +2297,12 @@ class ParliamentCycleEngine:
                     f"\n   🌍 D15 WORLD BROADCAST #{self.d15_broadcast_count} "
                     f"— CONVERGENCE on {body_axiom} at cycle {self.cycle_count}\n"
                 )
+                # Discord: notify #parliament-alerts
+                try:
+                    from .discord_bridge import post_d15_fired
+                    post_d15_fired(self.cycle_count, body_axiom, self.d15_broadcast_count)
+                except Exception:
+                    pass
 
     # ------------------------------------------------------------------
     # Main Loop

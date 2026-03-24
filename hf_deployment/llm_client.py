@@ -219,6 +219,12 @@ class LLMClient:
                 "bypassing for %ds, all calls go to OpenRouter",
                 provider, count, self._CB_COOLDOWN_S,
             )
+            # Discord: notify #parliament-alerts
+            try:
+                from elpidaapp.discord_bridge import post_circuit_breaker
+                post_circuit_breaker(provider, "trip", count, self._CB_COOLDOWN_S)
+            except Exception:
+                pass
 
     # ----- public API -------------------------------------------------------
 
