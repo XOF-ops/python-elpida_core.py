@@ -111,7 +111,7 @@ _DOMAIN_PROVIDER: Dict[int, str] = {
     0:  "groq",
     3:  "groq",
     4:  "groq",
-    11: "anthropic",   # D11 synthesis uses strongest reasoning model
+    11: "claude",   # D11 synthesis uses strongest reasoning model
     13: "groq",
 }
 
