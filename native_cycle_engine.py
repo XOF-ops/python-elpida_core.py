@@ -1253,15 +1253,17 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
     
     def _load_memory(self) -> List[Dict]:
         """Load recent evolution patterns"""
-        patterns = []
-        if EVOLUTION_MEMORY.exists():
-            with open(EVOLUTION_MEMORY, 'r') as f:
-                for line in f:
-                    try:
-                        patterns.append(json.loads(line.strip()))
-                    except:
-                        pass
-        return patterns[-50:]
+        if not EVOLUTION_MEMORY.exists():
+            return []
+        from collections import deque
+        ring = deque(maxlen=50)
+        with open(EVOLUTION_MEMORY, 'r') as f:
+            for line in f:
+                try:
+                    ring.append(json.loads(line.strip()))
+                except:
+                    pass
+        return list(ring)
     
     def _load_ark(self) -> Optional[str]:
         """Load the Ark memory - D13's persistent civilization seed"""
