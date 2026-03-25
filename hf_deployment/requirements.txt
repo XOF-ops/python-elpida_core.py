@@ -30,3 +30,6 @@ faiss-cpu>=1.7.4               # Oracle FAISS semantic retrieval over advisories
 
 # ── Domain Internet Grounding (P4) ──
 ddgs>=9.0.0                    # DuckDuckGo web search for domain grounding
+
+# ── Discord Guest Chamber ──
+discord.py>=2.3.0               # Bot listener for #guest-chamber channel

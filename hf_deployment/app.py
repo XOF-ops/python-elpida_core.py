@@ -206,10 +206,18 @@ def run_parliament_loop():
 
         # Guest Chamber — polls S3 for human questions and routes them
         # into Parliament as I↔WE tensions with priority delivery.
-        # Questions arrive via feed_elpida.py CLI or future Discord bot.
         from elpidaapp.guest_chamber import GuestChamberFeed
         guest_chamber = GuestChamberFeed(engine.input_buffer, poll_interval_s=30)
         guest_chamber.start()
+
+        # Discord Guest Listener — watches #guest-chamber for messages,
+        # posts them to S3, GuestChamberFeed picks them up within 30s.
+        # Requires DISCORD_BOT_TOKEN env var. Gracefully disabled if not set.
+        try:
+            from elpidaapp.discord_listener import start_listener
+            start_listener()
+        except Exception as _dl_err:
+            logger.warning("Discord listener not started: %s", _dl_err)
 
         # Federated Agents — 4 autonomous tab observers (GAP 7)
         # Each HF tab has a background agent generating inputs continuously:
