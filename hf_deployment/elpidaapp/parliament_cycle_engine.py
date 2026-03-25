@@ -285,6 +285,7 @@ class InputBuffer:
             "scanner": [],
             "governance": [],
             "kaya": [],
+            "guest": [],
         }
         self._max = max_per_system
 
@@ -713,16 +714,22 @@ class ParliamentCycleEngine:
 
         Returns (action_text, metadata_dict).
         """
-        # Map rhythm → preferred HF system
-        rhythm_to_system = {v: k for k, v in HF_SYSTEM_TO_RHYTHM.items()}
-        preferred = rhythm_to_system.get(rhythm, "chat")
+        # Guest Chamber priority — humans waiting for a response
+        # take precedence over rhythm-based selection.
+        guest_events = self.input_buffer.pull("guest", n=1)
+        if guest_events:
+            events = guest_events
+        else:
+            # Map rhythm → preferred HF system
+            rhythm_to_system = {v: k for k, v in HF_SYSTEM_TO_RHYTHM.items()}
+            preferred = rhythm_to_system.get(rhythm, "chat")
 
-        # Pull from preferred system
-        events = self.input_buffer.pull(preferred, n=3)
+            # Pull from preferred system
+            events = self.input_buffer.pull(preferred, n=3)
 
-        # If nothing in preferred, pull from any
-        if not events:
-            events = self.input_buffer.pull_any(n=3)
+            # If nothing in preferred, pull from any
+            if not events:
+                events = self.input_buffer.pull_any(n=3)
 
         # If still nothing, generate an internal contemplation
         # (A0: Sacred Incompletion — the void speaks when nothing else does)
@@ -809,6 +816,14 @@ class ParliamentCycleEngine:
             "systems": sources,
             "event_count": len(events),
         }
+
+        # Carry guest metadata through for Discord response
+        if "guest" in sources and events:
+            guest_ev = next((e for e in events if e.system == "guest"), None)
+            if guest_ev and guest_ev.metadata:
+                meta["source"] = "guest_chamber"
+                meta["guest_metadata"] = guest_ev.metadata
+
         return action, meta
 
     # ------------------------------------------------------------------
@@ -1324,7 +1339,37 @@ class ParliamentCycleEngine:
             except Exception as _e:
                 logger.warning("D0↔D11 persist failed: %s", _e)
 
-        # 12. Log
+        # 12. Guest Chamber response — post verdict to Discord
+        #     when the deliberation input came from a guest question.
+        if meta.get("source") == "guest_chamber" or "guest" in meta.get("systems", []):
+            guest_meta = meta.get("guest_metadata", {})
+            try:
+                from .discord_bridge import post_guest_verdict
+                tension_text = "; ".join(
+                    t.get("synthesis", str(t.get("pair", "")))
+                    for t in cycle_record.get("tensions", [])[:3]
+                )
+                post_guest_verdict(
+                    cycle=self.cycle_count,
+                    question_id=guest_meta.get("question_id", "?"),
+                    author=guest_meta.get("author", "anonymous"),
+                    original_question=guest_meta.get("original_question", ""),
+                    governance=result.get("governance", "?"),
+                    dominant_axiom=dominant_axiom or "?",
+                    approval_rate=int(result.get("parliament", {}).get("approval_rate", 0) * 100),
+                    tensions=tension_text,
+                    coherence=self.coherence,
+                )
+                logger.info(
+                    "Guest verdict posted: id=%s gov=%s axiom=%s",
+                    guest_meta.get("question_id", "?"),
+                    result.get("governance", "?"),
+                    dominant_axiom or "?",
+                )
+            except Exception as e:
+                logger.debug("Guest verdict Discord post failed: %s", e)
+
+        # 13. Log
         governance = result.get("governance", "?")
         approval = result.get("parliament", {}).get("approval_rate", 0)
         logger.info(

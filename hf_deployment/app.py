@@ -204,6 +204,13 @@ def run_parliament_loop():
         world_feed = WorldFeed(engine.input_buffer, fetch_interval_s=300)
         world_feed.start()
 
+        # Guest Chamber — polls S3 for human questions and routes them
+        # into Parliament as I↔WE tensions with priority delivery.
+        # Questions arrive via feed_elpida.py CLI or future Discord bot.
+        from elpidaapp.guest_chamber import GuestChamberFeed
+        guest_chamber = GuestChamberFeed(engine.input_buffer, poll_interval_s=30)
+        guest_chamber.start()
+
         # Federated Agents — 4 autonomous tab observers (GAP 7)
         # Each HF tab has a background agent generating inputs continuously:
         #   Chat → CONTEMPLATION (philosophical questions from axiom drift)

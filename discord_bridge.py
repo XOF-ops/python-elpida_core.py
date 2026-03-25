@@ -26,6 +26,7 @@ logger = logging.getLogger("elpida.discord")
 WEBHOOK_MIND = os.getenv("DISCORD_WEBHOOK_MIND", "")
 WEBHOOK_PARLIAMENT = os.getenv("DISCORD_WEBHOOK_PARLIAMENT", "")
 WEBHOOK_WORLD = os.getenv("DISCORD_WEBHOOK_WORLD", "")
+WEBHOOK_GUEST = os.getenv("DISCORD_WEBHOOK_GUEST", "")
 
 # ── Embed colors ───────────────────────────────────────────────────
 COLOR_MIND = 0x7B2FBE       # deep purple — contemplation
@@ -34,6 +35,7 @@ COLOR_WORLD = 0x00BFA5       # teal — external broadcasts
 COLOR_SYNOD = 0xE91E63       # rose — synod ratification
 COLOR_DRIFT = 0xFF5252       # red — pathology critical
 COLOR_CIRCUIT = 0xFFEB3B     # yellow — circuit breaker
+COLOR_GUEST = 0x2196F3       # blue — guest chamber response
 
 # Discord message limit
 MAX_DESC = 4096
@@ -211,3 +213,48 @@ def post_d15_broadcast(
         "footer": {"text": "MIND • D15 Reality Interface"},
     }
     _post_webhook(WEBHOOK_WORLD, {"embeds": [embed]})
+
+
+# ════════════════════════════════════════════════════════════════════
+# GUEST CHAMBER (#guest-chamber)
+# ════════════════════════════════════════════════════════════════════
+
+def post_guest_verdict(
+    cycle: int,
+    question_id: str,
+    author: str,
+    original_question: str,
+    governance: str,
+    dominant_axiom: str = "",
+    approval_rate: int = 0,
+    tensions: str = "",
+    coherence: float = 0.0,
+):
+    """Post Parliament's verdict on a guest question to #guest-chamber."""
+    verdict_emoji = {
+        "PROCEED": "✅", "HOLD": "⏸️", "HALT": "🛑",
+    }.get(governance, "❓")
+
+    desc = (
+        f"**\"{original_question[:300]}\"**\n\n"
+        f"{verdict_emoji} Verdict: **{governance}**\n"
+        f"Dominant axiom: {dominant_axiom}\n"
+        f"Approval: {approval_rate}%\n"
+    )
+    if tensions:
+        desc += f"\nTensions:\n{tensions[:MAX_FIELD]}"
+
+    embed = {
+        "title": f"Guest Chamber — Response to {author}",
+        "description": desc[:MAX_DESC],
+        "color": COLOR_GUEST,
+        "fields": [
+            {"name": "Question ID", "value": question_id, "inline": True},
+            {"name": "Cycle", "value": str(cycle), "inline": True},
+            {"name": "Coherence", "value": f"{coherence:.3f}", "inline": True},
+        ],
+        "footer": {"text": "BODY • Guest Chamber"},
+    }
+    # Post to guest channel, fall back to parliament if no guest webhook
+    webhook = WEBHOOK_GUEST or WEBHOOK_PARLIAMENT
+    _post_webhook(webhook, {"embeds": [embed]})
