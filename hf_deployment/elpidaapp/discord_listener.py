@@ -27,6 +27,16 @@ logger = logging.getLogger("elpida.discord_listener")
 GUEST_CHANNEL_NAME = os.getenv("DISCORD_GUEST_CHANNEL", "guest-chamber")
 BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN", "")
 
+# Extract Elpida's own webhook ID from the guest webhook URL to prevent loops.
+# Webhook URLs look like: https://discord.com/api/webhooks/{ID}/{TOKEN}
+_guest_webhook_url = os.getenv("DISCORD_WEBHOOK_GUEST", "")
+ELPIDA_WEBHOOK_ID = None
+if _guest_webhook_url:
+    try:
+        ELPIDA_WEBHOOK_ID = int(_guest_webhook_url.split("/webhooks/")[1].split("/")[0])
+    except (IndexError, ValueError):
+        pass
+
 
 def _run_bot():
     """Start the Discord bot in an asyncio event loop (blocking)."""
@@ -66,8 +76,9 @@ def _run_bot():
         # Ignore our own messages
         if message.author == client.user:
             return
-        # Ignore webhook posts (Elpida's own replies) to prevent loops
-        if message.webhook_id:
+        # Only block Elpida's own webhook (replies) to prevent loops.
+        # Other webhooks (e.g. Pipedream, Zapier) are allowed through.
+        if message.webhook_id and ELPIDA_WEBHOOK_ID and message.webhook_id == ELPIDA_WEBHOOK_ID:
             return
 
         # Only listen in #guest-chamber
