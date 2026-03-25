@@ -63,10 +63,11 @@ def _run_bot():
 
     @client.event
     async def on_message(message):
-        # Ignore self and other bots (including webhook posts from Elpida)
+        # Ignore our own messages
         if message.author == client.user:
             return
-        if message.author.bot:
+        # Ignore webhook posts (Elpida's own replies) to prevent loops
+        if message.webhook_id:
             return
 
         # Only listen in #guest-chamber
