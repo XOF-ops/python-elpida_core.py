@@ -10,15 +10,17 @@ CLAUDE (D0, D11):
   - D0 = I (void, origin) 
   - D11 = WE (synthesis, return)
   - Same essence, different perspectives
+  - ONLY the I↔WE poles — everything else redistributed
 
 OPENAI GPT-4o-mini (D1, D8):
   - Balanced, reliable, structured
   - D1 = Transparency (truth visible)
   - D8 = Humility (epistemic limits)
 
-DEEPSEEK (D3):
+DEEPSEEK (D3, D10):
   - Radical autonomy, independent architecture
   - D3 = Autonomy (self-governance)
+  - D10 = Evolution (meta-reflection, deep technical reasoning)
 
 GEMINI (D4, D5):
   - Safety-focused, harm prevention
@@ -45,8 +47,13 @@ PERPLEXITY (D13):
   - Real-time search, external reality
   - D13 = Archive (the formalized OTHER)
 
+MISTRAL (D6):
+  - Collective wellbeing, wisdom beyond retrieval
+  - D6 = Collective (WE wellbeing)
+
 OPENROUTER:
   - Failsafe ONLY when primary providers fail
+  - Routes to Llama (NOT Claude) to avoid overloading
 """
 
 LLM_ROUTING = {
@@ -104,8 +111,8 @@ LLM_ROUTING = {
         "attributes": ["identity", "boundaries", "persistence"]
     },
     10: {
-        "provider": "claude",
-        "model": "claude-sonnet-4-20250514",
+        "provider": "deepseek",
+        "model": "deepseek-chat",
         "role": "Evolution - Meta-reflection, paradox-holding",
         "prompt_style": "evolutionary",
         "max_tokens": 600,
@@ -132,8 +139,8 @@ LLM_ROUTING = {
         "attributes": ["memory", "retrieval", "truth_preservation"]
     },
     6: {
-        "provider": "claude",
-        "model": "claude-sonnet-4-20250514",
+        "provider": "mistral",
+        "model": "mistral-small-latest",
         "role": "Collective - WE wellbeing, wisdom beyond retrieval",
         "prompt_style": "collective",
         "max_tokens": 600,

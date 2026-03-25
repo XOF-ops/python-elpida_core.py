@@ -640,9 +640,9 @@ class ConvergenceGate:
 
         try:
             stage_start = time.time()
-            raw = llm.call("claude", prompt, max_tokens=300)
+            raw = llm.call("gemini", prompt, max_tokens=300)
             stages["llm_synthesis"] = {
-                "provider": "claude",
+                "provider": "gemini",
                 "duration_s": round(time.time() - stage_start, 2),
             }
             d15_text = raw.strip() if raw else broadcast["d15_output"]
