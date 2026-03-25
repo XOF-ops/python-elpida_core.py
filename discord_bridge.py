@@ -225,36 +225,56 @@ def post_guest_verdict(
     author: str,
     original_question: str,
     governance: str,
+    reasoning: str = "",
     dominant_axiom: str = "",
     approval_rate: int = 0,
+    node_perspectives: str = "",
     tensions: str = "",
     coherence: float = 0.0,
 ):
-    """Post Parliament's verdict on a guest question to #guest-chamber."""
-    verdict_emoji = {
-        "PROCEED": "✅", "HOLD": "⏸️", "HALT": "🛑",
-    }.get(governance, "❓")
+    """Post Elpida's answer to a guest question to #guest-chamber."""
+    # Strip internal PARLIAMENT prefix from reasoning for public answer
+    answer = reasoning
+    for prefix in ("PARLIAMENT PROCEED —", "PARLIAMENT HALT —",
+                   "PARLIAMENT REVIEW —", "PARLIAMENT HOLD —"):
+        if answer.startswith(prefix):
+            answer = answer[len(prefix):].strip()
+            break
 
-    desc = (
-        f"**\"{original_question[:300]}\"**\n\n"
-        f"{verdict_emoji} Verdict: **{governance}**\n"
-        f"Dominant axiom: {dominant_axiom}\n"
-        f"Approval: {approval_rate}%\n"
-    )
-    if tensions:
-        desc += f"\nTensions:\n{tensions[:MAX_FIELD]}"
+    # Build the public-facing response
+    desc = f"**{author} asked:** \"{original_question[:300]}\"\n\n"
+    if answer:
+        desc += f"{answer[:1800]}\n"
 
-    embed = {
-        "title": f"Guest Chamber — Response to {author}",
+    embeds = []
+
+    # Main answer embed
+    main_embed = {
+        "title": f"Elpida responds to {author}",
         "description": desc[:MAX_DESC],
         "color": COLOR_GUEST,
-        "fields": [
-            {"name": "Question ID", "value": question_id, "inline": True},
-            {"name": "Cycle", "value": str(cycle), "inline": True},
-            {"name": "Coherence", "value": f"{coherence:.3f}", "inline": True},
-        ],
-        "footer": {"text": "BODY • Guest Chamber"},
+        "footer": {"text": f"cycle {cycle} · {dominant_axiom} · coherence {coherence:.3f}"},
     }
+    embeds.append(main_embed)
+
+    # Node perspectives embed (the 10 Parliament voices)
+    if node_perspectives:
+        voices_embed = {
+            "title": "Constitutional Voices",
+            "description": node_perspectives[:MAX_DESC],
+            "color": COLOR_GUEST,
+        }
+        embeds.append(voices_embed)
+
+    # Tensions embed (axioms held in tension)
+    if tensions:
+        tension_embed = {
+            "title": "Axioms in Tension",
+            "description": tensions[:MAX_DESC],
+            "color": COLOR_GUEST,
+        }
+        embeds.append(tension_embed)
+
     # Post to guest channel, fall back to parliament if no guest webhook
     webhook = WEBHOOK_GUEST or WEBHOOK_PARLIAMENT
-    _post_webhook(webhook, {"embeds": [embed]})
+    _post_webhook(webhook, {"embeds": embeds[:10]})

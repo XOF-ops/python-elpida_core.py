@@ -1339,31 +1339,50 @@ class ParliamentCycleEngine:
             except Exception as _e:
                 logger.warning("D0↔D11 persist failed: %s", _e)
 
-        # 12. Guest Chamber response — post verdict to Discord
+        # 12. Guest Chamber response — post Elpida's full answer to Discord
         #     when the deliberation input came from a guest question.
         if meta.get("source") == "guest_chamber" or "guest" in meta.get("systems", []):
             guest_meta = meta.get("guest_metadata", {})
             try:
                 from .discord_bridge import post_guest_verdict
-                tension_text = "; ".join(
-                    t.get("synthesis", str(t.get("pair", "")))
-                    for t in cycle_record.get("tensions", [])[:3]
-                )
+
+                # Build node perspectives from individual votes
+                votes = result.get("parliament", {}).get("votes", {})
+                perspectives = []
+                for node_name, vote_data in votes.items():
+                    rationale = vote_data.get("rationale", "")
+                    if rationale:
+                        perspectives.append(f"**{node_name}**: {rationale}")
+                node_text = "\n".join(perspectives) if perspectives else ""
+
+                # Build tension text from held contradictions
+                tension_parts = []
+                for t in result.get("parliament", {}).get("tensions", [])[:5]:
+                    pair = t.get("axiom_pair", "")
+                    synthesis = t.get("synthesis", "")
+                    if pair and synthesis:
+                        tension_parts.append(f"**{pair}**: {synthesis}")
+                    elif synthesis:
+                        tension_parts.append(synthesis)
+                tension_text = "\n".join(tension_parts)
+
                 post_guest_verdict(
                     cycle=self.cycle_count,
                     question_id=guest_meta.get("question_id", "?"),
                     author=guest_meta.get("author", "anonymous"),
                     original_question=guest_meta.get("original_question", ""),
                     governance=result.get("governance", "?"),
+                    reasoning=result.get("reasoning", ""),
                     dominant_axiom=dominant_axiom or "?",
                     approval_rate=int(result.get("parliament", {}).get("approval_rate", 0) * 100),
+                    node_perspectives=node_text,
                     tensions=tension_text,
                     coherence=self.coherence,
                 )
                 logger.info(
-                    "Guest verdict posted: id=%s gov=%s axiom=%s",
+                    "Guest answer posted: id=%s author=%s axiom=%s",
                     guest_meta.get("question_id", "?"),
-                    result.get("governance", "?"),
+                    guest_meta.get("author", "anonymous"),
                     dominant_axiom or "?",
                 )
             except Exception as e:
