@@ -1098,6 +1098,35 @@ with tab_audit:
                     st.markdown("</div>", unsafe_allow_html=True)
             _show_analysis(result)
 
+            # ── Replicate Vision — visual representation of the synthesis ──
+            try:
+                import os as _vis_os
+                if _vis_os.getenv("REPLICATE_API_TOKEN"):
+                    st.divider()
+                    st.markdown(
+                        '<div style="color:#ff8844;font-size:0.75rem;'
+                        'text-transform:uppercase;letter-spacing:0.12em;">'
+                        '🎨 Governance Vision</div>',
+                        unsafe_allow_html=True,
+                    )
+                    if st.button("Generate Visual Synthesis", key="replicate_vision_btn"):
+                        with st.spinner("Generating visual representation via Replicate Flux..."):
+                            from elpidaapp.replicate_vision import generate_vision
+                            vis_result = generate_vision(result, problem)
+                        if vis_result.get("error"):
+                            st.warning(f"Vision generation: {vis_result['error']}")
+                        else:
+                            st.image(
+                                vis_result["image_url"],
+                                caption="Governance Vision — visual synthesis of domain tensions",
+                                use_container_width=True,
+                            )
+                            with st.expander("Vision prompt", expanded=False):
+                                st.code(vis_result["prompt"], language="text")
+                            st.caption(f"Generated in {vis_result['latency_s']}s via Replicate Flux")
+            except Exception as _vis_err:
+                pass  # Silently skip if replicate not available
+
             # Pattern Library matching (Wave 2)
             try:
                 from elpidaapp.pattern_library import PatternLibrary

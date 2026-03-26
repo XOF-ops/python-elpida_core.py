@@ -32,4 +32,7 @@ faiss-cpu>=1.7.4               # Oracle FAISS semantic retrieval over advisories
 ddgs>=9.0.0                    # DuckDuckGo web search for domain grounding
 
 # ── Discord Guest Chamber ──
-discord.py>=2.3.0               # Bot listener for #guest-chamber channel
+discord.py>=2.3.0
+
+# ── Replicate Vision (Flux image generation) ──
+replicate>=0.25.0               # Bot listener for #guest-chamber channel
