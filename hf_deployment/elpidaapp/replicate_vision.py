@@ -57,9 +57,10 @@ def generate_vision(result: dict, problem: str) -> dict:
         {"image_url": str, "prompt": str, "latency_s": float}
         or {"error": str} on failure
     """
-    token = os.getenv("REPLICATE_API_TOKEN", "")
+    token = os.getenv("REPLICATE_API_TOKEN", "").strip()
     if not token:
         return {"error": "REPLICATE_API_TOKEN not set"}
+    os.environ["REPLICATE_API_TOKEN"] = token  # write back stripped value
 
     synthesis = result.get("synthesis", {})
     divergence = result.get("divergence", {})
