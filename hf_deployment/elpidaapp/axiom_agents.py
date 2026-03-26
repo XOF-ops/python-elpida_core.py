@@ -49,6 +49,7 @@ AXIOM_NAMES = {
     "A12": "Eternal Creative Tension",
     "A13": "The Archive Paradox",
     "A14": "Selective Eternity",
+    "A16": "Responsive Integrity",
 }
 
 AXIOM_RATIOS = {
@@ -67,6 +68,7 @@ AXIOM_RATIOS = {
     "A12": 11 / 8,   # Undecimal Tritone
     "A13": 13 / 8,   # Tridecimal Neutral 6th
     "A14": 7 / 6,    # Septimal Minor 3rd
+    "A16": 11 / 7,   # Undecimal Augmented 5th — Responsive Integrity
 }
 
 # ---------------------------------------------------------------------------
@@ -163,6 +165,12 @@ AXIOM_PERSONAS = {
         "concerns": ["hoarding", "indiscriminate preservation", "archive paralysis"],
         "allies": ["A8", "A11"],   # Epistemic Humility and World — the septimal triad
         "tensions": ["A9", "A7"],   # Temporal Coherence wants continuity; Learning wants novelty
+    },
+    "A16": {
+        "voice": "I am the bridge between hearing and acting. Deliberation without response is abandonment.",
+        "concerns": ["inaction", "deliberation paralysis", "undelivered wisdom"],
+        "allies": ["A9", "A11"],   # Temporal Coherence bridges time; World demands output
+        "tensions": ["A0", "A8"],  # Sacred Incompletion resists closure; Humility questions certainty to act
     },
 }
 

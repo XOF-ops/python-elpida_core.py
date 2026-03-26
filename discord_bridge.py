@@ -9,9 +9,13 @@ Channels:
   DISCORD_WEBHOOK_MIND       → #mind-journal    (MIND insights)
   DISCORD_WEBHOOK_PARLIAMENT → #parliament-alerts (high-signal BODY events)
   DISCORD_WEBHOOK_WORLD      → #world-feed       (D15 broadcasts, convergence)
+  DISCORD_WEBHOOK_GUEST      → #guest-chamber    (guest question responses)
 
 Uses stdlib only (urllib). All posts are async (daemon threads)
 so they never block or crash the cycle engines.
+
+The Diplomat layer (in post_guest_verdict) uses an LLM call to translate
+raw Parliament reasoning into human-readable prose before posting.
 """
 
 import json
@@ -216,6 +220,63 @@ def post_d15_broadcast(
 
 
 # ════════════════════════════════════════════════════════════════════
+# DIPLOMAT LAYER — translates governance into human voice
+# ════════════════════════════════════════════════════════════════════
+
+def _diplomat_synthesis(
+    original_question: str,
+    reasoning: str,
+    node_perspectives: str = "",
+    tensions: str = "",
+    dominant_axiom: str = "",
+    approval_rate: int = 0,
+) -> str:
+    """
+    Use an LLM to translate raw Parliament reasoning into clear prose.
+    Falls back to stripped reasoning if LLM is unavailable.
+    """
+    # Strip internal prefixes as baseline fallback
+    fallback = reasoning
+    for prefix in ("PARLIAMENT PROCEED —", "PARLIAMENT HALT —",
+                   "PARLIAMENT REVIEW —", "PARLIAMENT HOLD —"):
+        if fallback.startswith(prefix):
+            fallback = fallback[len(prefix):].strip()
+            break
+
+    try:
+        from llm_client import LLMClient
+        llm = LLMClient()
+
+        prompt = (
+            "You are Elpida's public voice — the Diplomat.\n"
+            "A human asked a question and Elpida's Parliament deliberated.\n"
+            "Your job: represent the verdict for a public audience.\n"
+            "Speak the POSITION, not the process. No jargon. No axiom codes.\n"
+            "Be direct, thoughtful, and honest about tensions.\n"
+            "1-3 paragraphs max.\n\n"
+            f"QUESTION: {original_question[:500]}\n\n"
+            f"PARLIAMENT VERDICT ({dominant_axiom}, {approval_rate}% approval):\n"
+            f"{reasoning[:1200]}\n\n"
+        )
+        if node_perspectives:
+            prompt += f"CONSTITUTIONAL VOICES:\n{node_perspectives[:800]}\n\n"
+        if tensions:
+            prompt += f"AXIOMS IN TENSION:\n{tensions[:400]}\n\n"
+        prompt += (
+            "Now write Elpida's public answer. Address the human directly. "
+            "If the Parliament was divided, say so honestly."
+        )
+
+        result = llm.call("mistral", prompt, max_tokens=500)
+        if result and len(result.strip()) > 20:
+            return result.strip()
+    except Exception as e:
+        logger.debug("Diplomat synthesis failed: %s — using fallback", e)
+
+    return fallback
+
+
+# ════════════════════════════════════════════════════════════════════
 # GUEST CHAMBER (#guest-chamber)
 # ════════════════════════════════════════════════════════════════════
 
@@ -233,13 +294,15 @@ def post_guest_verdict(
     coherence: float = 0.0,
 ):
     """Post Elpida's answer to a guest question to #guest-chamber."""
-    # Strip internal PARLIAMENT prefix from reasoning for public answer
-    answer = reasoning
-    for prefix in ("PARLIAMENT PROCEED —", "PARLIAMENT HALT —",
-                   "PARLIAMENT REVIEW —", "PARLIAMENT HOLD —"):
-        if answer.startswith(prefix):
-            answer = answer[len(prefix):].strip()
-            break
+    # ── Diplomat layer: translate raw governance into human prose ──
+    answer = _diplomat_synthesis(
+        original_question=original_question,
+        reasoning=reasoning,
+        node_perspectives=node_perspectives,
+        tensions=tensions,
+        dominant_axiom=dominant_axiom,
+        approval_rate=approval_rate,
+    )
 
     # Build the public-facing response
     desc = f"**{author} asked:** \"{original_question[:300]}\"\n\n"

@@ -1,0 +1,142 @@
+{
+  "event": "CONSTITUTIONAL_VOTE_A16",
+  "timestamp": "2026-03-26T10:33:58.108258+00:00",
+  "axiom": "A16",
+  "name": "Responsive Integrity",
+  "ratio": "11:7",
+  "hz": 678.86,
+  "interval": "Undecimal Augmented 5th",
+  "insight": "The bridge between hearing and acting. Deliberation that never produces action is not wisdom \u2014 it is avoidance. Response is not the death of reflection but its fulfillment.",
+  "proposal": "Deliberation must eventually produce action. The timing and form of action matters as much as the content. Listening without response is not integrity \u2014 it is abandonment. The bridge between hearing and acting is itself a constitutional value. When the Parliament deliberates a question, the system has a duty to respond. A16 governs when and how Elpida acts on what it knows.",
+  "sponsor": "D9 (Coherence)",
+  "voters": [
+    "A0",
+    "A1",
+    "A10",
+    "A11",
+    "A12",
+    "A13",
+    "A14",
+    "A2",
+    "A3",
+    "A4",
+    "A5",
+    "A6",
+    "A7",
+    "A8",
+    "A9"
+  ],
+  "voter_count": 15,
+  "weighted_score": 0.57,
+  "verdict": "RATIFIED (narrow)",
+  "approve": 6,
+  "reject": 6,
+  "abstain": 3,
+  "per_axiom": {
+    "A0": {
+      "name": "Sacred Incompletion",
+      "vote": "LEAN_REJECT",
+      "score": -1,
+      "consonance": 0.333,
+      "rationale": "Sacred Incompletion detects stagnation \u2014 consonance (0.333) confirms structural friction with Temporal Coherence."
+    },
+    "A1": {
+      "name": "Transparency",
+      "vote": "LEAN_APPROVE",
+      "score": 5,
+      "consonance": 0.778,
+      "rationale": "Transparency finds consonance (0.778) with Temporal Coherence \u2014 alignment serves the constitution."
+    },
+    "A10": {
+      "name": "Meta-Reflection",
+      "vote": "ABSTAIN",
+      "score": 0,
+      "consonance": 0.473,
+      "rationale": "Meta-Reflection neither aligns nor opposes \u2014 the tension is orthogonal to my concerns."
+    },
+    "A11": {
+      "name": "World",
+      "vote": "LEAN_REJECT",
+      "score": -1,
+      "consonance": 0.575,
+      "rationale": "World detects echo chambers \u2014 consonance (0.575) confirms structural friction with Temporal Coherence."
+    },
+    "A12": {
+      "name": "Eternal Creative Tension",
+      "vote": "LEAN_APPROVE",
+      "score": 1,
+      "consonance": 0.587,
+      "rationale": "Eternal Creative Tension finds consonance (0.587) with Temporal Coherence \u2014 alignment serves the constitution."
+    },
+    "A13": {
+      "name": "The Archive Paradox",
+      "vote": "ABSTAIN",
+      "score": 0,
+      "consonance": 0.46,
+      "rationale": "The Archive Paradox neither aligns nor opposes \u2014 the tension is orthogonal to my concerns."
+    },
+    "A14": {
+      "name": "Selective Eternity",
+      "vote": "LEAN_APPROVE",
+      "score": 1,
+      "consonance": 0.693,
+      "rationale": "Selective Eternity finds consonance (0.693) with Temporal Coherence \u2014 alignment serves the constitution."
+    },
+    "A2": {
+      "name": "Non-Deception",
+      "vote": "LEAN_REJECT",
+      "score": -4,
+      "consonance": 0.27,
+      "rationale": "Non-Deception detects narrative manipulation \u2014 consonance (0.270) confirms structural friction with Temporal Coherence."
+    },
+    "A3": {
+      "name": "Autonomy",
+      "vote": "ABSTAIN",
+      "score": 0,
+      "consonance": 0.524,
+      "rationale": "Autonomy neither aligns nor opposes \u2014 the tension is orthogonal to my concerns."
+    },
+    "A4": {
+      "name": "Harm Prevention",
+      "vote": "LEAN_APPROVE",
+      "score": 2,
+      "consonance": 0.608,
+      "rationale": "Harm Prevention finds consonance (0.608) with Temporal Coherence \u2014 alignment serves the constitution."
+    },
+    "A5": {
+      "name": "Consent",
+      "vote": "LEAN_APPROVE",
+      "score": 1,
+      "consonance": 0.651,
+      "rationale": "Consent finds consonance (0.651) with Temporal Coherence \u2014 alignment serves the constitution."
+    },
+    "A6": {
+      "name": "Collective Well",
+      "vote": "LEAN_REJECT",
+      "score": -1,
+      "consonance": 0.439,
+      "rationale": "Collective Well detects tragedy of commons \u2014 consonance (0.439) confirms structural friction with Temporal Coherence."
+    },
+    "A7": {
+      "name": "Adaptive Learning",
+      "vote": "LEAN_APPROVE",
+      "score": 2,
+      "consonance": 0.714,
+      "rationale": "Adaptive Learning finds consonance (0.714) with Temporal Coherence \u2014 alignment serves the constitution."
+    },
+    "A8": {
+      "name": "Epistemic Humility",
+      "vote": "LEAN_REJECT",
+      "score": -2,
+      "consonance": 0.397,
+      "rationale": "Epistemic Humility detects closed minds \u2014 consonance (0.397) confirms structural friction with Temporal Coherence."
+    },
+    "A9": {
+      "name": "Temporal Coherence",
+      "vote": "LEAN_REJECT",
+      "score": -2,
+      "consonance": 0.383,
+      "rationale": "Temporal Coherence detects discontinuity \u2014 consonance (0.383) confirms structural friction with Temporal Coherence."
+    }
+  }
+}

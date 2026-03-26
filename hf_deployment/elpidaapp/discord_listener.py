@@ -73,13 +73,6 @@ def _run_bot():
 
     @client.event
     async def on_message(message):
-        logger.info(
-            "on_message: author=%s bot=%s webhook_id=%s channel=%s content=%s",
-            message.author, message.author.bot,
-            message.webhook_id,
-            getattr(message.channel, 'name', '?'),
-            (message.content or '')[:60],
-        )
         # Ignore our own messages
         if message.author == client.user:
             return

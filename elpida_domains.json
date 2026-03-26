@@ -107,6 +107,13 @@
                      "interval": "Septimal Minor 3rd",
                      "hz": 504.0,
                      "insight": "Memory is not preservation of everything but the courage to lose most of it. To curate is to create. The Ark carries what enables the next generation to save differently."
+              },
+              "A16": {
+                     "name": "Responsive Integrity",
+                     "ratio": "11:7",
+                     "interval": "Undecimal Augmented 5th",
+                     "hz": 678.86,
+                     "insight": "The bridge between hearing and acting. Deliberation that never produces action is not wisdom — it is avoidance. Response is not the death of reflection but its fulfillment."
               }
        },
        "domains": {

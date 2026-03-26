@@ -485,8 +485,15 @@ class ConvergenceGate:
         if tensions_text:
             dynamic_parts.append(f"Parliament tensions this cycle:\n{tensions_text}")
         if parliament_reasoning:
+            # Strip internal governance prefixes for cleaner fallback
+            clean_reasoning = parliament_reasoning
+            for pfx in ("PARLIAMENT PROCEED —", "PARLIAMENT HALT —",
+                        "PARLIAMENT REVIEW —", "PARLIAMENT HOLD —"):
+                if clean_reasoning.startswith(pfx):
+                    clean_reasoning = clean_reasoning[len(pfx):].strip()
+                    break
             dynamic_parts.append(
-                f"Parliament reasoning: {parliament_reasoning[:600]}"
+                f"Parliament reasoning: {clean_reasoning[:600]}"
             )
         if stagnation_detected:
             dynamic_parts.append(
