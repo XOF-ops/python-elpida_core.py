@@ -467,7 +467,7 @@ class HackerNewsFeed:
             return events
 
         try:
-            ids = json.loads(raw)[:30]
+            ids = json.loads(raw)[:10]
         except json.JSONDecodeError:
             return events
 
@@ -478,6 +478,7 @@ class HackerNewsFeed:
             if fetched >= MAX_EVENTS_PER_FETCH:
                 break
 
+            time.sleep(1)  # Rate limit — avoid burst flagging
             item_raw = _http_get(HACKERNEWS_ITEM.format(story_id))
             if not item_raw:
                 continue
@@ -883,7 +884,7 @@ class RedditRSSFeed:
             url = f"https://www.reddit.com/r/{sub}/.rss"
             try:
                 req = urllib.request.Request(url, headers={
-                    "User-Agent": "Mozilla/5.0 (compatible; ElpidaAI/1.0)",
+                    "User-Agent": "ElpidaAI/1.0 (governance research; +https://huggingface.co/spaces/z65nik/Elpida-Governance-Layer)",
                 })
                 with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
                     raw = resp.read().decode("utf-8", errors="replace")

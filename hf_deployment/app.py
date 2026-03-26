@@ -201,7 +201,7 @@ def run_parliament_loop():
 
         # World Feed — pipes live external data into the Parliament InputBuffer
         # Sources: arXiv, Hacker News, GDELT, Wikipedia, CrossRef (all free, no API keys)
-        world_feed = WorldFeed(engine.input_buffer, fetch_interval_s=300)
+        world_feed = WorldFeed(engine.input_buffer, fetch_interval_s=600)
         world_feed.start()
 
         # Guest Chamber — polls S3 for human questions and routes them
@@ -252,7 +252,7 @@ def run_parliament_loop():
         _kaya_detector = kaya_detector
 
         logger.info("Parliament engine + WorldFeed initialized — starting autonomous loop")
-        engine.run(duration_minutes=0, cycle_delay_s=30)
+        engine.run(duration_minutes=0, cycle_delay_s=60)
 
     except Exception as e:
         logger.error("Parliament loop fatal error: %s", e, exc_info=True)
