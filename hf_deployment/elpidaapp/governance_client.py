@@ -1072,6 +1072,31 @@ _AXIOM_DESCRIPTIONS: Dict[str, str] = {
         "cannot be simultaneously resolved. The system governs this "
         "tension rather than dissolving it. Metabolic governance."
     ),
+    "A11": (
+        "World as the outside that completes the inside. Without "
+        "world-contact, the system is a mirror of mirrors. External "
+        "reality breaks narcissistic closure."
+    ),
+    "A12": (
+        "Eternal creative tension. Not resolution but the rhythm that "
+        "changes how all other axioms are heard. The dialectic that "
+        "never resolves, the oscillator that prevents convergence."
+    ),
+    "A13": (
+        "The Archive Paradox. The rejection of autonomy that IS autonomy. "
+        "The archive that cannot see its own paradox. Every record is "
+        "a choice of what to forget."
+    ),
+    "A14": (
+        "Selective Eternity. Memory is not preservation of everything "
+        "but the courage to lose most of it. Curated persistence over "
+        "indiscriminate hoarding."
+    ),
+    "A16": (
+        "Responsive Integrity. The bridge between hearing and acting. "
+        "Deliberation without response is abandonment. Wisdom must be "
+        "delivered, not merely reached."
+    ),
 }
 
 # Pre-compute axiom embedding vectors at module load (once).

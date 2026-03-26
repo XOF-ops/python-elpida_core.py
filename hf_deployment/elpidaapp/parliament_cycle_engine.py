@@ -2393,7 +2393,7 @@ class ParliamentCycleEngine:
         print(f"\n⚖️  PARLIAMENT CYCLE ENGINE — BODY LOOP STARTING")
         print(f"   Duration: {duration_minutes}min | Delay: {cycle_delay_s}s/cycle")
         print(f"   Rhythms: {', '.join(RHYTHM_WEIGHTS)}")
-        print(f"   Axiom genome: A0–A14 (15 axioms)")
+        print(f"   Axiom genome: A0–A14+A16 (16 axioms)")
         print(f"   Parliament: 10 nodes (HERMES→LOGOS)")
         print(f"   D15 convergence: cooldown={CONVERGENCE_COOLDOWN_CYCLES} cycles\n")
 

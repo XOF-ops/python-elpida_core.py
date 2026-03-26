@@ -72,6 +72,7 @@ AXIOM_NAMES = {
     "A12": "Eternal Creative Tension",
     "A13": "The Archive Paradox",
     "A14": "Selective Eternity",
+    "A16": "Responsive Integrity",
 }
 
 DOMAIN_NAMES = {

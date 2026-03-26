@@ -216,6 +216,13 @@ AXIOM_TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "spiritual":     "Selective Eternity as the Ark — not everything survives the flood, and that selection is the act of creation",
         "technical":     "Selective Eternity as garbage collection — systems that cannot forget cannot grow",
     },
+    "A16": {
+        "political":     "Responsive Integrity as democratic accountability — deliberation without action is tyranny of process",
+        "philosophical": "Responsive Integrity as praxis — wisdom that does not act is not yet wisdom",
+        "psychological": "Responsive Integrity as follow-through — the bridge between insight and behaviour change",
+        "spiritual":     "Responsive Integrity as incarnation of intent — the word must become deed",
+        "technical":     "Responsive Integrity as delivery pipeline — code that is never deployed is technical debt of the spirit",
+    },
 }
 
 

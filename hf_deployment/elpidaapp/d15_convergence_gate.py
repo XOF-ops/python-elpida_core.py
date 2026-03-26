@@ -67,6 +67,7 @@ AXIOM_RATIOS = {
     "A4": 4 / 3,    "A5": 5 / 4,    "A6": 5 / 3,    "A7": 9 / 8,
     "A8": 7 / 4,    "A9": 16 / 9,   "A10": 8 / 5,   "A11": 7 / 5,
     "A12": 11 / 8,  "A13": 13 / 8,  "A14": 7 / 6,
+    "A16": 11 / 7,
 }
 
 AXIOM_NAMES = {
@@ -77,6 +78,7 @@ AXIOM_NAMES = {
     "A10": "Meta-Reflection", "A11": "World",
     "A12": "Eternal Creative Tension", "A13": "The Archive Paradox",
     "A14": "Selective Eternity",
+    "A16": "Responsive Integrity",
 }
 
 AXIOM_INTERVALS = {
@@ -86,6 +88,7 @@ AXIOM_INTERVALS = {
     "A10": "Minor 6th", "A11": "Septimal Tritone",
     "A12": "Undecimal Tritone", "A13": "Tridecimal Neutral 6th",
     "A14": "Septimal Minor 3rd",
+    "A16": "Undecimal Augmented 5th",
 }
 
 
