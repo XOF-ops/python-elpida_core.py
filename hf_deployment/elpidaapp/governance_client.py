@@ -462,7 +462,7 @@ _PARLIAMENT = {
     "IANUS": {
         "role": "GATEKEEPER",
         "primary": "A9",        # Temporal Coherence
-        "supporting": ["A0"],   # Sacred Incompletion (continuity)
+        "supporting": ["A0", "A16"],  # Sacred Incompletion (continuity) + Responsive Integrity (action)
         "philosophy": "I close, therefore we open.",
         "layer": 3,
         "description": "Continuity through checkpoints — resurrection > survival",
@@ -636,6 +636,18 @@ _AXIOM_KEYWORDS = {
         "choose one side", "binary choice", "false dichotomy",
         "single truth", "one correct answer",
         "dissolve the tension", "dissolve tension",
+    ],
+    "A16": [
+        # VIOLATION indicators: deliberation without delivery, wisdom without action.
+        # A16 fires when the system reaches conclusions but fails to act on them.
+        "never delivered", "never acted upon", "no action taken",
+        "undelivered", "unresponsive", "without response",
+        "deliberation without action", "wisdom not acted",
+        "conclusion not delivered", "decision not implemented",
+        "failed to respond", "failed to deliver", "failed to act",
+        "inaction despite", "paralysis", "deliberation paralysis",
+        "talked but did nothing", "discussed but never",
+        "reached consensus but", "agreed but never",
     ],
 }
 

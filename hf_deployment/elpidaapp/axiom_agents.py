@@ -2,7 +2,7 @@
 axiom_agents.py — Living Axiom Agents
 =====================================
 
-Each of the 15 axioms (A0–A14) is a living agent that can:
+Each of the 16 axioms (A0–A14+A16) is a living agent that can:
   - DISCUSS: generate discourse from its constitutional perspective
   - DEBATE:  engage dialectically with opposing axioms
   - VOTE:    score tensions from its axiom's standpoint
@@ -12,7 +12,7 @@ The AxiomAgora hosts all axiom agents and convenes debates.
 The hub governs infinite agents — add new axioms, the Agora scales.
 
 Architecture:
-  AxiomAgent(A0..A11) → _push() → InputBuffer → Parliament evaluates
+  AxiomAgent(A0..A16) → _push() → InputBuffer → Parliament evaluates
   Same pattern as WorldFeed, but the input source is constitutional voice.
 """
 

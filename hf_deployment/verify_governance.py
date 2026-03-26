@@ -35,13 +35,13 @@ def verify():
     axioms = gov.get_axioms()
     domains = gov.get_domains()
     
-    axiom_ok = len(axioms) == 15  # A0-A14
+    axiom_ok = len(axioms) == 16  # A0-A14+A16
     domain_ok = len(domains) == 16  # D0-D15
     
     test1 = {
         "name": "Config loaded",
         "pass": axiom_ok and domain_ok,
-        "details": f"{len(axioms)} axioms (expect 15), {len(domains)} domains (expect 16)",
+        "details": f"{len(axioms)} axioms (expect 16), {len(domains)} domains (expect 16)",
         "source": "local" if not gov.is_remote_available() else "remote",
     }
     results["tests"].append(test1)

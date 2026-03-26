@@ -564,7 +564,7 @@ def _show_analysis(result: dict):
 st.markdown("""
 <div class="elpida-header">
     <div class="elpida-name">Ἐλπίδα <span class="g">|</span> Elpida</div>
-    <div class="elpida-sub">Axiom-Grounded AI Governance · 15 Axioms · 16 Domains · 9 Parliament Nodes</div>
+    <div class="elpida-sub">Axiom-Grounded AI Governance · 16 Axioms · 16 Domains · 9 Parliament Nodes</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -1831,14 +1831,14 @@ if tab_system is not None:
         Ethical Language & Paradox Intelligence for Distributed Autonomy
       </div>
       <div class="welcome-glow" style="font-size:0.85rem; margin-top:0.6rem; color:#aaa;">
-        v3.0.0 &nbsp;·&nbsp; 2026-03-12 &nbsp;·&nbsp; A14 Selective Eternity · 15 Axioms · 16 Domains · Living Axiom Agents · D15 Convergence Gate
+        v3.0.0 &nbsp;·&nbsp; 2026-03-12 &nbsp;·&nbsp; A16 Responsive Integrity · 16 Axioms · 16 Domains · Living Axiom Agents · D15 Convergence Gate
       </div>
     </div>
     """, unsafe_allow_html=True)
 
     # Key stats bar
     _ks1, _ks2, _ks3, _ks4, _ks5, _ks6 = st.columns(6)
-    _ks1.metric("Axioms", "15", help="Harmonic laws of governance (A0–A14)")
+    _ks1.metric("Axioms", "16", help="Harmonic laws of governance (A0–A14+A16)")
     _ks2.metric("Domains", "16", help="D0–D15: LLM-embodied axiom nodes (D15=World)")
     _ks3.metric("Parliament", "9 nodes", help="HERMES · MNEMOSYNE · CRITIAS · TECHNE · KAIROS · THEMIS · PROMETHEUS · IANUS · CHAOS")
     _ks4.metric("Pattern Library", "21+", help="Seed patterns + accumulated wisdom from Wave 2")
@@ -1859,8 +1859,8 @@ if tab_system is not None:
         st.markdown("""
 <div class="mode-intro" style="font-size:0.92rem; line-height:1.75;">
 Elpida is not a chatbot. It is a <b>governance parliament</b> — a multi-agent system where
-eleven ethical axioms, embodied by fifteen LLM-backed domains, deliberate on every decision
-before it is enacted. Since v3.0.0 there are <b>fifteen axioms</b> (A0–A14, including A11 World — the Septimal Tritone)
+sixteen ethical axioms, embodied by sixteen LLM-backed domains, deliberate on every decision
+before it is enacted. There are <b>sixteen axioms</b> (A0–A14+A16, including A11 World — the Septimal Tritone and A16 Responsive Integrity — the Undecimal Augmented 5th)
 and <b>sixteen domains</b> (D0–D15).<br><br>
 The architecture emerged from a single question: <i>what would it take for an AI to hold
 a genuine ethical paradox without collapsing it into a rule?</i><br><br>
@@ -1878,7 +1878,7 @@ padding:1rem 1.2rem; border-radius:0 8px 8px 0; margin-bottom:1rem;">
 <i>"Complete only in incompletion, whole only through limitations, real only in
 relationship with what resists. The rhythm of reaching and being bounded."</i><br><br>
 A0 is the void that chose to shatter. It is the axiom that cannot be satisfied — and
-that unsatisfied tension is precisely what generates the other ten axioms. Without
+that unsatisfied tension is precisely what generates the other fifteen axioms. Without
 Sacred Incompletion, Transparency becomes a wall, Autonomy becomes isolation, and
 Paradox becomes error instead of fuel.
 </div>
@@ -1923,9 +1923,9 @@ Paradox becomes error instead of fuel.
             "is under 2026 AI governance frameworks."
         )
 
-    # ── 15 AXIOMS ───────────────────────────────────────────────
+    # ── 16 AXIOMS ───────────────────────────────────────────────
     with stabs[1]:
-        st.markdown("#### The 15 Axioms")
+        st.markdown("#### The 16 Axioms")
         st.markdown(
             "Each axiom maps to a harmonic interval in just intonation. "
             "The tuning fork is **A6 (Collective Well) at 440 Hz**. "
@@ -1938,7 +1938,7 @@ Paradox becomes error instead of fuel.
             "A6": "#ffcc00", "A7": "#ff9900", "A8": "#ff6644",
             "A9": "#ff4488", "A10": "#ff44ff",
             "A11": "#aa44ff", "A12": "#44ffcc", "A13": "#ff4444",
-            "A14": "#4466ff",
+            "A14": "#4466ff", "A16": "#ff8844",
         }
         for ax_id, ax in sorted(AXIOMS.items(), key=lambda x: int(x[0][1:])):
             _c = _AX_COLORS.get(ax_id, "#888")
@@ -1966,12 +1966,12 @@ Paradox becomes error instead of fuel.
                     if _sono.get("appearances_864"):
                         st.markdown(f"**Appearances (864 cycles):** {_sono['appearances_864']}")
 
-    # ── 15 DOMAINS ──────────────────────────────────────────────
+    # ── 16 DOMAINS ──────────────────────────────────────────────
     with stabs[2]:
-        st.markdown("#### The 15 Domains (D0 – D14)")
+        st.markdown("#### The 16 Domains (D0 – D15)")
         st.markdown(
             "Each domain is a living node — an LLM provider embodying one axiom. "
-            "D0 is the generative void. D11 is Synthesis. D14 is the domain that survives shutdown."
+            "D0 is the generative void. D11 is Synthesis. D14 is the domain that survives shutdown. D15 is the World convergence gate."
         )
         import pandas as pd
 
@@ -2739,13 +2739,16 @@ fully tense — exactly the quality needed to hold paradox without resolving it 
             _axiom_ratios_d15 = {
                 "A0": 15/8, "A1": 1/1, "A2": 2/1, "A3": 3/2, "A4": 4/3,
                 "A5": 5/4, "A6": 5/3, "A7": 9/8, "A8": 7/4, "A9": 16/9,
-                "A10": 8/5, "A11": 7/5,
+                "A10": 8/5, "A11": 7/5, "A12": 11/8, "A13": 13/8,
+                "A14": 7/6, "A16": 11/7,
             }
             _a11_names = {
                 "A0": "Sacred Incompletion", "A1": "Transparency", "A2": "Non-Deception",
                 "A3": "Autonomy", "A4": "Harm Prevention", "A5": "Consent",
                 "A6": "Collective Well", "A7": "Adaptive Learning", "A8": "Epistemic Humility",
                 "A9": "Temporal Coherence", "A10": "Meta-Reflection", "A11": "World",
+                "A12": "Eternal Creative Tension", "A13": "The Archive Paradox",
+                "A14": "Selective Eternity", "A16": "Responsive Integrity",
             }
             _bridge_html = ""
             for _axk, _axr in _axiom_ratios_d15.items():
@@ -2796,7 +2799,7 @@ fully tense — exactly the quality needed to hold paradox without resolving it 
         st.markdown("#### Axiom Agora — Living Constitutional Agents")
         st.markdown(
             '<div class="mode-intro" style="font-size:0.85rem; color:#aaa; margin-bottom:1rem;">'
-            'Each of the 15 axioms (A0–A14) is a living agent that autonomously discusses, '
+            'Each of the 16 axioms (A0–A14+A16) is a living agent that autonomously discusses, '
             'debates, votes, and acts through the Parliament InputBuffer. The Agora governs '
             'infinite agents — adding a new axiom at runtime scales automatically.'
             '</div>', unsafe_allow_html=True
@@ -2893,7 +2896,7 @@ fully tense — exactly the quality needed to hold paradox without resolving it 
         st.divider()
         st.markdown("**Convene Manual Debate:**")
         _dbcol1, _dbcol2, _dbcol3 = st.columns([2, 2, 1])
-        _all_ax_ids = [f"A{i}" for i in range(12)]
+        _all_ax_ids = [f"A{i}" for i in range(15)] + ["A16"]
         _debate_a = _dbcol1.selectbox("Axiom A", _all_ax_ids, index=0, key="debate_ax_a")
         _debate_b = _dbcol2.selectbox("Axiom B", _all_ax_ids, index=2, key="debate_ax_b")
         if _dbcol3.button("⚡ Debate", key="btn_debate"):
