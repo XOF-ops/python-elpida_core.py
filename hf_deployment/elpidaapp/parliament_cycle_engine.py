@@ -441,6 +441,9 @@ class ParliamentCycleEngine:
         self._start_time: Optional[float] = None
         self._running = False
 
+        # Pause flag — set True while a Live Audit is running to avoid OOM
+        self._paused = False
+
         # Axiom frequency tracker (which axioms dominate across cycles)
         self._axiom_frequency: Dict[str, int] = {}
 
@@ -2416,6 +2419,10 @@ class ParliamentCycleEngine:
 
         try:
             while self._running and time.time() < end_time:
+                # Skip cycle if paused (Live Audit running — avoid OOM)
+                if self._paused or self._check_audit_pause():
+                    time.sleep(cycle_delay_s)
+                    continue
                 try:
                     cycle_result = self.run_cycle()
                 except Exception as e:
@@ -2439,6 +2446,21 @@ class ParliamentCycleEngine:
     def stop(self):
         """Signal the loop to stop after current cycle."""
         self._running = False
+
+    def _check_audit_pause(self) -> bool:
+        """Check if a Live Audit signalled the engine to pause (file-based IPC)."""
+        try:
+            flag = Path(__file__).resolve().parent.parent / "cache" / "audit_running.flag"
+            if flag.exists():
+                # Auto-expire after 5 minutes (safety net)
+                age = time.time() - flag.stat().st_mtime
+                if age > 300:
+                    flag.unlink(missing_ok=True)
+                    return False
+                return True
+        except Exception:
+            pass
+        return False
 
     # ------------------------------------------------------------------
     # State for external consumption

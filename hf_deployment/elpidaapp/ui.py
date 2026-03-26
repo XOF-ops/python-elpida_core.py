@@ -1058,6 +1058,14 @@ with tab_audit:
         _push_to_parliament("audit", problem, source="live_audit")
         from elpidaapp.divergence_engine import DivergenceEngine
 
+        # Pause BODY loop during audit to avoid OOM on free-tier Spaces
+        _audit_flag = Path(__file__).resolve().parent.parent / "cache" / "audit_running.flag"
+        try:
+            _audit_flag.parent.mkdir(parents=True, exist_ok=True)
+            _audit_flag.touch()
+        except Exception:
+            pass
+
         engine = DivergenceEngine(
             llm=st.session_state.llm_client,
             domains=_domain_ids,
@@ -1065,6 +1073,12 @@ with tab_audit:
         )
         with st.spinner(f"Running {preset_choice} analysis across {len(_domain_ids)} domains..."):
             result = engine.analyze(problem)
+
+        # Resume BODY loop
+        try:
+            _audit_flag.unlink(missing_ok=True)
+        except Exception:
+            pass
 
         # Persist result + problem in session_state so it survives reruns
         st.session_state["_audit_result"] = result
