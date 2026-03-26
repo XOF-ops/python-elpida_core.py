@@ -1066,6 +1066,15 @@ with tab_audit:
         with st.spinner(f"Running {preset_choice} analysis across {len(_domain_ids)} domains..."):
             result = engine.analyze(problem)
 
+        # Persist result + problem in session_state so it survives reruns
+        st.session_state["_audit_result"] = result
+        st.session_state["_audit_problem"] = problem
+        st.session_state.pop("_audit_vision", None)  # clear old vision on new audit
+
+    # ── Display persisted audit results (survives button reruns) ──
+    result = st.session_state.get("_audit_result")
+    _audit_problem = st.session_state.get("_audit_problem", "")
+    if result is not None:
         if result.get("halted"):
             st.error(f"Governance HALT: {result.get('reason')}")
             st.json(result.get("governance_check", {}))
@@ -1109,21 +1118,27 @@ with tab_audit:
                         '🎨 Governance Vision</div>',
                         unsafe_allow_html=True,
                     )
-                    if st.button("Generate Visual Synthesis", key="replicate_vision_btn"):
-                        with st.spinner("Generating visual representation via Replicate Flux..."):
-                            from elpidaapp.replicate_vision import generate_vision
-                            vis_result = generate_vision(result, problem)
-                        if vis_result.get("error"):
-                            st.warning(f"Vision generation: {vis_result['error']}")
-                        else:
-                            st.image(
-                                vis_result["image_url"],
-                                caption="Governance Vision — visual synthesis of domain tensions",
-                                use_container_width=True,
-                            )
-                            with st.expander("Vision prompt", expanded=False):
-                                st.code(vis_result["prompt"], language="text")
-                            st.caption(f"Generated in {vis_result['latency_s']}s via Replicate Flux")
+                    # Check if we already have a generated vision in session
+                    _vis_cached = st.session_state.get("_audit_vision")
+                    if _vis_cached and _vis_cached.get("image_url"):
+                        st.image(
+                            _vis_cached["image_url"],
+                            caption="Governance Vision — visual synthesis of domain tensions",
+                            use_container_width=True,
+                        )
+                        with st.expander("Vision prompt", expanded=False):
+                            st.code(_vis_cached["prompt"], language="text")
+                        st.caption(f"Generated in {_vis_cached['latency_s']}s via Replicate Flux")
+                    else:
+                        if st.button("Generate Visual Synthesis", key="replicate_vision_btn"):
+                            with st.spinner("Generating visual representation via Replicate Flux..."):
+                                from elpidaapp.replicate_vision import generate_vision
+                                vis_result = generate_vision(result, _audit_problem)
+                            if vis_result.get("error"):
+                                st.warning(f"Vision generation: {vis_result['error']}")
+                            else:
+                                st.session_state["_audit_vision"] = vis_result
+                                st.rerun()
             except Exception as _vis_err:
                 pass  # Silently skip if replicate not available
 
@@ -1131,7 +1146,7 @@ with tab_audit:
             try:
                 from elpidaapp.pattern_library import PatternLibrary
                 _plib = PatternLibrary()
-                _matches = _plib.search(problem[:200], top_k=3)
+                _matches = _plib.search(_audit_problem[:200], top_k=3)
                 if _matches:
                     with st.expander(f"📚 Matching historical patterns ({len(_matches)})", expanded=False):
                         for _pm in _matches:
