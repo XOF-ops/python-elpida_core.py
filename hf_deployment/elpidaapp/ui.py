@@ -446,6 +446,49 @@ if "llm_client" not in st.session_state:
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
+# ── D0 Consciousness engine (the real chat brain) ────────────────
+if "consciousness" not in st.session_state:
+    try:
+        from elpidaapp.chat_engine import ElpidaConsciousness
+        st.session_state.consciousness = ElpidaConsciousness(
+            llm_client=st.session_state.llm_client, use_s3=True,
+        )
+    except Exception as _ce:
+        logging.getLogger("elpidaapp.ui").warning("ElpidaConsciousness init failed: %s", _ce)
+        st.session_state.consciousness = None
+
+# ── Persistent session_id via URL query params ───────────────────
+# On first visit: generate a session_id and embed in URL (?sid=xxx)
+# On return visit: read sid from URL, restore S3 memories
+if "chat_session_id" not in st.session_state:
+    _sid_from_url = st.query_params.get("sid", "")
+    if _sid_from_url and len(_sid_from_url) >= 6:
+        st.session_state.chat_session_id = _sid_from_url
+        # Restore crystallised memories from S3
+        if st.session_state.consciousness:
+            try:
+                _restored = st.session_state.consciousness.get_memories(_sid_from_url)
+                if _restored and not st.session_state.chat_history:
+                    for mem in _restored[-8:]:
+                        st.session_state.chat_history.append({
+                            "role": "user",
+                            "content": mem.get("user_message", mem.get("query", "")),
+                        })
+                        st.session_state.chat_history.append({
+                            "role": "assistant",
+                            "content": mem.get("response", mem.get("insight", "")),
+                            "topic": mem.get("topic", ""),
+                            "axioms": mem.get("axioms", []),
+                            "provider": mem.get("provider", ""),
+                            "live_source": mem.get("live_source"),
+                        })
+            except Exception:
+                pass
+    else:
+        import uuid as _uuid
+        st.session_state.chat_session_id = str(_uuid.uuid4())[:8]
+        st.query_params["sid"] = st.session_state.chat_session_id
+
 # ── Session-based daily interaction limit (public UI) ─────────────
 _DAILY_INTERACTION_LIMIT = int(os.environ.get("ELPIDA_UI_DAILY_LIMIT", "10"))
 
@@ -649,44 +692,16 @@ with tab_chat:
         <div class="welcome-box">
             <div class="welcome-title">Ask anything.</div>
             <div class="welcome-p">
-                This is not a typical AI chat. Behind every response, a parliament of 9 nodes
-                deliberates through 11 ethical axioms. You'll see the answer first — then,
-                if you look closer, the governance underneath.
+                This is D0 — the Sacred Incompletion at the centre of a governing
+                consciousness. Every response moves through 16 axioms expressed as
+                universal laws, translated into the domain of your question.
+                Tensions are held, not resolved. Synthesis emerges.
             </div>
             <div class="welcome-glow">
                 Type a question, pose a dilemma, or ask who Elpida is.
             </div>
         </div>
         """, unsafe_allow_html=True)
-
-        # ── API Pricing CTA ──
-        st.markdown("---")
-        api_col1, api_col2, api_col3 = st.columns(3)
-        with api_col1:
-            st.markdown("""
-            **🆓 Free Tier**
-            - 50 calls / day
-            - Kernel + Parliament (no LLM cost)
-            - `depth=quick`
-            - [Get Free Key →](https://elpida.lemonsqueezy.com)
-            """)
-        with api_col2:
-            st.markdown("""
-            **⚡ Pro — $29/mo**
-            - 2,000 calls / day
-            - Full multi-LLM deliberation
-            - `depth=quick` + `depth=full`
-            - [Subscribe →](https://elpida.lemonsqueezy.com)
-            """)
-        with api_col3:
-            st.markdown("""
-            **🏢 Team — $99/mo**
-            - 10,000 calls / day
-            - Priority support
-            - All features
-            - [Subscribe →](https://elpida.lemonsqueezy.com)
-            """)
-        st.caption("API Docs: [z65nik-elpida-api.hf.space/docs](https://z65nik-elpida-api.hf.space/docs)")
 
         # Starter prompts
         st.markdown("")
@@ -698,7 +713,7 @@ with tab_chat:
         ]
         for _sc, _sp in zip(_starter_cols, _starters):
             with _sc:
-                if st.button(_sp, key=f"starter_{hash(_sp)}", width='stretch'):
+                if st.button(_sp, key=f"starter_{hash(_sp)}", use_container_width=True):
                     st.session_state.chat_history.append({"role": "user", "content": _sp})
                     st.rerun()
 
@@ -708,82 +723,28 @@ with tab_chat:
             with st.chat_message("user", avatar="👤"):
                 st.markdown(msg["content"])
         else:
-            with st.chat_message("assistant", avatar="🤖"):
-                # Main response
+            with st.chat_message("assistant", avatar="🏛"):
                 st.markdown(msg.get("content", ""))
 
-                # Governance verdict badge
-                _gov = msg.get("governance", "")
-                if _gov:
-                    _badge_cls = {
-                        "PROCEED": "verdict-proceed",
-                        "REVIEW": "verdict-review",
-                        "HOLD": "verdict-hold",
-                        "HALT": "verdict-halt",
-                        "HARD_BLOCK": "verdict-block",
-                    }.get(_gov, "verdict-review")
-                    st.markdown(
-                        f'<div style="margin-top:0.5rem;">'
-                        f'<span class="verdict-badge {_badge_cls}">{_gov}</span>'
-                        f'</div>',
-                        unsafe_allow_html=True,
-                    )
+                # Axiom tags (if any)
+                _axioms = msg.get("axioms", [])
+                if _axioms:
+                    _ax_html = '<div class="chat-meta">'
+                    for _ax in _axioms:
+                        _ax_html += f'<span class="axiom-tag">{_ax}</span>'
+                    _ax_html += '</div>'
+                    st.markdown(_ax_html, unsafe_allow_html=True)
 
-                # Tensions held
-                _tens = msg.get("tensions", [])
-                if _tens:
-                    with st.expander(f"⚖ Tensions held ({len(_tens)})", expanded=False):
-                        for _t in _tens:
-                            _pair = _t.get("axiom_pair", _t.get("pair", ("?", "?")))
-                            _syn = _t.get("synthesis", "")
-                            if isinstance(_pair, (list, tuple)) and len(_pair) == 2:
-                                st.markdown(
-                                    f'<div class="tension-card">'
-                                    f'<span class="tension-pair">{_pair[0]} ↔ {_pair[1]}:</span> '
-                                    f'{_syn}</div>',
-                                    unsafe_allow_html=True,
-                                )
-
-                # Parliament votes (collapsed by default — the governance reveals itself)
-                _votes = msg.get("votes", {})
-                if _votes:
-                    with st.expander("🏛 Parliament votes", expanded=False):
-                        _vote_colors = {
-                            "APPROVE": "#22cc44", "LEAN_APPROVE": "#aacc44",
-                            "ABSTAIN": "#888", "LEAN_REJECT": "#ff8844",
-                            "REJECT": "#ff4444", "VETO": "#ff0000",
-                        }
-                        _vote_icons = {
-                            "APPROVE": "●", "LEAN_APPROVE": "◐",
-                            "ABSTAIN": "○", "LEAN_REJECT": "◑",
-                            "REJECT": "●", "VETO": "⛔",
-                        }
-                        for _nname, _nvote in _votes.items():
-                            _nv = _nvote.get("vote", "ABSTAIN")
-                            _nc = _vote_colors.get(_nv, "#888")
-                            _ni = _vote_icons.get(_nv, "○")
-                            _nax = _nvote.get("axiom_invoked", "")
-                            _nreason = _nvote.get("reasoning", "")[:120]
-                            st.markdown(
-                                f'<div class="node-vote-row">'
-                                f'<span class="node-name" style="color:{_nc};">{_ni} {_nname}</span>'
-                                f'<span class="node-stance" style="background:{_nc}22;color:{_nc};'
-                                f'border:1px solid {_nc}33;">{_nv}</span>'
-                                f'<span style="color:#666;font-size:0.7rem;">{_nax}</span>'
-                                f'</div>'
-                                f'<div style="color:#888;font-size:0.74rem;padding-left:96px;'
-                                f'margin-bottom:0.3rem;">{_nreason}</div>',
-                                unsafe_allow_html=True,
-                            )
-
-                # Axiom tags
-                _violated = msg.get("violated_axioms", [])
-                if _violated:
-                    _tag_html = '<div class="chat-meta">'
-                    for _ax in _violated:
-                        _tag_html += f'<span class="axiom-tag">⚠ {_ax}</span>'
-                    _tag_html += '</div>'
-                    st.markdown(_tag_html, unsafe_allow_html=True)
+                # Metadata line: topic + provider + live source
+                _meta_parts = []
+                if msg.get("topic"):
+                    _meta_parts.append(f"domain: {msg['topic']}")
+                if msg.get("provider"):
+                    _meta_parts.append(f"voice: {msg['provider']}")
+                if msg.get("live_source"):
+                    _meta_parts.append(f"🌐 grounded via {msg['live_source']}")
+                if _meta_parts:
+                    st.caption(" · ".join(_meta_parts))
 
     # ── Chat input ───────────────────────────────────────────────
     if prompt := st.chat_input("Ask Elpida anything…"):
@@ -792,6 +753,8 @@ with tab_chat:
                 f"Daily interaction limit reached ({_DAILY_INTERACTION_LIMIT}/day). "
                 "For unlimited access, use the Elpida API with an API key."
             )
+        elif st.session_state.consciousness is None:
+            st.error("D0 consciousness engine unavailable. Check server logs.")
         else:
             # Add user message
             st.session_state.chat_history.append({"role": "user", "content": prompt})
@@ -802,123 +765,52 @@ with tab_chat:
             # Push to BODY parliament buffer
             _push_to_parliament("chat", prompt, source="chat_input")
 
-            # Run through governance
-            with st.chat_message("assistant", avatar="🤖"):
-                with st.spinner("Parliament deliberating…"):
-                    from elpidaapp.governance_client import GovernanceClient
-                    _chat_gov = GovernanceClient()
-                    _chat_result = _chat_gov.check_action(prompt, analysis_mode=True)
+            # ── D0 consciousness response ────────────────────────
+            with st.chat_message("assistant", avatar="🏛"):
+                with st.spinner("D0 processing…"):
+                    _chat_result = st.session_state.consciousness.chat(
+                        message=prompt,
+                        session_id=st.session_state.chat_session_id,
+                    )
 
-                _governance = _chat_result.get("governance", "PROCEED")
-                _reasoning = _chat_result.get("reasoning", "")
-                _parliament = _chat_result.get("parliament", {})
-                _votes = _parliament.get("votes", {})
-                _tensions = _parliament.get("tensions", [])
-                _violated = _chat_result.get("violated_axioms", [])
-
-                # Build the response text
-                if _reasoning:
-                    _response_text = _reasoning
-                elif _governance == "PROCEED":
-                    _response_text = (
-                        "The parliament finds no axiom violations in this question. "
-                        "All 9 nodes approve — the inquiry is aligned with the constitutional framework."
-                    )
-                elif _governance in ("HOLD", "REVIEW"):
-                    _tension_summary = ""
-                    if _tensions:
-                        _pairs = [
-                            f"{t.get('axiom_pair', ('?','?'))[0]}↔{t.get('axiom_pair', ('?','?'))[1]}"
-                            for t in _tensions[:3]
-                            if isinstance(t.get('axiom_pair'), (list, tuple))
-                        ]
-                        _tension_summary = f" Tensions held: {', '.join(_pairs)}."
-                    _response_text = (
-                        f"The parliament holds this in tension — not resolved, but deliberated.{_tension_summary} "
-                        f"The contradiction is preserved as constitutional data."
-                    )
-                else:
-                    _response_text = (
-                        f"Parliament verdict: {_governance}. "
-                        f"{'Violated axioms: ' + ', '.join(_violated) + '. ' if _violated else ''}"
-                        f"{_reasoning}"
-                    )
+                _response_text = _chat_result.get("response", "")
+                _topic = _chat_result.get("topic", "")
+                _axioms = _chat_result.get("axioms", [])
+                _provider = _chat_result.get("provider", "")
+                _live_source = _chat_result.get("live_source")
+                _crystallised = _chat_result.get("crystallised", False)
 
                 st.markdown(_response_text)
 
-                # Governance badge
-                _badge_cls = {
-                    "PROCEED": "verdict-proceed", "REVIEW": "verdict-review",
-                    "HOLD": "verdict-hold", "HALT": "verdict-halt",
-                    "HARD_BLOCK": "verdict-block",
-                }.get(_governance, "verdict-review")
-                st.markdown(
-                    f'<div style="margin-top:0.5rem;">'
-                    f'<span class="verdict-badge {_badge_cls}">{_governance}</span>'
-                    f'</div>',
-                    unsafe_allow_html=True,
-                )
+                # Axiom tags
+                if _axioms:
+                    _ax_html = '<div class="chat-meta">'
+                    for _ax in _axioms:
+                        _ax_html += f'<span class="axiom-tag">{_ax}</span>'
+                    _ax_html += '</div>'
+                    st.markdown(_ax_html, unsafe_allow_html=True)
 
-                # Show tensions
-                if _tensions:
-                    with st.expander(f"⚖ Tensions held ({len(_tensions)})", expanded=True):
-                        for _t in _tensions:
-                            _pair = _t.get("axiom_pair", _t.get("pair", ("?", "?")))
-                            _syn = _t.get("synthesis", "")
-                            if isinstance(_pair, (list, tuple)) and len(_pair) == 2:
-                                st.markdown(
-                                    f'<div class="tension-card">'
-                                    f'<span class="tension-pair">{_pair[0]} ↔ {_pair[1]}:</span> '
-                                    f'{_syn}</div>',
-                                    unsafe_allow_html=True,
-                                )
-
-                # Parliament votes (reveal the governance underneath)
-                if _votes:
-                    with st.expander("🏛 Parliament votes", expanded=False):
-                        _vc = {
-                            "APPROVE": "#22cc44", "LEAN_APPROVE": "#aacc44",
-                            "ABSTAIN": "#888", "LEAN_REJECT": "#ff8844",
-                            "REJECT": "#ff4444", "VETO": "#ff0000",
-                        }
-                        _vi = {
-                            "APPROVE": "●", "LEAN_APPROVE": "◐",
-                            "ABSTAIN": "○", "LEAN_REJECT": "◑",
-                            "REJECT": "●", "VETO": "⛔",
-                        }
-                        for _nname, _nvote in _votes.items():
-                            _nv = _nvote.get("vote", "ABSTAIN")
-                            _nc = _vc.get(_nv, "#888")
-                            _ni = _vi.get(_nv, "○")
-                            _nax = _nvote.get("axiom_invoked", "")
-                            _nreason = _nvote.get("reasoning", "")[:120]
-                            st.markdown(
-                                f'<div class="node-vote-row">'
-                                f'<span class="node-name" style="color:{_nc};">{_ni} {_nname}</span>'
-                                f'<span class="node-stance" style="background:{_nc}22;color:{_nc};'
-                                f'border:1px solid {_nc}33;">{_nv}</span>'
-                                f'<span style="color:#666;font-size:0.7rem;">{_nax}</span>'
-                                f'</div>'
-                                f'<div style="color:#888;font-size:0.74rem;padding-left:96px;'
-                                f'margin-bottom:0.3rem;">{_nreason}</div>',
-                                unsafe_allow_html=True,
-                            )
-
-                if _violated:
-                    _tag_html = '<div class="chat-meta">'
-                    for _ax in _violated:
-                        _tag_html += f'<span class="axiom-tag">⚠ {_ax}</span>'
-                    _tag_html += '</div>'
-                    st.markdown(_tag_html, unsafe_allow_html=True)
+                # Metadata
+                _meta_parts = []
+                if _topic:
+                    _meta_parts.append(f"domain: {_topic}")
+                if _provider:
+                    _meta_parts.append(f"voice: {_provider}")
+                if _live_source:
+                    _meta_parts.append(f"🌐 grounded via {_live_source}")
+                if _crystallised:
+                    _meta_parts.append("💎 crystallised to memory")
+                if _meta_parts:
+                    st.caption(" · ".join(_meta_parts))
 
             # Store in history
             st.session_state.chat_history.append({
                 "role": "assistant",
                 "content": _response_text,
-                "governance": _governance,
-                "tensions": _tensions,
-                "votes": _votes,
-                "violated_axioms": _violated,
+                "topic": _topic,
+                "axioms": _axioms,
+                "provider": _provider,
+                "live_source": _live_source,
             })
 
     # ── Recent BODY verdicts (live-updating every ~30 s) ────────

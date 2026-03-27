@@ -247,9 +247,12 @@ def build_axiom_context(topic: str, lang: str) -> str:
 _GROUNDING_KEYWORDS = [
     # time-sensitive signals
     "today", "currently", "latest", "recent", "news", "now",
-    "σήμερα", "τώρα", "πρόσφατα", "τελευταία",
+    "this year", "this month", "this week", "2026", "2025",
+    "update", "current", "breaking", "trend",
+    "σήμερα", "τώρα", "πρόσφατα", "τελευταία", "φέτος",
     # factual lookup signals
     "who is", "what happened", "statistics", "data shows", "evidence",
+    "how many", "where is", "when did",
     "ποιος είναι", "τι συνέβη", "στατιστικά", "στοιχεία",
 ]
 
@@ -266,10 +269,21 @@ def fetch_live_context(
     prefer_grok: bool = False,
 ) -> Tuple[str, str]:
     """
-    Fetch live grounding via Perplexity (D13/Archive) or Grok (D7/Learning).
+    Fetch live grounding — DuckDuckGo/Wikipedia first (free), then
+    Perplexity/Grok LLM fallback (paid) only if free search returns empty.
     Returns (context_text, provider_used).
     One call per turn max — budget aware.
     """
+    # ── Primary: free web search via domain_grounding ──────────────
+    try:
+        from elpidaapp.domain_grounding import ground_query
+        ddg_result = ground_query(query, max_results=3)
+        if ddg_result and len(ddg_result.strip()) > 30:
+            return ddg_result.strip(), "duckduckgo"
+    except Exception as e:
+        logger.debug("DDG grounding failed, falling back to LLM: %s", e)
+
+    # ── Fallback: LLM-based grounding (Perplexity/Grok) ───────────
     grounding_prompt = (
         f"Search for current, factual information relevant to this query. "
         f"Be concise (≤200 words). Return only verified facts, cite sources inline.\n\n"
