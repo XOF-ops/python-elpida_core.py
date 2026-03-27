@@ -214,6 +214,7 @@ class ForkProtocol:
         self._resolved: List[ForkDeclaration] = []
         self._last_declaration_cycle: Dict[str, int] = {}  # axiom → cycle
         self._last_remediate_severity: Dict[str, float] = {}  # axiom → severity at last REMEDIATE
+        self._remediate_count: Dict[str, int] = {}  # axiom → consecutive REMEDIATE count
         self._load_history()
 
     # ── History ───────────────────────────────────────────────────
@@ -240,6 +241,10 @@ class ForkProtocol:
                         prev = self._last_remediate_severity.get(axiom, 0)
                         if cycle >= existing:  # most recent takes precedence
                             self._last_remediate_severity[axiom] = sev
+                        self._remediate_count[axiom] = self._remediate_count.get(axiom, 0) + 1
+                    elif rec.get("outcome") == "ACKNOWLEDGE":
+                        # ACKNOWLEDGE resets the remediation counter
+                        self._remediate_count[axiom] = 0
         except Exception as e:
             logger.warning("Fork history load failed: %s", e)
 
@@ -632,6 +637,11 @@ class ForkProtocol:
         # must show worsening (prevents mechanical re-triggering).
         if outcome == "REMEDIATE":
             self._last_remediate_severity[declaration.axiom] = declaration.severity
+            self._remediate_count[declaration.axiom] = self._remediate_count.get(declaration.axiom, 0) + 1
+        elif outcome == "ACKNOWLEDGE":
+            # Acknowledgement resolves the loop — reset counters
+            self._remediate_count[declaration.axiom] = 0
+            self._last_remediate_severity.pop(declaration.axiom, None)
 
         # Write to living_axioms.jsonl as crystallized fork knowledge
         axioms_path = Path(
@@ -666,7 +676,23 @@ class ForkProtocol:
         REMEDIATE: the system can realistically re-align with the axiom
         ACKNOWLEDGE: the axiom's operational meaning has evolved — both
                      interpretations are recorded as valid
+
+        Escalation: if the same axiom has been REMEDIATEd 3+ times
+        without improvement, escalate to ACKNOWLEDGE — repeated
+        remediation that doesn't reduce severity is not remediation.
         """
+        # ── Circuit breaker: escalate after repeated failed remediations ──
+        prior_remediates = self._remediate_count.get(declaration.axiom, 0)
+        if prior_remediates >= 3:
+            logger.warning(
+                "Fork ESCALATION: %s (%s) — %d prior REMEDIATEs without "
+                "improvement, escalating to ACKNOWLEDGE",
+                declaration.axiom,
+                AXIOM_NAMES.get(declaration.axiom, "?"),
+                prior_remediates,
+            )
+            return "ACKNOWLEDGE"
+
         if declaration.violation_type == "ZOMBIE":
             # Zombie → the axiom is invoked but does nothing.
             # High severity zombie = the axiom has become meaningless.

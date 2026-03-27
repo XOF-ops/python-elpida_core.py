@@ -250,6 +250,12 @@ class CulturalDriftDetector:
                         continue
 
                     # Extract axioms from various field shapes
+                    # Skip CONSTITUTIONAL_FORK entries — these are fork protocol
+                    # records, not constitutional values. Including them would
+                    # inflate the espoused weight for recently-forked axioms.
+                    if entry.get("section") == "CONSTITUTIONAL_FORK":
+                        continue
+
                     axiom = entry.get("axiom", "")
                     axiom_pair = entry.get("axiom_pair", "")
                     grounded = entry.get("axioms_grounded_in", [])
