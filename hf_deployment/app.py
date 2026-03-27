@@ -35,6 +35,12 @@ from pathlib import Path
 from threading import Thread
 from datetime import datetime
 
+# Suppress noisy library loggers before anything imports them
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+logging.getLogger("transformers").setLevel(logging.ERROR)
+logging.getLogger("sentence_transformers").setLevel(logging.WARNING)
+logging.getLogger("huggingface_hub").setLevel(logging.WARNING)
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(message)s'

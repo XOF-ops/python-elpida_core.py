@@ -42,6 +42,7 @@ try:
         "all-MiniLM-L6-v2",
         token=os.environ.get("HF_TOKEN"),
     )
+    _EMBEDDING_MODEL.encode("test", show_progress_bar=False)  # warm up silently
     _USE_EMBEDDINGS = True
     logger.info("Semantic embedding model loaded (all-MiniLM-L6-v2)")
 except Exception as _emb_err:
@@ -1116,7 +1117,7 @@ _AXIOM_EMBEDDINGS: Dict[str, Any] = {}
 if _USE_EMBEDDINGS:
     try:
         _AXIOM_EMBEDDINGS = {
-            ax: _EMBEDDING_MODEL.encode(desc, convert_to_tensor=True)
+            ax: _EMBEDDING_MODEL.encode(desc, convert_to_tensor=True, show_progress_bar=False)
             for ax, desc in _AXIOM_DESCRIPTIONS.items()
         }
         logger.info("Pre-computed embeddings for %d axioms", len(_AXIOM_EMBEDDINGS))
@@ -2204,7 +2205,7 @@ class GovernanceClient:
             return {}, {}
 
         try:
-            action_embedding = _EMBEDDING_MODEL.encode(action, convert_to_tensor=True)
+            action_embedding = _EMBEDDING_MODEL.encode(action, convert_to_tensor=True, show_progress_bar=False)
         except Exception as e:
             logger.warning("Embedding encode failed: %s", e)
             return {}, {}
