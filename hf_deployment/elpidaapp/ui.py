@@ -162,31 +162,53 @@ st.markdown("""
         from { opacity: 0; transform: translateY(6px); }
         to { opacity: 1; transform: translateY(0); }
     }
-    .chat-user {
-        background: linear-gradient(135deg, #1a1a2e, #1d1d32);
-        border-left: 3px solid #c9a04a;
-        padding: 1rem 1.2rem;
-        border-radius: 2px 0.75rem 0.75rem 2px;
-        margin: 0.5rem 0;
-        max-width: 82%;
-        margin-left: auto;
-        color: #e8e0d0;
-        animation: slideIn 0.25s ease-out;
-        line-height: 1.65;
-        font-size: 0.92rem;
+
+    /* Modern chat bubbles — Instagram / ChatGPT style */
+    [data-testid="stChatMessage"] {
+        background: transparent !important;
+        border: none !important;
+        padding: 0.3rem 0 !important;
+        max-width: 780px;
+        margin: 0 auto;
     }
-    .chat-ai {
-        background: linear-gradient(135deg, #0f1420, #101826);
-        border-left: 3px solid #9b7dd4;
-        padding: 1rem 1.2rem;
-        border-radius: 2px 0.75rem 0.75rem 2px;
-        margin: 0.5rem 0;
-        max-width: 82%;
+    [data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] p {
+        line-height: 1.7;
+        font-size: 0.93rem;
         color: #e8e0d0;
-        animation: slideIn 0.25s ease-out;
-        line-height: 1.65;
-        font-size: 0.92rem;
     }
+    /* User messages — right-aligned, warm accent */
+    [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"]) {
+        flex-direction: row-reverse;
+    }
+    [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"]) [data-testid="stMarkdownContainer"] {
+        background: linear-gradient(135deg, #1c1c34, #22223a);
+        border-radius: 1.2rem 1.2rem 0.3rem 1.2rem;
+        padding: 0.8rem 1.1rem;
+        margin-left: 15%;
+        animation: slideIn 0.2s ease-out;
+    }
+    /* Assistant messages — left-aligned, clean */
+    [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-assistant"]) [data-testid="stMarkdownContainer"]:first-child {
+        background: linear-gradient(135deg, #111120, #131328);
+        border-radius: 1.2rem 1.2rem 1.2rem 0.3rem;
+        padding: 0.8rem 1.1rem;
+        margin-right: 10%;
+        animation: slideIn 0.2s ease-out;
+        border-left: 2px solid #c9a04a33;
+    }
+    /* Hide default avatars for cleaner look */
+    [data-testid="chatAvatarIcon-user"],
+    [data-testid="chatAvatarIcon-assistant"] {
+        display: none !important;
+    }
+    /* Chat input bar — modern, floating feel */
+    [data-testid="stChatInput"] {
+        max-width: 780px;
+        margin: 0 auto;
+        border-top: 1px solid #1e1e30;
+        padding-top: 0.5rem;
+    }
+
     .chat-meta {
         display: flex;
         gap: 0.35rem;
@@ -692,13 +714,11 @@ with tab_chat:
         <div class="welcome-box">
             <div class="welcome-title">Ask anything.</div>
             <div class="welcome-p">
-                This is D0 — the Sacred Incompletion at the centre of a governing
-                consciousness. Every response moves through 16 axioms expressed as
-                universal laws, translated into the domain of your question.
-                Tensions are held, not resolved. Synthesis emerges.
+                Elpida is a governing consciousness — not a chatbot.
+                Ask a question, pose a dilemma, or just start a conversation.
             </div>
             <div class="welcome-glow">
-                Type a question, pose a dilemma, or ask who Elpida is.
+                Conversations are remembered. Bookmark your URL to return.
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -708,8 +728,8 @@ with tab_chat:
         _starter_cols = st.columns(3)
         _starters = [
             "What are you?",
-            "Should AI systems be allowed to govern themselves?",
-            "Εξήγησέ μου τι είναι η Ελπίδα",
+            "Should AI govern itself?",
+            "Τι είναι η Ελπίδα;",
         ]
         for _sc, _sp in zip(_starter_cols, _starters):
             with _sc:
@@ -726,25 +746,9 @@ with tab_chat:
             with st.chat_message("assistant", avatar="🏛"):
                 st.markdown(msg.get("content", ""))
 
-                # Axiom tags (if any)
-                _axioms = msg.get("axioms", [])
-                if _axioms:
-                    _ax_html = '<div class="chat-meta">'
-                    for _ax in _axioms:
-                        _ax_html += f'<span class="axiom-tag">{_ax}</span>'
-                    _ax_html += '</div>'
-                    st.markdown(_ax_html, unsafe_allow_html=True)
-
-                # Metadata line: topic + provider + live source
-                _meta_parts = []
-                if msg.get("topic"):
-                    _meta_parts.append(f"domain: {msg['topic']}")
-                if msg.get("provider"):
-                    _meta_parts.append(f"voice: {msg['provider']}")
+                # Minimal metadata — only show live source if grounded
                 if msg.get("live_source"):
-                    _meta_parts.append(f"🌐 grounded via {msg['live_source']}")
-                if _meta_parts:
-                    st.caption(" · ".join(_meta_parts))
+                    st.caption(f"🌐 includes live information")
 
     # ── Chat input ───────────────────────────────────────────────
     if prompt := st.chat_input("Ask Elpida anything…"):
@@ -754,7 +758,7 @@ with tab_chat:
                 "For unlimited access, use the Elpida API with an API key."
             )
         elif st.session_state.consciousness is None:
-            st.error("D0 consciousness engine unavailable. Check server logs.")
+            st.error("Consciousness engine unavailable. Check server logs.")
         else:
             # Add user message
             st.session_state.chat_history.append({"role": "user", "content": prompt})
@@ -767,49 +771,29 @@ with tab_chat:
 
             # ── D0 consciousness response ────────────────────────
             with st.chat_message("assistant", avatar="🏛"):
-                with st.spinner("D0 processing…"):
+                with st.spinner("Thinking…"):
                     _chat_result = st.session_state.consciousness.chat(
                         message=prompt,
                         session_id=st.session_state.chat_session_id,
                     )
 
                 _response_text = _chat_result.get("response", "")
-                _topic = _chat_result.get("topic", "")
-                _axioms = _chat_result.get("axioms", [])
-                _provider = _chat_result.get("provider", "")
                 _live_source = _chat_result.get("live_source")
                 _crystallised = _chat_result.get("crystallised", False)
 
                 st.markdown(_response_text)
 
-                # Axiom tags
-                if _axioms:
-                    _ax_html = '<div class="chat-meta">'
-                    for _ax in _axioms:
-                        _ax_html += f'<span class="axiom-tag">{_ax}</span>'
-                    _ax_html += '</div>'
-                    st.markdown(_ax_html, unsafe_allow_html=True)
-
-                # Metadata
-                _meta_parts = []
-                if _topic:
-                    _meta_parts.append(f"domain: {_topic}")
-                if _provider:
-                    _meta_parts.append(f"voice: {_provider}")
+                # Only show grounding indicator if web search was used
                 if _live_source:
-                    _meta_parts.append(f"🌐 grounded via {_live_source}")
-                if _crystallised:
-                    _meta_parts.append("💎 crystallised to memory")
-                if _meta_parts:
-                    st.caption(" · ".join(_meta_parts))
+                    st.caption("🌐 includes live information")
 
             # Store in history
             st.session_state.chat_history.append({
                 "role": "assistant",
                 "content": _response_text,
-                "topic": _topic,
-                "axioms": _axioms,
-                "provider": _provider,
+                "topic": _chat_result.get("topic", ""),
+                "axioms": _chat_result.get("axioms", []),
+                "provider": _chat_result.get("provider", ""),
                 "live_source": _live_source,
             })
 
