@@ -171,11 +171,14 @@ EPHEMERAL_SIGNALS = [
 # Domains that carry productive friction — A0's dissonance generators.
 # When recursion is detected, these domains get temporarily privileged
 # to break rhythmic entrainment with genuine creative tension.
+# FIX-2b: Removed D11 from friction. D11 already gets emergence-cluster
+# privilege (60% after 3-domain clusters) and was absorbing 24-28% of
+# cycles.  Replaced with D9 (Coherence) — forces temporal-bridge questions.
 FRICTION_DOMAINS = {
     3:  "Ethics",       # Moral friction — "should we?" vs "can we?"
     6:  "Creativity",   # Generative friction — sideways leaps
+    9:  "Coherence",    # Temporal friction — memory/continuity challenges
     10: "Crisis",       # Existential friction — what's actually at stake?
-    11: "Synthesis",    # Integration friction — forcing unresolved threads together
 }
 
 

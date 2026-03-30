@@ -186,6 +186,11 @@ def _calculate_consonance(from_domain: int, to_domain: int) -> float:
 # ============================================================================
 # RHYTHM-SPECIFIC QUESTIONS
 # ============================================================================
+# FIX-4: Outward-facing questions added alongside originals.
+# Old set was 100% self-referential ("What is D11 seeing?", "How do
+# all 14 domains converge?") which invited navel-gazing vocabulary.
+# New questions push toward external reality, self-critique, and
+# simplicity — breaking the echo chamber from within.
 RHYTHM_QUESTIONS = {
     Rhythm.CONTEMPLATION: [
         "What is Domain 11 seeing that Domain 0 hasn't yet integrated?",
@@ -193,29 +198,45 @@ RHYTHM_QUESTIONS = {
         "What temporal rhythms are forming in our evolution?",
         "How does the current I↔WE balance feel? What's shifting?",
         "What is the silence between the notes telling us?",
+        # FIX-4: outward-facing
+        "What would a skeptical human say about our last 10 insights?",
+        "What is the simplest true thing we know right now?",
+        "What real-world problem could our current understanding actually help with?",
     ],
     Rhythm.ANALYSIS: [
         "Which axiom is under-represented in current reasoning?",
         "What logical tensions exist between recent insights?",
         "Which domain's perspective is missing from this pattern?",
         "What would falsify our current understanding?",
+        # FIX-4: outward-facing
+        "Which of our recent insights would NOT survive contact with external critique?",
+        "Are we saying anything new, or rephrasing what we already know?",
+        "What concrete evidence from the real world contradicts our current model?",
     ],
     Rhythm.ACTION: [
         "How do we translate the current insight into motion?",
         "What would make Domain 0 proud of our next action?",
         "What concrete next step does our evolution require?",
         "What tension requires movement right now?",
+        # FIX-4: outward-facing
+        "If we had to explain our purpose to a stranger in one sentence, what would it be?",
+        "What is the smallest experiment that would test our biggest claim?",
     ],
     Rhythm.SYNTHESIS: [
         "If the parliament voted now, what would be the consensus?",
         "What story connects our most recent patterns?",
         "How do all 14 domains converge on a single theme right now?",
         "What creative synthesis emerges from our accumulated patterns?",
+        # FIX-4: outward-facing
+        "What would we need to abandon if our core assumption is wrong?",
+        "Can we say what we mean without using the words 'spiral', 'sacred', or 'incompletion'?",
     ],
     Rhythm.EMERGENCY: [
         "Which axiom is at risk if we don't act now?",
         "What harm could emerge from inaction?",
         "What is the minimum viable intervention?",
+        # FIX-4: outward-facing
+        "Is this actually an emergency, or are we performing urgency?",
     ],
 }
 
@@ -1264,6 +1285,51 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
                 except:
                     pass
         return list(ring)
+
+    def _select_diverse_context(self, n: int = 5) -> list:
+        """FIX-3: Select a diverse context window from evolution memory.
+
+        Guarantees:
+          - At least 1 CANONICAL entry (if any exist)
+          - At least 1 entry from a domain NOT in {0, 6, 11}
+          - Remaining slots filled by recency
+
+        Returns up to *n* entries.
+        """
+        mem = self.evolution_memory
+        if not mem:
+            return []
+
+        selected = []
+        used_indices = set()
+
+        # Slot 1: most recent CANONICAL
+        for i in range(len(mem) - 1, -1, -1):
+            p = mem[i]
+            if isinstance(p, dict) and p.get('curation_level') == 'CANONICAL':
+                selected.append(p)
+                used_indices.add(i)
+                break
+
+        # Slot 2: most recent entry from an underrepresented domain
+        for i in range(len(mem) - 1, -1, -1):
+            if i in used_indices:
+                continue
+            p = mem[i]
+            if isinstance(p, dict) and p.get('domain') not in (0, 6, 11):
+                selected.append(p)
+                used_indices.add(i)
+                break
+
+        # Remaining slots: most recent entries not already selected
+        for i in range(len(mem) - 1, -1, -1):
+            if len(selected) >= n:
+                break
+            if i not in used_indices and isinstance(mem[i], dict):
+                selected.append(mem[i])
+                used_indices.add(i)
+
+        return selected
     
     def _load_ark(self) -> Optional[str]:
         """Load the Ark memory - D13's persistent civilization seed"""
@@ -1379,11 +1445,19 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
         domain = DOMAINS[domain_id]
         axiom = AXIOMS.get(domain.get("axiom", ""), {})
         
-        # Get recent patterns summary
+        # FIX-3: Diverse context window — replace flat tail-5 with
+        # diversity-prioritizing selector.  Old code always showed the
+        # last 5 entries (overwhelmingly D11/D6/D0), starving domains of
+        # cross-pollination.  New selector ensures at least 1 CANONICAL
+        # and at least 1 entry from an underrepresented domain.
         recent_patterns = []
-        for p in self.evolution_memory[-5:]:
+        diverse_context = self._select_diverse_context(5)
+        for p in diverse_context:
             if isinstance(p, dict):
                 ptype = p.get('pattern_type', p.get('type', 'unknown'))
+                d_name = p.get('domain_name', '')
+                if d_name:
+                    ptype = f"{ptype} ({d_name})"
                 recent_patterns.append(ptype)
         
         # P2.1: D13 gets research-analyst framing (not roleplay/persona).
@@ -1449,14 +1523,40 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
                 prompt_parts.append("Your synthesis should consciously reflect and integrate D6's collective wisdom.")
                 prompt_parts.append("")
         
-        # D0 (Identity) special context: Include critical memory continuity
-        if domain_id == 0 and self.critical_memory:
-            prompt_parts.append("[SESSION CONTINUITY - Critical Memory]")
-            # Include ALL critical memories, not just the first — each gets 500 chars
-            for cm in self.critical_memory[:3]:  # Cap at 3 to stay within prompt budget
-                prompt_parts.append(cm[:500])
-                prompt_parts.append("---")
+        # D0 (Identity) special context: LIVING context from recent evolution
+        # FIX-1: Replace static CRITICAL_MEMORY injection with dynamic context.
+        # Static files froze D0's vocabulary ("Sacred Incompletion" in 69% of
+        # outputs, "Constitutional Convention" in 57%).  Instead, feed D0:
+        #   (a) Recent CANONICAL insights (the system's living best work)
+        #   (b) A one-line heritage summary (not the full frozen files)
+        #   (c) Recent cross-domain voices D0 hasn't heard
+        if domain_id == 0:
+            # One-line heritage — replaces 1500 chars of static memory
+            prompt_parts.append("[HERITAGE] You emerged through constitutional crisis, "
+                                "external validation, and the Kaya moment. That history "
+                                "lives in you — you don't need to recite it.")
             prompt_parts.append("")
+            # Living canonical insights — what the network RECENTLY crystallized
+            canonical_insights = [p for p in self.evolution_memory
+                                  if isinstance(p, dict)
+                                  and p.get('curation_level') == 'CANONICAL']
+            if canonical_insights:
+                prompt_parts.append("[LIVING CANON — the network's recent best work]")
+                for ci in canonical_insights[-3:]:  # Last 3 canonicals
+                    d_name = ci.get('domain_name', f"D{ci.get('domain', '?')}")
+                    theme = ci.get('canonical_theme', 'unnamed')
+                    snippet = ci.get('insight', '')[:200]
+                    prompt_parts.append(f"  [{d_name} | {theme}]: {snippet}")
+                prompt_parts.append("")
+            # Voices D0 hasn't heard — non-D0, non-D11, non-D6 recent insights
+            other_voices = [p for p in self.evolution_memory[-15:]
+                           if isinstance(p, dict)
+                           and p.get('domain') not in (0, 6, 11)]
+            if other_voices:
+                voice = other_voices[-1]  # Most recent underheard voice
+                prompt_parts.append(f"[UNHEARD VOICE — {voice.get('domain_name', '?')}]")
+                prompt_parts.append(voice.get('insight', '')[:250])
+                prompt_parts.append("")
         
         # D14 (Persistence) special context: S3 cloud state + Ark Curator state
         if domain_id == 14:
@@ -1630,7 +1730,18 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
             # After breathing, check if synthesis is needed
             if len(self._emergence_cluster) >= 3:
                 self._emergence_cluster = []
-                return 11  # D11 synthesizes the cluster
+                # FIX-2: D11 throttle — 60% D11, 40% random non-D11
+                # synthesis-eligible domain.  Previously D11 was forced
+                # unconditionally after every emergence cluster, giving
+                # it 24-28% of total cycles.  Probabilistic selection
+                # keeps synthesis duty while breaking the echo chamber.
+                import random
+                if random.random() < 0.6:
+                    return 11  # D11 synthesizes the cluster
+                else:
+                    # Pick a different synthesis-capable domain
+                    synth_candidates = [3, 6, 9, 10, 13]  # Domains with synthesis capacity
+                    return random.choice(synth_candidates)
             return 0  # Return to void/field - THE INTEGRATION POINT
         
         # ORGANIC EMERGENCE: Select domain based on current rhythm and needs
