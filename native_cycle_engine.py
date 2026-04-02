@@ -1611,9 +1611,15 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
             )
         else:
             prompt_parts.append("Respond AS this domain. Begin with '**Domain X (Name) speaks:**' or similar.")
-        prompt_parts.append("Reference relevant axioms naturally (e.g., 'A7 suggests...').")
-        prompt_parts.append("Speak from your domain's unique perspective on the I↔WE tension.")
-        prompt_parts.append("Be concise but profound. End with a question or insight for the next domain.")
+            # D13 (Perplexity) uses research-analyst framing (above).  These roleplay
+            # instructions are deliberately excluded for D13 because they trigger
+            # Perplexity content guardrails: "I cannot roleplay as a fictional domain."
+            # BUG 13 root cause: leaked roleplay lines after the if/else block caused
+            # ~30% of D13 cycles to produce full refusals even though the system-prompt
+            # section was correctly research-framed.
+            prompt_parts.append("Reference relevant axioms naturally (e.g., 'A7 suggests...').")
+            prompt_parts.append("Speak from your domain's unique perspective on the I↔WE tension.")
+            prompt_parts.append("Be concise but profound. End with a question or insight for the next domain.")
         
         return "\n".join(prompt_parts)
     
@@ -1636,6 +1642,53 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
         # (observed in March 1 cycle data: cycles 11, 27, 31, 37)
         max_tok = 1200 if provider == "gemini" else 1200
         response = self.llm.call(provider, prompt, max_tokens=max_tok)
+
+        # D13 refusal detection + retry (BUG 13 fix).
+        # Perplexity occasionally refuses with "I cannot fulfill this request
+        # as written. The query asks me to roleplay" — even with research-analyst
+        # framing — when residual framework vocabulary (e.g., "axiom", "I↔WE",
+        # "domain") bleeds in from the context block.  On refusal, retry with a
+        # stripped-down prompt that only contains the bare question and the
+        # explicit research task instruction, with no persona language at all.
+        if domain_id == 13 and response and any(
+            phrase in response.lower() for phrase in [
+                "i cannot fulfill",
+                "i'm unable to roleplay",
+                "unable to roleplay",
+                "i cannot roleplay",
+                "i'm not able to roleplay",
+                "fictional domain",
+                "as written. the query asks",
+            ]
+        ):
+            # Extract the original question from the prompt (after "Question: ")
+            question_line = ""
+            for line in prompt.split("\n"):
+                if line.startswith("Question: "):
+                    question_line = line[len("Question: "):].strip()
+                    break
+            if not question_line:
+                question_line = prompt[-400:]  # Fallback: last 400 chars
+
+            # Normalise any remaining internal vocabulary that triggers refusals
+            question_line = (
+                question_line
+                .replace("axiom", "principle")
+                .replace("I↔WE", "individual vs collective")
+                .replace("the Elpida", "the")
+                .replace("Elpida", "the reasoning")
+                .replace("Domain 13", "you")
+            )
+
+            fallback_prompt = (
+                "You are a research analyst. Using your search capabilities, find "
+                "real-world research, historical precedents, or empirical evidence "
+                "that addresses the following question. Cite your sources.\n\n"
+                f"Question: {question_line}\n\n"
+                "Begin your response with '**Archive (research synthesis):**'."
+            )
+            print(f"   🔄 D13/perplexity refusal detected — retrying with stripped prompt")
+            response = self.llm.call(provider, fallback_prompt, max_tokens=max_tok)
 
         # Truncation detection: if response is suspiciously short for a
         # domain prompt, log it so CloudWatch captures the pattern.

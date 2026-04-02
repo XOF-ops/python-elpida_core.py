@@ -1428,6 +1428,7 @@ class GovernanceClient:
         action_description: str,
         context: Optional[Dict[str, Any]] = None,
         *,
+        action_for_kernel: Optional[str] = None,
         analysis_mode: bool = False,
         body_cycle: Optional[int] = None,
         depth: str = "full",
@@ -1440,6 +1441,12 @@ class GovernanceClient:
             Layer 1 (Shell)  — Semantic axiom analysis. Only runs if Kernel passes.
 
         Args:
+            action_for_kernel: Optional stripped action text for Kernel check only.
+                When supplied, the Kernel regex runs on this text instead of
+                action_description.  Use this to exclude injected context blocks
+                (e.g. Pattern Library wisdom) whose governance vocabulary would
+                produce spurious HARD_BLOCKs — those blocks are context to help
+                Parliament, not part of the action being proposed.
             analysis_mode: When True, skip the regex Kernel check but keep
                 Parliament deliberation.  Use for content being *analyzed*
                 (e.g. policy dilemmas fed to the Divergence Engine) where
@@ -1459,8 +1466,12 @@ class GovernanceClient:
         """
         # ═══ LAYER 2: KERNEL (immutable, pre-semantic) ═══
         # Skipped in analysis_mode — the Parliament (semantic) still deliberates.
+        # When action_for_kernel is provided, run the kernel on the stripped
+        # text rather than the full action_description (avoids false-positives
+        # on Pattern Library context blocks that contain governance vocabulary).
         if not analysis_mode:
-            kernel_result = _kernel_check(action_description)
+            _kernel_text = action_for_kernel if action_for_kernel is not None else action_description
+            kernel_result = _kernel_check(_kernel_text)
             if kernel_result:
                 self._log("KERNEL_BLOCK", "kernel", True,
                           action=action_description,

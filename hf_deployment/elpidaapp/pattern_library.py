@@ -27,6 +27,7 @@ Usage::
 
 import json
 import logging
+import random
 from pathlib import Path
 from typing import List, Dict, Optional
 
@@ -159,7 +160,21 @@ class PatternLibrary:
                 scored.append((score, entry))
 
         scored.sort(key=lambda x: x[0], reverse=True)
-        return [entry for _, entry in scored[:max_results]]
+
+        # Shuffle within equal-score buckets so the same 3 patterns do not
+        # surface on every cycle for a given rhythm.  Higher-scored entries
+        # still take priority over lower-scored ones; only ties are shuffled.
+        result: List[Dict] = []
+        i = 0
+        while i < len(scored) and len(result) < max_results:
+            j = i
+            while j < len(scored) and scored[j][0] == scored[i][0]:
+                j += 1
+            bucket = [entry for _, entry in scored[i:j]]
+            random.shuffle(bucket)
+            result.extend(bucket)
+            i = j
+        return result[:max_results]
 
     def query_by_rhythm(self, rhythm: str, max_results: int = 3) -> List[Dict]:
         """
