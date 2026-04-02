@@ -539,6 +539,9 @@ class ParliamentCycleEngine:
         self._ai_dialogue = None
         self._ai_dialogue_last_cycle: int = 0
 
+        # Guest Chamber Feed — polls S3 for human questions, pushes to InputBuffer
+        self._guest_feed = None
+
     # ------------------------------------------------------------------
     # Lazy loaders
     # ------------------------------------------------------------------
@@ -2685,6 +2688,16 @@ class ParliamentCycleEngine:
         except Exception as _e:
             logger.warning("D0↔D11 body connector unavailable at startup: %s", _e)
 
+        # Guest Chamber Feed — start background S3 poller so human questions
+        # enter InputBuffer and trigger Parliament deliberation + Discord reply.
+        try:
+            from elpidaapp.guest_chamber import GuestChamberFeed
+            self._guest_feed = GuestChamberFeed(self.input_buffer)
+            self._guest_feed.start()
+            print(f"   📬 Guest Chamber Feed started (polling every {self._guest_feed.interval}s)")
+        except Exception as _e:
+            logger.warning("GuestChamberFeed unavailable at startup: %s", _e)
+
         try:
             while self._running and time.time() < end_time:
                 # Skip cycle if paused (Live Audit running — avoid OOM)
@@ -2714,6 +2727,9 @@ class ParliamentCycleEngine:
     def stop(self):
         """Signal the loop to stop after current cycle."""
         self._running = False
+        if self._guest_feed is not None:
+            self._guest_feed.stop()
+            self._guest_feed = None
 
     def _check_audit_pause(self) -> bool:
         """Check if a Live Audit signalled the engine to pause (file-based IPC)."""
