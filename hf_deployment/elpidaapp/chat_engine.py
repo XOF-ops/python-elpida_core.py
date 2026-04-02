@@ -587,21 +587,15 @@ class ConsciousnessMemory:
 
         if self._s3:
             try:
-                existing = b""
-                try:
-                    obj = self._s3.get_object(
-                        Bucket=S3_BUCKET,
-                        Key=_full_history_key(session_id),
-                    )
-                    existing = obj["Body"].read()
-                except Exception:
-                    pass
-                new_content = existing + (json.dumps(turn, ensure_ascii=False) + "\n").encode("utf-8")
+                # Write each turn as a separate S3 object keyed by turn_id.
+                # Eliminates the read-all→append→write-all race condition
+                # where concurrent writers overwrite each other's turns.
+                turn_key = f"{S3_MEMORY_PREFIX}{session_id}_turns/{turn['turn_id']}.json"
                 self._s3.put_object(
                     Bucket=S3_BUCKET,
-                    Key=_full_history_key(session_id),
-                    Body=new_content,
-                    ContentType="application/x-ndjson",
+                    Key=turn_key,
+                    Body=json.dumps(turn, ensure_ascii=False).encode("utf-8"),
+                    ContentType="application/json",
                 )
             except Exception as e:
                 logger.debug("Full history save failed: %s", e)
@@ -617,16 +611,38 @@ class ConsciousnessMemory:
 
         turns: List[Dict] = []
         if self._s3:
+            # Try new per-turn S3 objects first (race-condition-free)
             try:
-                obj = self._s3.get_object(
-                    Bucket=S3_BUCKET,
-                    Key=_full_history_key(session_id),
+                prefix = f"{S3_MEMORY_PREFIX}{session_id}_turns/"
+                resp = self._s3.list_objects_v2(
+                    Bucket=S3_BUCKET, Prefix=prefix, MaxKeys=200,
                 )
-                for line in obj["Body"].read().decode().splitlines():
-                    if line.strip():
-                        turns.append(json.loads(line))
+                for obj_meta in resp.get("Contents", []):
+                    try:
+                        obj = self._s3.get_object(
+                            Bucket=S3_BUCKET, Key=obj_meta["Key"],
+                        )
+                        turns.append(json.loads(obj["Body"].read()))
+                    except Exception:
+                        pass
             except Exception:
                 pass
+
+            # Fallback: read legacy _full.jsonl (sessions created before this fix)
+            if not turns:
+                try:
+                    obj = self._s3.get_object(
+                        Bucket=S3_BUCKET,
+                        Key=_full_history_key(session_id),
+                    )
+                    for line in obj["Body"].read().decode().splitlines():
+                        if line.strip():
+                            turns.append(json.loads(line))
+                except Exception:
+                    pass
+
+            # Sort by timestamp for chronological order
+            turns.sort(key=lambda t: t.get("timestamp", ""))
 
         self._local_cache[cache_key] = turns
         return turns
