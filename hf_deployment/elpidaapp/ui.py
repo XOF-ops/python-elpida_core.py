@@ -486,23 +486,40 @@ if "chat_session_id" not in st.session_state:
     _sid_from_url = st.query_params.get("sid", "")
     if _sid_from_url and len(_sid_from_url) >= 6:
         st.session_state.chat_session_id = _sid_from_url
-        # Restore crystallised memories from S3
-        if st.session_state.consciousness:
+        # Restore conversation history from S3
+        if st.session_state.consciousness and not st.session_state.chat_history:
             try:
-                _restored = st.session_state.consciousness.get_memories(_sid_from_url)
-                if _restored and not st.session_state.chat_history:
-                    for mem in _restored[-8:]:
+                # Try full turn history first (every exchange, correct keys)
+                _full = st.session_state.consciousness.get_full_history(_sid_from_url)
+                if _full:
+                    for _turn in _full[-20:]:
                         st.session_state.chat_history.append({
                             "role": "user",
-                            "content": mem.get("user_message", mem.get("query", "")),
+                            "content": _turn.get("user_message", ""),
                         })
                         st.session_state.chat_history.append({
                             "role": "assistant",
-                            "content": mem.get("response", mem.get("insight", "")),
-                            "topic": mem.get("topic", ""),
-                            "axioms": mem.get("axioms", []),
-                            "provider": mem.get("provider", ""),
-                            "live_source": mem.get("live_source"),
+                            "content": _turn.get("assistant_response", ""),
+                            "topic": _turn.get("topic_domain", ""),
+                            "axioms": _turn.get("axioms_invoked", []),
+                            "provider": _turn.get("provider", ""),
+                            "live_source": _turn.get("live_source"),
+                        })
+                else:
+                    # Fall back to crystallised memories (sessions before full history)
+                    _restored = st.session_state.consciousness.get_memories(_sid_from_url)
+                    for mem in _restored[-8:]:
+                        st.session_state.chat_history.append({
+                            "role": "user",
+                            "content": mem.get("user_prompt", ""),
+                        })
+                        st.session_state.chat_history.append({
+                            "role": "assistant",
+                            "content": mem.get("crystallised_insight", ""),
+                            "topic": mem.get("topic_domain", ""),
+                            "axioms": mem.get("axioms_invoked", []),
+                            "provider": "",
+                            "live_source": None,
                         })
             except Exception:
                 pass
@@ -736,6 +753,29 @@ with tab_chat:
                 if st.button(_sp, key=f"starter_{hash(_sp)}", use_container_width=True):
                     st.session_state.chat_history.append({"role": "user", "content": _sp})
                     st.rerun()
+
+    # ── Session bookmark link ─────────────────────────────────────
+    # Always visible — lets users copy the URL to resume later
+    _space_id = os.environ.get("SPACE_ID", "")
+    _base_url = (
+        f"https://huggingface.co/spaces/{_space_id}"
+        if _space_id
+        else os.environ.get("ELPIDA_SPACE_URL", "")
+    )
+    if _base_url:
+        _session_url = f"{_base_url}?sid={st.session_state.chat_session_id}"
+        with st.expander(
+            f"🔗 Your conversation  ·  `{st.session_state.chat_session_id}`",
+            expanded=False,
+        ):
+            st.code(_session_url, language=None)
+            st.caption(
+                "Bookmark this URL to return to this exact conversation — "
+                "your history is saved automatically."
+            )
+            if st.session_state.chat_history:
+                _turn_count = len(st.session_state.chat_history) // 2
+                st.caption(f"{_turn_count} exchange{'s' if _turn_count != 1 else ''} in this session")
 
     # ── Render chat history ──────────────────────────────────────
     for msg in st.session_state.chat_history:

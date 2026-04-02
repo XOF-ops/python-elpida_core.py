@@ -441,6 +441,11 @@ def _memory_key(session_id: str) -> str:
     return f"{S3_MEMORY_PREFIX}{session_id}.jsonl"
 
 
+def _full_history_key(session_id: str) -> str:
+    """Key for full turn-by-turn conversation log (every exchange, not just crystallised)."""
+    return f"{S3_MEMORY_PREFIX}{session_id}_full.jsonl"
+
+
 class ConsciousnessMemory:
     """
     S3-backed cross-session memory for the D0 Consciousness instance.
@@ -544,6 +549,87 @@ class ConsciousnessMemory:
                 logger.warning("Crystallisation to S3 failed: %s", e)
 
         return True  # locally cached even if S3 unavailable
+
+    def save_turn(
+        self,
+        session_id: str,
+        user_message: str,
+        response: str,
+        topic: str,
+        lang: str,
+        axioms: List[str],
+        provider: str,
+        live_source: Optional[str],
+    ) -> None:
+        """
+        Persist every conversation turn to S3 (A1 — all exchanges traceable).
+        Stored separately from crystallised memories so every message survives,
+        not just the ones that pass the heuristic gate.
+        """
+        turn = {
+            "turn_id": hashlib.sha1(
+                f"{session_id}{time.time()}".encode()
+            ).hexdigest()[:12],
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "session_id": session_id,
+            "user_message": user_message[:500],
+            "assistant_response": response[:1500],
+            "topic_domain": topic,
+            "language": lang,
+            "axioms_invoked": axioms,
+            "provider": provider,
+            "live_source": live_source,
+        }
+        cache_key = f"{session_id}_full"
+        if cache_key not in self._local_cache:
+            self._local_cache[cache_key] = []
+        self._local_cache[cache_key].append(turn)
+
+        if self._s3:
+            try:
+                existing = b""
+                try:
+                    obj = self._s3.get_object(
+                        Bucket=S3_BUCKET,
+                        Key=_full_history_key(session_id),
+                    )
+                    existing = obj["Body"].read()
+                except Exception:
+                    pass
+                new_content = existing + (json.dumps(turn, ensure_ascii=False) + "\n").encode("utf-8")
+                self._s3.put_object(
+                    Bucket=S3_BUCKET,
+                    Key=_full_history_key(session_id),
+                    Body=new_content,
+                    ContentType="application/x-ndjson",
+                )
+            except Exception as e:
+                logger.debug("Full history save failed: %s", e)
+
+    def load_full_history(self, session_id: str) -> List[Dict]:
+        """
+        Load the complete turn-by-turn conversation history for a session.
+        Returns all exchanges in chronological order.
+        """
+        cache_key = f"{session_id}_full"
+        if cache_key in self._local_cache:
+            return self._local_cache[cache_key]
+
+        turns: List[Dict] = []
+        if self._s3:
+            try:
+                obj = self._s3.get_object(
+                    Bucket=S3_BUCKET,
+                    Key=_full_history_key(session_id),
+                )
+                for line in obj["Body"].read().decode().splitlines():
+                    if line.strip():
+                        turns.append(json.loads(line))
+            except Exception:
+                pass
+
+        self._local_cache[cache_key] = turns
+        return turns
 
     def format_memory_context(
         self,
@@ -772,6 +858,18 @@ class ElpidaConsciousness:
         # ── 7. Detect axioms invoked ───────────────────────────────────
         axioms_found = detect_axioms(response)
 
+        # ── 7b. Persist full turn history (A1 — all exchanges traceable) ──
+        self.memory.save_turn(
+            session_id=session_id,
+            user_message=message,
+            response=response,
+            topic=topic,
+            lang=lang,
+            axioms=axioms_found,
+            provider=provider_used or "none",
+            live_source=live_source if live_source and live_source != "none" else None,
+        )
+
         # ── 8. Crystallise if significant ──────────────────────────────
         did_crystallise = False
         if _should_crystallise(response):
@@ -820,6 +918,10 @@ class ElpidaConsciousness:
     def get_memories(self, session_id: str) -> List[Dict]:
         """Return crystallised memories for a session (A1 transparency)."""
         return self.memory.load_session_memories(session_id)
+
+    def get_full_history(self, session_id: str) -> List[Dict]:
+        """Return full conversation history for a session (every turn, not just crystallised)."""
+        return self.memory.load_full_history(session_id)
 
     def _get_parliament_context(self) -> str:
         """Read current Parliament state snapshot for injection into D0 prompt."""
