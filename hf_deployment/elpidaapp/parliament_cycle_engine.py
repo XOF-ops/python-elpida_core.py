@@ -751,11 +751,11 @@ class ParliamentCycleEngine:
                         r, boost, self._d14_ratified_axiom,
                     )
 
-        # D14 cross-layer: MIND cadence_mood read-through.
+        # D14 cross-layer: MIND ark_mood read-through.
         # If the MIND's Ark Curator signals "breaking" (recursion
         # detected), boost EMERGENCY from BODY side too so both
         # layers break the loop together.
-        _mind_mood = (self._mind_heartbeat or {}).get("cadence_mood")
+        _mind_mood = (self._mind_heartbeat or {}).get("ark_mood")
         if _mind_mood == "breaking":
             weights["EMERGENCY"] = weights.get("EMERGENCY", 5) + 20
             logger.debug("D14 cross-layer: MIND mood=breaking — EMERGENCY +20")
