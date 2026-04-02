@@ -343,12 +343,18 @@ class CulturalDriftDetector:
         drifting = []
         aligned = []
 
+        # Scale drift threshold by sample size — with 55 cycles and 16 axioms,
+        # Laplace smoothing makes per-axiom deltas tiny. 0.05 is unreachable
+        # for short runs, producing "all zeros" in the drift report.
+        n_cycles = max(len(self.decisions), 1)
+        min_drift = max(0.02, 0.05 * min(1.0, 50 / n_cycles))
+
         for ax in ALL_AXIOMS:
             e_val = espoused.get(ax, 0)
             l_val = lived.get(ax, 0)
             drift = abs(e_val - l_val)
 
-            if drift > 0.05:  # 5% divergence threshold per axiom
+            if drift > min_drift:
                 drifting.append({
                     "axiom": ax,
                     "axiom_name": AXIOM_NAMES.get(ax, ax),
@@ -464,9 +470,12 @@ class PathologyScanner:
         # Overall health = worst of all detectors
         severities = ["HEALTHY", "WARNING", "CRITICAL"]
         zombie_count = len(zombie_report.get("zombies", []))
-        if zombie_count >= 3:
+        # Raised from 3→5: with 16 axioms and short windows (55 cycles),
+        # axioms that simply lacked opportunity easily flag as zombies.
+        # 5 zombies = 31% of all axioms are truly unresponsive.
+        if zombie_count >= 5:
             zombie_severity = "CRITICAL"
-        elif zombie_count >= 1:
+        elif zombie_count >= 2:
             zombie_severity = "WARNING"
         else:
             zombie_severity = "HEALTHY"
