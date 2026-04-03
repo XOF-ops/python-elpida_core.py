@@ -176,8 +176,8 @@ PROVIDER_DIVERSE = {
     "mistral":    [3],
     "grok":       [7],
     "cohere":     [2, 9],
-    "perplexity": [13],
-    "groq":       [],      # available as alternate
+    "perplexity": [],       # reserved for MIND (costs tokens)
+    "groq":       [13],    # D13 archive — generic reasoning, no web search needed
     "huggingface":[],      # available as alternate
 }
 

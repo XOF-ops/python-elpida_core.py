@@ -511,7 +511,7 @@ _NODE_LLM: Dict[str, str] = {
     "TECHNE":    "openai",      # A4  — Method/safety → gpt-4o-mini safety tuning
     "KAIROS":    "groq",        # A5  — Timing/design decisions = fast
     "THEMIS":    "gemini",      # A6  — Collective governance → broad tuning
-    "PROMETHEUS":"perplexity",  # A8  — Epistemic humility → grounded in reality
+    "PROMETHEUS":"groq",        # A8  — Epistemic humility (was perplexity, swapped to free)
     "IANUS":     "groq",        # A9  — Temporal checkpoints = fast gating
     "CHAOS":     "claude",      # A10 — Contradiction-holding = Claude's strength
     "LOGOS":     "mistral",     # A2  — Semantic precision = Mistral's strength

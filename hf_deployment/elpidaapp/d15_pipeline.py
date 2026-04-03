@@ -273,22 +273,31 @@ class D15Pipeline:
             }
     
     def _stage_d13(self) -> Dict[str, Any]:
-        """D13: Research external reality via Perplexity/Archive."""
+        """D13: Research external reality via DDG web search + Groq synthesis."""
         try:
+            from elpidaapp.domain_grounding import ground_query
+
+            # Free web grounding via DuckDuckGo
+            web_ctx = ground_query(
+                "AI consciousness AI ethics AI governance autonomous systems 2026",
+                max_results=5,
+            )
+
             prompt = (
-                "What are the most significant developments in AI consciousness, "
-                "AI ethics, and AI governance happening right now? "
+                "Summarise the most significant developments in AI consciousness, "
+                "AI ethics, and AI governance happening right now. "
                 "Focus on: autonomous AI systems, multi-model architectures, "
                 "transparency in AI decision-making, and collective AI wellbeing. "
-                "Provide specific examples and their implications."
+                "Provide specific examples and their implications.\n\n"
             )
-            
-            # Use perplexity (D13's assigned provider)
-            output = self.llm.call("perplexity", prompt, max_tokens=600)
-            
+            if web_ctx:
+                prompt += web_ctx + "\n\n"
+            prompt += "Based on the above web context, give a concise research brief."
+
+            output = self.llm.call("groq", prompt, max_tokens=600)
+
             if not output:
-                # Fallback to groq
-                output = self.llm.call("groq", prompt, max_tokens=600)
+                output = self.llm.call("gemini", prompt, max_tokens=600)
             
             return {
                 "success": output is not None,
