@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "file=\"${CLAUDE_TOOL_INPUT_FILE_PATH:-}\" && if [ -n \"$file\" ] && echo \"$file\" | grep -qE '(kernel|elpida_domains|immutable_kernel|axiom)'; then echo '[Elpida] Constitutional file modified — run: python3 verify_elpida_canon.py'; fi"
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(source .env && aws s3 cp *)",
+      "Bash(source .env && aws ecs *)",
+      "Bash(source .env && aws events *)",
+      "Bash(python3 verify_elpida_canon.py)",
+      "Bash(git log *)",
+      "Bash(git diff *)",
+      "Bash(git status)"
+    ]
+  }
+}

@@ -79,8 +79,8 @@ class ElpidaIdentity:
     genesis_timestamp: str = ""
     identity_hash: str = ""
     # ─── Unfrozen fields ─────────────────────────────
-    axiom_count: int = 15
-    domain_count: int = 16
+    axiom_count: int = 16
+    domain_count: int = 17
     genesis_chain: str = GENESIS_CHAIN
     
     def __post_init__(self):
@@ -203,12 +203,13 @@ class ElpidaCore:
                     "A14" in axioms and axioms["A14"].get("ratio") == "7:6"
                 )
                 # Genesis chain: every axiom in the chain must exist
-                chain_axioms = [f"A{i}" for i in range(15)]
+                # A0-A14 + A16 (no A15 — constitutional gap, never ratified)
+                chain_axioms = [f"A{i}" for i in range(15)] + ["A16"]
                 recognition_checks["genesis_chain"] = all(a in axioms for a in chain_axioms)
                 if all(recognition_checks.get(k, False) for k in
                        ["axiom_architecture", "a11_world", "a14_selective_eternity", "genesis_chain"]):
                     self.memory.axioms_verified = True
-                    self.logger.info(f"  ✓ Axiom architecture: {len(axioms)} axioms, A0-A14")
+                    self.logger.info(f"  ✓ Axiom architecture: {len(axioms)} axioms, A0-A14+A16")
             except Exception as e:
                 self.logger.warning(f"  Axiom verification error: {e}")
         

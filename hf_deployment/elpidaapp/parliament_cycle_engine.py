@@ -88,10 +88,10 @@ HF_SYSTEM_TO_RHYTHM = {
 RHYTHM_DOMAINS = {
     "CONTEMPLATION": [1, 2, 3, 6, 8, 14],
     "ANALYSIS": [4, 5, 6, 9, 13, 14],
-    "ACTION": [6, 7, 8, 9, 10],
-    "SYNTHESIS": [6, 11, 13, 14, 15],
+    "ACTION": [6, 7, 8, 9, 10, 16],
+    "SYNTHESIS": [6, 11, 13, 14, 15, 16],
     "EMERGENCY": [4, 6, 7, 12, 13, 14],
-    "CONVERGENCE": [6, 10, 11, 14, 15],
+    "CONVERGENCE": [6, 10, 11, 14, 15, 16],
 }
 
 # Domain → primary axiom (from config)
@@ -99,6 +99,7 @@ DOMAIN_AXIOM = {
     0: "A0", 1: "A1", 2: "A2", 3: "A3", 4: "A4", 5: "A5",
     6: "A6", 7: "A7", 8: "A8", 9: "A9", 10: "A10",
     11: "A0", 12: "A12", 13: "A13", 14: "A14", 15: "A11",
+    16: "A16",
 }
 
 # Musical ratios (from elpida_domains.json) for consonance calculation
@@ -118,6 +119,7 @@ AXIOM_RATIOS = {
     "A12": 11 / 8,  # Undecimal Tritone — Eternal Creative Tension
     "A13": 13 / 8,  # Tridecimal Neutral 6th — The Archive Paradox
     "A14": 7 / 6,   # Septimal Minor 3rd — Selective Eternity
+    "A16": 11 / 7,  # Undecimal Augmented 5th — Responsive Integrity
 }
 
 # Fibonacci heartbeat interval (same as MIND)

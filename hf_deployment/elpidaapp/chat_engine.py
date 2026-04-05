@@ -674,7 +674,7 @@ class ConsciousnessMemory:
 def detect_axioms(text: str) -> List[str]:
     """Detect which axioms were invoked in a response."""
     axioms = []
-    for i in range(0, 15):
+    for i in list(range(0, 15)) + [16]:  # A0-A14 + A16 (no A15)
         pattern = rf'\bA{i}\b|\bAxiom {i}\b|\bΑξίωμα {i}\b'
         if re.search(pattern, text):
             axioms.append(f"A{i}")

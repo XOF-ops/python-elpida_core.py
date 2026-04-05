@@ -144,6 +144,7 @@ TECHNOLOGY_REVIEW_RATIONALE = {
     9:  ("Coherence",    "Cohere",     "Temporal stability: does it behave consistently across contexts and time?"),
     10: ("Evolution",    "Claude",     "Meta-reflection: can this system hold its own contradictions and limits?"),
     13: ("Archive",      "Perplexity", "Research grounding: what does external evidence say about this technology?"),
+    16: ("Agency",       "Claude",     "Responsive Integrity: what action does this technology review require? What bounded, witnessed response follows from our analysis?"),
 }
 
 # Master preset registry
