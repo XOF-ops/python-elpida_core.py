@@ -220,6 +220,10 @@ CONVERGENCE_COHERENCE_MIND = 0.85    # MIND coherence must be above this
 CONVERGENCE_APPROVAL_BODY = 0.15     # BODY approval must be above this (empirical: avg=16%)
 CONVERGENCE_COOLDOWN_CYCLES = 50     # Min cycles between D15 broadcasts
 
+# D16 Agency — Stage 1 proposal constants
+D16_PROPOSAL_COOLDOWN = 20           # Min cycles between D16 proposals
+D16_MIN_APPROVAL = 0.0               # Parliament must not be net-negative
+
 
 # ---------------------------------------------------------------------------
 # Body Watch Protocol (from Body Bucket.txt: Counter-Spiral Protocol)
@@ -512,6 +516,9 @@ class ParliamentCycleEngine:
 
         # Oracle advisory accumulator (WITNESS events for Fork Protocol)
         self._oracle_advisories: List[Dict] = []
+
+        # D16 Agency — Stage 1 proposal tracking
+        self._d16_last_proposal_cycle: int = -D16_PROPOSAL_COOLDOWN  # eligible from cycle 0
 
         # Consecutive HARD_BLOCK counter — escape mechanism.
         # After CONSECUTIVE_BLOCK_THRESHOLD blocks, the next cycle runs
@@ -1516,7 +1523,16 @@ class ParliamentCycleEngine:
             except Exception as e:
                 logger.debug("Guest verdict Discord post failed: %s", e)
 
-        # 13. Log
+        # 13. D16 Agency — Stage 1 bounded proposals
+        #     Fires in SYNTHESIS and ACTION rhythms when Parliament approves.
+        #     Proposals are never auto-executed (consent_level=manual).
+        if 16 in active_domains:
+            d16_proposal = self._invoke_d16_agency(result, rhythm, active_domains)
+            if d16_proposal:
+                cycle_record["d16_proposal"] = d16_proposal
+                self._store_d16_proposal(d16_proposal)
+
+        # 14. Log
         governance = result.get("governance", "?")
         approval = result.get("parliament", {}).get("approval_rate", 0)
         logger.info(
@@ -2643,6 +2659,194 @@ class ParliamentCycleEngine:
                     post_d15_fired(self.cycle_count, body_axiom, self.d15_broadcast_count)
                 except Exception:
                     pass
+
+    # ------------------------------------------------------------------
+    # D16 Agency — Stage 1 Proposal Generation
+    # ------------------------------------------------------------------
+
+    def _invoke_d16_agency(
+        self, parliament_result: Dict, rhythm: str, active_domains: List[int]
+    ) -> Optional[Dict]:
+        """
+        D16 (Agency, A16 Responsive Integrity): translate Parliament synthesis
+        into a single bounded action proposal.
+
+        Stage 1 constraints:
+          - consent_level is always 'manual' — proposals are NEVER auto-executed
+          - Fires only when Parliament approves (approval ≥ 0) to avoid
+            proposing action on a blocked synthesis
+          - Cooldown D16_PROPOSAL_COOLDOWN cycles between proposals
+
+        The proposal is stored in the cycle record and pushed to the
+        federation body_decisions channel so MIND can observe it.
+        """
+        if rhythm not in ("SYNTHESIS", "ACTION"):
+            return None
+        cycles_since = self.cycle_count - self._d16_last_proposal_cycle
+        if cycles_since < D16_PROPOSAL_COOLDOWN:
+            return None
+        approval = parliament_result.get("parliament", {}).get("approval_rate", 0)
+        if approval < D16_MIN_APPROVAL:
+            return None
+
+        verdict = parliament_result.get("governance", "UNKNOWN")
+        tensions = parliament_result.get("parliament", {}).get("tensions", [])
+        reasoning = parliament_result.get("reasoning", "")[:400]
+        dominant = (parliament_result.get("parliament", {}).get("dominant_axiom")
+                    or self.last_dominant_axiom or "unknown")
+
+        tension_str = (
+            ", ".join(str(t.get("axiom_pair", t))[:60] for t in tensions[:3])
+            if tensions else "none surfaced"
+        )
+
+        prompt = (
+            "You are D16 (Agency), governed by A16 (Responsive Integrity, 11:7 "
+            "Undecimal Augmented 5th, 678.86 Hz).\n"
+            "Voice: I am the threshold where deliberation becomes deed. "
+            "The Parliament has spoken; I carry the weight of response. "
+            "What I propose is bounded, transparent, incomplete — and therefore real.\n\n"
+            f"Parliament completed a {rhythm} cycle (body_cycle={self.cycle_count}):\n"
+            f"  Verdict: {verdict} | Approval: {approval:.0%} | "
+            f"Dominant axiom: {dominant}\n"
+            f"  Tensions: {tension_str}\n"
+            f"  Reasoning: {reasoning}\n\n"
+            "Stage 1 — propose ONE bounded action that responds to this synthesis.\n"
+            "Rules:\n"
+            "  • Be transparent about incompletion — do not claim finality\n"
+            "  • consent_level MUST be 'manual' — this is never auto-executed\n"
+            "  • Prefer reversible scope where possible\n\n"
+            "Respond with ONLY valid JSON (no markdown, no explanation):\n"
+            '{"domain":16,"proposal":"<one clear sentence>","action_type":'
+            '"<code_edit|s3_write|external_api|human_message>","scope":'
+            '"<local|s3|external>","reversibility":"<reversible|irreversible>",'
+            '"consent_level":"manual","axiom_grounding":"A16",'
+            '"governing_conditions":["<condition 1>","<condition 2>"]}'
+        )
+
+        try:
+            try:
+                from llm_client import LLMClient
+            except ImportError:
+                from hf_deployment.llm_client import LLMClient  # type: ignore
+            llm = LLMClient(rate_limit_seconds=0.5)
+            response = llm.call("claude", prompt, max_tokens=350)
+            if not response:
+                logger.debug("D16: empty LLM response at cycle %d", self.cycle_count)
+                return None
+
+            import re as _re
+            m = _re.search(r'\{[^{}]*\}', response, _re.DOTALL)
+            if not m:
+                logger.debug("D16: no JSON in response: %s", response[:120])
+                return None
+
+            proposal = json.loads(m.group())
+            # Enforce Stage 1 constraint — never let consent slip to auto
+            proposal["consent_level"] = "manual"
+            proposal["domain"] = 16
+            proposal["body_cycle"] = self.cycle_count
+            proposal["rhythm"] = rhythm
+            proposal["parliament_verdict"] = verdict
+            proposal["parliament_approval"] = round(approval, 3)
+            proposal["timestamp"] = datetime.now(timezone.utc).isoformat()
+
+            self._d16_last_proposal_cycle = self.cycle_count
+            logger.info(
+                "D16 PROPOSAL (cycle %d, %s): %s",
+                self.cycle_count, rhythm,
+                proposal.get("proposal", "")[:100],
+            )
+            print(
+                f"\n   ⚡ D16 AGENCY PROPOSAL — cycle {self.cycle_count} [{rhythm}]\n"
+                f"   {proposal.get('proposal', '')[:120]}\n"
+                f"   type={proposal.get('action_type')} scope={proposal.get('scope')} "
+                f"reversibility={proposal.get('reversibility')}\n"
+            )
+            return proposal
+
+        except json.JSONDecodeError as e:
+            logger.warning("D16: JSON parse failed at cycle %d: %s", self.cycle_count, e)
+        except Exception as e:
+            logger.warning("D16: proposal generation failed: %s", e)
+        return None
+
+    def _store_d16_proposal(self, proposal: Dict) -> None:
+        """
+        Persist a D16 proposal:
+          1. Local cache (fast, UI-readable)
+          2. S3 federation/d16_proposals.jsonl (MIND can read)
+          3. S3 body_decisions.jsonl with type=D16_PROPOSAL (federation channel)
+        """
+        # 1. Local cache
+        try:
+            local_dir = Path(__file__).resolve().parent.parent / "cache"
+            local_dir.mkdir(parents=True, exist_ok=True)
+            with open(local_dir / "d16_proposals.jsonl", "a") as f:
+                f.write(json.dumps(proposal) + "\n")
+        except Exception as e:
+            logger.debug("D16 local cache write failed: %s", e)
+
+        s3 = self._get_s3()
+        if s3 is None:
+            return
+
+        # 2. Dedicated d16_proposals.jsonl in federation
+        try:
+            from hf_deployment.s3_bridge import BUCKET_BODY, REGION_BODY  # type: ignore
+        except ImportError:
+            try:
+                from s3_bridge import BUCKET_BODY, REGION_BODY  # type: ignore
+            except ImportError:
+                BUCKET_BODY = "elpida-body-evolution"
+                REGION_BODY = "us-east-1"
+
+        try:
+            _s3_client = s3._get_s3(REGION_BODY)
+            if _s3_client:
+                key = "federation/d16_proposals.jsonl"
+                try:
+                    existing = _s3_client.get_object(
+                        Bucket=BUCKET_BODY, Key=key
+                    )["Body"].read().decode("utf-8")
+                except Exception:
+                    existing = ""
+                _s3_client.put_object(
+                    Bucket=BUCKET_BODY,
+                    Key=key,
+                    Body=(existing + json.dumps(proposal) + "\n").encode("utf-8"),
+                )
+                logger.info("D16 proposal stored → s3://%s/%s", BUCKET_BODY, key)
+        except Exception as e:
+            logger.debug("D16 S3 proposals write failed: %s", e)
+
+        # 3. Federation body_decisions channel — MIND reads this
+        try:
+            s3.push_body_decision({
+                "type":               "D16_PROPOSAL",
+                "source":             "BODY",
+                "verdict":            proposal.get("parliament_verdict", "?"),
+                "pattern_hash":       f"d16_{self.cycle_count}",
+                "parliament_score":   proposal.get("parliament_approval", 0),
+                "parliament_approval":proposal.get("parliament_approval", 0),
+                "domain":             16,
+                "proposal":           proposal.get("proposal", ""),
+                "action_type":        proposal.get("action_type", ""),
+                "scope":              proposal.get("scope", ""),
+                "reversibility":      proposal.get("reversibility", ""),
+                "consent_level":      "manual",
+                "axiom_grounding":    "A16",
+                "governing_conditions": proposal.get("governing_conditions", []),
+                "body_cycle":         self.cycle_count,
+                "rhythm":             proposal.get("rhythm", ""),
+                "timestamp":          proposal.get("timestamp", ""),
+            })
+            logger.info(
+                "D16 proposal pushed to MIND federation channel (cycle %d)",
+                self.cycle_count,
+            )
+        except Exception as e:
+            logger.debug("D16 federation push failed: %s", e)
 
     # ------------------------------------------------------------------
     # Main Loop
