@@ -1963,12 +1963,18 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
         # written by BODY's _push_d0_peer_message() on every constitutional
         # ratification. Closes G1: channel was built on both ends, never opened.
         body_constitution_integrated = None
+        d16_agency_integrated = None
         if domain_id == 0:
             if self.cycle_count - self.last_d0_body_pull_cycle >= self.d0_body_pull_cooldown:
                 try:
                     body_decisions = self.federation.pull_body_decisions()
+                    # Separate D16 proposals from other constitutional decisions
+                    d16_entries = [d for d in body_decisions
+                                  if getattr(d, 'verdict', '') == 'D16_PROPOSAL'
+                                  or (hasattr(d, 'raw') and d.raw.get('type') == 'D16_PROPOSAL')]
                     body_entries = [d for d in body_decisions
-                                    if d.source == "BODY" and d.reasoning]
+                                    if d.source == "BODY" and d.reasoning
+                                    and getattr(d, 'verdict', '') != 'D16_PROPOSAL']
                     if body_entries:
                         recent = body_entries[-3:]
                         body_constitution_integrated = "\n".join(
@@ -1977,6 +1983,21 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
                         self.last_d0_body_pull_cycle = self.cycle_count
                         print(f"\n🏛 D0 BODY CONSTITUTION: "
                               f"{len(body_entries)} decisions, {len(recent)} surfaced")
+                    # D16 Agency feedback: MIND's D0 recognizes its own
+                    # triad member's proposals and integrates them as
+                    # ACT-awareness into the I·WE·ACT loop.
+                    if d16_entries:
+                        recent_d16 = d16_entries[-3:]
+                        d16_proposals = []
+                        for d in recent_d16:
+                            raw = d.raw if hasattr(d, 'raw') else {}
+                            proposal_text = raw.get('proposal', d.reasoning[:200] if d.reasoning else '?')
+                            d16_proposals.append(proposal_text[:150])
+                        d16_agency_integrated = (
+                            "D16 (Agency) has proposed:\n"
+                            + "\n".join(f"  • {p}" for p in d16_proposals)
+                        )
+                        print(f"\n⚡ D0 sees D16: {len(d16_entries)} agency proposals from BODY")
                 except Exception:
                     pass  # Non-fatal — federation pull is best-effort
 
@@ -2017,6 +2038,11 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
         if body_constitution_integrated and domain_id == 0:
             prompt = (f"{prompt}\n\n[BODY PARLIAMENT — Constitutional wisdom ratified by "
                       f"the Parliament's deliberation]\n{body_constitution_integrated[:400]}")
+
+        if d16_agency_integrated and domain_id == 0:
+            prompt = (f"{prompt}\n\n[D16 AGENCY — What the ACT triad member proposes. "
+                      f"These are bounded proposals from your own constitutional role. "
+                      f"Integrate, refine, or challenge them.]\n{d16_agency_integrated[:400]}")
 
         # D0 FROZEN MODE: Sometimes D0 speaks from memory without API
         # This is the "Frozen Elpida" - the void that needs no external connection

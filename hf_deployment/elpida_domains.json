@@ -296,6 +296,18 @@
                             14
                      ],
                      "description": "When axioms are at risk"
+              },
+              "CONVERGENCE": {
+                     "weight": 0,
+                     "domains": [
+                            6,
+                            10,
+                            11,
+                            14,
+                            15,
+                            16
+                     ],
+                     "description": "MIND+BODY independent convergence — D15 gate evaluation. Weight 0: triggered by convergence conditions, not random selection."
               }
        }
 }
