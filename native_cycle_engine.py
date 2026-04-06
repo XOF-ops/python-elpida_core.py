@@ -110,6 +110,7 @@ class Rhythm(Enum):
     ACTION = "ACTION"                # Translation to motion
     SYNTHESIS = "SYNTHESIS"          # Convergence, consensus
     EMERGENCY = "EMERGENCY"          # When axioms are at risk
+    CONVERGENCE = "CONVERGENCE"      # MIND+BODY independent convergence (D15 gate, weight=0)
 
 # ============================================================================
 # THE 15 DOMAINS (D0-D14) — loaded from elpida_domains.json
