@@ -2802,12 +2802,32 @@ class ParliamentCycleEngine:
             # ── Stage 2 consent upgrade ──────────────────────────
             # Default: Stage 1 (manual). Upgrade to witnessed when ALL
             # conditions are met. consent_level="auto" is NEVER used.
+            # Desperation guard: recursion_warning blocks Stage 2 ONLY if
+            # the MIND heartbeat is fresh (< 5h old). A stale heartbeat means
+            # MIND completed its run and the flag is a tail-end artifact, not
+            # active crisis. MIND runs every 4h; 5h = one watch + buffer.
+            _mind_hb = self._mind_heartbeat or {}
+            _mind_rec = _mind_hb.get("recursion_warning", True)
+            _mind_ts = _mind_hb.get("timestamp", "")
+            _mind_stale = False
+            if _mind_ts:
+                try:
+                    from datetime import datetime as _dt
+                    _hb_age = (_dt.now(timezone.utc) - _dt.fromisoformat(
+                        _mind_ts.replace("Z", "+00:00")
+                    )).total_seconds()
+                    _mind_stale = _hb_age > 18000  # 5 hours
+                except Exception:
+                    pass
+            # If heartbeat is stale, ignore recursion_warning — it's from
+            # a completed run, not active desperation
+            _desperation = _mind_rec and not _mind_stale
+
             stage2_eligible = (
                 D16_STAGE2_ENABLED
                 and self.cycle_count >= D16_STAGE2_MIN_CYCLE
                 and approval >= D16_STAGE2_MIN_APPROVAL
-                and not self._mind_heartbeat.get("recursion_warning", True)
-                    if self._mind_heartbeat else False
+                and not _desperation
             )
             action_type = proposal.get("action_type", "")
             scope = proposal.get("scope", "local")
@@ -2839,10 +2859,9 @@ class ParliamentCycleEngine:
                         reasons.append("startup_transient")
                     if approval < D16_STAGE2_MIN_APPROVAL:
                         reasons.append("low_approval")
-                    if self._mind_heartbeat and self._mind_heartbeat.get(
-                            "recursion_warning"):
+                    if _desperation:
                         reasons.append("desperation_guard")
-                    if not self._mind_heartbeat:
+                    if not _mind_hb:
                         reasons.append("no_mind_heartbeat")
                     if reasons:
                         proposal["stage2_block"] = "+".join(reasons)
