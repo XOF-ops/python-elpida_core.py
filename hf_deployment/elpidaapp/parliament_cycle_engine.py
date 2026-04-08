@@ -2846,7 +2846,7 @@ class ParliamentCycleEngine:
             action_type = proposal.get("action_type", "")
             scope = proposal.get("scope", "local")
 
-            if stage2_eligible and action_type != "code_edit":
+            if stage2_eligible:
                 # External scope requires D15 gate — D16 cannot bypass D15
                 if scope in D16_SCOPE_REQUIRES_D15:
                     # Check if D15 convergence gate is currently satisfied
