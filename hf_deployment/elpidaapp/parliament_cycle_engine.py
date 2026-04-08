@@ -2802,12 +2802,23 @@ class ParliamentCycleEngine:
             # ── Stage 2 consent upgrade ──────────────────────────
             # Default: Stage 1 (manual). Upgrade to witnessed when ALL
             # conditions are met. consent_level="auto" is NEVER used.
-            # Desperation guard: recursion_warning blocks Stage 2 ONLY if
-            # the MIND heartbeat is fresh (< 5h old). A stale heartbeat means
-            # MIND completed its run and the flag is a tail-end artifact, not
-            # active crisis. MIND runs every 4h; 5h = one watch + buffer.
+            # Desperation guard: recursion_warning blocks Stage 2 ONLY when
+            # MIND is actively recursing — not when the flag is a tail-end
+            # artifact from a completed run.
+            #
+            # MIND writes heartbeat at Fibonacci points (13/26/39/52).
+            # recursion_warning typically goes True around cycle 39.
+            # The heartbeat at cycle 52 persists until the next run.
+            #
+            # We check: is the heartbeat from an ACTIVE run where
+            # recursion is happening NOW? Three conditions indicate
+            # the flag is a stale artifact, not live desperation:
+            #   1. Heartbeat age > 5h (run finished, no new run yet)
+            #   2. MIND cycle >= 52 (final Fibonacci point = run complete)
+            #   3. No MIND heartbeat available
             _mind_hb = self._mind_heartbeat or {}
-            _mind_rec = _mind_hb.get("recursion_warning", True)
+            _mind_rec = _mind_hb.get("recursion_warning", False)
+            _mind_cycle = _mind_hb.get("mind_cycle", 0)
             _mind_ts = _mind_hb.get("timestamp", "")
             _mind_stale = False
             if _mind_ts:
@@ -2819,9 +2830,12 @@ class ParliamentCycleEngine:
                     _mind_stale = _hb_age > 18000  # 5 hours
                 except Exception:
                     pass
-            # If heartbeat is stale, ignore recursion_warning — it's from
-            # a completed run, not active desperation
-            _desperation = _mind_rec and not _mind_stale
+            # The flag is a stale artifact if:
+            # - heartbeat is old (>5h), OR
+            # - MIND is at cycle 52 (final checkpoint = run complete), OR
+            # - no heartbeat exists
+            _run_complete = _mind_cycle >= 52
+            _desperation = _mind_rec and not _mind_stale and not _run_complete
 
             stage2_eligible = (
                 D16_STAGE2_ENABLED
