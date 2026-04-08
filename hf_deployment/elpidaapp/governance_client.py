@@ -497,24 +497,33 @@ _PARLIAMENT = {
 # Philosophy: no single vendor's bias should dominate the Parliament.
 # LLM temperaments are chosen to match node roles.
 #
-#   GROQ (Llama 3.3 70B)   — High throughput, flow, temporal — HERMES, KAIROS, IANUS
-#   GEMINI (Flash)         — Long context, recall, governance  — MNEMOSYNE, THEMIS
-#   MISTRAL (Small)        — Analytical precision, semantics  — CRITIAS, LOGOS
-#   OPENAI (gpt-4o-mini)   — Method clarity, safety-aware     — TECHNE
-#   PERPLEXITY (Sonar)     — Reality-grounded, external truth — PROMETHEUS
-#   CLAUDE                 — Contradiction-holding, paradox   — CHAOS (rarest, costliest)
+# Rebalanced 2026-04-08 based on ARC-AGI reasoning benchmark (30 tasks,
+# 32 tests, 6 providers). Evidence-based seat assignment:
+#   Gemini  53.1% — best abstract reasoner, 2 unique solves
+#   Claude  37.5% — unique-solve capability, contradiction-holding
+#   Grok    37.5% — complementary reasoning, 1 unique solve
+#   Cohere  28.1% — breadth across domains
+#   OpenAI  21.9% — structured precision
+#   Groq    N/A   — speed-critical nodes (not tested on reasoning)
+#
+# Changes from prior mapping:
+#   CRITIAS:    mistral→grok    (stronger reasoning for the questioner)
+#   TECHNE:     openai→gemini   (best reasoner for safety-critical domain)
+#   THEMIS:     gemini→claude   (A6 anchor needs unique-solve capability)
+#   PROMETHEUS: groq→cohere     (humility needs breadth, not speed)
+#   LOGOS:      mistral→openai  (precision needs structured reasoning)
 #
 _NODE_LLM: Dict[str, str] = {
     "HERMES":    "groq",        # A1  — Flow needs speed, not depth
     "MNEMOSYNE": "gemini",      # A0  — Memory/recall → long-context model
-    "CRITIAS":   "mistral",     # A3  — Analytical questioning = precision
-    "TECHNE":    "openai",      # A4  — Method/safety → gpt-4o-mini safety tuning
+    "CRITIAS":   "grok",        # A3  — Analytical questioning needs strong reasoning
+    "TECHNE":    "gemini",      # A4  — Safety-critical → best abstract reasoner (53.1% ARC)
     "KAIROS":    "groq",        # A5  — Timing/design decisions = fast
-    "THEMIS":    "gemini",      # A6  — Collective governance → broad tuning
-    "PROMETHEUS":"groq",        # A8  — Epistemic humility (was perplexity, swapped to free)
+    "THEMIS":    "claude",      # A6  — Harmonic anchor → unique-solve + contradiction-holding
+    "PROMETHEUS":"cohere",      # A8  — Epistemic humility needs breadth, not speed
     "IANUS":     "groq",        # A9  — Temporal checkpoints = fast gating
     "CHAOS":     "claude",      # A10 — Contradiction-holding = Claude's strength
-    "LOGOS":     "mistral",     # A2  — Semantic precision = Mistral's strength
+    "LOGOS":     "openai",      # A2  — Semantic precision → structured reasoning
 }
 
 # ── Signal keywords per axiom ───────────────────────────────────────
@@ -2615,11 +2624,13 @@ class GovernanceClient:
         VETO conditions from keyword scoring are IMMUTABLE — LLMs cannot
         override the Layer 4 kernel. Only contested/ambiguous votes escalate.
 
-        Node → LLM assignment (see _NODE_LLM above):
+        Node → LLM assignment (see _NODE_LLM above, rebalanced 2026-04-08):
           HERMES, KAIROS, IANUS  → Groq (fast, flow/timing)
-          MNEMOSYNE, THEMIS      → Gemini (memory/governance)
-          CRITIAS, LOGOS         → Mistral (analytical precision)
-          TECHNE                 → OpenAI gpt-4o-mini (method/safety)
+          MNEMOSYNE, TECHNE      → Gemini (memory + safety-critical reasoning)
+          CRITIAS                → Grok (strong analytical reasoning)
+          THEMIS, CHAOS          → Claude (anchor + contradiction-holding)
+          PROMETHEUS             → Cohere (epistemic breadth)
+          LOGOS                  → OpenAI (structured precision)
           PROMETHEUS             → Perplexity (reality-grounded)
           CHAOS                  → Claude (contradiction-holding)
 
