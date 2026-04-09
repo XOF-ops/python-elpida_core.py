@@ -1687,8 +1687,14 @@ class GovernanceClient:
         friction = hb.get("friction_boost", {})
 
         # Also: if recursion_warning is True but friction_boost is empty,
-        # apply rhythm-aware friction boosts via Oracle modulation
-        if hb.get("recursion_warning") and not friction:
+        # apply rhythm-aware friction boosts via Oracle modulation.
+        # BUT: if MIND is at cycle >= 52 (run complete, final Fibonacci
+        # checkpoint), the recursion_warning is a tail-end artifact.
+        # Friction should NOT fire on stale signals — same logic as
+        # the D16 desperation guard.
+        _mind_cycle = hb.get("mind_cycle", 0)
+        _run_complete = _mind_cycle >= 52
+        if hb.get("recursion_warning") and not friction and not _run_complete:
             rhythm = hb.get("current_rhythm", "ANALYSIS")
             _rhythm_multipliers = {
                 "CONTEMPLATION": 1.2,
