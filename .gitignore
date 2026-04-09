@@ -133,3 +133,4 @@ ElpidaAI/handshake_quarantine.jsonlsetup_full_deployment.py
 
 # Large analysis data files — local only
 FILES/
+LostCode/
