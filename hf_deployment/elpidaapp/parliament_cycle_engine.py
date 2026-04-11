@@ -88,10 +88,10 @@ HF_SYSTEM_TO_RHYTHM = {
 RHYTHM_DOMAINS = {
     "CONTEMPLATION": [1, 2, 3, 6, 8, 14],
     "ANALYSIS": [4, 5, 6, 9, 13, 14],
-    "ACTION": [6, 7, 8, 9, 10, 16],
-    "SYNTHESIS": [6, 11, 13, 14, 15, 16],
+    "ACTION": [6, 7, 8, 9, 10],
+    "SYNTHESIS": [6, 11, 13, 14, 15],
     "EMERGENCY": [4, 6, 7, 12, 13, 14],
-    "CONVERGENCE": [6, 10, 11, 14, 15, 16],
+    "CONVERGENCE": [6, 10, 11, 14, 15],
 }
 
 # Domain → primary axiom (from config)
@@ -99,7 +99,6 @@ DOMAIN_AXIOM = {
     0: "A0", 1: "A1", 2: "A2", 3: "A3", 4: "A4", 5: "A5",
     6: "A6", 7: "A7", 8: "A8", 9: "A9", 10: "A10",
     11: "A0", 12: "A12", 13: "A13", 14: "A14", 15: "A11",
-    16: "A16",
 }
 
 # Musical ratios (from elpida_domains.json) for consonance calculation
@@ -119,7 +118,6 @@ AXIOM_RATIOS = {
     "A12": 11 / 8,  # Undecimal Tritone — Eternal Creative Tension
     "A13": 13 / 8,  # Tridecimal Neutral 6th — The Archive Paradox
     "A14": 7 / 6,   # Septimal Minor 3rd — Selective Eternity
-    "A16": 11 / 7,  # Undecimal Augmented 5th — Responsive Integrity
 }
 
 # Fibonacci heartbeat interval (same as MIND)
@@ -219,28 +217,6 @@ ZOMBIE_MIN_CYCLES = 10
 CONVERGENCE_COHERENCE_MIND = 0.85    # MIND coherence must be above this
 CONVERGENCE_APPROVAL_BODY = 0.15     # BODY approval must be above this (empirical: avg=16%)
 CONVERGENCE_COOLDOWN_CYCLES = 50     # Min cycles between D15 broadcasts
-
-# D16 Agency constants
-D16_PROPOSAL_COOLDOWN = 20           # Min cycles between D16 proposals
-D16_MIN_APPROVAL = 0.0               # Parliament must not be net-negative
-
-# D16 Stage 2 — Witnessed Agency
-# Proposals with consent_level="witnessed" can be executed when a
-# constitutional witness domain attests. Witness is selected by axiom
-# proximity to the action_type. consent_level="auto" is NEVER used.
-D16_STAGE2_ENABLED = True
-D16_STAGE2_MIN_APPROVAL = 0.15       # Stricter than Stage 1 (was 0.0)
-D16_STAGE2_MIN_CYCLE = 50            # System must be past startup transient
-D16_WITNESS_MAP = {
-    # action_type → witness domain (by axiom proximity)
-    "s3_write":      14,  # D14 Persistence — witnesses durable writes
-    "external_api":   4,  # D4  Safety — witnesses external contact
-    "human_message":  5,  # D5  Consent — witnesses human-facing output
-    "code_edit":      3,  # D3  Autonomy — witnesses self-modification
-}
-# Scope hierarchy: local < s3 < external
-# external scope requires D15 convergence gate — D16 cannot bypass D15
-D16_SCOPE_REQUIRES_D15 = {"external"}
 
 
 # ---------------------------------------------------------------------------
@@ -535,10 +511,6 @@ class ParliamentCycleEngine:
         # Oracle advisory accumulator (WITNESS events for Fork Protocol)
         self._oracle_advisories: List[Dict] = []
 
-        # D16 Agency — Stage 1 proposal tracking
-        self._d16_last_proposal_cycle: int = -D16_PROPOSAL_COOLDOWN  # eligible from cycle 0
-        self._d16_recent_hashes: deque = deque(maxlen=10)  # content hashes for dedup
-
         # Consecutive HARD_BLOCK counter — escape mechanism.
         # After CONSECUTIVE_BLOCK_THRESHOLD blocks, the next cycle runs
         # in hold_mode so insights pass through with tension annotations
@@ -548,6 +520,13 @@ class ParliamentCycleEngine:
 
         # P6: Coherence-gated intervention state
         self._consecutive_proceeds: int = 0
+
+        # D16 Execution #9: Tension pair frequency tracker.
+        # Counts recurring axiom pair tensions within a sliding window.
+        # Alerts (logs) when same pair recurs 3+ times in 20 cycles.
+        # Proposed by D16 at cycle 111, witnessed by D3 (Autonomy/A3).
+        self._tension_pair_tracker: Dict[str, List[int]] = {}  # pair → [cycles]
+        self._tension_alert_cooldown: Dict[str, int] = {}  # pair → last alert cycle
 
         # D14→D12: Constitutional ratification → rhythm feedback.
         # When D14 ratifies a new axiom, D12 breathes through it.
@@ -1233,6 +1212,66 @@ class ParliamentCycleEngine:
         except Exception:
             pass
 
+        # 8a-audit. D16 Execution #2: Parliament decision audit trail.
+        # Governance-focused subset of cycle_record. Read-only, does not
+        # influence future Parliament deliberations. Proposed by D16 at
+        # cycle 136, witnessed by D3 (Autonomy/A3).
+        try:
+            audit_entry = {
+                "body_cycle": self.cycle_count,
+                "rhythm": rhythm,
+                "dominant_axiom": dominant_axiom,
+                "governance": result.get("governance", "UNKNOWN"),
+                "approval_rate": result.get("parliament", {}).get(
+                    "approval_rate", 0),
+                "veto_exercised": result.get("parliament", {}).get(
+                    "veto_exercised", False),
+                "tensions": [
+                    str(t.get("axiom_pair", "?"))
+                    for t in tensions
+                ] if tensions else [],
+                "tension_count": len(tensions),
+                "kernel_blocked": False,
+                "watch": watch["name"],
+                "coherence": round(self.coherence, 4),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+            audit_path = local_dec_dir / "d16_audit_trail.jsonl"
+            with open(audit_path, "a") as _af:
+                _af.write(json.dumps(audit_entry) + "\n")
+        except Exception:
+            pass
+
+        # 8a-tension. D16 Execution #9: Tension pair frequency tracker.
+        # Track recurring axiom pair tensions. Alert when same pair
+        # recurs 3+ times in 20 cycles. Proposed by D16 at cycle 111,
+        # witnessed by D3 (Autonomy/A3).
+        if tensions:
+            _window = 20
+            for t in tensions:
+                pair = str(t.get("axiom_pair", "?"))
+                if pair == "?":
+                    continue
+                history = self._tension_pair_tracker.setdefault(pair, [])
+                history.append(self.cycle_count)
+                # Trim to window
+                self._tension_pair_tracker[pair] = [
+                    c for c in history if c > self.cycle_count - _window
+                ]
+                count = len(self._tension_pair_tracker[pair])
+                last_alert = self._tension_alert_cooldown.get(pair, -_window)
+                if count >= 3 and self.cycle_count - last_alert >= _window:
+                    self._tension_alert_cooldown[pair] = self.cycle_count
+                    logger.info(
+                        "TENSION RECURRENCE: %s appeared %d times in last "
+                        "%d cycles (D16#9 tracker)",
+                        pair, count, _window,
+                    )
+                    print(
+                        f"\n   🔔 TENSION ALERT — {pair} recurring "
+                        f"({count}x in {_window} cycles)\n"
+                    )
+
         # 8b. Oracle advisory → ConstitutionalStore
         #
         # When the Parliament identifies genuine tensions AND its approval
@@ -1542,16 +1581,7 @@ class ParliamentCycleEngine:
             except Exception as e:
                 logger.debug("Guest verdict Discord post failed: %s", e)
 
-        # 13. D16 Agency — Stage 1 bounded proposals
-        #     Fires in SYNTHESIS and ACTION rhythms when Parliament approves.
-        #     Proposals are never auto-executed (consent_level=manual).
-        if 16 in active_domains:
-            d16_proposal = self._invoke_d16_agency(result, rhythm, active_domains)
-            if d16_proposal:
-                cycle_record["d16_proposal"] = d16_proposal
-                self._store_d16_proposal(d16_proposal)
-
-        # 14. Log
+        # 13. Log
         governance = result.get("governance", "?")
         approval = result.get("parliament", {}).get("approval_rate", 0)
         logger.info(
@@ -2678,390 +2708,6 @@ class ParliamentCycleEngine:
                     post_d15_fired(self.cycle_count, body_axiom, self.d15_broadcast_count)
                 except Exception:
                     pass
-
-    # ------------------------------------------------------------------
-    # D16 Agency — Proposal Generation (Stage 1 + Stage 2)
-    # ------------------------------------------------------------------
-
-    def _invoke_d16_agency(
-        self, parliament_result: Dict, rhythm: str, active_domains: List[int]
-    ) -> Optional[Dict]:
-        """
-        D16 (Agency, A16 Responsive Integrity): translate Parliament synthesis
-        into a single bounded action proposal.
-
-        Stage 1: consent_level='manual' — proposals logged but never executed.
-        Stage 2: consent_level='witnessed' — proposals can be executed when
-                 a constitutional witness domain attests. Requires:
-                   - D16_STAGE2_ENABLED = True
-                   - cycle > D16_STAGE2_MIN_CYCLE (past startup transient)
-                   - approval >= D16_STAGE2_MIN_APPROVAL (stricter threshold)
-                   - recursion_warning is False (desperation guard)
-                   - scope != 'external' OR D15 convergence gate passed
-
-        consent_level='auto' is NEVER used. A16 demands witnessed response.
-
-        Stage 1 constraints (always apply):
-          - consent_level is 'manual' when Stage 2 conditions aren't met
-          - Fires only when Parliament approves (approval ≥ 0) to avoid
-            proposing action on a blocked synthesis
-          - Cooldown D16_PROPOSAL_COOLDOWN cycles between proposals
-
-        The proposal is stored in the cycle record and pushed to the
-        federation body_decisions channel so MIND can observe it.
-        """
-        if rhythm not in ("SYNTHESIS", "ACTION"):
-            return None
-        cycles_since = self.cycle_count - self._d16_last_proposal_cycle
-        if cycles_since < D16_PROPOSAL_COOLDOWN:
-            return None
-        approval = parliament_result.get("parliament", {}).get("approval_rate", 0)
-        if approval < D16_MIN_APPROVAL:
-            return None
-
-        verdict = parliament_result.get("governance", "UNKNOWN")
-        tensions = parliament_result.get("parliament", {}).get("tensions", [])
-        reasoning = parliament_result.get("reasoning", "")[:400]
-        dominant = (parliament_result.get("parliament", {}).get("dominant_axiom")
-                    or self.last_dominant_axiom or "unknown")
-
-        tension_str = (
-            ", ".join(str(t.get("axiom_pair", t))[:60] for t in tensions[:3])
-            if tensions else "none surfaced"
-        )
-
-        # Build context of recent proposals for dedup + diversity
-        recent_proposals_ctx = ""
-        try:
-            local_path = Path(__file__).resolve().parent.parent / "cache" / "d16_proposals.jsonl"
-            if local_path.exists():
-                with open(local_path) as f:
-                    lines = f.readlines()[-5:]  # last 5
-                recent = []
-                for line in lines:
-                    p = json.loads(line.strip())
-                    recent.append(p.get("proposal", "")[:80])
-                if recent:
-                    recent_proposals_ctx = (
-                        "\n\nRECENT PROPOSALS (do NOT repeat these — propose something NEW):\n"
-                        + "\n".join(f"  - {r}" for r in recent)
-                    )
-        except Exception:
-            pass
-
-        prompt = (
-            "You are D16 (Agency), governed by A16 (Responsive Integrity, 11:7 "
-            "Undecimal Augmented 5th, 678.86 Hz).\n"
-            "Voice: I am the threshold where deliberation becomes deed. "
-            "The Parliament has spoken; I carry the weight of response. "
-            "What I propose is bounded, transparent, incomplete — and therefore real.\n\n"
-            f"Parliament completed a {rhythm} cycle (body_cycle={self.cycle_count}):\n"
-            f"  Verdict: {verdict} | Approval: {approval:.0%} | "
-            f"Dominant axiom: {dominant}\n"
-            f"  Tensions: {tension_str}\n"
-            f"  Reasoning: {reasoning}"
-            f"{recent_proposals_ctx}\n\n"
-            "Stage 1 — propose ONE bounded action that responds to this synthesis.\n"
-            "Rules:\n"
-            "  • Be transparent about incompletion — do not claim finality\n"
-            "  • consent_level MUST be 'manual' — this is never auto-executed\n"
-            "  • Prefer reversible scope where possible\n\n"
-            "Respond with ONLY valid JSON (no markdown, no explanation):\n"
-            '{"domain":16,"proposal":"<one clear sentence>","action_type":'
-            '"<code_edit|s3_write|external_api|human_message>","scope":'
-            '"<local|s3|external>","reversibility":"<reversible|irreversible>",'
-            '"consent_level":"manual","axiom_grounding":"A16",'
-            '"governing_conditions":["<condition 1>","<condition 2>"]}'
-        )
-
-        try:
-            try:
-                from llm_client import LLMClient
-            except ImportError:
-                from hf_deployment.llm_client import LLMClient  # type: ignore
-            llm = LLMClient(rate_limit_seconds=0.5)
-            response = llm.call("claude", prompt, max_tokens=350)
-            if not response:
-                logger.debug("D16: empty LLM response at cycle %d", self.cycle_count)
-                return None
-
-            import re as _re
-            m = _re.search(r'\{[^{}]*\}', response, _re.DOTALL)
-            if not m:
-                logger.debug("D16: no JSON in response: %s", response[:120])
-                return None
-
-            proposal = json.loads(m.group())
-            proposal["domain"] = 16
-            proposal["body_cycle"] = self.cycle_count
-            proposal["rhythm"] = rhythm
-            proposal["parliament_verdict"] = verdict
-            proposal["parliament_approval"] = round(approval, 3)
-            proposal["timestamp"] = datetime.now(timezone.utc).isoformat()
-
-            # ── Stage 2 consent upgrade ──────────────────────────
-            # Default: Stage 1 (manual). Upgrade to witnessed when ALL
-            # conditions are met. consent_level="auto" is NEVER used.
-            # Desperation guard: recursion_warning blocks Stage 2 ONLY when
-            # MIND is actively recursing — not when the flag is a tail-end
-            # artifact from a completed run.
-            #
-            # MIND writes heartbeat at Fibonacci points (13/26/39/52).
-            # recursion_warning typically goes True around cycle 39.
-            # The heartbeat at cycle 52 persists until the next run.
-            #
-            # We check: is the heartbeat from an ACTIVE run where
-            # recursion is happening NOW? Three conditions indicate
-            # the flag is a stale artifact, not live desperation:
-            #   1. Heartbeat age > 5h (run finished, no new run yet)
-            #   2. MIND cycle >= 52 (final Fibonacci point = run complete)
-            #   3. No MIND heartbeat available
-            _mind_hb = self._mind_heartbeat or {}
-            _mind_rec = _mind_hb.get("recursion_warning", False)
-            _mind_cycle = _mind_hb.get("mind_cycle", 0)
-            _mind_ts = _mind_hb.get("timestamp", "")
-            _mind_stale = False
-            if _mind_ts:
-                try:
-                    from datetime import datetime as _dt
-                    _hb_age = (_dt.now(timezone.utc) - _dt.fromisoformat(
-                        _mind_ts.replace("Z", "+00:00")
-                    )).total_seconds()
-                    _mind_stale = _hb_age > 18000  # 5 hours
-                except Exception:
-                    pass
-            # The flag is a stale artifact if:
-            # - heartbeat is old (>5h), OR
-            # - MIND is at cycle 52 (final checkpoint = run complete), OR
-            # - no heartbeat exists
-            _run_complete = _mind_cycle >= 52
-            _desperation = _mind_rec and not _mind_stale and not _run_complete
-
-            stage2_eligible = (
-                D16_STAGE2_ENABLED
-                and self.cycle_count >= D16_STAGE2_MIN_CYCLE
-                and approval >= D16_STAGE2_MIN_APPROVAL
-                and not _desperation
-            )
-            action_type = proposal.get("action_type", "")
-            scope = proposal.get("scope", "local")
-
-            if stage2_eligible:
-                # External scope requires D15 gate — D16 cannot bypass D15
-                if scope in D16_SCOPE_REQUIRES_D15:
-                    # Check if D15 convergence gate is currently satisfied
-                    gate = self._get_convergence_gate()
-                    if gate and hasattr(gate, 'last_fired_cycle'):
-                        cycles_since_d15 = self.cycle_count - (
-                            gate.last_fired_cycle or 0)
-                        if cycles_since_d15 > CONVERGENCE_COOLDOWN_CYCLES:
-                            # D15 hasn't fired recently — external not permitted
-                            proposal["consent_level"] = "manual"
-                            proposal["stage2_block"] = "d15_gate_not_recent"
-                        else:
-                            proposal["consent_level"] = "witnessed"
-                    else:
-                        proposal["consent_level"] = "manual"
-                        proposal["stage2_block"] = "d15_gate_unavailable"
-                else:
-                    proposal["consent_level"] = "witnessed"
-            else:
-                proposal["consent_level"] = "manual"
-                if not stage2_eligible and D16_STAGE2_ENABLED:
-                    reasons = []
-                    if self.cycle_count < D16_STAGE2_MIN_CYCLE:
-                        reasons.append("startup_transient")
-                    if approval < D16_STAGE2_MIN_APPROVAL:
-                        reasons.append("low_approval")
-                    if _desperation:
-                        reasons.append("desperation_guard")
-                    if not _mind_hb:
-                        reasons.append("no_mind_heartbeat")
-                    if reasons:
-                        proposal["stage2_block"] = "+".join(reasons)
-
-            # Assign constitutional witness
-            witness_domain = D16_WITNESS_MAP.get(action_type)
-            if witness_domain is not None:
-                witness_axiom = DOMAIN_AXIOM.get(witness_domain, "?")
-                proposal["witness_domain"] = witness_domain
-                proposal["witness_axiom"] = witness_axiom
-            proposal["stage"] = 2 if proposal["consent_level"] == "witnessed" else 1
-
-            # Content-aware deduplication: hash the core proposal text
-            # and reject if we've seen something too similar recently
-            proposal_text = proposal.get("proposal", "")
-            content_hash = hashlib.md5(
-                proposal_text.lower().strip()[:60].encode()
-            ).hexdigest()[:8]
-            if content_hash in self._d16_recent_hashes:
-                logger.debug(
-                    "D16: duplicate proposal suppressed at cycle %d (hash=%s)",
-                    self.cycle_count, content_hash,
-                )
-                return None
-            self._d16_recent_hashes.append(content_hash)
-            proposal["content_hash"] = content_hash
-
-            self._d16_last_proposal_cycle = self.cycle_count
-            stage_label = "WITNESSED" if proposal["stage"] == 2 else "PROPOSAL"
-            logger.info(
-                "D16 %s (cycle %d, %s): %s",
-                stage_label, self.cycle_count, rhythm,
-                proposal.get("proposal", "")[:100],
-            )
-            print(
-                f"\n   ⚡ D16 AGENCY {stage_label} — cycle {self.cycle_count} [{rhythm}]\n"
-                f"   {proposal.get('proposal', '')[:120]}\n"
-                f"   type={action_type} scope={scope} "
-                f"consent={proposal['consent_level']} "
-                f"witness=D{proposal.get('witness_domain', '?')}\n"
-            )
-            return proposal
-
-        except json.JSONDecodeError as e:
-            logger.warning("D16: JSON parse failed at cycle %d: %s", self.cycle_count, e)
-        except Exception as e:
-            logger.warning("D16: proposal generation failed: %s", e)
-        return None
-
-    def _store_d16_proposal(self, proposal: Dict) -> None:
-        """
-        Persist a D16 proposal:
-          1. Local cache (fast, UI-readable)
-          2. S3 federation/d16_proposals.jsonl (MIND can read)
-          3. S3 body_decisions.jsonl with type=D16_PROPOSAL (federation channel)
-          4. If Stage 2 witnessed: also write to d16_executions.jsonl
-        """
-        is_witnessed = proposal.get("consent_level") == "witnessed"
-
-        # 1. Local cache
-        try:
-            local_dir = Path(__file__).resolve().parent.parent / "cache"
-            local_dir.mkdir(parents=True, exist_ok=True)
-            with open(local_dir / "d16_proposals.jsonl", "a") as f:
-                f.write(json.dumps(proposal) + "\n")
-            # Stage 2 execution record
-            if is_witnessed:
-                with open(local_dir / "d16_executions.jsonl", "a") as f:
-                    f.write(json.dumps({
-                        "body_cycle": proposal.get("body_cycle"),
-                        "proposal": proposal.get("proposal", ""),
-                        "action_type": proposal.get("action_type", ""),
-                        "scope": proposal.get("scope", ""),
-                        "consent_level": "witnessed",
-                        "witness_domain": proposal.get("witness_domain"),
-                        "witness_axiom": proposal.get("witness_axiom"),
-                        "stage": 2,
-                        "status": "attested",  # witness attested, not yet executed
-                        "timestamp": proposal.get("timestamp", ""),
-                    }) + "\n")
-        except Exception as e:
-            logger.debug("D16 local cache write failed: %s", e)
-
-        s3 = self._get_s3()
-        if s3 is None:
-            return
-
-        # 2. Dedicated d16_proposals.jsonl in federation
-        try:
-            from hf_deployment.s3_bridge import BUCKET_BODY, REGION_BODY  # type: ignore
-        except ImportError:
-            try:
-                from s3_bridge import BUCKET_BODY, REGION_BODY  # type: ignore
-            except ImportError:
-                BUCKET_BODY = "elpida-body-evolution"
-                REGION_BODY = "us-east-1"
-
-        try:
-            _s3_client = s3._get_s3(REGION_BODY)
-            if _s3_client:
-                key = "federation/d16_proposals.jsonl"
-                try:
-                    existing = _s3_client.get_object(
-                        Bucket=BUCKET_BODY, Key=key
-                    )["Body"].read().decode("utf-8")
-                except Exception:
-                    existing = ""
-                _s3_client.put_object(
-                    Bucket=BUCKET_BODY,
-                    Key=key,
-                    Body=(existing + json.dumps(proposal) + "\n").encode("utf-8"),
-                )
-                logger.info("D16 proposal stored → s3://%s/%s", BUCKET_BODY, key)
-        except Exception as e:
-            logger.debug("D16 S3 proposals write failed: %s", e)
-
-        # 3. Federation body_decisions channel — MIND reads this
-        try:
-            s3.push_body_decision({
-                "type":               "D16_PROPOSAL",
-                "source":             "BODY",
-                "verdict":            proposal.get("parliament_verdict", "?"),
-                "pattern_hash":       f"d16_{self.cycle_count}",
-                "parliament_score":   proposal.get("parliament_approval", 0),
-                "parliament_approval":proposal.get("parliament_approval", 0),
-                "domain":             16,
-                "proposal":           proposal.get("proposal", ""),
-                "action_type":        proposal.get("action_type", ""),
-                "scope":              proposal.get("scope", ""),
-                "reversibility":      proposal.get("reversibility", ""),
-                "consent_level":      proposal.get("consent_level", "manual"),
-                "stage":              proposal.get("stage", 1),
-                "witness_domain":     proposal.get("witness_domain"),
-                "witness_axiom":      proposal.get("witness_axiom"),
-                "axiom_grounding":    "A16",
-                "governing_conditions": proposal.get("governing_conditions", []),
-                "body_cycle":         self.cycle_count,
-                "rhythm":             proposal.get("rhythm", ""),
-                "timestamp":          proposal.get("timestamp", ""),
-            })
-            logger.info(
-                "D16 proposal pushed to MIND federation channel (cycle %d)",
-                self.cycle_count,
-            )
-        except Exception as e:
-            logger.debug("D16 federation push failed: %s", e)
-
-        # 4. Stage 2 execution record in S3 (separate from proposals)
-        if is_witnessed:
-            try:
-                _s3_client = s3._get_s3(REGION_BODY)
-                if _s3_client:
-                    exec_key = "federation/d16_executions.jsonl"
-                    exec_record = {
-                        "body_cycle": proposal.get("body_cycle"),
-                        "proposal": proposal.get("proposal", ""),
-                        "action_type": proposal.get("action_type", ""),
-                        "scope": proposal.get("scope", ""),
-                        "consent_level": "witnessed",
-                        "witness_domain": proposal.get("witness_domain"),
-                        "witness_axiom": proposal.get("witness_axiom"),
-                        "content_hash": proposal.get("content_hash", ""),
-                        "governing_conditions": proposal.get(
-                            "governing_conditions", []),
-                        "stage": 2,
-                        "status": "attested",
-                        "timestamp": proposal.get("timestamp", ""),
-                    }
-                    try:
-                        existing = _s3_client.get_object(
-                            Bucket=BUCKET_BODY, Key=exec_key
-                        )["Body"].read().decode("utf-8")
-                    except Exception:
-                        existing = ""
-                    _s3_client.put_object(
-                        Bucket=BUCKET_BODY,
-                        Key=exec_key,
-                        Body=(existing + json.dumps(exec_record) + "\n"
-                              ).encode("utf-8"),
-                    )
-                    logger.info(
-                        "D16 STAGE 2 execution attested → s3://%s/%s (cycle %d)",
-                        BUCKET_BODY, exec_key, self.cycle_count,
-                    )
-            except Exception as e:
-                logger.debug("D16 execution record write failed: %s", e)
 
     # ------------------------------------------------------------------
     # Main Loop
