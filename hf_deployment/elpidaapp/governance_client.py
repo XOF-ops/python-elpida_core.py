@@ -1568,6 +1568,38 @@ class GovernanceClient:
                 logger.warning("Federation heartbeat pull failed: %s", e)
         return self._mind_heartbeat  # stale cache is better than nothing
 
+    @staticmethod
+    def is_mind_heartbeat_live(hb: Optional[Dict[str, Any]]) -> bool:
+        """Return True if *hb* represents a MIND run still in progress.
+
+        Stale signals — run-complete or old heartbeats — must not trigger
+        friction, desperation guards, or other reactive BODY behaviour.
+        Canonical staleness test; all call-sites should use this.
+
+        A heartbeat is **stale** when either:
+        * ``mind_cycle >= 52``  (run complete — final Fibonacci checkpoint)
+        * ``age > 18 000 s`` (> 5 h — heartbeat from a previous run)
+        """
+        if not hb:
+            return False
+        if hb.get("mind_cycle", 0) >= 52:
+            return False
+        ts = hb.get("timestamp") or hb.get("updated_at")
+        if ts:
+            try:
+                from datetime import datetime, timezone
+                if isinstance(ts, str):
+                    # Handle ISO format with or without tz
+                    t = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+                else:
+                    t = datetime.fromtimestamp(float(ts), tz=timezone.utc)
+                age = (datetime.now(timezone.utc) - t).total_seconds()
+                if age > 18_000:
+                    return False
+            except Exception:
+                pass  # unparseable timestamp — fall through to live
+        return True
+
     def pull_mind_curation(self, limit: int = 100) -> List[Dict[str, Any]]:
         """
         Read MIND's curation metadata (CurationMetadata JSONL).
@@ -1688,13 +1720,8 @@ class GovernanceClient:
 
         # Also: if recursion_warning is True but friction_boost is empty,
         # apply rhythm-aware friction boosts via Oracle modulation.
-        # BUT: if MIND is at cycle >= 52 (run complete, final Fibonacci
-        # checkpoint), the recursion_warning is a tail-end artifact.
-        # Friction should NOT fire on stale signals — same logic as
-        # the D16 desperation guard.
-        _mind_cycle = hb.get("mind_cycle", 0)
-        _run_complete = _mind_cycle >= 52
-        if hb.get("recursion_warning") and not friction and not _run_complete:
+        # Skip if heartbeat is stale (run complete or old).
+        if hb.get("recursion_warning") and not friction and self.is_mind_heartbeat_live(hb):
             rhythm = hb.get("current_rhythm", "ANALYSIS")
             _rhythm_multipliers = {
                 "CONTEMPLATION": 1.2,
