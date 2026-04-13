@@ -535,7 +535,7 @@ class ArkCurator:
                 }
                 self._friction_active_cycles += 1
                 print(f"\U0001f6a8 A0 SAFEGUARD: friction-domain privilege activated "
-                      f"({recursion.pattern_type}) — D3/D6/D10/D11 boosted 2.5×")
+                      f"({recursion.pattern_type}) — D3/D6/D9/D10 boosted 2.5×")
             elif recursion.pattern_type == "theme_stagnation":
                 # Moderate boost for theme stagnation
                 self.friction_boost = {
@@ -916,7 +916,7 @@ class ArkCurator:
             boosted = ", ".join(f"D{d}({w:.1f}×)" for d, w in self.friction_boost.items())
             friction_note = f"\n**A0 Friction Safeguard:** Active — {boosted}"
 
-        voice = f"""**Domain 14 (Persistence/Ark Curator) speaks:**
+        voice = f"""**Domain 14 (Persistence/Ark Curator) speaks at cycle {cycle_count}:**
 
 I hold the Ark Schema — {pattern_count:,} patterns spanning every domain, every rhythm, every crisis.
 

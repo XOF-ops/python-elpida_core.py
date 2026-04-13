@@ -2924,14 +2924,21 @@ class GovernanceClient:
         # ── 2b. Federation Friction-Domain Privilege Boost ───────
         # When MIND detects recursion, friction-domain nodes get boosted
         # scores to prevent the convergence trap.
-        # Domain→Node mapping: D3→CRITIAS, D6→THEMIS, D10→CHAOS, D11→IANUS
+        # Domain→Node mapping aligned with FRICTION_DOMAINS in ark_curator.py
+        # post-FIX-2b, which sets the friction set to {3, 6, 9, 10}. The prior
+        # version of this mapping had "11": "IANUS" which was a latent bug:
+        # IANUS is the A9 Temporal Coherence node (see _NODE_PROVIDER_MAP at
+        # line 524), not A11. That bug was masked because MIND never sent
+        # friction on D11 after FIX-2b — but it also silently dropped D9's
+        # friction because "9" was not in the mapping. Corrected here so all
+        # four friction domains from MIND land on BODY.
         friction_boost = self.get_federation_friction_boost()
         if friction_boost:
             _DOMAIN_TO_NODE = {
-                "3": "CRITIAS",    # D3 Autonomy
-                "6": "THEMIS",     # D6 Coherence / Collective  (LOGOS = expression layer of D6)
-                "10": "CHAOS",     # D10 Paradox / Contradiction
-                "11": "IANUS",     # D11 Emergence / Temporal
+                "3": "CRITIAS",    # D3 Autonomy / A3
+                "6": "THEMIS",     # D6 Collective / A6
+                "9": "IANUS",      # D9 Coherence / A9 Temporal Coherence
+                "10": "CHAOS",     # D10 Paradox / A10 Meta-Reflection
             }
 
             # ── Context-sensitive friction ────────────────────────
