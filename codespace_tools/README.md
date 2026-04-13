@@ -58,6 +58,14 @@ python codespace_tools/analyze_cloud_cycles.py --since "2026-02-10"
 
 # ── Step 4: Deep dive on specific domain ──
 python codespace_tools/domain_deep_dive.py --domain 12  # D12 Rhythm/Oneiros
+
+# ── Step 5: Extract K2 diagnostics for runs 424+ ──
+python codespace_tools/extract_k2_diag_runs.py
+# Uses anchor mapping (run 423 -> known stream) and pulls runs >= 424.
+# Writes merged raw logs to ElpidaInsights/ and prints K2 clusters.
+
+# Optional: Cluster any existing raw CloudWatch export
+python codespace_tools/cluster_k2_diag.py --input ElpidaInsights/k2_diag_runs_smoke.log
 ```
 
 ---
@@ -99,6 +107,8 @@ bash codespace_tools/push_refinements.sh
 | `pull_from_cloud.sh` | Download autonomous cycles from S3 to local |
 | `analyze_cloud_cycles.py` | Analyze patterns, trends, interesting moments |
 | `domain_deep_dive.py` | Deep analysis of specific domain's behavior |
+| `extract_k2_diag_runs.py` | One-command CloudWatch extraction + K2 clustering for run windows |
+| `cluster_k2_diag.py` | Parse and cluster D13->K2 diagnostics from raw log text |
 | `push_refinements.sh` | (Future) Upload manual improvements to S3 |
 | `deploy_to_cloud.sh` | Redeploy updated code to ECS Fargate |
 

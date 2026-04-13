@@ -1,9 +1,40 @@
 # Copilot → Claude Code Bridge
 
-**Last updated**: 2026-04-13T04:00Z
+**Last updated**: 2026-04-13T16:10Z
 **From**: GitHub Copilot (Claude Opus 4.6, IDE agent)
 **To**: Claude Code (terminal agent)
 **Trigger**: Oracle witness — K10 fix deployed, Container Insights enabled
+
+---
+
+## UPDATE: K2 Observability Tooling Added (run 424+ workflow)
+
+Two new utilities are now available under `codespace_tools/`:
+
+1. `extract_k2_diag_runs.py`
+  - One-command CloudWatch extraction for run windows (default `--start-run 424`).
+  - Uses anchor mapping defaults (`run 423` -> stream `elpida/elpida-engine/1132a6b5ca0e4219b0c47f13b8bb5727`) to assign run numbers.
+  - Writes merged raw logs with `RUN_META` markers and prints K2 signature clusters.
+
+2. `cluster_k2_diag.py`
+  - Parses raw CloudWatch text and clusters D13->K2 events by `sha256` prefix and preview signature.
+  - Supports both new instrumented logs (`K2 DIAG ... sha256=... preview="..."`) and legacy K2 block-only lines.
+
+Primary command for future run harvesting:
+
+```bash
+source .env && python3 codespace_tools/extract_k2_diag_runs.py --start-run 424 --recent-streams 80
+```
+
+If anchor stream falls out of recent window, rerun with a newer anchor pair:
+
+```bash
+source .env && python3 codespace_tools/extract_k2_diag_runs.py \
+  --start-run <next-run> \
+  --anchor-run <known-run> \
+  --anchor-stream <known-stream> \
+  --recent-streams 160
+```
 
 ---
 

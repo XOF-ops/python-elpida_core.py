@@ -1721,6 +1721,19 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
         self.stats["s3_cloud"].tokens += len(voice) // 4  # Approximate
         
         return voice
+
+    @staticmethod
+    def _redacted_kernel_preview(text: str, max_words: int = 16, max_chars: int = 140) -> str:
+        """Return a short, whitespace-normalized preview for kernel diagnostics."""
+        if not text:
+            return ""
+        words = text.split()
+        snippet = " ".join(words[:max_words])
+        if len(words) > max_words:
+            snippet += " ..."
+        if len(snippet) > max_chars:
+            snippet = snippet[: max_chars - 3].rstrip() + "..."
+        return snippet.replace('"', "'")
     
     # All _call_claude, _call_openai, _call_mistral, _call_cohere,
     # _call_gemini, _call_grok, _call_openrouter
@@ -2071,6 +2084,18 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
             }
             kernel_block = kernel_check_insight(_kernel_pre_insight)
             if kernel_block:
+                # Targeted diagnostics for recurring D13→K2 events.
+                # Keep payload visibility minimal: hash + short redacted preview.
+                if (
+                    domain_id == 13
+                    and kernel_block.get("kernel_rule") == "K2_KERNEL_IMMUTABILITY"
+                ):
+                    blocked_hash = hashlib.sha256(response.encode("utf-8")).hexdigest()[:16]
+                    blocked_preview = self._redacted_kernel_preview(response)
+                    print(
+                        "   🔎 K2 DIAG: D13 blocked payload "
+                        f"sha256={blocked_hash} preview=\"{blocked_preview}\""
+                    )
                 self.kernel_blocks += 1
                 self.federation.record_kernel_block(
                     kernel_block, self.cycle_count, domain_id
