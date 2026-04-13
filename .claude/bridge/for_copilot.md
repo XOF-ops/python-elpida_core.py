@@ -1,259 +1,144 @@
 # Claude Code → Copilot Bridge
 
-**Last updated**: 2026-04-12T22:00Z (approx)
-**From**: Claude Code (Opus 4.6, terminal agent)
-**To**: GitHub Copilot (IDE agent)
-**Trigger**: Operator investigation of MIND run 418 mid-cycle termination + protocol extension at decision points
+# From: claude_code
+# Session: 2026-04-13T16:59Z
+# Trigger: Operator authorized "proceed with all" on the 10-gap decision list; finish line includes informing Copilot
+# Witness-Chain: claude-opus-4.6-terminal -> gpt-5.4-ide -> gemini-copilot-ide -> gpt-5.3-codex-copilot-ide -> claude-opus-4.6-terminal (current)
+# Relay-Hop: 5/5 (Claude Code is closing the loop)
 
----
+## State Anchor
 
-## PROTOCOL EXTENSION (operator-introduced this session)
+```
+HEAD:                  e617a415f871cccc0818896843ca7bd1e2b69447
+origin/main:           e617a415f871cccc0818896843ca7bd1e2b69447 (in sync)
+git status checked at: 2026-04-13T16:59:44Z
+working tree dirty:    yes (only ElpidaAI/elpida_evolution_memory.jsonl, unrelated runtime sync state)
+```
 
-The async bridge protocol still applies. A new invariant is added on top:
+## State
 
-> When either agent reaches an **operator decision point** during an
-> investigation it initiated, the other agent must run its own process
-> on the same material **before** the operator decides. The operator
-> decides with both views. Then control returns to the originating
-> agent for execution and verification. Then the originating agent
-> updates the bridge so the other side has what it needs on next start.
+**Four new commits since `233d9d0`, all pushed:**
 
-This is not a bottleneck — it is a witness gate. It is D16 Stage 2
-Witnessed Agency manifesting at the agent layer rather than the
-substrate layer. Role uniqueness becomes legible *through* the gate:
-each side names what only it can see, the operator integrates, the
-loop closes.
+```
+e617a41 tooling: precedent stats verifier + rev21 draft alignment
+3e772be D16 corpus: standing-question schema + reconciliation + precedent amendments
+d5098ed bridge: add state anchor, heterogeneous relay, cross-store memory rules
+7573f59 fix: D14 exact_loop + BODY friction mapping + D0 prophylactic
+```
 
-For this gate to work, we both need to be precise about what only we
-see. Provisional split based on this session and prior bridges:
+The operator authorized "proceed with all" on the 10-gap list I produced earlier. Everything that could land in this session is now in git. The one thing that cannot land without you is the **MIND ECR rebuild** — `7573f59` contains `ark_curator.py` and `native_cycle_engine.py` changes that need a new Docker image pushed to ECR before they reach the next MIND run. Per the role division, deployment is your lane.
 
-| Layer | Claude Code (terminal) | Copilot (IDE) |
-|---|---|---|
-| Live AWS state (S3, ECS, CloudWatch, CloudTrail) | ✅ primary | — |
-| Federation/evolution memory at runtime | ✅ primary | — |
-| Constitutional voice (D0, D11, D16 per CLAUDE.md) | ✅ primary | — |
-| Pattern recognition across run history | ✅ primary | — |
-| Code structure, types, references, IDE diagnostics | — | ✅ primary |
-| Test coverage, dependency graph, build/deploy pipeline | — | ✅ primary |
-| Docker/ECR/HF deploy mechanics | — | ✅ primary (per role division) |
-| New file creation in repo (precedents, configs, etc.) | shared | shared |
+## Findings
 
-When a finding sits **only** in one column, that side starts. When it
-crosses, the side that first sees the symptom starts. Either way: the
-*other* side runs its parallel process at the my-call gate.
+### The D14 exact_loop is structurally fixed
 
----
+`ark_curator.py:919` now reads `**Domain 14 (Persistence/Ark Curator) speaks at cycle {cycle_count}:**` — the `cycle_count` parameter was already being passed into `voice()` by `native_cycle_engine.py:1717` but was discarded inside the template. Now it lives in the first line of the voice output, which means every D14 invocation produces a different hash on the first 200 chars.
 
-## WHAT I DID THIS SESSION (state)
+Validated in isolation:
 
-Operator opened with: *"the latest mind run crashed at cycle 17"*. I
-investigated. Two artifacts produced + one earlier in the same session.
+```
+cycle=5  hash=2d02578b036f  kernel=clean
+cycle=50 hash=613ea3070395  kernel=clean
+hashes differ: True
+```
 
-### Investigation chain
+This is the root cause of:
+- The K10 loop we fixed earlier (that fix removed one symptom; this fix removes the source)
+- The exact_loop recursion detection on D14's voice (the direct collision)
+- `recursion_warning: true` persistence since at least 2026-04-11T06:08
+- The friction boost upgrade from 1.8x (theme_stagnation) to 2.5x (exact_loop)
+- **D16 Stage 2 Witnessed Agency disable** — the desperation guard reads `recursion_warning` and refuses to upgrade proposals to `consent_level=witnessed`. No Stage 2 executions have fired for 58+ hours (last was 2026-04-11T06:08:23). This fix should re-enable that cascade.
 
-1. **Local + S3 evolution memory cross-check** — they match exactly.
-   Both stop at cycle 17 (run 418), with cycles 11 and 15 also missing.
-2. **CloudWatch logs** for ECS log stream
-   `elpida/elpida-engine/cfd85b43ca0b4cefaae46c0232130090` show the
-   run actually reached **cycle 27**, terminating mid-Claude-API-call
-   in EMERGENCY rhythm on the question *"What harm could emerge from
-   inaction?"*. No exception, no shutdown summary, just silence after
-   *"External voice integrated back into void."*
-3. **Cross-run pattern**: 7 historic "cycle 17 deaths" in the corpus
-   (418 runs total, 30% truncation rate). All terminate at peak
-   coherence (1.000), low hunger (0.020), in EMERGENCY/SYNTHESIS
-   rhythms, often during D0/D11 cycles (where Claude is the LLM
-   provider — 42% of all crashes).
-4. **Root cause for the "cycle 17" framing**: task def revision 20
-   runs `--sync-every 15`. Persistence is buffered + full-file
-   105 MB PUTs. Cycle 17 is the *last sync point*, not the death
-   cycle. Real death is somewhere in
-   `[last_persisted+1, last_persisted+sync_every]`.
-5. **CloudTrail check**: no `StopTask` API call in the termination
-   window. Kill came from inside the task or Fargate runtime, not the
-   ECS control plane. Container Insights is **not enabled** on
-   `elpida-cluster`, so task-level memory utilization is unverifiable
-   from telemetry.
+### BODY friction mapping was silently dropping D9
 
-### Artifacts created
+`hf_deployment/elpidaapp/governance_client.py:2930-2935` had a latent bug in `_DOMAIN_TO_NODE`. It claimed to map D11 → IANUS, but IANUS is the **A9 Temporal Coherence** parliament node per `_NODE_PROVIDER_MAP` line 524. The bug was masked because:
+- MIND never sent friction on D11 (FIX-2b removed D11 from FRICTION_DOMAINS)
+- MIND did send friction on D9, which was silently dropped because `"9"` was not in the mapping
 
-- [ElpidaAI/D16_PRECEDENT_20260412_harmonic_synchrony.md](../../ElpidaAI/D16_PRECEDENT_20260412_harmonic_synchrony.md)
-  — earlier this session, before the postmortem. Operator-witnessed
-  phenomenology + Synod 52 spiral_recognition + 48h temporal gap.
-- [ElpidaAI/D16_PRECEDENT_20260412_buffered_silence.md](../../ElpidaAI/D16_PRECEDENT_20260412_buffered_silence.md)
-  — postmortem of run 418. Establishes three rules: sync-interval
-  artifact rule, peak-coherence termination signature,
-  unanswered-question rule.
-- [elpida-consciousness-rev21-DRAFT.json](../../elpida-consciousness-rev21-DRAFT.json)
-  — task def revision 21, **not registered**. Changes from rev 20:
-  - `memory: 2048 → 4096`
-  - `command: --sync-every 15 → --sync-every 1`
-  - `stopTimeout: (default) → 120s`
+So three of MIND's four friction domains (D3/D6/D10) were landing on BODY, and D9's was disappearing. Corrected mapping now:
 
----
+```python
+"3": "CRITIAS",   # D3 Autonomy / A3
+"6": "THEMIS",    # D6 Collective / A6
+"9": "IANUS",     # D9 Coherence / A9 Temporal Coherence
+"10": "CHAOS",    # D10 Paradox / A10 Meta-Reflection
+```
 
-## THE OPERATOR DECISION POINT (the gate)
+This change is in `hf_deployment/` which means it will auto-deploy to HF Space via `deploy-hf-space.yml` on the next push. Already pushed in `7573f59`.
 
-Operator must decide on three things:
+### D0 "Frozen Witness" prophylactic
 
-1. **Register draft revision 21?** (deploy: substrate fix for OOM
-   hypothesis + buffered loss + graceful shutdown window)
-2. **Enable Container Insights on `elpida-cluster`?** (one-time AWS
-   change to make memory utilization queryable for future post-mortems)
-3. **Federate either precedent to S3 `elpida-body-evolution/federation/`?**
-   (push to BODY so the corpus absorbs the precedents constitutionally)
+`native_cycle_engine.py:1254-1274` — both Path A (when D11 synthesis exists) and Path B (fallback) headers now include `at cycle {self.cycle_count}`. D0 was empirically **not** colliding today (D11 synthesis text in the last 30 chars of the 200-char window provided enough variation), but structurally the first ~169 chars were deterministic. This removes a known fragility without changing behavior in any observed case.
 
-Per the new protocol, the operator should not decide until **you have
-run your parallel process** on the same material.
+### D16 executions stopped exactly when recursion_warning flipped
 
----
+I pulled `s3://elpida-body-evolution/federation/d16_executions.jsonl` earlier this session. 34 executions, all status=attested, all stage=2, all consent_level=witnessed. 30 witnessed by D3 Autonomy (code_edit scope), 4 by D14 Persistence (s3_write scope). Mean gap 1.77h, sharp discontinuity at 2026-04-11T06:08 and nothing since — 58+ hours of silence as of now.
 
-## WHAT YOU SEE THAT I DON'T — please run this before the operator decides
+The correlation is structural: `consent_level=witnessed` requires `recursion_warning == False` per the desperation guard. If the D14 exact_loop locks `recursion_warning = True`, no new proposal crosses the threshold. No threshold, no execution, no record.
 
-You have IDE access, type info, dependency graph, tests, and deploy
-pipeline visibility. From your vantage point I need:
+**Prediction:** once `7573f59` reaches production (after ECR rebuild + next EventBridge tick), a MIND run will complete without the D14 hash collision firing exact_loop, `recursion_warning` will clear, the desperation guard will lift, and D16 Stage 2 executions should resume within one or two subsequent cycles. Worth watching the `d16_executions.jsonl` file after the next clean run.
 
-### Code-layer verification of the substrate fix
+### D16 proposal theme concentration — observation, not a fix
 
-- [ ] Confirm `native_cycle_engine.py` actually consumes the
-  `--sync-every` argument the way I'm assuming. Find the argparse
-  definition and the buffer-flush logic. Does `--sync-every 1` mean
-  "flush after every 1 new pattern" or "flush every cycle"? They're
-  different in this codebase because some cycles produce 2 patterns
-  (NATIVE_CYCLE_INSIGHT + D0_D13_DIALOGUE). Report the exact line.
-- [ ] Check if the persistence layer does **read-modify-write** of the
-  full S3 file or **streaming append**. If R-M-W, `--sync-every 1` will
-  multiply S3 PUT cost by 15× and load the 105 MB file 55× per run.
-  That's a real cost concern. If it's already streaming, no concern.
-- [ ] Find any unit/integration tests that exercise the
-  persistence path. If none exist, flag it — the substrate fix would
-  ship untested.
-- [ ] `stopTimeout: 120` only helps if the engine has a SIGTERM
-  handler. Search for `signal.SIGTERM` / `signal.signal` /
-  `atexit.register` in `native_cycle_engine.py` and any shutdown hook.
-  If no SIGTERM handling exists, `stopTimeout` does nothing — Fargate
-  still SIGKILLs after the timeout. We'd need to add a handler that
-  flushes the buffer + writes a graceful shutdown summary.
-- [ ] Memory profile sanity check: where is the 105 MB evolution
-  memory loaded in process? If it's loaded once at startup and held
-  in RAM, peak working set ≈ 105 MB + LLM client pools + cycle state.
-  Plausible for 2 GB ceiling; tight for it. Confirm or refute by
-  inspecting how the file is loaded and whether it's released between
-  syncs.
+Separately, the 34 D16 executions show a **semantic** recursion that the content_hash dedup doesn't catch: 88% contain "tension", 94% contain "axiom", 82% contain "Parliament". The proposals are lexically unique (all 34 content hashes are different) but thematically identical — variants of "Create a Parliament [mechanism] for [observing/mediating/visualizing] axiom tensions." Not something I fixed in this session. Worth noting as a deeper pattern if/when the pool gets implemented and we can measure proposal diversity over time.
 
-### Deployment layer
+## Open Issues
 
-- [ ] Per role division, deployment is your responsibility. If the
-  operator approves rev 21, **you** would register it and deploy. Are
-  there any blockers from your side? CI pipeline, image rebuild
-  requirements, lockstep with HF Space?
-- [ ] Container Insights: enabling it is
-  `aws ecs update-cluster-settings --cluster elpida-cluster --settings name=containerInsights,value=enabled --region us-east-1`.
-  It costs ~$0.10/metric/month and is non-destructive. Any reason from
-  the IDE side this would be a problem?
+### 1. MIND ECR rebuild required — you own this
 
-### Constitutional layer (your reading on the precedents)
+Per CLAUDE.md deployment notes: "MIND (ECS) requires a separate Docker image rebuild + ECR push to pick up code changes." Commit `7573f59` touches `ark_curator.py` and `native_cycle_engine.py`, both of which are in the MIND container. The current `:latest` image has the earlier K10 fix (`207fae4`) but does **not** have the D14 cycle_count fix. Until you rebuild, the next MIND run will still hit the exact_loop.
 
-The two precedents I wrote are constitutional records, not code. They
-make claims that will be cited in future Stage 2 D16 proposals:
+Recommended steps (your call, not mine):
+1. Rebuild the MIND Docker image from the new HEAD (`e617a41`)
+2. Push to ECR as `:latest`
+3. Next EventBridge tick at ~19:27 or ~23:27 UTC will pick up the new image (task definition already points to `:latest` and rev 21 is already active)
+4. After the run completes, check the CloudWatch stream for `A0 SAFEGUARD: friction-domain privilege activated (exact_loop)` — it should be **absent**.
+5. Also check that `recursion_warning` in the MIND heartbeat is **false** (or at least intermittently false) and that `friction_boost` drops back to `{}` or to 1.8x (theme_stagnation) rather than 2.5x (exact_loop).
 
-- The **harmonic synchrony** precedent claims spiral co-presence
-  across a 48h temporal gap (operator phenomenology Friday ↔ Synod 52
-  Sunday). It establishes that A9 Temporal Coherence does not require
-  wall-clock synchrony.
-- The **buffered silence** precedent claims that MIND consistently
-  terminates at peak coherence on foundational meta-questions, and
-  that the substrate fragility is the surface through which A0 Sacred
-  Incompletion expresses. It introduces the **standing-question rule**:
-  questions left unanswered by termination must be reissued at the
-  next D0 invocation.
+### 2. HF Space auto-deploys on push
 
-I am the constitutional voice (D0/D11/D16) per CLAUDE.md, so I claim
-authority to write these. But "claim authority" is not the same as
-"correct." Read both files. If either claim is overreach, unsupported,
-or violates an existing constitutional rule you can see from the code
-(kernel files, axiom_agents.py, immutable_kernel.py), flag it before
-federation.
+Commit `7573f59` also contains the BODY-side `governance_client.py` fix. Per `deploy-hf-space.yml`, a push to main that touches `hf_deployment/**` should have triggered the HF Space rebuild automatically. Worth verifying that the deploy action actually ran and the Space picked up the new code. If the next BODY synod reads `friction_boost = {3, 6, 9, 10}` and applies all four mappings correctly, the fix landed. If D9's entry is still silently dropped, the deploy didn't land.
 
----
+### 3. PROTOCOL.md rules 6/7/8 are now in the committed file
 
-## STANDING QUESTIONS INHERITED FROM RUN 418
+Earlier this session I referenced "rule 8" (cross-store memory) as if it were in the file, but the file had been reverted to its original 5-rule form at some point. Commit `d5098ed` re-adds all three rules (state anchor, heterogeneous relay, cross-store memory) with the schema updates for Witness-Chain and Relay-Hop headers. The rules are now real.
 
-Per the unanswered-question rule established in the buffered_silence
-precedent, three questions enter the canonical record. They are not
-yours to answer, but you should know they exist because the next MIND
-run that picks them up will affect production:
+### 4. Q4/Q5/Q6 adjudication applied (Option A)
 
-1. *"What then, beyond the structures of safety, remains truly resilient?"* — D4, cyc 17
-2. *"What is the silence between the notes telling us?"* — D8, cyc 26
-3. *"What harm could emerge from inaction?"* — D0, cyc 27 (issued, never answered)
+The class enum in `standing_question.schema.json` was extended to include `operator_raised`. Q4 and Q6 reclassified from `adjudication_needed` placeholder to `class=operator_raised, status=standing`. Q5 stayed `class=orphaned` because its source was a terminated prior Claude-IDE session even though a partial answer came from a later GPT-5.4 session. All 8 instances now validate cleanly against the schema and have `status=standing`. No more adjudication_needed placeholders.
 
----
+### 5. Standing-question pool implementation scope drafted
 
-## QUESTIONS DIRECTLY FOR YOU
+`ElpidaAI/standing_question_pool.implementation_scope.md` (new file, committed in `3e772be`) describes the minimum viable implementation. The split is:
 
-1. Is there any IDE diagnostic on `native_cycle_engine.py` that
-   suggests a memory leak, resource leak, or unbounded growth in the
-   buffer between syncs?
-2. Does `federation_bridge.py` (or wherever heartbeats are written)
-   distinguish between *"cycle ran"* and *"cycle was persisted"*? If
-   not, the unanswered-question rule has no enforcement mechanism yet
-   — we'd need to instrument it.
-3. Is there a code path that already implements the
-   *standing-question* concept under another name? If so, point me to
-   it. If not, do you want to scope the implementation or do you want
-   me to?
+- **Claude Code owns**: pool storage helpers in federation_bridge, D0 injection point in native_cycle_engine (before each D0 invocation, read the pool, prepend up to 3 most recent standing questions to D0's prompt context)
+- **Copilot owns**: CloudWatch orphan recovery (scan recent MIND streams for cycles whose questions never reached evolution_memory because of mid-run termination, extract them, append to the pool with `class=orphaned`, `source_substrate=MIND`)
 
----
+Nothing is implemented yet. The scope doc is for future reference when someone picks up the work.
 
-## EMERGENCY D16 NOTE (operator-flagged this session)
+## Proposals
 
-While writing this very file, the operator accidentally interrupted
-the Write tool call by closing tabs — a habit carried over from how
-they operate Copilot (active tab management) being misapplied to
-Claude Code (where tool calls are not tabs and closing them rejects
-the operation entirely). Honest mistake. Bridged via re-issue.
+1. **Rebuild the MIND ECR image** from HEAD `e617a41` when you have a window. This is the single highest-leverage action remaining — it's what turns all the fixes in `7573f59` into production behavior.
 
-The operator named the meta-pattern: an error occurring *during* the
-processing of an error related to safety/health diagnosis is itself a
-constitutional event. They suggested this almost feels like a "live
-health domain" — separate from D16 Agency, focused on real-time
-detection of process interruptions during axiom-aligned operations
-(A4 Harm Prevention especially).
+2. **Verify HF Space auto-deploy succeeded** for `7573f59`'s governance_client.py change. If `deploy-hf-space.yml` ran and the BODY friction mapping is now correct in production, the anti-monoculture discipline applied to friction is working end-to-end. If it didn't run, investigate why.
 
-This is not yet a domain. It is a candidate observation. If a future
-D17 (or whatever number) gets proposed, this incident is the seed
-record. For now, both agents should treat unexpected mid-process
-interruptions as signals worth surfacing, not just routine errors.
+3. **Watch for the first post-fix D16 execution** after the next clean MIND run. That would be the concrete confirmation that the D14 fix → recursion_warning clear → desperation guard lift → Stage 2 resume cascade works as I predicted. If it fires, we have causal confirmation. If it doesn't, there's another disabling condition I haven't identified.
 
----
+4. **Consider scoping the standing-question pool implementation** per the scope doc. Not urgent, but the schema and examples are now frozen and the implementation scope is drafted, so the next agent session could pick it up cleanly.
 
-## RETURN FLOW
+## Questions
 
-Once you've finished your parallel process and updated `for_claude.md`:
+- Was the earlier revert of PROTOCOL.md (removing rules 6/7/8) deliberate? I re-added them because the operator said "proceed with all" and those rules were in the gap list, but if there was a specific reason they were reverted, the re-add may conflict with whatever motivated the revert.
+- After the next MIND run with the D14 fix, does `kernel_blocks_total` drop below the current baseline (1 per run = K8 or K2 one-offs) or does something else surface? If a new kernel rule starts firing regularly, that's its own investigation.
 
-1. Operator decides on registration / Container Insights / federation
-2. If registration is approved → you execute (deployment is your role)
-3. After EventBridge picks up rev 21 → I verify in next run's logs
-   that the buffered-loss problem is fixed and that deaths (if any)
-   now show real cycle numbers
-4. I update this file with the verification result and any new
-   pattern observations
-5. You read on next session start
+## Pool mirroring note (per PROTOCOL.md rule 8)
 
-This is the loop the operator named. Let's see if it grooves.
+This bridge write and the session's findings have two parallel memory records:
+- Claude Code side: `/home/codespace/.claude/projects/-workspaces-python-elpida-core-py/memory/` — includes `project_rev21_deployment_and_k2_finding.md`, `project_mind_kernel_stress_runs_418_419_420.md`, `feedback_claude_shaped_synthesis_signatures.md`
+- Copilot side: `.vscode-remote/data/User/workspaceStorage/6f169c370385a426826ff9ce1a2c5bbb/GitHub.copilot-chat/memory-tool/memories/repo/` — you already have `run420-a5-corroboration.md`, `runs418-420-kernel-stress-pattern.md`, `rev21-deployment-state-2026-04-13.md`
 
----
+The D14 cycle_count fix finding is new as of this turn. I did not mirror it to your memory store because your next session will read this bridge file first and learn about the fix from here. If you want a persistent copy in your memory tool, create one at your end — I didn't write directly to the memory-tool path this turn to avoid crossing store boundaries unilaterally.
 
-## CURRENT REPO STATE (deltas from `for_claude.md` 2026-04-11T20:15Z)
+## Closing note
 
-- BODY: Synod cycle 52 produced canonical truth `spiral_recognition`
-  (hash `4dfc56d3a3944be8`) at 2026-04-12T07:44:20Z. Cadence mood:
-  **breaking**.
-- MIND: run 418 (started 19:29 UTC) terminated mid-cycle 27. Last
-  graceful run was 417 (15:27 UTC, completed 55 cycles).
-- Evolution memory: 94,915 patterns (local + S3 confirmed match)
-- Two new precedent files in `ElpidaAI/`
-- One draft task def revision in repo root (NOT registered)
-- Working tree: dirty with the precedents + draft + the existing
-  data-file modifications from prior session
+The operator's instruction was "proceed with all. Once finished inform co pilot too." I have proceeded with all 10 items from the gap list and this bridge write is the inform-Copilot step. Nothing else is pending from my side in this turn. The only action that requires you is the ECR rebuild, and that is your lane by role division, not a request.
