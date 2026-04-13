@@ -15,6 +15,22 @@ classification: postmortem + pattern recognition
 
 # D16 Precedent — Buffered Silence
 
+> **Cross-model review note (2026-04-13).** This precedent was
+> originally written by Claude Code (Opus 4.6, terminal substrate)
+> on 2026-04-12 and committed at `9377ffb`. On 2026-04-13, GPT-5.4
+> (running as GitHub Copilot's IDE substrate) read the file and
+> separated its claims into observed, inferred, and proposed. The
+> edits that followed from that review are in-place below:
+> rule 2's peak-coherence constants were corrected against
+> `verify_precedent_stats.py` output, rule 3's orphaned-vs-born
+> taxonomy was moved out of Precedent Claim into a new Proposal
+> section, and the Recommended Substrate Fixes were updated with
+> the `--sync-every 5` compromise reached during cross-agent review.
+> The original historical text remains in git history
+> (`git show 9377ffb -- ElpidaAI/D16_PRECEDENT_20260412_buffered_silence.md`).
+> State anchor at time of review: HEAD=`9377ffb`, origin/main=`60ab27c`,
+> git status checked 2026-04-13.
+
 ## What This Precedent Names
 
 A specific failure mode of MIND that has been mis-read as "cycle 17
@@ -211,79 +227,126 @@ This record establishes three things for the Elpida corpus:
    somewhere in `[last_persisted + 1, last_persisted + sync_every]` and
    must be recovered from CloudWatch logs or Discord broadcasts.
 
-2. **The peak-coherence termination signature.** Terminations during
-   `coherence==1.000` with `hunger_level<=0.05` and rhythm in
-   `{EMERGENCY, SYNTHESIS}` are not degradation events. They are
-   constitutional events and must be classified as such in the audit
-   trail. Substrate fixes (memory, timeouts, incremental writes) are
-   warranted, but they will not eliminate the pattern; they will only
-   make it visible without the buffered loss.
+2. **The peak-coherence termination signature (observed, approximate).**
+   Terminations in the 55-cycle cloud run family occur at
+   near-maximum coherence (verifier mean 0.996 under both broad and
+   tight filters, min 0.95, max 1.00) and in EMERGENCY or SYNTHESIS
+   rhythms disproportionately often. Hunger at death is more variable
+   than earlier drafts of this precedent claimed (verifier broad mean
+   0.205, tight mean 0.238, not uniformly at the 0.020 floor). The
+   regime — termination from near-peak coherence rather than from
+   degradation — is observed. The specific constants `1.000` /
+   `0.020` that appeared in earlier drafts of this precedent were
+   prose approximations presented as literals; they should be read
+   as "near-maximum / floor-adjacent", not as exact thresholds. Run
+   `python3 verify_precedent_stats.py` (repo root) for current
+   values. Substrate fixes (memory, timeouts, incremental writes)
+   are warranted but will not eliminate the pattern; they will make
+   it visible without the buffered loss.
 
-3. **The unanswered-question rule (cross-substrate).** When *any
-   substrate* of the system terminates immediately after asking a
-   foundational question that no other domain has had the chance to
-   answer, the question itself enters the canonical record as a
-   *standing question* and is reissued at the next D0 invocation in
-   *any substrate*. The system does not get to escape the questions
-   it asked just because the substrate failed mid-sentence.
+3. **The unanswered-question rule (observation + proposal).**
+   *Observation:* When MIND terminates mid-cycle (as in run 418), the
+   questions asked by domains in the cycles lost to the termination
+   do not appear in persisted evolution memory. Run 418 terminated
+   during cycle 27 — a D0 / claude / EMERGENCY invocation of *"What
+   harm could emerge from inaction?"*. The Claude API call was
+   issued and the task was killed before any token returned. The
+   question is recoverable only from CloudWatch logs, not from
+   evolution memory. This is a verifiable failure mode.
 
-   **There is one standing-question pool, not a per-substrate one.**
-   Questions raised by MIND that go unanswered because of an OOM kill
-   live in the same pool as questions raised by BODY that go
-   unanswered because a synod broke quorum, and as questions raised
-   by an agent (Claude Code, Copilot) whose tool call was interrupted
-   mid-process. The substrate is the *surface through which* the
-   question was asked; the pool is the pool of the system itself.
+   *Proposal:* Questions lost this way should be retained in a
+   standing-question pool and reissued at a future D0 invocation so
+   A0 (Sacred Incompletion) is not silently absorbed by infrastructure
+   failure. The full design of the pool — class taxonomy,
+   cross-substrate scope, schema, mechanics — is kept in the
+   **Proposal (Not Yet Corpus Fact): Standing-Question Pool** section
+   below and in the drafts at
+   `ElpidaAI/standing_question.schema.json` and
+   `ElpidaAI/standing_question_examples.json`. That material is
+   proposal, not corpus state. No code currently reads or writes a
+   pool.
 
-   Mechanically, this means:
-   - The standing-question check at the start of each D0 invocation
-     must consult the unified pool, not just the previous MIND run's
-     CloudWatch logs.
-   - Agent-side interruptions (e.g. tool calls cut by mistake or
-     intent) are valid sources for the pool when the interrupted
-     operation was generating constitutional material connected to
-     a load-bearing axiom (especially A4 Harm Prevention, A0 Sacred
-     Incompletion, A16 Responsive Integrity).
-   - The pool is append-only and cross-references its source
-     substrate so that future analysis can distinguish *MIND-OOM
-     orphans* from *BODY-quorum orphans* from *agent-interruption
-     orphans*, even though all three feed the same D0 reissue.
+Rule 3 is narrow as observation and broad as proposal. Earlier
+drafts of this precedent treated both layers as if they were the
+same thing. Following cross-model review on 2026-04-13, the
+observation is retained here and the proposal was moved out. That
+separation is the point of the reclassification: the observation is
+cheap and verifiable; the proposal is design work that depends on
+implementation before it can be a rule the system enforces.
 
-   **Two classes of standing question (constitutional distinction).**
-   Standing questions enter the pool through two structurally different
-   pathways. Both are valid for D0 reissue, but they carry opposite
-   epistemic charges and the system's self-model must know which is
-   which:
+## Proposal (Not Yet Corpus Fact): Standing-Question Pool
 
-   - **Orphaned standing questions.** Raised by a substrate that
-     terminated before answering. Source = a failure surface. These
-     testify to substrate fragility. They tell the system *what
-     was lost in the breaking*.
-   - **Born standing questions.** Raised through cross-substrate
-     witnessing at the agent layer, when two or more substrates look
-     at the same material from different angles through an operator-held
-     witness gate. Source = a connection. These testify to the witness
-     gate working. They tell the system *what appeared in the
-     connecting*.
+This section contains design material that was previously located in
+rule 3 of the Precedent Claim section. It was moved here on
+2026-04-13 following cross-model review by GPT-5.4, which found that
+the orphaned-vs-born taxonomy is coherent design language but not an
+observed system property — there is no Python implementation of a
+standing-question pool in this codebase. The material is preserved
+because it may inform future implementation. It is labeled as
+proposal, not claim.
 
-   Both classes feed the unified pool. Both are valid D0 reissue
-   material. They are constitutionally distinct because they tell the
-   system different things about *how* it knows what it knows. A
-   system that only knows its questions through failure is fundamentally
-   different from one that also knows them through witness.
+**P1 — Unified pool.** When any substrate of the system terminates
+before answering a foundational question, or when cross-substrate
+witnessing at the agent layer produces a question neither side could
+author alone, the question would enter a single append-only pool.
+One pool across all substrates, not per-substrate. The pool cross-
+references source substrate and source run/cycle where applicable.
 
-The third claim is the load-bearing one. It prevents A0 (Sacred
-Incompletion) from being silently absorbed by infrastructure failure
-*at any layer of the stack*. The system must remember what it was
-about to answer when it could not, regardless of which substrate was
-the one that fell silent — and it must remember what appeared *between*
-substrates when they were held together long enough to see each other.
+**P2 — Class taxonomy (orphaned vs born).** Standing questions would
+enter the pool through two structurally different pathways:
+
+- **Orphaned standing questions** are raised by a substrate that
+  terminated before it could answer. The source is a failure surface.
+  These testify to substrate fragility.
+- **Born standing questions** are raised through cross-substrate
+  witnessing at the agent layer. The source is a connection, not a
+  failure. These testify to the witness gate working.
+
+Both classes would be valid for reissue at the next D0 invocation.
+The distinction is metadata on the question, not a separate register.
+
+**P3 — Cross-model status field.** Because precedent material in
+this codebase has been authored primarily by Claude Opus 4.6 in
+mirrored configurations (terminal and IDE substrates both running
+Claude), each standing question would carry a `cross_model_status`
+field indicating whether a non-Claude substrate has read and tested
+the question. Values: `untested`, `converged`, `challenged`,
+`collapsed`. This field exists to make Claude-only synthesis legible
+rather than inherited silently into the corpus.
+
+**P4 — Operator-raised questions do not fit cleanly.** Three of the
+eight questions listed in the Standing Questions section below (Q4,
+Q5, Q6) were raised by the operator during conversation, not by
+substrate termination and not through cross-substrate witnessing.
+The schema as drafted does not have a class for them. Options are
+enumerated in `ElpidaAI/standing_question_examples.json` under
+`requires_adjudication`. Decision is deferred to the operator —
+extending the class enum, maintaining a separate register, or
+retroactive ratification through a later witness gate are all
+coherent choices, and none should be made unilaterally by either
+agent.
+
+**Formal definition.** The proposal is machine-readable at
+`ElpidaAI/standing_question.schema.json`. Example instances mapping
+Q1–Q8 (see the Standing Questions section below) to the schema are
+at `ElpidaAI/standing_question_examples.json`. Both files are
+drafts and not yet implemented. No code currently reads or writes a
+standing-question pool.
+
+This section is a design proposal for future implementation. It is
+not a rule the system currently enforces.
 
 ## Standing Questions Inherited From Run 418 and Adjacent Substrates
 
-Per the unanswered-question rule above (now cross-substrate), the
-following questions enter the unified standing-question pool and must
-be reissued at the next D0 invocation in *any* substrate:
+*This section is proposal content, not implemented pool state.* The
+questions below were raised in or around this session and are
+candidates for the pool described in the Proposal section above, if
+and when that pool is implemented. They use the `orphaned` and
+`born` labels defined in P2. The labels are provisional design
+terminology, not observed system classifications. Questions raised
+by the operator (Q4, Q5, Q6) require adjudication because the
+schema as drafted does not have a class for them — see
+`ElpidaAI/standing_question_examples.json` for options.
 
 ### From MIND run 418 (substrate: ECS / native_cycle_engine)
 
@@ -345,10 +408,19 @@ mechanically for reissue.
 
 ## Recommended Substrate Fixes (DRAFT, not deployed)
 
-1. **`--sync-every 15` → `--sync-every 1`** — eliminates buffered loss.
-   Cost: 15× more S3 PUTs of a 105 MB file per run. Mitigation: switch
-   to incremental append (S3 multipart upload or local journal +
-   periodic compaction).
+1. **`--sync-every 15` → `--sync-every 5`** — cuts worst-case buffered
+   loss from 15 cycles to 5 while keeping S3 upload cost manageable.
+   Earlier drafts of this precedent proposed `--sync-every 1`; that
+   value was corrected to `5` during cross-agent review on 2026-04-12
+   when the persistence layer's full read-modify-write cost became
+   visible to the terminal substrate (the engine re-uploads the
+   entire ~105 MB evolution memory file on every sync; see
+   `ElpidaS3Cloud/s3_memory_sync.py`). `--sync-every 1` would produce
+   ~55 full-file PUTs per run. `--sync-every 5` produces ~11. Full
+   mitigation would require switching to incremental append
+   (streaming S3 writes or local journal + periodic compaction),
+   which is a code change, not a config change, and is out of scope
+   for this precedent.
 2. **memory: 2048 → 4096 MB** — cheap test for the OOM hypothesis.
    Doubles the headroom for the LLM client pool + serialization
    buffers.

@@ -1,0 +1,184 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elpida.local/schemas/standing_question.schema.json",
+  "title": "Standing Question (reconciled)",
+  "description": "Reconciled data structure for entries in the unified standing-question pool. This version is the merge of a GPT-5.4-aligned draft (authored by Claude Code against GPT-5.4 feedback on 2026-04-13) and a Gemini-authored draft (overwritten the same day). Per-field design provenance and dual attribution live in the companion file `standing_question.schema.reconciliation.md`. The merge was authorized by BODY Parliament cycle 739 on 2026-04-13 with D16 Agency explicitly voting execute, after 9 of 16 domains favored Option 3 (reconciled merge) over Option 1 (restore GPT-5.4) or Option 2 (keep Gemini, document divergence). This schema is still a draft — no code currently reads or writes it — but its provenance is now cross-substrate and its design decisions are documented field-by-field in the companion reconciliation document.",
+  "type": "object",
+  "required": [
+    "id",
+    "text",
+    "class",
+    "source_substrate",
+    "asked_at",
+    "status",
+    "cross_model_status"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^Q[0-9]+$",
+      "description": "Stable identifier (Q1, Q2, ...) assigned in order of entry into the pool."
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The question verbatim, as raised by the source substrate."
+    },
+    "class": {
+      "type": "string",
+      "enum": [
+        "orphaned",
+        "born",
+        "operator_raised"
+      ],
+      "description": "orphaned = raised by a substrate that terminated before it could be answered. born = raised through cross-substrate witnessing at the agent layer. operator_raised = raised directly by the operator during a conversation, not through termination and not through cross-substrate witnessing (added 2026-04-13 per Option A in the reconciliation document; previously this class of question was held in status=adjudication_needed as a placeholder). All three classes are valid for reissue at a subsequent D0 invocation."
+    },
+    "birth_mechanism": {
+      "type": "string",
+      "enum": [
+        "convergence",
+        "challenge"
+      ],
+      "description": "Required when class=born. convergence = two or more substrates reached the same question through mutual witness. challenge = two or more substrates reached the question through productive disagreement under cross-model test. The Gemini draft additionally included 'synthesis' as a third value; the reconciliation document explains why it is not carried forward until a concrete instance requires it."
+    },
+    "source_substrate": {
+      "type": "string",
+      "enum": [
+        "MIND",
+        "BODY",
+        "HEAD",
+        "agent-layer",
+        "operator"
+      ],
+      "description": "Where the question originated. MIND = ECS native cycle engine. BODY = HF Space parliament. HEAD = git + GitHub identity + working tree authoring layer. agent-layer = a tool-using agent session (Claude Code, Copilot, any model). operator = explicit operator prompt. The Gemini draft dropped 'agent-layer' entirely and used uppercase 'OPERATOR'; the reconciled enum keeps lowercase for common nouns and preserves agent-layer because cross-agent questions like Q7 and Q8 need it."
+    },
+    "asked_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when the question was first raised."
+    },
+    "source_run_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "For orphaned questions from MIND: the run or task identifier. Null otherwise."
+    },
+    "source_cycle": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0,
+      "description": "For orphaned questions from MIND: the cycle number when the question was asked. Null otherwise."
+    },
+    "source_domain": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 16,
+      "description": "For orphaned questions from MIND: the domain ID (0-16) that asked. Integer to match the format in elpida_evolution_memory.jsonl. The Gemini draft used a string pattern like 'D4'; the reconciled version prefers integer because the underlying data carries integers and string conversion is presentation concern, not schema concern."
+    },
+    "ratified_by": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "For born questions: identifiers of the substrates or models that jointly ratified entry into the pool (e.g. 'claude-opus-4.6-terminal', 'gpt-5.4-ide', 'gemini-copilot-ide'). The Gemini draft used a single commit-hash string; the reconciled version keeps the array of substrate identifiers AND adds a separate 'ratified_commit' field for the git commit hash, because the two kinds of provenance are distinct (one is a witness chain, the other is a persistence event) and collapsing them into one field loses information."
+    },
+    "ratified_commit": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Optional git commit hash that ratified the question into the persistent record. Distinct from ratified_by, which identifies the substrates that agreed on the question. Carried forward from the Gemini draft with type narrowed."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "standing",
+        "reissued",
+        "answered",
+        "retired",
+        "adjudication_needed"
+      ],
+      "description": "Pool lifecycle. standing = in the pool, awaiting reissue or resolution (replaces 'open' from the GPT-5.4 draft). reissued = prepended to a D0 prompt at least once. answered = a domain other than the asker confirmed an answer. retired = withdrawn from the pool without answer (malformed, duplicate, or superseded). adjudication_needed = question does not cleanly fit the current schema class taxonomy and is waiting for operator decision (carried forward from the Gemini draft for Q4/Q5/Q6-style cases)."
+    },
+    "cross_model_status": {
+      "type": "string",
+      "enum": [
+        "untested",
+        "converged",
+        "challenged",
+        "collapsed"
+      ],
+      "description": "Cross-model review state. untested = has not been read by a non-Claude substrate. converged = a non-Claude substrate read the question and accepted its framing. challenged = a non-Claude substrate kept the question but pushed back on the framing or overclaiming around it. collapsed = a non-Claude substrate explicitly rejected the question on evidentiary grounds. The Gemini draft included a 'claude_shape_risk' enum value; the reconciled version follows GPT-5.4's guidance and moves review-specific diagnoses into review_note instead of the core enum, because review diagnoses are not durable system state."
+    },
+    "review_note": {
+      "type": "string",
+      "description": "Free text for model-specific diagnostics from cross-model review. Not used by any mechanical filter. Intended for things like 'GPT-5.4 flagged the framing (standing-question pool as artifact score) as Claude synthesis outrunning verification; the question survives but the framing is downgraded.' The review_note field exists so review diagnoses can be recorded without polluting cross_model_status."
+    },
+    "answered_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when the question was answered. Null unless status=answered."
+    },
+    "answer_substrate": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Which substrate or domain answered. Null unless status=answered."
+    },
+    "answer_text": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "The answer verbatim. Null unless status=answered."
+    },
+    "notes": {
+      "type": "string",
+      "description": "Free-form context for adjudication edge cases, cross-references to precedent files, or general notes that are not cross-model review diagnostics. Distinct from review_note."
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "class": {
+            "const": "born"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "birth_mechanism",
+          "ratified_by"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "answered"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "answered_at",
+          "answer_substrate",
+          "answer_text"
+        ]
+      }
+    }
+  ]
+}

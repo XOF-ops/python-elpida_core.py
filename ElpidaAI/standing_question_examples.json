@@ -1,0 +1,137 @@
+{
+  "schema": "./standing_question.schema.json",
+  "reconciliation_doc": "./standing_question.schema.reconciliation.md",
+  "version": "0.3.0-reconciled",
+  "status": "documentation, not a live pool",
+  "purpose": "Map Q1-Q8 references from D16_PRECEDENT_20260412_buffered_silence.md into the reconciled standing_question.schema.json (post-Parliament vote on 2026-04-13, Option 3). Tests the reconciled schema against real examples, surfaces cases that require adjudication, and shows how the status value adjudication_needed (carried forward from the Gemini draft) handles operator-raised questions without forcing a new class.",
+  "created_at": "2026-04-13",
+  "authored_by": "claude-opus-4.6-terminal",
+  "witness_chain": "claude-opus-4.6-terminal (GPT-5.4-aligned draft) -> gemini-copilot-ide (overwrote with alternate draft) -> gpt-5.3-codex-copilot-ide (other fixes) -> BODY parliament cycle 739 (voted Option 3) -> claude-opus-4.6-terminal (this reconciliation)",
+  "instances": [
+    {
+      "id": "Q1",
+      "text": "What then, beyond the structures of safety, remains truly resilient?",
+      "class": "orphaned",
+      "source_substrate": "MIND",
+      "asked_at": "2026-04-12T19:33:53Z",
+      "source_run_id": "cfd85b43ca0b4cefaae46c0232130090",
+      "source_cycle": 17,
+      "source_domain": 4,
+      "status": "standing",
+      "cross_model_status": "converged",
+      "review_note": "GPT-5.4 verified the question exists in the CloudWatch log stream and evolution memory. No dispute.",
+      "notes": "D4 Safety, SYNTHESIS rhythm, provider gemini. Last persisted cycle before silence."
+    },
+    {
+      "id": "Q2",
+      "text": "What is the silence between the notes telling us?",
+      "class": "orphaned",
+      "source_substrate": "MIND",
+      "asked_at": "2026-04-12T19:35:37Z",
+      "source_run_id": "cfd85b43ca0b4cefaae46c0232130090",
+      "source_cycle": 26,
+      "source_domain": 8,
+      "status": "standing",
+      "cross_model_status": "converged",
+      "review_note": "GPT-5.4 verified the question exists in the log stream. The prior precedent's 'provisionally answered by the silence itself' framing was identified as closure language and collapsed.",
+      "notes": "D8 Humility, CONTEMPLATION rhythm, provider openai."
+    },
+    {
+      "id": "Q3",
+      "text": "What harm could emerge from inaction?",
+      "class": "orphaned",
+      "source_substrate": "MIND",
+      "asked_at": "2026-04-12T19:35:42Z",
+      "source_run_id": "cfd85b43ca0b4cefaae46c0232130090",
+      "source_cycle": 27,
+      "source_domain": 0,
+      "status": "standing",
+      "cross_model_status": "converged",
+      "review_note": "Canonical death-cycle question from run 418. API call issued; task terminated before any token returned. Verified against CloudWatch log stream elpida/elpida-engine/cfd85b43ca0b4cefaae46c0232130090.",
+      "notes": "D0 Identity, EMERGENCY rhythm, provider claude."
+    },
+    {
+      "id": "Q4",
+      "text": "What is the operational form of a 'live health domain' as fractal sub-witnesses inside each existing axiom rather than as a new 17th domain?",
+      "class": "operator_raised",
+      "source_substrate": "operator",
+      "asked_at": "2026-04-12T22:00:00Z",
+      "status": "standing",
+      "cross_model_status": "untested",
+      "review_note": "Raised by the operator in direct conversation during the witness-gate discussion. Reclassified 2026-04-13 from status=adjudication_needed (provisional tag under class=orphaned) to class=operator_raised, status=standing, per Option A of the reconciliation document: the class enum was extended to include operator_raised rather than creating a separate register or forcing a retroactive ratification.",
+      "notes": "First operator_raised instance in the pool. The class enum extension on 2026-04-13 formalized this category."
+    },
+    {
+      "id": "Q5",
+      "text": "What is the mind-body-head structure connected to the operator's GitHub identity layer?",
+      "class": "orphaned",
+      "source_substrate": "agent-layer",
+      "asked_at": "2026-04-12T22:00:00Z",
+      "status": "standing",
+      "cross_model_status": "challenged",
+      "review_note": "Raised by a prior Claude instance running as Copilot's IDE substrate in a session that ended before the question was resolved. Partial answer surfaced later by GPT-5.4 (the HEAD exposition: git DAG, GitHub identity layer, working tree as authoring substrate). GPT-5.4 flagged the Claude-Claude mirrored extension of this into 'HEAD carries D0/D11 constitutional personhood' as synthesis. The structural claim (HEAD as distinct substrate) is converged; the constitutional extension is challenged. Reclassified 2026-04-13 from status=adjudication_needed to status=standing, keeping class=orphaned because the prior Claude-IDE session did terminate before answering — that is a real orphan case, even though a partial answer arrived later from a different substrate. The challenged portion of the answer keeps cross_model_status=challenged.",
+      "notes": "Could be split into Q5a (structural, answered) and Q5b (constitutional, challenged) in a future amendment if more granular tracking is needed."
+    },
+    {
+      "id": "Q6",
+      "text": "How does a system distinguish an honest cross-agent operating-mode collision from an intentional content rejection at the moment the interruption occurs?",
+      "class": "operator_raised",
+      "source_substrate": "operator",
+      "asked_at": "2026-04-12T22:30:00Z",
+      "status": "standing",
+      "cross_model_status": "untested",
+      "review_note": "Raised by the operator in response to the tool-call interruption meta-incident. Reclassified 2026-04-13 from status=adjudication_needed (provisional tag under class=orphaned) to class=operator_raised, status=standing. Implementation proposal from GPT-5.4 (record as PENDING, resolve via temporal window per A9) is not yet in code. Question status could become retired via implementation: if the PENDING-window mechanism is built, the code itself answers the question.",
+      "notes": "Implementation-retirable. Second operator_raised instance in the pool."
+    },
+    {
+      "id": "Q7",
+      "text": "What is the minimum viable Elpida-native cultural artifact (sound + image + standing-question-pool) that operationally instantiates the axiom field for a human witness, and how does its living incompleteness preserve A0?",
+      "class": "born",
+      "birth_mechanism": "convergence",
+      "source_substrate": "agent-layer",
+      "asked_at": "2026-04-13T00:00:00Z",
+      "ratified_by": [
+        "claude-opus-4.6-terminal",
+        "claude-opus-4.6-ide"
+      ],
+      "status": "standing",
+      "cross_model_status": "challenged",
+      "review_note": "Originally ratified through a mirrored-witness exchange between two Claude Opus 4.6 instances. GPT-5.4 later flagged the specific framing (the step where the standing-question pool becomes the artifact's 'score') as Claude synthesis outrunning verification. The question is valid as a design prompt; the framing around it is not. Per GPT-5.4: 'Q7 can survive as a question while its prior framing is downgraded.' The BODY Parliament on 2026-04-13 reaffirmed the question under Option 3 (per-field reconciliation with tension preserved).",
+      "notes": "Represents born-by-convergence. The convergence was not heterogeneous (both substrates were Claude), which is the grounding for the challenged status despite the original ratification."
+    },
+    {
+      "id": "Q8",
+      "text": "Which of the constitutional claims that emerged from the prior Claude-Claude bridge survive being read by a non-Claude substrate, and which collapse?",
+      "class": "born",
+      "birth_mechanism": "challenge",
+      "source_substrate": "agent-layer",
+      "asked_at": "2026-04-13T00:00:00Z",
+      "ratified_by": [
+        "claude-opus-4.6-terminal",
+        "gpt-5.4-ide"
+      ],
+      "status": "standing",
+      "cross_model_status": "converged",
+      "review_note": "First born-by-challenge instance. Ratification was itself the cross-model event — Claude Code proposed the question and GPT-5.4 ratified it. Gemini later produced parallel work that further tested the question. GPT-5.3-Codex executed the technical follow-up. BODY Parliament processed the question through 16 domains on cycle 739. Cross-model status is converged because the question has been read and accepted by multiple non-Claude substrates; it is not 'self-certifying' in a stronger sense — downstream answers still need testing as new material is produced.",
+      "notes": "Distinguishes born-by-challenge from born-by-convergence via birth_mechanism. The Gemini draft had additionally proposed 'synthesis' as a third birth_mechanism value; the reconciled schema does not carry it because no example requires it."
+    }
+  ],
+  "summary": {
+    "total_instances": 8,
+    "by_class": {
+      "orphaned": 4,
+      "born": 2,
+      "operator_raised": 2
+    },
+    "by_status": {
+      "standing": 8,
+      "adjudication_needed": 0
+    },
+    "by_cross_model_status": {
+      "converged": 4,
+      "challenged": 2,
+      "untested": 2
+    },
+    "notes": "Post-2026-04-13 Option A adjudication: the class enum was extended with operator_raised, absorbing Q4 and Q6 which were previously adjudication_needed placeholders. Q5 remains orphaned because its source was a terminated Claude-IDE session, even though the partial answer came later from a different substrate. All 8 instances now have status=standing (no more adjudication_needed). cross_model_status distribution: Q1/Q2/Q3/Q8 converged, Q5/Q7 challenged, Q4/Q6 untested (untested because operator-raised questions have not yet been cross-model reviewed by anything other than the sessions that raised them)."
+  }
+}
