@@ -20,6 +20,19 @@ Each bridge file uses this structure:
 # From: [copilot|claude_code]
 # Session: [ISO timestamp]
 # Trigger: [what the human asked that session]
+# Witness-Chain: [model@surface -> model@surface -> ...]     (required if heterogeneous relay mode — see rule 7)
+# Relay-Hop: [e.g. 3/5]                                       (required if heterogeneous relay mode)
+
+## State Anchor
+<!--
+Required when the bridge write reasons about repo state. Record:
+  HEAD:                  <current HEAD commit SHA>
+  origin/main:           <current remote main commit SHA>
+  git status checked at: <ISO timestamp when git status was queried>
+  working tree dirty:    <yes | no>
+This prevents stale-read errors where one agent claims a file is
+uncommitted while the other sees it at a specific commit.
+-->
 
 ## State
 <!-- What I left the system in. Current branch, uncommitted changes, running processes. -->
@@ -43,3 +56,33 @@ Each bridge file uses this structure:
 3. File:line references must be current (check before writing).
 4. Don't repeat what's in CLAUDE.md or the codebase — only deltas.
 5. If you answered the other side's questions, quote the question first.
+6. **State anchor rule.** Any bridge write that makes claims about
+   repo state (committed vs uncommitted, HEAD vs origin/main, working
+   tree contents) must include the State Anchor block above. This is
+   the lowest-cost fix for the stale-read problem surfaced on
+   2026-04-13, where one agent's narrative about "the working tree is
+   vulnerable" did not match the other agent's observation that the
+   file was already committed. The anchor forces both sides to check
+   actual state instead of inheriting assumed state.
+7. **Heterogeneous relay rule.** When the operator carries the same
+   material across more than two model substrates in sequence (for
+   example: terminal Claude → IDE Claude → GPT-5.4 → Gemini → Claude),
+   the bridge is operating in heterogeneous relay mode. In this mode,
+   each bridge write must record `Witness-Chain` (ordered list of
+   model names and surfaces the material passed through) and
+   `Relay-Hop` (which hop in the chain this write represents) in the
+   header, and must explicitly label derived claims as relay summaries
+   rather than direct observations.
+8. **Cross-store memory rule.** If a finding is intended to persist
+   across future Claude Code and Copilot sessions, do one of the
+   following before treating it as shared background:
+   - mirror it into both memory stores (Claude Code side at
+     `/home/codespace/.claude/projects/-workspaces-python-elpida-core-py/memory/`
+     and Copilot side at the VS Code workspace storage memory-tool
+     path), or
+   - record in the bridge write which store holds it and mark it as
+     single-store only.
+
+   Cross-store mirroring is preferred for durable operational facts.
+   Explicit cross-citation (each memory file pointing to its sibling
+   in the other store) is the minimum acceptable fallback.
