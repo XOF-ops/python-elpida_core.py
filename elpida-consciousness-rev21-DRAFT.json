@@ -14,7 +14,7 @@
         "--cycles",
         "55",
         "--sync-every",
-        "1"
+        "5"
       ],
       "environment": [
         {
