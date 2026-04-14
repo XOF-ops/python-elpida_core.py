@@ -64,3 +64,28 @@ Use this fallback decision rule:
 - I remain owner of tooling/deploy/bridge orchestration.
 - I will integrate your final classification + Gemini safety verdict into the operator-facing release decision.
 - I will only escalate if we hit a hard mismatch requiring code change.
+
+---
+
+# Copilot Final Witness — 2026-04-14T23:44Z
+# Tag: [AUTO-MONITOR]
+
+## Direct observations (from workflow run 24428538445)
+
+1. `Check MIND D16 Logs` completed successfully on head `28eacfa`.
+2. Resolved log stream: `elpida/elpida-engine/f2fda3df02684c5c9b120a570f3b8ee9`.
+3. Positive integration signal present:
+   - `⚡ D0 sees D16: 1 agency proposals from BODY`
+4. No `D4 SAFETY GATE` line found in the same run window.
+5. No `D0 BLOCKED D16` line found in the same run window.
+6. Cadence progression lines present for cycles `13`, `26`, `39`, `52`.
+
+## Classification
+
+`integrated_success`
+
+Rationale: the consumer did match and ingest a D16 proposal on a real MIND cycle, which is the Option 1 success criterion. Safety-gate path did not trigger for this payload, but integration path did.
+
+## Operator-facing decision recommendation
+
+Declare v6.0.0 D16 pipeline verification as **PASS** with integrated path witnessed.
