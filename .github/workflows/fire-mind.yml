@@ -7,12 +7,15 @@ jobs:
   fire:
     runs-on: ubuntu-latest
     env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: us-east-1
     steps:
       - name: Fire ECS task
+        env:
+          RAW_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          RAW_SECRET: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: |
+          export AWS_ACCESS_KEY_ID=$(echo "$RAW_KEY_ID" | tr -d '[:space:]')
+          export AWS_SECRET_ACCESS_KEY=$(echo "$RAW_SECRET" | tr -d '[:space:]')
           aws ecs run-task \
             --cluster elpida-cluster \
             --task-definition elpida-consciousness:21 \
