@@ -526,6 +526,14 @@ _NODE_LLM: Dict[str, str] = {
     "LOGOS":     "openai",      # A2  — Semantic precision → structured reasoning
 }
 
+# PROMETHEUS canary model override for contested deliberation.
+# Default is command-r for faster/strict-format voting; override at runtime:
+#   ELPIDA_PROMETHEUS_COHERE_MODEL=command-a-03-2025
+_PROMETHEUS_COHERE_MODEL = os.environ.get(
+    "ELPIDA_PROMETHEUS_COHERE_MODEL",
+    "command-r-08-2024",
+).strip()
+
 # ── Signal keywords per axiom ───────────────────────────────────────
 # Phase 1 of signal detection: direct keyword matching.
 # Each axiom has a list of keywords that trigger signals.
@@ -2664,8 +2672,9 @@ class GovernanceClient:
           THEMIS, CHAOS          → Claude (anchor + contradiction-holding)
           PROMETHEUS             → Cohere (epistemic breadth)
           LOGOS                  → OpenAI (structured precision)
-          PROMETHEUS             → Perplexity (reality-grounded)
-          CHAOS                  → Claude (contradiction-holding)
+
+                Provider-level fallback is handled by LLMClient; node mapping
+                remains stable.
 
         Returns updated votes dict.
         """
@@ -2698,6 +2707,9 @@ class GovernanceClient:
                 continue
 
             provider    = _NODE_LLM.get(node_name, "groq")
+            model_override = None
+            if node_name == "PROMETHEUS" and provider == "cohere":
+                model_override = _PROMETHEUS_COHERE_MODEL or None
             philosophy  = node_cfg["philosophy"]
             role        = node_cfg["role"]
             primary     = node_cfg["primary"]
@@ -2720,7 +2732,12 @@ class GovernanceClient:
             )
 
             try:
-                raw = llm.call(provider, prompt, max_tokens=130)
+                raw = llm.call(
+                    provider,
+                    prompt,
+                    max_tokens=130,
+                    model=model_override,
+                )
                 if not raw or len(raw.strip()) < 10:
                     continue
 
@@ -2765,10 +2782,15 @@ class GovernanceClient:
                         "is_veto":         False,
                         "llm_deliberated": True,
                         "llm_provider":    provider,
+                        "llm_model":       model_override,
                     }
                     logger.debug(
-                        "LLM deliberation %s via %s: %s (score=%d)",
-                        node_name, provider, parsed_vote, parsed_score,
+                        "LLM deliberation %s via %s/%s: %s (score=%d)",
+                        node_name,
+                        provider,
+                        model_override or "default",
+                        parsed_vote,
+                        parsed_score,
                     )
 
             except Exception as e:

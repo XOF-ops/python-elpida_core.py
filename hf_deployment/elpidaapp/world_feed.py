@@ -113,7 +113,7 @@ GDELT_DOC = (
 WIKIPEDIA_FEED = (
     "https://en.wikipedia.org/w/api.php?action=query&list=recentchanges"
     "&rcnamespace=0&rclimit=20&rcprop=title|comment|timestamp|flags"
-    "&rcshow=!bot&rctype=edit&format=json"
+    "&rcshow=!bot|!minor&rctype=edit&format=json"
 )
 
 # GDELT topic queries → governance dilemmas
@@ -279,7 +279,10 @@ def _frame_as_tension(title: str, abstract: str = "", domain: str = "") -> Optio
             "territorial integrity asserted by the collective erases the natural mobility "
             "that precedes all state borders"
         )
-    elif "hous" in low or "property" in low or (" land" in low or low.startswith("land")) or (" rent" in low or low.startswith("rent")):
+    elif (re.search(r"\bhous(?:e|ing)?\b", low)
+          or "property" in low
+          or (" land" in low or low.startswith("land"))
+          or (" rent" in low or low.startswith("rent"))):
         matched = True
         individual = f"absolute property rights and return-on-investment for owners in: {title}"
         collective = f"affordable land access for all current and future residents in: {title}"
@@ -598,9 +601,16 @@ class WikipediaCurrentEvents:
     _NOISE_PATTERNS = re.compile(
         r"Cat-a-lot|WPCleaner|AWB|AutoWikiBrowser|"
         r"HotCat|"
+        r"QuickCategories|toolforge:quickcategories|"
+        r"\[\[Category:|"
         r"Reverted edit|Undid revision|"
+        r"[Mm]anually reverted|reverted a edit|"
         r"Moving .* to Category|"
         r"Changing stub|stub sorting|"
+        r"\bc/e\b|copyedit|"
+        r"grammar|spelling|"
+        r"fixed grammar|Correction|tidy|"
+        r"infobox|"
         r"typo|ce per MOS|"
         r"tag:? ?visual.?edit|"
         r"Redirected page to|"
@@ -617,6 +627,29 @@ class WikipediaCurrentEvents:
         r"Career|Awards|Filmography|Discography|Bibliography|"
         r"Personal life|Early life|Season|Record|Roster|"
         r"Schedule and results|Cast|Plot|Track listing)\s*\*/",
+        re.IGNORECASE,
+    )
+
+    # Section-only edits are frequently low-signal maintenance, e.g.
+    # "/* Early life and education */" or "/* History */".
+    _SECTION_ONLY_COMMENT = re.compile(r"^\s*/\*[^*]+\*/\s*$", re.IGNORECASE)
+
+    # Keep Wikipedia ingest focused on governance-relevant updates.
+    # This prevents biographical/sports/category churn from entering Parliament.
+    _GOVERNANCE_SIGNAL = re.compile(
+        r"\b("
+        r"war|conflict|attack|airstrike|invasion|military|weapon|"
+        r"ceasefire|truce|sanction|diplomat|peace|"
+        r"refugee|humanitarian|famine|disaster|crisis|"
+        r"policy|regulation|law|parliament|election|vote|"
+        r"rights?|gender|discriminat|"
+        r"trade|tariff|inflation|recession|debt|market|"
+        r"resource|privacy|surveillance|autonomous|robot|"
+        r"ai\b|artificial intelligence|"
+        r"health|medical|hospital|triage|"
+        r"justice|criminal|prison|"
+        r"migrat|immigr|border|sovereign|climate|carbon|emission"
+        r")\b",
         re.IGNORECASE,
     )
 
@@ -647,7 +680,14 @@ class WikipediaCurrentEvents:
             combined = f"{title}: {comment}" if comment else title
             if len(combined) < self._MIN_TEXT_LENGTH:
                 continue
+            # Minor edits are overwhelmingly maintenance churn.
+            if "minor" in change:
+                continue
+            if self._SECTION_ONLY_COMMENT.match(comment or ""):
+                continue
             if self._NOISE_PATTERNS.search(comment):
+                continue
+            if not self._GOVERNANCE_SIGNAL.search(combined):
                 continue
 
             seen.add(item_id)

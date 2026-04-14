@@ -817,9 +817,19 @@ class ParliamentCycleEngine:
         # Assemble events into deliberation text
         parts = [f"[{rhythm} RHYTHM — cycle {self.cycle_count}]"]
         sources = []
+        event_provenance = []
         for e in events:
             parts.append(f"  [{e.system.upper()}]: {e.content[:500]}")
             sources.append(e.system)
+            md = e.metadata or {}
+            event_provenance.append({
+                "system": e.system,
+                "source": str(md.get("source", ""))[:40],
+                "title": str(md.get("title", ""))[:180],
+                "comment": str(md.get("comment", ""))[:120],
+                "domain": str(md.get("domain", ""))[:80],
+                "subreddit": str(md.get("subreddit", ""))[:40],
+            })
 
         # Add MIND heartbeat context if available
         if self._mind_heartbeat:
@@ -883,6 +893,7 @@ class ParliamentCycleEngine:
             "rhythm": rhythm,
             "systems": sources,
             "event_count": len(events),
+            "event_provenance": event_provenance,
         }
 
         # Carry guest metadata through for Discord response
@@ -1163,6 +1174,7 @@ class ParliamentCycleEngine:
             "veto_exercised": result.get("parliament", {}).get("veto_exercised", False),
             "input_source": meta.get("source", "?"),
             "input_systems": meta.get("systems", []),
+            "input_event_provenance": meta.get("event_provenance", []),
             "watch": watch["name"],
             "watch_symbol": watch["symbol"],
             "active_domains": active_domains,

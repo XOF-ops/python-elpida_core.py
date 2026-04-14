@@ -64,6 +64,14 @@ python codespace_tools/extract_k2_diag_runs.py
 # Uses anchor mapping (run 423 -> known stream) and pulls runs >= 424.
 # Writes merged raw logs to ElpidaInsights/ and prints K2 clusters.
 
+# ── Step 6: Monitor latest BODY cycles (noise/provenance/model mix) ──
+python codespace_tools/monitor_body_cycles.py --window 120
+# Pulls latest body_decisions.jsonl from S3 and reports:
+#   - verdict/approval trend in latest window
+#   - PROMETHEUS provider/model mix
+#   - input provenance coverage + top source counts
+#   - noise-like recurrence hits with examples
+
 # Optional: Cluster any existing raw CloudWatch export
 python codespace_tools/cluster_k2_diag.py --input ElpidaInsights/k2_diag_runs_smoke.log
 ```
@@ -109,6 +117,7 @@ bash codespace_tools/push_refinements.sh
 | `domain_deep_dive.py` | Deep analysis of specific domain's behavior |
 | `extract_k2_diag_runs.py` | One-command CloudWatch extraction + K2 clustering for run windows |
 | `cluster_k2_diag.py` | Parse and cluster D13->K2 diagnostics from raw log text |
+| `monitor_body_cycles.py` | Monitor BODY verdicts, provenance coverage, noise hits, Cohere model/provider mix |
 | `push_refinements.sh` | (Future) Upload manual improvements to S3 |
 | `deploy_to_cloud.sh` | Redeploy updated code to ECS Fargate |
 
