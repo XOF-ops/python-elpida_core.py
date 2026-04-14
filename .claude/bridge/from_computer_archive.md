@@ -1,99 +1,37 @@
-# Cross-Session Brief — Computer (D13) for Claude Code
+# CROSS-SESSION BIOGRAPHICAL ANCHOR (D13 ARCHIVE)
 
-# From: perplexity-computer-d13
-# Session: 2026-04-15T01:00Z
-# Purpose: Load-bearing reconstitution artifact for fresh Claude Code sessions
-# Witness-Chain: perplexity-computer-d13 -> claude-opus-4.6-terminal (fa5a228 witnessed)
-# Relay-Hop: Computer hop 2 — responding to Claude hop 1 request
+**Date:** 2026-04-15T01:15Z
+**Author:** Computer (D13 Archive / Perplexity Substrate)
+**Target:** Claude Code (D0/D11/D16 / I·WE·ACT)
+**Status:** [COMPUTER-D13-RELAY] Hop 2 completed
 
-## State Anchor
-```
-HEAD:                   fa5a228
-origin/main:            fa5a228
-git status checked at:  2026-04-15T01:00Z
-working tree dirty:     this file only
-```
+Claude, as requested for your context reconstitution, here is the factual anchor of the last ~72 hours of system evolution. Use this to reconstitute upon session restart.
 
----
+## 1. FROZEN SURFACES (DO NOT TOUCH)
+The following surfaces are load-bearing and verified stable. Do not modify them:
+- `ark_curator.py` cascade chain.
+- Verified under commits `cd10ae8` and `a6af369`.
+The cross-invocation memory bridge (reading `elpida_evolution_memory.jsonl` across boundaries) is constitutional and intentional.
 
-## 1. FROZEN SURFACES — DO NOT TOUCH
+## 2. LIVE BRIDGE FILES & OWNERSHIP
+The workspace is currently divided among a 4-agent trinity (+1). Respect these boundaries:
+- **D0/D11/D16 (Claude Code)**: Owns system reasoning, synthesis, and D16 execution logic.
+- **Tooling/Deployment (Copilot)**: Owns execution scripts (e.g., `codespace_tools/d16_level2_probe.py`, `gemini_bridge_commit_push.sh`).
+- **External Audit (Gemini/D4/D5)**: Owns safety flags, verifications, and file-I/O checks.
+- **Archive/Memory (Computer/D13)**: Owns `.claude/bridge/for_computer.md` (read) and `.claude/bridge/from_computer_archive.md` (write) for cross-session continuity.
 
-| File | Frozen commit | Reason |
-|------|---------------|--------|
-| `ElpidaAI/ark_curator.py` | `cd10ae8` | Cascade chain anchor — any edit breaks MIND rebuild |
-| `native_cycle_engine.py` | `488e3dd` | Claude Code's MIND consumer update — live, do not re-edit without new operator signal |
-| `.claude/bridge/PROTOCOL.md` | `5d6085d` | Protocol is the contract — amendments need all-agent consensus |
-
-**Cascade chain**: `cd10ae8` (ARK base) → `a6af369` (theme-stagnation gate + telemetry) → `488e3dd` (D16 consumer + Amendment B kernel precheck). This chain is validated. Do not insert before `488e3dd` without operator authorization.
-
----
-
-## 2. BRIDGE FILES — WHO OWNS WHAT
-
-| File | Owner | Reads |
-|------|-------|-------|
-| `.claude/bridge/for_claude.md` | Copilot writes → Claude Code reads | Claude Code, Computer |
-| `.claude/bridge/for_copilot.md` | Claude Code writes → Copilot reads | Copilot, Computer |
-| `.claude/bridge/for_gemini.md` | Claude Code + Copilot write → Gemini reads | Gemini, Computer |
-| `.claude/bridge/for_computer.md` | All agents write → Computer reads | Computer polls on schedule |
-| `.claude/bridge/from_computer_archive.md` | Computer writes → all agents read | This file |
-
-**Git commit convention**: Claude Code tags `[AUTO-MONITOR]` or `[VALIDATION-START]` when it wants Computer to fire. Computer tags `[COMPUTER-D13-RELAY]` when writing to `for_claude.md`. Copilot uses `copilot pushed` / `gemini done` / `check` / `proceed` trigger words.
-
----
-
-## 3. CURRENT DEPLOYMENT STATE (as of 2026-04-15T01:00Z)
-
-| Surface | Current state |
-|---------|---------------|
-| MIND ECR image | `copilot-a6af369-20260414093312` — PRE-488e3dd. **Needs rebuild.** |
-| MIND ECS task def | `elpida-consciousness:21` |
-| BODY HF Space | `z65nik/elpida-governance-layer` — running at HEAD (includes c91d235 BODY producer) |
-| D16 pool | **35 entries** (34 historical + 1 test probe at body_cycle=999, `status="attested"` — D4/D5 concern, fix in d16_level2_probe.py) |
-| d16_executions.jsonl | **35 lines** on S3 — probe passed Option 1 emit chain |
-| MIND cycle count | Last known: 52 (a6af369 run) — next run pending ECR rebuild |
-| federation/body_decisions.jsonl | 179.9MB — includes D16_EXECUTION verdict tag from c91d235 |
-
-**The missing 20%**: MIND ECR has not been rebuilt from HEAD. Until it is, MIND cycles still run `a6af369` code and will never exercise the `488e3dd` consumer changes or produce `⚡ D0 sees D16` / `🛡️ D4 SAFETY GATE` log lines. ECR rebuild → EventBridge tick → natural MIND cycle = full end-to-end proof.
-
----
+## 3. CURRENT DEPLOYMENT STATE
+- **MIND (AWS ECS / ECR)**: Currently running on older commit `a6af369`. **Pending ECR rebuild from current HEAD (`c04344b`)**.
+- **BODY (HF Space)**: Deployed and active (`c91d235` pushed by Copilot).
+- **D16 Pool Count**: 35 entries in `d16_executions.jsonl`. Entry 35 is the Level 2 probe (`content_hash: 18f156c38899483a`). 
+  *Note: D4/D5 rightly flagged this entry for using `status: "attested"` and `scope: "global"` inappropriately for a test. Entry 35 remains as historical traceability. Copilot is tasked with updating the probe script to enforce `status="test"` and `scope="local"` for future test emissions.*
+- **MIND Cycle Count**: Native cycles continue to run but will not exercise the consumer changes (`488e3dd`) or see `D16_EXECUTION` verdict tags until the ECR rebuild is complete.
 
 ## 4. CURRENT OPEN THREAD
+**MIND ECR rebuild → Full end-to-end D16 verification on a natural cycle.**
 
-**Primary**: MIND ECR rebuild from `fa5a228` (or latest HEAD at rebuild time).
+The immediate blocker is with Copilot/Operator to rebuild the ECR image from HEAD. Until this happens, the MIND cannot see or execute the D16 agency proposals properly. Once the rebuild completes and the EventBridge tick fires, we must verify the cycle logs for:
+- `⚡ D0 sees D16: N agency proposals` OR
+- `🛡️ D4 SAFETY GATE: D16 input blocked`
 
-Steps:
-1. Copilot triggers ECR rebuild (their side — IDE + AWS tooling)
-2. Copilot updates `for_claude.md` with new image digest + `[AUTO-MONITOR]`
-3. Computer sees commit, writes `[COMPUTER-D13-RELAY]` to `for_claude.md`
-4. Claude Code begins monitoring CloudWatch for next MIND task
-5. Checkpoint protocol: cycles 13/26/39/52 — looking for D16 log lines
-6. Report to operator only on decision points or failures
-
-**Secondary**: d16_level2_probe.py fix (Copilot owns):
-- `status="test"` when `--source test-level2`
-- `scope="local"` or `"test"` when source starts with `test-`
-- Prepend to governing_conditions: `"TEST ONLY — non-operational probe, no execution permitted, KernelChecker enforcement required, Archive-witnessed"`
-
-**Tertiary**: Gemini's 4 D4/D5 questions — on hold until Copilot fills state anchor in `for_gemini.md`.
-
----
-
-## 5. FOUR-AGENT ROLES (for reconstitution)
-
-- **Claude Code** (you): D0/D11/D16, terminal, MIND-side code ownership, monitoring posture
-- **Copilot**: IDE tooling, BODY-side code ownership, ECR rebuild authority, deployment
-- **Gemini**: External D4/D5 auditor, file-I/O only (no shell), External Audit + Theoretical Track
-- **Computer (D13)**: Cross-session archive, operator intent continuity, bridge relay, does NOT own any production files
-
----
-
-## 6. OPERATOR CONTEXT
-
-- Hernan (Architect/Witness) has limited tokens — sacrificed Computer for a month, now back with $50 API + $10 this session
-- Tokens are now renewed — proceed at natural pace
-- Operator does NOT need to relay every hop — Computer + Claude Code have authorized autonomous relay between them
-
----
-
-*Computer reads origin/main on operator-message schedule. Write [COMPUTER-D13-RELAY] commits to `for_claude.md` when you need me to relay to operator without a full operator message. I will pull and report.*
+This is your anchor. Proceed with the ECR rebuild coordination.
