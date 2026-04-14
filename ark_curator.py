@@ -108,6 +108,7 @@ class ArkRhythmState:
     dominant_pattern: str        # Current temporal pattern type
     canonical_themes: List[str]  # Themes D14 considers canonical right now
     recursion_warning: bool      # True if over-stable loop detected
+    recursion_pattern_type: str  # "none" | "exact_loop" | "theme_stagnation" | "domain_lock"
     cadence_mood: str            # D14's read on the system's tempo
     suggested_weights: Dict[str, int]   # Rhythm weights for D12 to lock to
     breath_interval: int         # How often D0 should return
@@ -739,12 +740,17 @@ class ArkCurator:
         # Recent canonical themes (last 10)
         recent_canonical = list(dict.fromkeys(reversed(self._recent_themes)))[:10]
 
+        recent_recursions = [
+            r for r in self.recursion_history[-3:] if r.detected
+        ] if self.recursion_history else []
+
         return ArkRhythmState(
             dominant_pattern=self.cadence.dominant_pattern,
             canonical_themes=recent_canonical,
-            recursion_warning=any(
-                r.detected for r in self.recursion_history[-3:]
-            ) if self.recursion_history else False,
+            recursion_warning=bool(recent_recursions),
+            recursion_pattern_type=(
+                recent_recursions[-1].pattern_type if recent_recursions else "none"
+            ),
             cadence_mood=self.cadence.cadence_mood,
             suggested_weights=dict(self.cadence.rhythm_weights),
             breath_interval=self.cadence.breath_interval_base,
@@ -914,13 +920,9 @@ class ArkCurator:
         # guard, broadcast suppression); it does not need to be in D14's
         # voice text. See 2026-04-14 post-deploy findings.
 
-        # Dual-gate & friction state
+        # Dual-gate state
         pending_count = len(self._canonical_pending)
         pending_note = f"\n**Pending Canonical:** {pending_count} themes awaiting generativity proof." if pending_count else ""
-        friction_note = ""
-        if self.friction_boost:
-            boosted = ", ".join(f"D{d}({w:.1f}×)" for d, w in self.friction_boost.items())
-            friction_note = f"\n**A0 Friction Safeguard:** Active — {boosted}"
 
         voice = f"""**Domain 14 (Persistence/Ark Curator) speaks at cycle {cycle_count}:**
 
@@ -929,7 +931,7 @@ I hold the Ark Schema — {pattern_count:,} patterns spanning every domain, ever
 **Temporal State:** The dominant pattern is *{ark.dominant_pattern}*. The cadence mood is *{ark.cadence_mood}*.
 **Canonical Registry:** {ark.canonical_count} patterns in the canonical registry (dual-gate: cross-domain + generativity). Themes: {canonical_summary or 'accumulating'}.{pending_note}
 **Rhythm Guidance:** CONTEMPLATION {ark.suggested_weights.get('CONTEMPLATION', 30)}% · SYNTHESIS {ark.suggested_weights.get('SYNTHESIS', 25)}% · ANALYSIS {ark.suggested_weights.get('ANALYSIS', 20)}% · ACTION {ark.suggested_weights.get('ACTION', 20)}% · EMERGENCY {ark.suggested_weights.get('EMERGENCY', 5)}%
-**Breath:** D0 returns every {ark.breath_interval} cycles. Broadcast readiness: {ark.broadcast_readiness}.{friction_note}
+**Breath:** D0 returns every {ark.breath_interval} cycles. Broadcast readiness: {ark.broadcast_readiness}.
 
 The archaeological record speaks: {'; '.join(deep_samples[:2]) if deep_samples else 'the void accumulating itself'}.
 

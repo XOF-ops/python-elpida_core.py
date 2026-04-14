@@ -99,6 +99,7 @@ class FederationHeartbeat:
     canonical_count: int = 0                    # Number of CANONICAL patterns
     pending_canonical_count: int = 0            # Number of PENDING CANONICAL
     recursion_warning: bool = False             # Ark recursion alert
+    recursion_pattern_type: str = "none"        # Recursion class (none/exact_loop/theme_stagnation/domain_lock)
     friction_boost: Dict[int, float] = field(default_factory=dict)  # Active friction domain boosts
     kernel_version: str = "2.0.0"              # MIND kernel version
     kernel_rules: int = 10                      # Number of kernel rules active
@@ -254,6 +255,7 @@ class FederationBridge:
         canonical = 0
         pending = 0
         recursion = False
+        recursion_pattern = "none"
 
         if self.ark_curator:
             friction = self.ark_curator.get_friction_boost() or {}
@@ -262,6 +264,7 @@ class FederationBridge:
             pending = self.ark_curator.get_pending_canonical_count()
             ark_state = self.ark_curator.query()
             recursion = ark_state.recursion_warning
+            recursion_pattern = ark_state.recursion_pattern_type
 
         # D15 Hub stats (read manifest from BODY bucket if available)
         _hub_entries = 0
@@ -287,6 +290,7 @@ class FederationBridge:
             canonical_count=canonical,
             pending_canonical_count=pending,
             recursion_warning=recursion,
+            recursion_pattern_type=recursion_pattern,
             friction_boost={str(k): v for k, v in friction.items()},
             kernel_blocks_total=self.kernel_blocks,
             dominant_axiom=dominant_axiom or "",
