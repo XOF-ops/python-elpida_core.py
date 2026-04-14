@@ -1142,6 +1142,13 @@ class ParliamentCycleEngine:
             logger.error("Parliament deliberation failed: %s", e)
             return None
 
+        # If governance-side federation push failed, write a minimal
+        # fallback decision record directly via S3Bridge so decision
+        # telemetry stays live even when governance serialization regresses.
+        if not result.get("_diag_federation_decision_pushed", False):
+            fallback_pushed = self._push_body_decision_fallback(action, result, meta)
+            result["_diag_federation_fallback_pushed"] = fallback_pushed
+
         # 5. Extract dominant axiom from Parliament result
         dominant_axiom = self._extract_dominant_axiom(result)
 
@@ -1945,6 +1952,92 @@ class ParliamentCycleEngine:
             return stats.get("hub")
         except Exception:
             return None
+
+    @staticmethod
+    def _safe_float(value: Any, default: float = 0.0) -> float:
+        try:
+            return float(value)
+        except Exception:
+            return default
+
+    def _push_body_decision_fallback(self, action: str, result: Dict[str, Any],
+                                     meta: Dict[str, Any]) -> bool:
+        """
+        Last-resort BODY decision append when governance-side push failed.
+
+        Uses the cycle engine's own S3Bridge handle so telemetry survives
+        governance client regressions without blocking deliberation.
+        """
+        s3 = self._get_s3()
+        if s3 is None:
+            logger.warning("Federation fallback push skipped: no S3 bridge")
+            return False
+
+        parliament = result.get("parliament", {}) or {}
+        governance = str(result.get("governance", "PROCEED"))
+        if governance == "HALT":
+            verdict = "VETOED" if parliament.get("veto_exercised") else "HARD_BLOCK"
+        elif governance in ("REVIEW", "HOLD"):
+            verdict = "PENDING"
+        else:
+            verdict = "APPROVED"
+
+        ts = datetime.now(timezone.utc).isoformat()
+        action_hash = hashlib.sha256(action.encode("utf-8", errors="replace")).hexdigest()[:16]
+        exchange_id = hashlib.sha256(
+            f"BODY-FALLBACK:{action_hash}:{ts}".encode("utf-8")
+        ).hexdigest()[:16]
+
+        votes = parliament.get("votes") or {}
+        diag_votes: Dict[str, Dict[str, Any]] = {}
+        for node, vote in votes.items():
+            if not isinstance(vote, dict):
+                continue
+            diag_votes[str(node)] = {
+                "score": self._safe_float(vote.get("score"), 0.0),
+                "vote": str(vote.get("vote", "")),
+                "rationale": str(vote.get("rationale", ""))[:200],
+                "llm_provider": vote.get("llm_provider"),
+                "llm_model": vote.get("llm_model"),
+                "llm_deliberated": bool(vote.get("llm_deliberated", False)),
+            }
+
+        exchange = {
+            "exchange_id": exchange_id,
+            "source": "BODY",
+            "verdict": verdict,
+            "pattern_hash": action_hash,
+            "cycle": self.cycle_count,
+            "domain": None,
+            "kernel_rule": None,
+            "parliament_score": self._safe_float(parliament.get("approval_rate"), 0.0),
+            "parliament_approval": self._safe_float(parliament.get("approval_rate"), 0.0),
+            "veto_node": (parliament.get("veto_nodes") or [None])[0],
+            "reasoning": str(result.get("reasoning", ""))[:500],
+            "timestamp": ts,
+            "input_source": str(meta.get("source", "")),
+            "input_systems": list(meta.get("systems") or []),
+            "rhythm": str(meta.get("rhythm", "")),
+            "watch": str(meta.get("watch", "")),
+            "input_event_provenance": list(meta.get("event_provenance") or []),
+            "_diag_action": action[:2000],
+            "_diag_node_votes": diag_votes,
+            "_diag_fallback": True,
+        }
+
+        try:
+            pushed = s3.push_body_decision(exchange)
+            if pushed:
+                logger.warning(
+                    "FEDERATION_DECISION_FALLBACK_PUSH: cycle=%s verdict=%s hash=%s",
+                    self.cycle_count,
+                    verdict,
+                    action_hash[:12],
+                )
+            return pushed
+        except Exception as e:
+            logger.warning("Federation fallback push failed: %s", e)
+            return False
 
     def _emit_heartbeat(self, rhythm: str, dominant_axiom: Optional[str],
                         result: Dict):

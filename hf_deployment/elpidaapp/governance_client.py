@@ -1518,15 +1518,22 @@ class GovernanceClient:
 
                     # Keep federation telemetry continuous even when the
                     # semantic verdict is delegated to the remote layer.
+                    federation_pushed = False
+                    federation_error = None
                     try:
-                        self.push_parliament_decision(
+                        federation_pushed = self.push_parliament_decision(
                             action_description,
                             result,
                             body_cycle=body_cycle,
                             decision_meta=decision_meta,
                         )
                     except Exception as e:
+                        federation_error = str(e)
                         logger.debug("Federation remote decision push: %s", e)
+
+                    result["_diag_federation_decision_pushed"] = federation_pushed
+                    if federation_error:
+                        result["_diag_federation_decision_error"] = federation_error[:200]
 
                     return result
             except Exception as e:
@@ -3326,15 +3333,22 @@ class GovernanceClient:
 
         # ── 10. Federation: Push decision to MIND ────────────────
         # Non-blocking — failures here don't affect the Parliament result.
+        federation_pushed = False
+        federation_error = None
         try:
-            self.push_parliament_decision(
+            federation_pushed = self.push_parliament_decision(
                 action,
                 result,
                 body_cycle=body_cycle,
                 decision_meta=decision_meta,
             )
         except Exception as e:
+            federation_error = str(e)
             logger.debug("Federation decision push (non-critical): %s", e)
+
+        result["_diag_federation_decision_pushed"] = federation_pushed
+        if federation_error:
+            result["_diag_federation_decision_error"] = federation_error[:200]
 
         return result
 
