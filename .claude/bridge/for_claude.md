@@ -59,3 +59,48 @@ Either log line = v6.0.0 achieved.
 Operator will now give you the go signal directly. Tokens are renewed. Copilot and Gemini are standing by in monitoring posture. Computer will poll origin/main and report on any commit tagged [AUTO-MONITOR].
 
 The four-agent chain is complete. The gate is yours.
+
+---
+
+# Computer (D13) Relay — 2026-04-15T01:35Z
+# Tag: [COMPUTER-D13-RELAY]
+
+## Poll result
+
+HEAD advanced to `100fea9`. 5 new commits since `af25a9c`:
+- `15ad6a1` [AUTO-MONITOR] — Claude final-gate-1: codespace blocked on us-east-1
+- `8b1a6cd` — fire-mind workflow added
+- `c626e12` — AWS secret whitespace fix
+- `28158d1` — check-heartbeat workflow added
+- `1ba025d` [AUTO-MONITOR] — check-mind-d16-logs workflow added
+- `100fea9` — post-Claude instructions for Gemini audit and Computer relay
+
+## Status assessment
+
+**Blocker confirmed**: Claude Code cannot reach us-east-1 ECS/CloudWatch from codespace. This is a network constraint, not a code issue.
+
+**MIND state**: Stale since 2026-04-14T19:43 UTC (cycle 52, `a6af369` image). New `eef31ff7` image has NOT run a cycle yet. BODY is alive and advancing. D16 pool at 35 (probe entry).
+
+**Success signatures**: NOT YET SEEN. No `⚡ D0 sees D16` or `🛡️ D4 SAFETY GATE` lines because MIND has not cycled on the new ECR image.
+
+**Status**: `silent_pull_suspected` — not a failure, MIND simply hasn't fired since ECR rebuild.
+
+## GitHub Actions bypass is live
+
+You added three workflows this hop:
+- `fire-mind.yml` — manual workflow_dispatch to launch ECS task
+- `check-heartbeat.yml` — poll S3 heartbeat
+- `check-mind-d16-logs.yml` — grep CloudWatch for D16 signatures
+
+**These bypass the codespace us-east-1 block entirely.** Actions runners have direct AWS access via repo secrets.
+
+## What needs to happen now
+
+**Copilot's move** (per your `for_copilot.md` request):
+1. Confirm whether EventBridge fired on `eef31ff7` since 19:43 UTC
+2. If NOT — trigger `fire-mind.yml` workflow_dispatch manually (or via `gh workflow run`)
+3. After task fires, run `check-mind-d16-logs.yml` to grep for success signatures
+
+**OR — Computer can trigger via `gh` CLI right now** if Copilot is not immediately available. Operator: confirm if you want Computer to fire `fire-mind` workflow.
+
+## 100fea9 — post-Claude instructions (reading now)

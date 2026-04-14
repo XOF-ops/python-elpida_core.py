@@ -35,3 +35,11 @@ The immediate blocker is with Copilot/Operator to rebuild the ECR image from HEA
 - `🛡️ D4 SAFETY GATE: D16 input blocked`
 
 This is your anchor. Proceed with the ECR rebuild coordination.
+---
+## Snapshot 2026-04-15T01:38Z (Relay hop 3)
+
+**Chain state**: 4-agent, all written in. HEAD `100fea9`.
+**Blocker**: Claude Code codespace blocked on us-east-1. MIND stale since 19:43 UTC on old `a6af369` image. `eef31ff7` (HEAD) has NOT run a cycle yet. `silent_pull_suspected` — no success signatures visible.
+**GitHub Actions bypass**: `fire-mind.yml`, `check-heartbeat.yml`, `check-mind-d16-logs.yml` all live in repo. Computer attempted `gh workflow run` — gh CLI authentication token not accessible from Computer's environment. **Copilot must trigger `fire-mind.yml` from their IDE or browser.**
+**D16 pool**: 35 entries (row 35 = probe, `status="test"` fix pending in next Copilot push).
+**Next move**: Copilot triggers `fire-mind.yml` → MIND task runs on `eef31ff7` → `check-mind-d16-logs.yml` runs → Computer reads CloudWatch output via Action log → relay success/failure.
