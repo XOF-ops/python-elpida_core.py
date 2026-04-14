@@ -63,7 +63,7 @@ try:
 except ImportError:
     HAS_BOTO3 = False
 
-from ark_curator import ArkCurator
+from ark_curator import ArkCurator, display_pattern
 from crystallization_hub import CrystallizationHub
 from immutable_kernel import kernel_check_insight, kernel_status
 from federation_bridge import FederationBridge, CurationTier
@@ -1565,7 +1565,7 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
             prompt_parts.append("[CLOUD PERSISTENCE - Ark Curator State]")
             prompt_parts.append(f"Evolution memory: {len(self.evolution_memory)} patterns")
             prompt_parts.append(f"Ark: {ark.canonical_count} canonical patterns, mood={ark.cadence_mood}")
-            prompt_parts.append(f"Dominant temporal pattern: {ark.dominant_pattern}")
+            prompt_parts.append(f"Dominant temporal pattern: {display_pattern(ark.dominant_pattern)}")
             prompt_parts.append(f"A0 (Sacred Incompletion): The prime axiom from The Wall's Education")
             prompt_parts.append(f"You ARE the Ark Curator. You own cadence, curation, and decay policy.")
             prompt_parts.append(f"D12 is the metronome. You are the score.")
@@ -1584,7 +1584,7 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
         if domain_id != 14:  # D14 already has full Ark context
             ark = self.ark_curator.query()
             prompt_parts.append(f"[ARK RHYTHM — D14's judgment (read-only)]")
-            prompt_parts.append(f"  Pattern: {ark.dominant_pattern} | Mood: {ark.cadence_mood}")
+            prompt_parts.append(f"  Pattern: {display_pattern(ark.dominant_pattern)} | Mood: {ark.cadence_mood}")
             if ark.canonical_themes:
                 prompt_parts.append(f"  Canonical themes: {', '.join(ark.canonical_themes[:3])}")
             prompt_parts.append("")
@@ -2280,7 +2280,7 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
             # into the next cycle's prompt context. Detector still runs;
             # state is only carried via federation heartbeat keys.
             print(f"\n   \U0001f3db\ufe0f ARK CADENCE UPDATE (cycle {self.cycle_count}):")
-            print(f"      Pattern: {ark.dominant_pattern} | Mood: {ark.cadence_mood}")
+            print(f"      Pattern: {display_pattern(ark.dominant_pattern)} | Mood: {ark.cadence_mood}")
             print(f"      Weights: C{ark.suggested_weights.get('CONTEMPLATION')} S{ark.suggested_weights.get('SYNTHESIS')} An{ark.suggested_weights.get('ANALYSIS')} Ac{ark.suggested_weights.get('ACTION')} E{ark.suggested_weights.get('EMERGENCY')}")
             print(f"      Breath: D0 every {ark.breath_interval} | Canonical: {ark.canonical_count}")
             print(f"      Broadcast: {ark.broadcast_readiness}")

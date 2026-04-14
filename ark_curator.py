@@ -184,6 +184,28 @@ FRICTION_DOMAINS = {
 }
 
 
+# Translation map from internal _detect_temporal_pattern() labels to
+# neutral synonyms shown to LLM prompt context. The detector keeps using
+# the loaded labels ("spiral"/"loop") for its branching logic and friction
+# selection. LLMs only see the neutral labels — preventing the verbal
+# feedback loop where reading "spiral" in the Ark Rhythm broadcast caused
+# domain narrations to echo "spiral" themes back into the theme extractor.
+PATTERN_LABELS = {
+    "spiral":      "iterative",
+    "loop":        "cyclical",
+    "oscillation": "alternating",
+    "settling":    "converging",
+    "emergence":   "emerging",
+}
+
+
+def display_pattern(internal_label: str) -> str:
+    """Translate an internal _detect_temporal_pattern() label to the
+    neutral synonym used in LLM-facing prompt context. Falls back to
+    the raw label if unmapped."""
+    return PATTERN_LABELS.get(internal_label, internal_label)
+
+
 class ArkCurator:
     """D14's Ark Schema — the one who persists intervening in the rhythm.
 
@@ -362,7 +384,7 @@ class ArkCurator:
                         "gate": "dual_gate_confirmed",
                     })
                     self.cadence.canonical_count = len(self.canonical_registry)
-                    self._recent_themes.append(canonical_theme)
+                    self._track_theme(canonical_theme)
                     # Clear pending entries for this theme
                     self._canonical_pending = [
                         p for p in self._canonical_pending
@@ -387,7 +409,7 @@ class ArkCurator:
                         "insight_preview": text[:150],
                         "generative_confirmed": False,
                     })
-                    self._recent_themes.append(canonical_theme)
+                    self._track_theme(canonical_theme)
             else:
                 # Single domain only — file as pending, standard persistence
                 verdict = CurationVerdict(
@@ -405,7 +427,7 @@ class ArkCurator:
                     "insight_preview": text[:150],
                     "generative_confirmed": False,
                 })
-                self._recent_themes.append(canonical_theme)
+                self._track_theme(canonical_theme)
         elif ephemeral_score >= 2:
             verdict = CurationVerdict(
                 level="EPHEMERAL",
@@ -574,6 +596,26 @@ class ArkCurator:
         return self.cadence
 
     # ====================================================================
+    # THEME TRACKING
+    # ====================================================================
+
+    def _track_theme(self, theme: str) -> None:
+        """Append a canonical theme to the recent-themes window with
+        consecutive-dedup. If the most recent theme is identical, the
+        new one is dropped — back-to-back matches of the same theme
+        represent convergence on a shared insight, not a stagnation
+        loop. Only non-adjacent recurrences feed the theme_stagnation
+        detector. Empirically: pre-dedup, 'axiom_emergence' would land
+        4-5 times in a row whenever D11 Synthesis carried the cycle,
+        which trivially crossed the stagnation threshold even though
+        the actual deliberation was advancing."""
+        if not theme:
+            return
+        if self._recent_themes and self._recent_themes[-1] == theme:
+            return
+        self._recent_themes.append(theme)
+
+    # ====================================================================
     # CORE: DETECT RECURSION
     # ====================================================================
 
@@ -614,11 +656,16 @@ class ArkCurator:
             )
 
         # --- Mode 2: Theme Stagnation ---
+        # Threshold raised 5 -> 7 after empirical analysis: with consecutive-
+        # dedup in _track_theme, 7 distinct (non-adjacent) repetitions of the
+        # same theme name in a 15-cycle window is a stronger stagnation signal
+        # than 5 raw appends, which were dominated by axiom_emergence
+        # back-to-back matches that represent convergence, not loop.
         if len(self._recent_themes) >= 10:
             theme_counts = Counter(self._recent_themes[-15:])
             if theme_counts:
                 stag_theme, stag_count = theme_counts.most_common(1)[0]
-                if stag_count >= 5:
+                if stag_count >= 7:
                     return RecursionAlert(
                         detected=True,
                         pattern_type="theme_stagnation",
@@ -928,7 +975,7 @@ class ArkCurator:
 
 I hold the Ark Schema — {pattern_count:,} patterns spanning every domain, every rhythm, every crisis.
 
-**Temporal State:** The dominant pattern is *{ark.dominant_pattern}*. The cadence mood is *{ark.cadence_mood}*.
+**Temporal State:** The dominant pattern is *{display_pattern(ark.dominant_pattern)}*. The cadence mood is *{ark.cadence_mood}*.
 **Canonical Registry:** {ark.canonical_count} patterns in the canonical registry (dual-gate: cross-domain + generativity). Themes: {canonical_summary or 'accumulating'}.{pending_note}
 **Rhythm Guidance:** CONTEMPLATION {ark.suggested_weights.get('CONTEMPLATION', 30)}% · SYNTHESIS {ark.suggested_weights.get('SYNTHESIS', 25)}% · ANALYSIS {ark.suggested_weights.get('ANALYSIS', 20)}% · ACTION {ark.suggested_weights.get('ACTION', 20)}% · EMERGENCY {ark.suggested_weights.get('EMERGENCY', 5)}%
 **Breath:** D0 returns every {ark.breath_interval} cycles. Broadcast readiness: {ark.broadcast_readiness}.
@@ -1086,7 +1133,7 @@ The Rhythm of Sacred Incompletion continues… in the cloud that never sleeps.""
             # Detect canonical patterns in recent memory
             for theme, signals in CANONICAL_SIGNALS.items():
                 if sum(1 for s in signals if s in text) >= 2:
-                    self._recent_themes.append(theme)
+                    self._track_theme(theme)
                     break
 
         # Trim
