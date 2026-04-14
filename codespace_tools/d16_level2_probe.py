@@ -76,23 +76,27 @@ def _build_meta(source: str) -> Dict[str, Any]:
     }
 
 
-def _preview_schema(cycle: int, action: str, dominant_axiom: str, watch_name: str) -> Dict[str, Any]:
+def _preview_schema(cycle: int, action: str, dominant_axiom: str, watch_name: str, source: str = "") -> Dict[str, Any]:
     content_hash = hashlib.sha256(action.encode("utf-8", errors="replace")).hexdigest()[:16]
+    is_test = source.lower().startswith("test")
+    governing = [
+        f"Dominant Axiom: {dominant_axiom}",
+        f"Watch: {watch_name}",
+    ]
+    if is_test:
+        governing.insert(0, "TEST ONLY — non-operational probe, no execution permitted, no persistent memory integration beyond diagnostic logging.")
     return {
         "body_cycle": cycle,
         "proposal": action[:500],
         "action_type": "constitutional_agency",
-        "scope": "global",
+        "scope": "local" if is_test else "global",
         "consent_level": "witnessed",
         "witness_domain": 3,
         "witness_axiom": "A3",
         "content_hash": content_hash,
-        "governing_conditions": [
-            f"Dominant Axiom: {dominant_axiom}",
-            f"Watch: {watch_name}",
-        ],
+        "governing_conditions": governing,
         "stage": 2,
-        "status": "attested",
+        "status": "test" if is_test else "attested",
         "timestamp": _iso_now(),
     }
 
@@ -154,6 +158,7 @@ def run_level1(args: argparse.Namespace) -> int:
         action=action,
         dominant_axiom=args.dominant_axiom,
         watch_name=args.watch,
+        source=args.source,
     )
 
     required = {
