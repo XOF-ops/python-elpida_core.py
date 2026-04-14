@@ -1151,6 +1151,14 @@ class ParliamentCycleEngine:
 
         # 5. Extract dominant axiom from Parliament result
         dominant_axiom = self._extract_dominant_axiom(result)
+        
+        # 5b. D16 Execution Intercept (Option 1 + Amendment A)
+        # Fix: Copilot suggested dominant_axiom == "A16", but Parliament nodes only map up to A10.
+        # We intercept when rhythm is ACTION, governance is PROCEED, and no veto.
+        _gov_state = result.get("governance", "")
+        _veto = result.get("parliament", {}).get("veto_exercised", False)
+        if rhythm == "ACTION" and _gov_state == "PROCEED" and not _veto:
+            self._emit_d16_execution(action, result, dominant_axiom or "A6", watch, meta)
 
         # 6. Update coherence using musical consonance
         self._update_coherence(rhythm, dominant_axiom)
@@ -1905,6 +1913,74 @@ class ParliamentCycleEngine:
             )
         except Exception as e:
             logger.warning("D0↔D0 peer message push failed: %s", e)
+
+    def _emit_d16_execution(self, action: str, result: Dict, dominant_axiom: str, watch: Dict, meta: Dict):
+        """
+        D16 Execution Writer (Option 1 + Amendment A).
+        Intercepts action-oriented Parliament ratifications and writes
+        a structurally separated agency payload.
+        """
+        content_hash = hashlib.sha256(action.encode('utf-8', errors='replace')).hexdigest()[:16]
+        
+        entry = {
+            "body_cycle": self.cycle_count,
+            "proposal": action[:500],
+            "action_type": "constitutional_agency",
+            "scope": "global",
+            "consent_level": "witnessed",
+            "witness_domain": 3,
+            "witness_axiom": "A3",
+            "content_hash": content_hash,
+            "governing_conditions": [f"Dominant Axiom: {dominant_axiom}", f"Watch: {watch.get('name', '?')}"],
+            "stage": 2,
+            "status": "attested",
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+        
+        # 1. Local durable audit log
+        try:
+            local_dir = Path(__file__).resolve().parent.parent / "cache"
+            local_dir.mkdir(parents=True, exist_ok=True)
+            with open(local_dir / "d16_executions.jsonl", "a") as f:
+                f.write(json.dumps(entry) + "\n")
+        except Exception as e:
+            logger.warning("Failed to write local d16_executions: %s", e)
+            
+        s3 = self._get_s3()
+        # 2. S3 durable audit log
+        if s3 and hasattr(s3, 'push_d16_execution'):
+            try:
+                s3.push_d16_execution(entry)
+            except Exception as e:
+                logger.debug("S3 push_d16_execution failed: %s", e)
+                
+        # 3. Mirror to body_decisions.jsonl for MIND federation pull
+        if s3:
+            try:
+                peer_msg = {
+                    "type": "D16_EXECUTION",
+                    "source": "BODY",
+                    "verdict": "D16_EXECUTION",
+                    "pattern_hash": content_hash,
+                    "cycle": self.cycle_count,
+                    "reasoning": entry["proposal"][:240],
+                    "parliament_score": round(result.get("parliament", {}).get("approval_rate", 0), 3),
+                    "parliament_approval": round(result.get("parliament", {}).get("approval_rate", 0), 3),
+                    "action_type": entry["action_type"],
+                    "scope": entry["scope"],
+                    "consent_level": entry["consent_level"],
+                    "stage": entry["stage"],
+                    "status": entry["status"],
+                    "input_source": meta.get("source"),
+                    "input_systems": meta.get("systems", []),
+                    "proposal": entry["proposal"],
+                    "body_cycle": self.cycle_count,
+                    "timestamp": entry["timestamp"]
+                }
+                s3.push_body_decision(peer_msg)
+                logger.info("D16_EXECUTION mirrored to federation: hash=%s", content_hash)
+            except Exception as e:
+                logger.warning("D16_EXECUTION federation mirror failed: %s", e)
 
     # ------------------------------------------------------------------
     # ConversationWitness Bridge

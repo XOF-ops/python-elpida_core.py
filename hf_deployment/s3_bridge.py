@@ -63,6 +63,7 @@ FED_MIND_HEARTBEAT_KEY = "federation/mind_heartbeat.json"
 FED_MIND_CURATION_KEY = "federation/mind_curation.jsonl"
 FED_GOVERNANCE_EXCHANGES_KEY = "federation/governance_exchanges.jsonl"
 FED_BODY_DECISIONS_KEY = "federation/body_decisions.jsonl"
+FED_D16_EXECUTIONS_KEY = "federation/d16_executions.jsonl"
 FED_LIVING_AXIOMS_KEY       = "federation/living_axioms.jsonl"  # D14 constitutional snapshot
 FED_HUMAN_VOTES_KEY         = "federation/pending_human_votes.jsonl"  # awaiting Parliament ratification
 FED_HUMAN_ACCEPTED_KEY      = "federation/accepted_human_voices.jsonl"  # ratified by Parliament
@@ -77,6 +78,7 @@ LOCAL_HEARTBEAT = LOCAL_DIR / "cache" / "heartbeat.json"
 LOCAL_FED_HEARTBEAT = LOCAL_DIR / "cache" / "federation_heartbeat.json"
 LOCAL_FED_CURATION = LOCAL_DIR / "cache" / "federation_curation.jsonl"
 LOCAL_FED_DECISIONS     = LOCAL_DIR / "cache" / "federation_body_decisions.jsonl"
+LOCAL_FED_D16_EXECUTIONS = LOCAL_DIR / "cache" / "federation_d16_executions.jsonl"
 LOCAL_FED_LIVING_AXIOMS     = LOCAL_DIR / "cache" / "federation_living_axioms.jsonl"  # D14
 LOCAL_FED_HUMAN_VOTES       = LOCAL_DIR / "cache" / "federation_pending_human_votes.jsonl"
 LOCAL_FED_HUMAN_ACCEPTED    = LOCAL_DIR / "cache" / "federation_accepted_human_voices.jsonl"
@@ -828,6 +830,39 @@ class S3Bridge:
                 return True
             except Exception as e:
                 logger.error("Federation body decision push failed: %s", e)
+                return False
+        return False
+
+    def push_d16_execution(self, entry: Dict[str, Any]) -> bool:
+        """
+        Append a D16 execution attestation entry to federation/d16_executions.jsonl.
+
+        This preserves a dedicated durable audit stream for agency payloads,
+        separate from generic body_decisions exchanges.
+        """
+        # Append locally first (survives transient S3 failures)
+        LOCAL_FED_D16_EXECUTIONS.parent.mkdir(parents=True, exist_ok=True)
+        with open(LOCAL_FED_D16_EXECUTIONS, "a") as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+        s3 = self._get_s3(REGION_BODY)
+        if s3:
+            try:
+                line = json.dumps(entry, ensure_ascii=False) + "\n"
+                self._append_jsonl_s3(
+                    s3=s3,
+                    bucket=BUCKET_BODY,
+                    key=FED_D16_EXECUTIONS_KEY,
+                    line=line,
+                )
+                logger.info(
+                    "D16 execution pushed: cycle=%s hash=%s",
+                    entry.get("body_cycle", "?"),
+                    str(entry.get("content_hash", "?"))[:12],
+                )
+                return True
+            except Exception as e:
+                logger.error("D16 execution push failed: %s", e)
                 return False
         return False
 
