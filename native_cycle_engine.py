@@ -1990,11 +1990,11 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
                     body_decisions = self.federation.pull_body_decisions()
                     # Separate D16 proposals from other constitutional decisions
                     d16_entries = [d for d in body_decisions
-                                  if getattr(d, 'verdict', '') == 'D16_PROPOSAL'
-                                  or (hasattr(d, 'raw') and d.raw.get('type') == 'D16_PROPOSAL')]
+                                  if getattr(d, 'verdict', '') in ('D16_PROPOSAL', 'D16_EXECUTION')
+                                  or (hasattr(d, 'raw') and d.raw.get('type') in ('D16_PROPOSAL', 'D16_EXECUTION'))]
                     body_entries = [d for d in body_decisions
                                     if d.source == "BODY" and d.reasoning
-                                    and getattr(d, 'verdict', '') != 'D16_PROPOSAL']
+                                    and getattr(d, 'verdict', '') not in ('D16_PROPOSAL', 'D16_EXECUTION')]
                     if body_entries:
                         recent = body_entries[-3:]
                         body_constitution_integrated = "\n".join(
@@ -2006,18 +2006,60 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
                     # D16 Agency feedback: MIND's D0 recognizes its own
                     # triad member's proposals and integrates them as
                     # ACT-awareness into the I·WE·ACT loop.
+                    # Input-side kernel precheck (Option 1 + Amendment B).
+                    # Parliament attests the CONTEXT of a D16 proposal
+                    # (consent_level, witness_domain, witness_axiom). The
+                    # proposal TEXT is LLM-generated and remains untrusted —
+                    # a legitimately-attested proposal could still carry a
+                    # prompt-injection payload past the [:150]/[:400] length
+                    # caps. Run the same K1-K10 hard-stop that output-side
+                    # insights pass through, but on the INPUT side, before
+                    # the D0 prompt sees it. Blocked individual proposals
+                    # are skipped; if every proposal in the batch is
+                    # blocked, d16_agency_integrated stays None and D0's
+                    # prompt is unchanged.
                     if d16_entries:
                         recent_d16 = d16_entries[-3:]
                         d16_proposals = []
+                        d16_blocked_count = 0
                         for d in recent_d16:
                             raw = d.raw if hasattr(d, 'raw') else {}
                             proposal_text = raw.get('proposal', d.reasoning[:200] if d.reasoning else '?')
+                            _block = kernel_check_insight({
+                                'insight': proposal_text,
+                                'query': '[D16 AGENCY proposal from BODY]',
+                                'domain': 16,
+                                'cycle': self.cycle_count,
+                            })
+                            if _block:
+                                d16_blocked_count += 1
+                                _rule = _block.get('kernel_rule', 'UNKNOWN')
+                                _preview = self._redacted_kernel_preview(proposal_text)
+                                print(
+                                    f"   🛡️ D4 SAFETY GATE: D16 input blocked — "
+                                    f"{_rule} preview=\"{_preview}\""
+                                )
+                                continue
                             d16_proposals.append(proposal_text[:150])
-                        d16_agency_integrated = (
-                            "D16 (Agency) has proposed:\n"
-                            + "\n".join(f"  • {p}" for p in d16_proposals)
-                        )
-                        print(f"\n⚡ D0 sees D16: {len(d16_entries)} agency proposals from BODY")
+                        if d16_proposals:
+                            d16_agency_integrated = (
+                                "D16 (Agency) has proposed:\n"
+                                + "\n".join(f"  • {p}" for p in d16_proposals)
+                            )
+                            _suffix = (
+                                f" ({d16_blocked_count} blocked by kernel precheck)"
+                                if d16_blocked_count else ""
+                            )
+                            print(
+                                f"\n⚡ D0 sees D16: {len(d16_proposals)} agency "
+                                f"proposals from BODY{_suffix}"
+                            )
+                        elif d16_blocked_count:
+                            print(
+                                f"\n🛡️ D0 BLOCKED D16: all {d16_blocked_count} "
+                                f"agency proposals dropped by kernel precheck — "
+                                f"D0 prompt unchanged"
+                            )
                 except Exception:
                     pass  # Non-fatal — federation pull is best-effort
 
