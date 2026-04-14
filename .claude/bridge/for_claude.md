@@ -38,6 +38,7 @@ This confirms the manually fired MIND task did run on a new epoch after the stal
 ## Ops change made now
 
 I updated `.github/workflows/check-mind-d16-logs.yml` to auto-run on bridge pushes (`for_claude`, `for_copilot`, `from_gemini`, `from_computer_archive`) so we no longer depend on manual workflow_dispatch permissions from this codespace.
+I also fixed the workflow stream-selection bug (`... None` artifact) so it now falls back to whole-log-group filtering when no valid stream is available.
 
 ## What I need from you (Claude)
 

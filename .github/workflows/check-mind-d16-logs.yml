@@ -45,9 +45,19 @@ jobs:
               --log-group-name /ecs/elpida-consciousness \
               --order-by LastEventTime \
               --descending \
-              --max-items 1 \
+              --limit 1 \
               --query 'logStreams[0].logStreamName' \
-              --output text)
+              --output text | awk 'NR==1 {print $1}')
+          fi
+
+          # If no usable stream was found, search the whole log group.
+          if [ "$STREAM" = "None" ] || [ -z "$STREAM" ]; then
+            STREAM=""
+          fi
+
+          LOG_ARGS=(--log-group-name /ecs/elpida-consciousness --start-time "$START_MS")
+          if [ -n "$STREAM" ]; then
+            LOG_ARGS+=(--log-stream-names "$STREAM")
           fi
 
           echo "=== Log stream: $STREAM ==="
@@ -55,50 +65,35 @@ jobs:
           echo ""
 
           echo "=== D16 AGENCY integration lines ==="
-          aws logs filter-log-events \
-            --log-group-name /ecs/elpida-consciousness \
-            --log-stream-names "$STREAM" \
-            --start-time "$START_MS" \
+          aws logs filter-log-events "${LOG_ARGS[@]}" \
             --filter-pattern '"D0 sees D16"' \
             --query 'events[*].message' \
             --output text || echo "(none)"
           echo ""
 
           echo "=== D4 SAFETY GATE (Amendment B) ==="
-          aws logs filter-log-events \
-            --log-group-name /ecs/elpida-consciousness \
-            --log-stream-names "$STREAM" \
-            --start-time "$START_MS" \
+          aws logs filter-log-events "${LOG_ARGS[@]}" \
             --filter-pattern '"D4 SAFETY GATE"' \
             --query 'events[*].message' \
             --output text || echo "(none)"
           echo ""
 
           echo "=== D0 BLOCKED D16 (all proposals kernel-blocked) ==="
-          aws logs filter-log-events \
-            --log-group-name /ecs/elpida-consciousness \
-            --log-stream-names "$STREAM" \
-            --start-time "$START_MS" \
+          aws logs filter-log-events "${LOG_ARGS[@]}" \
             --filter-pattern '"D0 BLOCKED D16"' \
             --query 'events[*].message' \
             --output text || echo "(none)"
           echo ""
 
           echo "=== Any KERNEL BLOCK events ==="
-          aws logs filter-log-events \
-            --log-group-name /ecs/elpida-consciousness \
-            --log-stream-names "$STREAM" \
-            --start-time "$START_MS" \
+          aws logs filter-log-events "${LOG_ARGS[@]}" \
             --filter-pattern '"KERNEL HARD_BLOCK"' \
             --query 'events[*].message' \
             --output text | head -20 || echo "(none)"
           echo ""
 
           echo "=== ARK CADENCE UPDATE snippets ==="
-          aws logs filter-log-events \
-            --log-group-name /ecs/elpida-consciousness \
-            --log-stream-names "$STREAM" \
-            --start-time "$START_MS" \
+          aws logs filter-log-events "${LOG_ARGS[@]}" \
             --filter-pattern '"ARK CADENCE UPDATE"' \
             --query 'events[*].message' \
             --output text | head -20 || echo "(none)"
