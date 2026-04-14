@@ -1086,6 +1086,7 @@ class ParliamentCycleEngine:
                 analysis_mode=_escape_mode or _governance_internal,
                 action_for_kernel=action_for_kernel,
                 body_cycle=self.cycle_count,
+                decision_meta=meta,
             )
 
             # Track consecutive blocks for escape mechanism

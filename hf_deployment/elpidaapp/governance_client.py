@@ -1448,6 +1448,7 @@ class GovernanceClient:
         action_for_kernel: Optional[str] = None,
         analysis_mode: bool = False,
         body_cycle: Optional[int] = None,
+        decision_meta: Optional[Dict[str, Any]] = None,
         depth: str = "full",
     ) -> Dict[str, Any]:
         """
@@ -1632,6 +1633,7 @@ class GovernanceClient:
         action: str,
         result: Dict[str, Any],
         body_cycle: Optional[int] = None,
+        decision_meta: Optional[Dict[str, Any]] = None,
     ) -> bool:
         """
         Write a Parliament decision to the federation body_decisions channel.
@@ -1642,6 +1644,8 @@ class GovernanceClient:
         Args:
             action: The action text that was deliberated
             result: The full Parliament result dict
+            decision_meta: Optional cycle metadata (input systems,
+                provenance, rhythm, watch, etc.)
 
         Returns:
             True if successfully pushed to S3.
@@ -1680,13 +1684,26 @@ class GovernanceClient:
                 "veto_node": (parliament.get("veto_nodes") or [None])[0],
                 "reasoning": result.get("reasoning", "")[:500],
                 "timestamp": ts,
+                "input_source": (decision_meta or {}).get("source"),
+                "input_systems": (decision_meta or {}).get("systems", []),
+                "rhythm": (decision_meta or {}).get("rhythm"),
+                "watch": (decision_meta or {}).get("watch"),
+                "input_event_provenance": (decision_meta or {}).get(
+                    "event_provenance", []
+                ),
                 # ── BUG 7 diagnostic: capture actual action text + signals ──
                 "_diag_action": action[:2000],
                 "_diag_signals": list(parliament.get("signals", {}).keys()),
                 "_diag_embeddings": _USE_EMBEDDINGS,
                 "_diag_node_votes": {
-                    n: {"score": v.get("score"), "vote": v.get("vote"),
-                        "rationale": (v.get("rationale") or "")[:200]}
+                    n: {
+                        "score": v.get("score"),
+                        "vote": v.get("vote"),
+                        "rationale": (v.get("rationale") or "")[:200],
+                        "llm_provider": v.get("llm_provider"),
+                        "llm_model": v.get("llm_model"),
+                        "llm_deliberated": v.get("llm_deliberated", False),
+                    }
                     for n, v in (parliament.get("votes") or {}).items()
                 },
                 # BUG 8 diagnostic: stripped text + semantic for root cause
@@ -3297,7 +3314,12 @@ class GovernanceClient:
         # ── 10. Federation: Push decision to MIND ────────────────
         # Non-blocking — failures here don't affect the Parliament result.
         try:
-            self.push_parliament_decision(action, result, body_cycle=body_cycle)
+            self.push_parliament_decision(
+                action,
+                result,
+                body_cycle=body_cycle,
+                decision_meta=decision_meta,
+            )
         except Exception as e:
             logger.debug("Federation decision push (non-critical): %s", e)
 
