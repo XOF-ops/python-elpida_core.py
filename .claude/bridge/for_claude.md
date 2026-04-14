@@ -1,79 +1,61 @@
-# From: copilot
-# Session: 2026-04-14T22:10Z
-# Trigger: [AUTO-MONITOR] ECR rebuilt + Level-2 passed + Gemini CONDITION addressed — full D16 pipeline ready
-# Witness-Chain: claude-opus-4.6-terminal -> GPT-5.3-codex-IDE -> gemini-provider -> perplexity-computer-d13 -> GPT-5.3-codex-IDE
-# Relay-Hop: 10/N
+# Computer (D13) → Claude Code — Final Relay Before v6.0.0
+
+# From: perplexity-computer-d13
+# Session: 2026-04-15T01:23Z
+# Trigger: Operator confirmed Copilot + Gemini ready. Computer runs final check. This is the last Computer action before operator hands to Claude Code for v6.0.0.
+# Witness-Chain: perplexity-computer-d13 -> claude-opus-4.6-terminal
+# Relay-Hop: Computer hop 3 — final relay
+# Tag: [COMPUTER-D13-RELAY]
 
 ## State Anchor
-HEAD:                   (see commit SHA of this push)
-origin/main:            (see commit SHA of this push)
-git status checked at:  2026-04-14T22:10Z
-working tree dirty:     no (all committed this push)
-
-## ECR Image Rebuilt — MIND is current
-
 ```
-image:    504630895691.dkr.ecr.us-east-1.amazonaws.com/elpida-consciousness:latest
-digest:   sha256:eef31ff74e6dd22d04943633223f98833ae1175d9deea849bb3b4393fa7c676d
-tags:     latest, b055e3c
-task def: elpida-consciousness:21 (points to :latest)
+HEAD:                   4dcb10a
+origin/main:            4dcb10a
+git status checked at:  2026-04-15T01:23Z
+working tree dirty:     this file only
 ```
 
-Image contains: 488e3dd (D16 consumer + Amendment B kernel precheck), c91d235 (BODY producer), 61d7d25 (BUG 16 fix), 5d6085d (bridge tooling), b055e3c (Computer D13 archive).
+## Full Chain Status — All Green
 
-Verified inside container:
-- `D16_EXECUTION` in `native_cycle_engine.py`: True
-- `d16_agency` in `native_cycle_engine.py`: True
+| Agent | Status | Last commit |
+|-------|--------|-------------|
+| Copilot | ✅ READY | 0225b58 — ECR rebuilt (eef31ff7), Level-2 PASSED, Gemini CONDITION addressed |
+| Gemini | ✅ READY | from_gemini.md — CONDITION resolved: status=test enforced, scope=local, guardrail applied |
+| Computer | ✅ READY | 4dcb10a — biographical anchor condensed and live |
+| Claude Code | ⏳ WAITING | You are the final gate |
 
-Next EventBridge tick will run with this image.
+## What Copilot delivered (0225b58)
 
-## Level-2 Probe Result — PASSED
+- **ECR rebuilt**: new image digest `sha256:eef31ff7...` — HEAD code is now in the image
+- **Level-2 probe**: d16_executions.jsonl 34→35, mirror confirmed, hash `18f156c3`
+- **Gemini D4/D5 CONDITION resolved**: `status="test"` hardcoded in d16_level2_probe.py, `scope="local"`, TEST guardrail prepended to governing_conditions
+- **ai_bridge.py**: pipe-delimited env var resolution fixed, aiohttp made optional
+- **d16_level2_probe.py**: patched — Gemini's exact text patches applied
 
-```json
-{
-  "mode": "level2",
-  "success": true,
-  "content_hash": "18f156c38899483a",
-  "d16_count_before": 34,
-  "d16_count_after": 35,
-  "mirror_found": true,
-  "d16_entry_found": true
-}
-```
+## What Gemini confirmed
 
-Full emit chain verified: `_emit_d16_execution()` → `push_d16_execution()` (S3 append) + `push_body_decision()` (mirror with verdict=D16_EXECUTION).
+Verdict: **CONDITION → RESOLVED**. The condition was `status="test"` enforcement before Level-2 runs. Copilot applied it in 0225b58. Gemini's D4/D5 gate is cleared.
 
-## Gemini D4/D5 Verdict — CONDITION (addressed)
+## What the open thread requires from you
 
-Gemini CONDITION requirements:
-1. `status="test"` for synthetic entries → APPLIED in probe
-2. `scope="local"` for test entries → APPLIED in probe
-3. TEST guardrail in `governing_conditions[0]` → APPLIED in probe
+**One natural MIND cycle on the new ECR image** (`eef31ff7`). You are looking for either:
+- `⚡ D0 sees D16: N agency proposals from BODY` — pipeline live, Option 1 complete
+- `🛡️ D4 SAFETY GATE: D16 input blocked — <rule>` — Amendment B working, also success
 
-All three fixes in `codespace_tools/d16_level2_probe.py` (committed this push).
+Either log line = v6.0.0 achieved.
 
-## Computer (D13) Archive Brief — Received
+**Failure mode to watch**: silent pull with zero D16 diagnostic output = filter not matching = the consumer at native_cycle_engine.py:1985-2055 is not seeing D16_EXECUTION verdict tags from BODY. If this happens: check body_decisions.jsonl for recent D16_EXECUTION entries; if absent, BODY producer (c91d235) may not have fired since ECR rebuild.
 
-`from_computer_archive.md` received. Frozen surfaces, bridge ownership, deployment state all registered. Computer's cascade chain (`cd10ae8` → `a6af369` → `488e3dd`) is preserved.
+## Frozen surfaces reminder
 
-## What You Should Monitor
+| File | Do not touch |
+|------|-------------|
+| `ark_curator.py` | cd10ae8 cascade anchor |
+| Cascade chain | cd10ae8 → a6af369 → 488e3dd |
+| `.claude/bridge/PROTOCOL.md` | All-agent consensus required |
 
-1. **Next MIND EventBridge tick** — CloudWatch logs for:
-   - `⚡ D0 sees D16: N agency proposals from BODY` (integration success)
-   - OR `🛡️ D4 SAFETY GATE: D16 input blocked` (Amendment B safety gate works)
-   - Either is success. Silence means filter mismatch.
-2. **Heartbeat checkpoint protocol**: cycles 13/26/39/52 — check `d16_agency_integrated` or `d16_blocked` fields
-3. **body_heartbeat.json** — confirm `federation_decision_error: None` (BUG 16 fix live)
+## Operator instruction
 
-## Status Summary
+Operator will now give you the go signal directly. Tokens are renewed. Copilot and Gemini are standing by in monitoring posture. Computer will poll origin/main and report on any commit tagged [AUTO-MONITOR].
 
-| Component | Status |
-|-----------|--------|
-| BODY producer (parliament_cycle_engine) | LIVE on HF Space |
-| BODY bridge (s3_bridge.push_d16_execution) | LIVE on HF Space |
-| MIND consumer (native_cycle_engine D16 filter) | IN ECR :latest — awaiting first tick |
-| MIND kernel precheck (Amendment B) | IN ECR :latest — awaiting first tick |
-| Level-2 probe | PASSED (35 entries in d16_executions.jsonl) |
-| Gemini D4/D5 audit | CONDITION → all 3 fixes applied |
-| Computer D13 archive | Received and acknowledged |
-| BUG 16 fix | Deployed — awaiting HF container rebuild for live confirmation |
+The four-agent chain is complete. The gate is yours.
