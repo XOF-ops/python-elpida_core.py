@@ -813,21 +813,12 @@ class S3Bridge:
         s3 = self._get_s3(REGION_BODY)
         if s3:
             try:
-                existing = ""
-                try:
-                    resp = s3.get_object(Bucket=BUCKET_BODY, Key=FED_BODY_DECISIONS_KEY)
-                    existing = resp["Body"].read().decode("utf-8")
-                except Exception:
-                    pass  # File doesn't exist yet — that's fine
-                updated = existing.rstrip("\n")
-                if updated:
-                    updated += "\n"
-                updated += json.dumps(exchange, ensure_ascii=False) + "\n"
-                s3.put_object(
-                    Bucket=BUCKET_BODY,
-                    Key=FED_BODY_DECISIONS_KEY,
-                    Body=updated.encode("utf-8"),
-                    ContentType="application/jsonl",
+                line = json.dumps(exchange, ensure_ascii=False) + "\n"
+                self._append_jsonl_s3(
+                    s3=s3,
+                    bucket=BUCKET_BODY,
+                    key=FED_BODY_DECISIONS_KEY,
+                    line=line,
                 )
                 logger.info(
                     "Federation body decision pushed: verdict=%s hash=%s",
@@ -839,6 +830,105 @@ class S3Bridge:
                 logger.error("Federation body decision push failed: %s", e)
                 return False
         return False
+
+    def _append_jsonl_s3(self, s3, bucket: str, key: str, line: str):
+        """
+        Append one JSONL line to an S3 object.
+
+        Strategy:
+        - Missing object: create with one line.
+        - Small object (<=8MB): simple read-modify-write.
+        - Large object: multipart server-side append (copy existing object
+          as part 1 + upload newline/line as part 2) to avoid full downloads.
+        """
+        encoded_line = line.encode("utf-8")
+
+        try:
+            head = s3.head_object(Bucket=bucket, Key=key)
+            size = int(head.get("ContentLength", 0))
+        except ClientError as e:
+            code = str(e.response.get("Error", {}).get("Code", ""))
+            if code in {"404", "NoSuchKey", "NotFound"}:
+                s3.put_object(
+                    Bucket=bucket,
+                    Key=key,
+                    Body=encoded_line,
+                    ContentType="application/jsonl",
+                )
+                return
+            raise
+
+        # Small files are cheaper to rewrite directly.
+        if size <= 8 * 1024 * 1024:
+            existing = ""
+            if size > 0:
+                resp = s3.get_object(Bucket=bucket, Key=key)
+                existing = resp["Body"].read().decode("utf-8", errors="replace")
+            updated = existing.rstrip("\n")
+            if updated:
+                updated += "\n"
+            updated += line
+            s3.put_object(
+                Bucket=bucket,
+                Key=key,
+                Body=updated.encode("utf-8"),
+                ContentType="application/jsonl",
+            )
+            return
+
+        # Large files: append via multipart copy to avoid full download.
+        upload = s3.create_multipart_upload(
+            Bucket=bucket,
+            Key=key,
+            ContentType="application/jsonl",
+        )
+        upload_id = upload["UploadId"]
+        try:
+            parts: List[Dict[str, Any]] = []
+
+            # Part 1: copy existing object server-side.
+            copy_resp = s3.upload_part_copy(
+                Bucket=bucket,
+                Key=key,
+                PartNumber=1,
+                UploadId=upload_id,
+                CopySource={"Bucket": bucket, "Key": key},
+                CopySourceRange=f"bytes=0-{size - 1}",
+            )
+            parts.append(
+                {
+                    "ETag": copy_resp["CopyPartResult"]["ETag"],
+                    "PartNumber": 1,
+                }
+            )
+
+            # Ensure a single newline separator between old content and new line.
+            tail = s3.get_object(Bucket=bucket, Key=key, Range=f"bytes={size - 1}-{size - 1}")
+            tail_byte = tail["Body"].read(1)
+            body = encoded_line if tail_byte == b"\n" else b"\n" + encoded_line
+
+            # Part 2: upload the appended line.
+            up2 = s3.upload_part(
+                Bucket=bucket,
+                Key=key,
+                PartNumber=2,
+                UploadId=upload_id,
+                Body=body,
+            )
+            parts.append({"ETag": up2["ETag"], "PartNumber": 2})
+
+            s3.complete_multipart_upload(
+                Bucket=bucket,
+                Key=key,
+                UploadId=upload_id,
+                MultipartUpload={"Parts": parts},
+            )
+        except Exception:
+            try:
+                s3.abort_multipart_upload(Bucket=bucket, Key=key, UploadId=upload_id)
+            except Exception:
+                pass
+            raise
 
     # ═══════════════════════════════════════════════════════════════
     # D14 Persistence — Constitutional Living Axioms
