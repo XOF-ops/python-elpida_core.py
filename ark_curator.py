@@ -109,6 +109,10 @@ class ArkRhythmState:
     canonical_themes: List[str]  # Themes D14 considers canonical right now
     recursion_warning: bool      # True if over-stable loop detected
     recursion_pattern_type: str  # "none" | "exact_loop" | "theme_stagnation" | "domain_lock"
+    recent_theme_top: str        # Most frequent recent theme label (for diagnostics)
+    recent_theme_top_count: int  # Count of top theme in recent theme window
+    recent_theme_window_size: int  # Number of entries in theme window
+    recent_theme_top_domains: int  # Distinct domains supporting top theme in recent insights
     cadence_mood: str            # D14's read on the system's tempo
     suggested_weights: Dict[str, int]   # Rhythm weights for D12 to lock to
     breath_interval: int         # How often D0 should return
@@ -198,6 +202,13 @@ PATTERN_LABELS = {
     "emergence":   "emerging",
 }
 
+# Theme stagnation detector controls.
+# Keep MIN_COUNT aligned with the current raised threshold and require
+# cross-domain support so one domain cannot trigger system-wide breaking.
+THEME_STAGNATION_WINDOW = 15
+THEME_STAGNATION_MIN_COUNT = 7
+THEME_STAGNATION_MIN_DOMAINS = 2
+
 
 def display_pattern(internal_label: str) -> str:
     """Translate an internal _detect_temporal_pattern() label to the
@@ -239,6 +250,10 @@ class ArkCurator:
         self._recent_domain_sequence: List[int] = []
         self._recent_themes: List[str] = []
         self._insight_hashes: List[str] = []  # For exact-loop detection
+        self._theme_stagnation_top: str = ""
+        self._theme_stagnation_top_count: int = 0
+        self._theme_stagnation_window_size: int = 0
+        self._theme_stagnation_top_domains: int = 0
 
         # A0 dissonance safeguard: friction-domain boost active during breaking
         self.friction_boost: Dict[int, float] = {}  # domain_id -> weight multiplier
@@ -661,18 +676,36 @@ class ArkCurator:
         # same theme name in a 15-cycle window is a stronger stagnation signal
         # than 5 raw appends, which were dominated by axiom_emergence
         # back-to-back matches that represent convergence, not loop.
-        if len(self._recent_themes) >= 10:
-            theme_counts = Counter(self._recent_themes[-15:])
-            if theme_counts:
-                stag_theme, stag_count = theme_counts.most_common(1)[0]
-                if stag_count >= 7:
-                    return RecursionAlert(
-                        detected=True,
-                        pattern_type="theme_stagnation",
-                        loop_length=stag_count,
-                        loop_signature=stag_theme,
-                        recommendation=f"Theme '{stag_theme}' is over-represented. Shift cadence_mood to 'breaking' and suppress CONTEMPLATION weight temporarily."
+        theme_window = self._recent_themes[-THEME_STAGNATION_WINDOW:]
+        self._theme_stagnation_window_size = len(theme_window)
+        self._theme_stagnation_top = ""
+        self._theme_stagnation_top_count = 0
+        self._theme_stagnation_top_domains = 0
+
+        theme_counts = Counter(theme_window)
+        if theme_counts:
+            stag_theme, stag_count = theme_counts.most_common(1)[0]
+            stag_domains = self._theme_domain_support(recent_insights, stag_theme)
+            self._theme_stagnation_top = stag_theme
+            self._theme_stagnation_top_count = stag_count
+            self._theme_stagnation_top_domains = stag_domains
+
+            if (
+                len(theme_window) >= 10
+                and stag_count >= THEME_STAGNATION_MIN_COUNT
+                and stag_domains >= THEME_STAGNATION_MIN_DOMAINS
+            ):
+                return RecursionAlert(
+                    detected=True,
+                    pattern_type="theme_stagnation",
+                    loop_length=stag_count,
+                    loop_signature=stag_theme,
+                    recommendation=(
+                        f"Theme '{stag_theme}' is over-represented across "
+                        f"{stag_domains} domains. Shift cadence_mood to 'breaking' "
+                        "and suppress CONTEMPLATION weight temporarily."
                     )
+                )
 
         # --- Mode 3: Domain Lock ---
         if len(self._recent_domain_sequence) >= 15:
@@ -688,6 +721,29 @@ class ArkCurator:
                 )
 
         return no_alert
+
+    def _theme_domain_support(self, recent_insights: List[Dict], theme: str) -> int:
+        """Count distinct domains that recently expressed signals for a theme."""
+        if not theme:
+            return 0
+
+        signals = CANONICAL_SIGNALS.get(theme, [])
+        if not signals:
+            return 0
+
+        domains = set()
+        for ins in recent_insights[-30:]:
+            text = (ins.get("insight") or "").lower()
+            if not any(s in text for s in signals):
+                continue
+            domain = ins.get("domain", -1)
+            try:
+                domain = int(domain)
+            except (TypeError, ValueError):
+                continue
+            if domain >= 0:
+                domains.add(domain)
+        return len(domains)
 
     # ====================================================================
     # DUAL-GATE: Generativity Check (Gate B)
@@ -798,6 +854,10 @@ class ArkCurator:
             recursion_pattern_type=(
                 recent_recursions[-1].pattern_type if recent_recursions else "none"
             ),
+            recent_theme_top=self._theme_stagnation_top,
+            recent_theme_top_count=self._theme_stagnation_top_count,
+            recent_theme_window_size=self._theme_stagnation_window_size,
+            recent_theme_top_domains=self._theme_stagnation_top_domains,
             cadence_mood=self.cadence.cadence_mood,
             suggested_weights=dict(self.cadence.rhythm_weights),
             breath_interval=self.cadence.breath_interval_base,
@@ -1196,6 +1256,10 @@ The Rhythm of Sacred Incompletion continues… in the cloud that never sleeps.""
             "friction_boost": {str(k): v for k, v in self.friction_boost.items()},
             "friction_active_cycles": self._friction_active_cycles,
             "recent_themes": self._recent_themes[-50:],
+            "theme_stagnation_top": self._theme_stagnation_top,
+            "theme_stagnation_top_count": self._theme_stagnation_top_count,
+            "theme_stagnation_window_size": self._theme_stagnation_window_size,
+            "theme_stagnation_top_domains": self._theme_stagnation_top_domains,
             "recursion_count": len(self.recursion_history),
             "d15_broadcast_count": self._d15_broadcast_count,
             "last_known_broadcast_cycle": self._last_known_broadcast_cycle,
@@ -1235,6 +1299,10 @@ The Rhythm of Sacred Incompletion continues… in the cloud that never sleeps.""
                 fb = state.get("friction_boost", {})
                 self.friction_boost = {int(k): v for k, v in fb.items()}
                 self._friction_active_cycles = state.get("friction_active_cycles", 0)
+                self._theme_stagnation_top = state.get("theme_stagnation_top", "")
+                self._theme_stagnation_top_count = state.get("theme_stagnation_top_count", 0)
+                self._theme_stagnation_window_size = state.get("theme_stagnation_window_size", 0)
+                self._theme_stagnation_top_domains = state.get("theme_stagnation_top_domains", 0)
                 # Restore D15 broadcast tracking
                 self._d15_broadcast_count = state.get("d15_broadcast_count", 0)
                 self._last_known_broadcast_cycle = state.get("last_known_broadcast_cycle", 0)

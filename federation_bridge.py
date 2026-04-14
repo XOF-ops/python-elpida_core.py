@@ -100,6 +100,10 @@ class FederationHeartbeat:
     pending_canonical_count: int = 0            # Number of PENDING CANONICAL
     recursion_warning: bool = False             # Ark recursion alert
     recursion_pattern_type: str = "none"        # Recursion class (none/exact_loop/theme_stagnation/domain_lock)
+    recent_theme_top: str = ""                  # Most frequent theme in stagnation window
+    recent_theme_top_count: int = 0             # Frequency of top theme in window
+    recent_theme_window_size: int = 0           # Number of tracked theme entries in window
+    recent_theme_top_domains: int = 0           # Distinct domains supporting top theme
     friction_boost: Dict[int, float] = field(default_factory=dict)  # Active friction domain boosts
     kernel_version: str = "2.0.0"              # MIND kernel version
     kernel_rules: int = 10                      # Number of kernel rules active
@@ -256,6 +260,10 @@ class FederationBridge:
         pending = 0
         recursion = False
         recursion_pattern = "none"
+        recent_theme_top = ""
+        recent_theme_top_count = 0
+        recent_theme_window_size = 0
+        recent_theme_top_domains = 0
 
         if self.ark_curator:
             friction = self.ark_curator.get_friction_boost() or {}
@@ -265,6 +273,10 @@ class FederationBridge:
             ark_state = self.ark_curator.query()
             recursion = ark_state.recursion_warning
             recursion_pattern = ark_state.recursion_pattern_type
+            recent_theme_top = ark_state.recent_theme_top
+            recent_theme_top_count = ark_state.recent_theme_top_count
+            recent_theme_window_size = ark_state.recent_theme_window_size
+            recent_theme_top_domains = ark_state.recent_theme_top_domains
 
         # D15 Hub stats (read manifest from BODY bucket if available)
         _hub_entries = 0
@@ -291,6 +303,10 @@ class FederationBridge:
             pending_canonical_count=pending,
             recursion_warning=recursion,
             recursion_pattern_type=recursion_pattern,
+            recent_theme_top=recent_theme_top,
+            recent_theme_top_count=recent_theme_top_count,
+            recent_theme_window_size=recent_theme_window_size,
+            recent_theme_top_domains=recent_theme_top_domains,
             friction_boost={str(k): v for k, v in friction.items()},
             kernel_blocks_total=self.kernel_blocks,
             dominant_axiom=dominant_axiom or "",
