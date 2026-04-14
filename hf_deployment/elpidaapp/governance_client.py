@@ -1546,6 +1546,7 @@ class GovernanceClient:
         return self._local_axiom_check(action_description, context,
                                        hold_mode=analysis_mode,
                                        body_cycle=body_cycle,
+                                       decision_meta=decision_meta,
                                        no_llm=_no_llm)
 
     def get_governance_log(self) -> List[Dict[str, Any]]:
@@ -2118,6 +2119,7 @@ class GovernanceClient:
         *,
         hold_mode: bool = False,
         body_cycle: Optional[int] = None,
+        decision_meta: Optional[Dict[str, Any]] = None,
         no_llm: bool = False,
     ) -> Dict[str, Any]:
         """
@@ -2158,7 +2160,13 @@ class GovernanceClient:
         if hub_precedent:
             action = f"[HUB PRECEDENT: {hub_precedent}] " + action
 
-        return self._parliament_deliberate(action, hold_mode=hold_mode, body_cycle=body_cycle, no_llm=no_llm)
+        return self._parliament_deliberate(
+            action,
+            hold_mode=hold_mode,
+            body_cycle=body_cycle,
+            decision_meta=decision_meta,
+            no_llm=no_llm,
+        )
 
     # ────────────────────────────────────────────────────────────────
     # Dual-Horn & Oracle (Spiral Parliament Architecture)
@@ -2915,6 +2923,7 @@ class GovernanceClient:
         action: str,
         hold_mode: bool = False,
         body_cycle: Optional[int] = None,
+        decision_meta: Optional[Dict[str, Any]] = None,
         no_llm: bool = False,
     ) -> Dict[str, Any]:
         """
