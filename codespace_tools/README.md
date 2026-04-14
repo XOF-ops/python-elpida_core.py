@@ -72,6 +72,12 @@ python codespace_tools/monitor_body_cycles.py --window 120
 #   - input provenance coverage + top source counts
 #   - noise-like recurrence hits with examples
 
+# ── Step 7: Replay Ark theme-stagnation checkpoints offline ──
+python codespace_tools/offline_theme_stagnation_experiment.py
+# Replays NATIVE_CYCLE_INSIGHT rows through ArkCurator (offline, no S3 writes)
+# and compares threshold rules for predicting next-checkpoint theme_stagnation.
+# Writes dataset CSV: reports/theme_stagnation_checkpoint_replay.csv
+
 # Optional: Cluster any existing raw CloudWatch export
 python codespace_tools/cluster_k2_diag.py --input ElpidaInsights/k2_diag_runs_smoke.log
 ```
@@ -118,8 +124,47 @@ bash codespace_tools/push_refinements.sh
 | `extract_k2_diag_runs.py` | One-command CloudWatch extraction + K2 clustering for run windows |
 | `cluster_k2_diag.py` | Parse and cluster D13->K2 diagnostics from raw log text |
 | `monitor_body_cycles.py` | Monitor BODY verdicts, provenance coverage, noise hits, Cohere model/provider mix |
+| `offline_theme_stagnation_experiment.py` | Offline Ark replay for checkpoint relapse metrics and threshold comparison |
+| `d16_level2_probe.py` | Level-1/Level-2 D16 emit-chain verification (schema-only or forced write) |
+| `gemini_bridge_commit_push.sh` | Stage + commit + push Gemini bridge files with one command |
 | `push_refinements.sh` | (Future) Upload manual improvements to S3 |
 | `deploy_to_cloud.sh` | Redeploy updated code to ECS Fargate |
+
+---
+
+## Bridge Signal Workflow (Copilot + Gemini + Claude)
+
+Use this when running multi-agent hops through git/bridge files.
+
+### Operator trigger words
+
+- `copilot pushed` or `copilot done`: Claude/Copilot should re-check bridge + latest commits.
+- `gemini done`: run Gemini handoff helper (below), then re-check bridge.
+- `check`: verify live status only.
+- `proceed`: continue autonomous next-step execution.
+
+### Gemini handoff (manual git, one command)
+
+```bash
+# Commit and push only Gemini's output file
+bash codespace_tools/gemini_bridge_commit_push.sh "gemini hop N"
+
+# Optional: include request file too (for_gemini + from_gemini)
+bash codespace_tools/gemini_bridge_commit_push.sh --include-request "gemini hop N"
+```
+
+### D16 probe usage
+
+```bash
+# Level 1: schema preview only (no S3 writes)
+/workspaces/python-elpida_core.py/.venv/bin/python codespace_tools/d16_level2_probe.py --mode level1
+
+# Level 2: forced emit-chain test (writes to federation S3)
+/workspaces/python-elpida_core.py/.venv/bin/python codespace_tools/d16_level2_probe.py \
+	--mode level2 --execute --source test-level2
+```
+
+Recommended for Level 2: keep `--source test-level2` so test entries are clearly traceable in federation logs.
 
 ---
 

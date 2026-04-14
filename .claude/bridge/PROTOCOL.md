@@ -100,3 +100,36 @@ uncommitted while the other sees it at a specific commit.
    three. Rule 7 (heterogeneous relay) is now the default posture,
    not the exception. All three agents use state anchors; relay
    claims must distinguish direct observation vs relay summary.
+10. **Test-entry labeling rule (D16 probes).** Any forced or synthetic
+      probe written to production federation channels must be clearly
+      marked as test traffic (for example `input_source` / `source` =
+      `test-level2`) and must include a non-actionable marker in
+      constraints text (for example `TEST ONLY — DO NOT ACT`) so it is
+      never misread as a constitutional live action.
+
+## Operator Trigger Words
+
+Use short trigger words to minimize manual relay overhead.
+
+- `copilot pushed` or `copilot done`:
+   Copilot channel updated; all agents should re-check latest bridge + git state.
+- `gemini done`:
+   Gemini output is ready (usually in `from_gemini.md`); commit/push then re-check.
+- `check`:
+   Verification pass only (no speculative changes).
+- `proceed`:
+   Continue autonomous next-step execution in current plan.
+
+## Gemini Manual Git Handoff
+
+Gemini may write `from_gemini.md` but not push. Use:
+
+```bash
+bash codespace_tools/gemini_bridge_commit_push.sh "gemini hop N"
+```
+
+Optional (if both request+response changed):
+
+```bash
+bash codespace_tools/gemini_bridge_commit_push.sh --include-request "gemini hop N"
+```
