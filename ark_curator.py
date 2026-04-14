@@ -152,8 +152,9 @@ CANONICAL_SIGNALS = {
         "reality-parliament", "external voice", "world responded",
     ],
     "spiral_recognition": [
-        "spiral", "recursion", "we've been here", "returning but different",
-        "the same question deeper", "fractal", "self-similar",
+        "we've been here", "returning but different",
+        "the same question deeper", "we are looping",
+        "this loop again", "caught in our own pattern",
     ],
 }
 

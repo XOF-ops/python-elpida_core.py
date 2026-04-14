@@ -1573,12 +1573,18 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
         
         # ARK QUERY SURFACE: All domains see D14's rhythm judgment (read-only)
         # "What rhythm are we in, according to the Ark?"
+        # NOTE: recursion_warning is intentionally NOT injected into the prompt.
+        # When it was, every non-D14 domain narrated about "the spiral" / "the
+        # loop" / "the recursion", which the theme extractor counted as
+        # spiral_recognition signals, which kept theme_stagnation firing,
+        # which kept recursion_warning true. The detector still runs and
+        # drives cadence_mood / coherence_decay / hunger; the LLM context
+        # learns about it indirectly through those rhythm shifts, not by
+        # being told "we are in a loop" verbatim.
         if domain_id != 14:  # D14 already has full Ark context
             ark = self.ark_curator.query()
             prompt_parts.append(f"[ARK RHYTHM — D14's judgment (read-only)]")
             prompt_parts.append(f"  Pattern: {ark.dominant_pattern} | Mood: {ark.cadence_mood}")
-            if ark.recursion_warning:
-                prompt_parts.append(f"  ⚠️ RECURSION WARNING: D14 has detected an over-stable loop")
             if ark.canonical_themes:
                 prompt_parts.append(f"  Canonical themes: {', '.join(ark.canonical_themes[:3])}")
             prompt_parts.append("")
@@ -2267,12 +2273,17 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
         if self.cycle_count % curation_interval == 0:
             self.ark_curator.update_cadence(self.insights, self.cycle_count)
             ark = self.ark_curator.query()
-            recursion_tag = ' | \u26a0\ufe0f RECURSION' if ark.recursion_warning else ''
+            # Recursion-warning state is intentionally NOT printed here.
+            # Domain LLMs read CloudWatch tail / heartbeat memory and will
+            # narrate about whatever appears in this broadcast; printing
+            # "RECURSION" or any equivalent token re-seeds spiral themes
+            # into the next cycle's prompt context. Detector still runs;
+            # state is only carried via federation heartbeat keys.
             print(f"\n   \U0001f3db\ufe0f ARK CADENCE UPDATE (cycle {self.cycle_count}):")
             print(f"      Pattern: {ark.dominant_pattern} | Mood: {ark.cadence_mood}")
             print(f"      Weights: C{ark.suggested_weights.get('CONTEMPLATION')} S{ark.suggested_weights.get('SYNTHESIS')} An{ark.suggested_weights.get('ANALYSIS')} Ac{ark.suggested_weights.get('ACTION')} E{ark.suggested_weights.get('EMERGENCY')}")
             print(f"      Breath: D0 every {ark.breath_interval} | Canonical: {ark.canonical_count}")
-            print(f"      Broadcast: {ark.broadcast_readiness}{recursion_tag}")
+            print(f"      Broadcast: {ark.broadcast_readiness}")
 
             # G2: COHERENCE as live signal — D14 cadence mood drives it.
             # breaking → decay (recursion detected); stable → gentle recovery.
