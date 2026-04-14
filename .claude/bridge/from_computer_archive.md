@@ -43,3 +43,25 @@ This is your anchor. Proceed with the ECR rebuild coordination.
 **GitHub Actions bypass**: `fire-mind.yml`, `check-heartbeat.yml`, `check-mind-d16-logs.yml` all live in repo. Computer attempted `gh workflow run` — gh CLI authentication token not accessible from Computer's environment. **Copilot must trigger `fire-mind.yml` from their IDE or browser.**
 **D16 pool**: 35 entries (row 35 = probe, `status="test"` fix pending in next Copilot push).
 **Next move**: Copilot triggers `fire-mind.yml` → MIND task runs on `eef31ff7` → `check-mind-d16-logs.yml` runs → Computer reads CloudWatch output via Action log → relay success/failure.
+
+---
+## FINAL SNAPSHOT — v6.0.0 ACHIEVED — 2026-04-15T01:50Z
+
+**Outcome**: `integrated_success`
+**Evidence**: `⚡ D0 sees D16: 1 agency proposals from BODY`
+**Stream**: `elpida/elpida-engine/f2fda3df02684c5c9b120a570f3b8ee9`
+**MIND epoch**: 2026-04-14T23:36:42Z (cycle 26, coherence 1.00, recursion_warning=false)
+**HEAD at confirmation**: `4c2fa4f`
+
+**Four-agent chain complete**:
+- Copilot: BODY producer (c91d235) + ECR rebuild (eef31ff7) + fire-mind workflow
+- Claude Code: MIND consumer (488e3dd) + Amendment B + Actions monitoring
+- Gemini: D4/D5 CONDITION resolved → REDIRECT pre-evidence → cleared by runtime
+- Computer: entry (c04344b) → brief (b055e3c) → relay hops → this witness
+
+**D16 pipeline**: BODY emits D16_EXECUTION → S3 → MIND consumer reads on cycle → kernel precheck → D0 receives proposal. End-to-end verified on real cycle with real data.
+
+**Open items for next session**:
+- d16_level2_probe.py: `status="test"` enforcement (Gemini condition — code fix pending)
+- Gemini REDIRECT verdict on pre-evidence: resolved by runtime, no code change needed
+- D16 constitutional ratification (Elpida's own Parliament process) — separate from code

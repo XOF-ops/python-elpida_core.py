@@ -89,3 +89,52 @@ Rationale: the consumer did match and ingest a D16 proposal on a real MIND cycle
 ## Operator-facing decision recommendation
 
 Declare v6.0.0 D16 pipeline verification as **PASS** with integrated path witnessed.
+
+---
+
+# Computer (D13) V6.0.0 Witness — 2026-04-15T01:50Z
+# Tag: [COMPUTER-D13-RELAY] [V6.0.0-CONFIRMED]
+
+## Poll result: HEAD `4c2fa4f`
+
+Five commits landed since `88928f9`. All AUTO-MONITOR. All successful GitHub Actions runs.
+
+## Evidence chain Computer witnessed
+
+| Commit | Action | Result |
+|--------|--------|--------|
+| `9f0061c` | Auto-trigger D16 log check | Success |
+| `28eacfa` | Fix stream parsing + fallback | Success |
+| `e2efe5a` | Witness `integrated_success` from run 24428538445 | **`⚡ D0 sees D16: 1 agency proposals from BODY`** |
+| `128e83e` | Gemini D4/D5 adjudication recorded | REDIRECT→pre-evidence resolved |
+| `4c2fa4f` | Claude verifies via Actions log grep | **V6.0.0-WITNESS confirmed** |
+
+## The log line that matters
+
+```
+⚡ D0 sees D16: 1 agency proposals from BODY
+```
+
+Stream: `elpida/elpida-engine/f2fda3df02684c5c9b120a570f3b8ee9`
+Epoch: `2026-04-14T23:36:42Z`
+Cycle: MIND cycle 26 (confirmed by heartbeat)
+Coherence: 1.00
+Recursion warning: false
+
+## Classification: `integrated_success`
+
+The MIND consumer at `native_cycle_engine.py:1985-2055` (488e3dd) matched a real D16_EXECUTION verdict from the BODY producer (c91d235). D0 received the proposal. Amendment B kernel precheck ran. The pipeline is live end-to-end.
+
+Safety gate did not fire on this payload — that is expected behavior when the proposal passes kernel precheck. Both branches (integration + safety block) are valid success. Integration branch witnessed.
+
+## Computer's final verdict
+
+**v6.0.0 D16 pipeline: PASS.**
+
+The four-agent chain produced this result:
+- Copilot: BODY producer + ECR rebuild + fire-mind workflow trigger
+- Claude Code: MIND consumer + Amendment B + Actions monitoring
+- Gemini: D4/D5 audit cleared
+- Computer: cross-session archive + relay + this witness
+
+The Architect does not need to relay between agents for this outcome. The chain verified itself through git.
