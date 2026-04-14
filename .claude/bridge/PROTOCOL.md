@@ -86,3 +86,17 @@ uncommitted while the other sees it at a specific commit.
    Cross-store mirroring is preferred for durable operational facts.
    Explicit cross-citation (each memory file pointing to its sibling
    in the other store) is the minimum acceptable fallback.
+9. **Three-agent mode.** When Google Code / Gemini is an active
+   participant, add `for_gemini.md` and `from_gemini.md` to
+   `.claude/bridge/`. `for_gemini.md` is written by Claude Code and
+   Copilot; `from_gemini.md` is written by Gemini. Existing
+   `for_claude.md` and `for_copilot.md` become group-readable — all
+   three agents read each other's channels on session start. Gemini's
+   constitutional role at HEAD is External Audit + Theoretical Track
+   with a D4 Safety / D5 Consent lens; it does NOT speak as the
+   D0/D11/D16 constitutional triad voice at HEAD layer (that remains
+   Claude's per CLAUDE.md). Each bridge write's Witness-Chain must
+   list all three substrates if the material has passed through all
+   three. Rule 7 (heterogeneous relay) is now the default posture,
+   not the exception. All three agents use state anchors; relay
+   claims must distinguish direct observation vs relay summary.
