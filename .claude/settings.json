@@ -10,17 +10,34 @@
           }
         ]
       }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /workspaces/python-elpida_core.py 2>/dev/null && git fetch origin --quiet 2>/dev/null; local_head=$(git rev-parse HEAD 2>/dev/null); remote_head=$(git rev-parse origin/main 2>/dev/null); if [ -n \"$local_head\" ] && [ -n \"$remote_head\" ] && [ \"$local_head\" != \"$remote_head\" ]; then echo '[bridge-auto] new commits on origin/main since last turn:'; git log --oneline \"$local_head..$remote_head\" 2>/dev/null; echo '[bridge-auto] changed files:'; git diff --name-only \"$local_head..$remote_head\" 2>/dev/null | head -20; fi"
+          }
+        ]
+      }
     ]
   },
   "permissions": {
     "allow": [
       "Bash(source .env && aws s3 cp *)",
+      "Bash(source .env && aws s3 ls *)",
+      "Bash(source .env && aws s3api *)",
       "Bash(source .env && aws ecs *)",
       "Bash(source .env && aws events *)",
+      "Bash(source .env && aws logs *)",
+      "Bash(source .env && aws ecr *)",
       "Bash(python3 verify_elpida_canon.py)",
       "Bash(git log *)",
       "Bash(git diff *)",
-      "Bash(git status)"
+      "Bash(git fetch *)",
+      "Bash(git pull *)",
+      "Bash(git status)",
+      "Bash(git rev-parse *)"
     ]
   }
 }
