@@ -2034,6 +2034,13 @@ class ParliamentCycleEngine:
                     verdict,
                     action_hash[:12],
                 )
+            else:
+                logger.warning(
+                    "FEDERATION_DECISION_FALLBACK_PUSH_FAILED: cycle=%s verdict=%s hash=%s",
+                    self.cycle_count,
+                    verdict,
+                    action_hash[:12],
+                )
             return pushed
         except Exception as e:
             logger.warning("Federation fallback push failed: %s", e)
@@ -2083,6 +2090,17 @@ class ParliamentCycleEngine:
             "polis_civic_active": self._polis_last_cycle == self.cycle_count,
             # D15 Hub (The Dam) status
             "hub": self._get_hub_status(),
+            "federation_decision_pushed": bool(
+                result.get("_diag_federation_decision_pushed", False)
+            ),
+            "federation_decision_fallback_pushed": bool(
+                result.get("_diag_federation_fallback_pushed", False)
+            ),
+            "federation_decision_error": (
+                str(result.get("_diag_federation_decision_error", ""))[:180]
+                if result.get("_diag_federation_decision_error")
+                else None
+            ),
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "federation_version": "1.2.0",
         }
