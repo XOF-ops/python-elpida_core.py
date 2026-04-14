@@ -1515,6 +1515,19 @@ class GovernanceClient:
                     result = resp.json()
                     result["source"] = "remote"
                     self._log("CHECK_ACTION", "remote", True, action=action_description)
+
+                    # Keep federation telemetry continuous even when the
+                    # semantic verdict is delegated to the remote layer.
+                    try:
+                        self.push_parliament_decision(
+                            action_description,
+                            result,
+                            body_cycle=body_cycle,
+                            decision_meta=decision_meta,
+                        )
+                    except Exception as e:
+                        logger.debug("Federation remote decision push: %s", e)
+
                     return result
             except Exception as e:
                 logger.warning("Remote governance check failed: %s", e)
