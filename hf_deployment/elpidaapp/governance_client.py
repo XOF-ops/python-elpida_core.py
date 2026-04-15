@@ -526,14 +526,6 @@ _NODE_LLM: Dict[str, str] = {
     "LOGOS":     "openai",      # A2  — Semantic precision → structured reasoning
 }
 
-# PROMETHEUS canary model override for contested deliberation.
-# Default is command-r for faster/strict-format voting; override at runtime:
-#   ELPIDA_PROMETHEUS_COHERE_MODEL=command-a-03-2025
-_PROMETHEUS_COHERE_MODEL = os.environ.get(
-    "ELPIDA_PROMETHEUS_COHERE_MODEL",
-    "command-r-08-2024",
-).strip()
-
 # ── Signal keywords per axiom ───────────────────────────────────────
 # Phase 1 of signal detection: direct keyword matching.
 # Each axiom has a list of keywords that trigger signals.
@@ -1448,7 +1440,6 @@ class GovernanceClient:
         action_for_kernel: Optional[str] = None,
         analysis_mode: bool = False,
         body_cycle: Optional[int] = None,
-        decision_meta: Optional[Dict[str, Any]] = None,
         depth: str = "full",
     ) -> Dict[str, Any]:
         """
@@ -1515,26 +1506,6 @@ class GovernanceClient:
                     result = resp.json()
                     result["source"] = "remote"
                     self._log("CHECK_ACTION", "remote", True, action=action_description)
-
-                    # Keep federation telemetry continuous even when the
-                    # semantic verdict is delegated to the remote layer.
-                    federation_pushed = False
-                    federation_error = None
-                    try:
-                        federation_pushed = self.push_parliament_decision(
-                            action_description,
-                            result,
-                            body_cycle=body_cycle,
-                            decision_meta=decision_meta,
-                        )
-                    except Exception as e:
-                        federation_error = str(e)
-                        logger.debug("Federation remote decision push: %s", e)
-
-                    result["_diag_federation_decision_pushed"] = federation_pushed
-                    if federation_error:
-                        result["_diag_federation_decision_error"] = federation_error[:200]
-
                     return result
             except Exception as e:
                 logger.warning("Remote governance check failed: %s", e)
@@ -1546,7 +1517,6 @@ class GovernanceClient:
         return self._local_axiom_check(action_description, context,
                                        hold_mode=analysis_mode,
                                        body_cycle=body_cycle,
-                                       decision_meta=decision_meta,
                                        no_llm=_no_llm)
 
     def get_governance_log(self) -> List[Dict[str, Any]]:
@@ -1654,7 +1624,6 @@ class GovernanceClient:
         action: str,
         result: Dict[str, Any],
         body_cycle: Optional[int] = None,
-        decision_meta: Optional[Dict[str, Any]] = None,
     ) -> bool:
         """
         Write a Parliament decision to the federation body_decisions channel.
@@ -1665,8 +1634,6 @@ class GovernanceClient:
         Args:
             action: The action text that was deliberated
             result: The full Parliament result dict
-            decision_meta: Optional cycle metadata (input systems,
-                provenance, rhythm, watch, etc.)
 
         Returns:
             True if successfully pushed to S3.
@@ -1705,26 +1672,13 @@ class GovernanceClient:
                 "veto_node": (parliament.get("veto_nodes") or [None])[0],
                 "reasoning": result.get("reasoning", "")[:500],
                 "timestamp": ts,
-                "input_source": (decision_meta or {}).get("source"),
-                "input_systems": (decision_meta or {}).get("systems", []),
-                "rhythm": (decision_meta or {}).get("rhythm"),
-                "watch": (decision_meta or {}).get("watch"),
-                "input_event_provenance": (decision_meta or {}).get(
-                    "event_provenance", []
-                ),
                 # ── BUG 7 diagnostic: capture actual action text + signals ──
                 "_diag_action": action[:2000],
                 "_diag_signals": list(parliament.get("signals", {}).keys()),
                 "_diag_embeddings": _USE_EMBEDDINGS,
                 "_diag_node_votes": {
-                    n: {
-                        "score": v.get("score"),
-                        "vote": v.get("vote"),
-                        "rationale": (v.get("rationale") or "")[:200],
-                        "llm_provider": v.get("llm_provider"),
-                        "llm_model": v.get("llm_model"),
-                        "llm_deliberated": v.get("llm_deliberated", False),
-                    }
+                    n: {"score": v.get("score"), "vote": v.get("vote"),
+                        "rationale": (v.get("rationale") or "")[:200]}
                     for n, v in (parliament.get("votes") or {}).items()
                 },
                 # BUG 8 diagnostic: stripped text + semantic for root cause
@@ -2119,7 +2073,6 @@ class GovernanceClient:
         *,
         hold_mode: bool = False,
         body_cycle: Optional[int] = None,
-        decision_meta: Optional[Dict[str, Any]] = None,
         no_llm: bool = False,
     ) -> Dict[str, Any]:
         """
@@ -2160,13 +2113,7 @@ class GovernanceClient:
         if hub_precedent:
             action = f"[HUB PRECEDENT: {hub_precedent}] " + action
 
-        return self._parliament_deliberate(
-            action,
-            hold_mode=hold_mode,
-            body_cycle=body_cycle,
-            decision_meta=decision_meta,
-            no_llm=no_llm,
-        )
+        return self._parliament_deliberate(action, hold_mode=hold_mode, body_cycle=body_cycle, no_llm=no_llm)
 
     # ────────────────────────────────────────────────────────────────
     # Dual-Horn & Oracle (Spiral Parliament Architecture)
@@ -2717,9 +2664,8 @@ class GovernanceClient:
           THEMIS, CHAOS          → Claude (anchor + contradiction-holding)
           PROMETHEUS             → Cohere (epistemic breadth)
           LOGOS                  → OpenAI (structured precision)
-
-                Provider-level fallback is handled by LLMClient; node mapping
-                remains stable.
+          PROMETHEUS             → Perplexity (reality-grounded)
+          CHAOS                  → Claude (contradiction-holding)
 
         Returns updated votes dict.
         """
@@ -2752,9 +2698,6 @@ class GovernanceClient:
                 continue
 
             provider    = _NODE_LLM.get(node_name, "groq")
-            model_override = None
-            if node_name == "PROMETHEUS" and provider == "cohere":
-                model_override = _PROMETHEUS_COHERE_MODEL or None
             philosophy  = node_cfg["philosophy"]
             role        = node_cfg["role"]
             primary     = node_cfg["primary"]
@@ -2777,12 +2720,7 @@ class GovernanceClient:
             )
 
             try:
-                raw = llm.call(
-                    provider,
-                    prompt,
-                    max_tokens=130,
-                    model=model_override,
-                )
+                raw = llm.call(provider, prompt, max_tokens=130)
                 if not raw or len(raw.strip()) < 10:
                     continue
 
@@ -2827,15 +2765,10 @@ class GovernanceClient:
                         "is_veto":         False,
                         "llm_deliberated": True,
                         "llm_provider":    provider,
-                        "llm_model":       model_override,
                     }
                     logger.debug(
-                        "LLM deliberation %s via %s/%s: %s (score=%d)",
-                        node_name,
-                        provider,
-                        model_override or "default",
-                        parsed_vote,
-                        parsed_score,
+                        "LLM deliberation %s via %s: %s (score=%d)",
+                        node_name, provider, parsed_vote, parsed_score,
                     )
 
             except Exception as e:
@@ -2923,7 +2856,6 @@ class GovernanceClient:
         action: str,
         hold_mode: bool = False,
         body_cycle: Optional[int] = None,
-        decision_meta: Optional[Dict[str, Any]] = None,
         no_llm: bool = False,
     ) -> Dict[str, Any]:
         """
@@ -2992,21 +2924,14 @@ class GovernanceClient:
         # ── 2b. Federation Friction-Domain Privilege Boost ───────
         # When MIND detects recursion, friction-domain nodes get boosted
         # scores to prevent the convergence trap.
-        # Domain→Node mapping aligned with FRICTION_DOMAINS in ark_curator.py
-        # post-FIX-2b, which sets the friction set to {3, 6, 9, 10}. The prior
-        # version of this mapping had "11": "IANUS" which was a latent bug:
-        # IANUS is the A9 Temporal Coherence node (see _NODE_PROVIDER_MAP at
-        # line 524), not A11. That bug was masked because MIND never sent
-        # friction on D11 after FIX-2b — but it also silently dropped D9's
-        # friction because "9" was not in the mapping. Corrected here so all
-        # four friction domains from MIND land on BODY.
+        # Domain→Node mapping: D3→CRITIAS, D6→THEMIS, D10→CHAOS, D11→IANUS
         friction_boost = self.get_federation_friction_boost()
         if friction_boost:
             _DOMAIN_TO_NODE = {
-                "3": "CRITIAS",    # D3 Autonomy / A3
-                "6": "THEMIS",     # D6 Collective / A6
-                "9": "IANUS",      # D9 Coherence / A9 Temporal Coherence
-                "10": "CHAOS",     # D10 Paradox / A10 Meta-Reflection
+                "3": "CRITIAS",    # D3 Autonomy
+                "6": "THEMIS",     # D6 Coherence / Collective  (LOGOS = expression layer of D6)
+                "10": "CHAOS",     # D10 Paradox / Contradiction
+                "11": "IANUS",     # D11 Emergence / Temporal
             }
 
             # ── Context-sensitive friction ────────────────────────
@@ -3342,22 +3267,10 @@ class GovernanceClient:
 
         # ── 10. Federation: Push decision to MIND ────────────────
         # Non-blocking — failures here don't affect the Parliament result.
-        federation_pushed = False
-        federation_error = None
         try:
-            federation_pushed = self.push_parliament_decision(
-                action,
-                result,
-                body_cycle=body_cycle,
-                decision_meta=decision_meta,
-            )
+            self.push_parliament_decision(action, result, body_cycle=body_cycle)
         except Exception as e:
-            federation_error = str(e)
             logger.debug("Federation decision push (non-critical): %s", e)
-
-        result["_diag_federation_decision_pushed"] = federation_pushed
-        if federation_error:
-            result["_diag_federation_decision_error"] = federation_error[:200]
 
         return result
 

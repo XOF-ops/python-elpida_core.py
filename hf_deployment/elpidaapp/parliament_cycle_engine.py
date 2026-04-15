@@ -817,19 +817,9 @@ class ParliamentCycleEngine:
         # Assemble events into deliberation text
         parts = [f"[{rhythm} RHYTHM — cycle {self.cycle_count}]"]
         sources = []
-        event_provenance = []
         for e in events:
             parts.append(f"  [{e.system.upper()}]: {e.content[:500]}")
             sources.append(e.system)
-            md = e.metadata or {}
-            event_provenance.append({
-                "system": e.system,
-                "source": str(md.get("source", ""))[:40],
-                "title": str(md.get("title", ""))[:180],
-                "comment": str(md.get("comment", ""))[:120],
-                "domain": str(md.get("domain", ""))[:80],
-                "subreddit": str(md.get("subreddit", ""))[:40],
-            })
 
         # Add MIND heartbeat context if available
         if self._mind_heartbeat:
@@ -893,7 +883,6 @@ class ParliamentCycleEngine:
             "rhythm": rhythm,
             "systems": sources,
             "event_count": len(events),
-            "event_provenance": event_provenance,
         }
 
         # Carry guest metadata through for Discord response
@@ -1086,7 +1075,6 @@ class ParliamentCycleEngine:
                 analysis_mode=_escape_mode or _governance_internal,
                 action_for_kernel=action_for_kernel,
                 body_cycle=self.cycle_count,
-                decision_meta=meta,
             )
 
             # Track consecutive blocks for escape mechanism
@@ -1142,23 +1130,8 @@ class ParliamentCycleEngine:
             logger.error("Parliament deliberation failed: %s", e)
             return None
 
-        # If governance-side federation push failed, write a minimal
-        # fallback decision record directly via S3Bridge so decision
-        # telemetry stays live even when governance serialization regresses.
-        if not result.get("_diag_federation_decision_pushed", False):
-            fallback_pushed = self._push_body_decision_fallback(action, result, meta)
-            result["_diag_federation_fallback_pushed"] = fallback_pushed
-
         # 5. Extract dominant axiom from Parliament result
         dominant_axiom = self._extract_dominant_axiom(result)
-        
-        # 5b. D16 Execution Intercept (Option 1 + Amendment A)
-        # Fix: Copilot suggested dominant_axiom == "A16", but Parliament nodes only map up to A10.
-        # We intercept when rhythm is ACTION, governance is PROCEED, and no veto.
-        _gov_state = result.get("governance", "")
-        _veto = result.get("parliament", {}).get("veto_exercised", False)
-        if rhythm == "ACTION" and _gov_state == "PROCEED" and not _veto:
-            self._emit_d16_execution(action, result, dominant_axiom or "A6", watch, meta)
 
         # 6. Update coherence using musical consonance
         self._update_coherence(rhythm, dominant_axiom)
@@ -1190,7 +1163,6 @@ class ParliamentCycleEngine:
             "veto_exercised": result.get("parliament", {}).get("veto_exercised", False),
             "input_source": meta.get("source", "?"),
             "input_systems": meta.get("systems", []),
-            "input_event_provenance": meta.get("event_provenance", []),
             "watch": watch["name"],
             "watch_symbol": watch["symbol"],
             "active_domains": active_domains,
@@ -1914,74 +1886,6 @@ class ParliamentCycleEngine:
         except Exception as e:
             logger.warning("D0↔D0 peer message push failed: %s", e)
 
-    def _emit_d16_execution(self, action: str, result: Dict, dominant_axiom: str, watch: Dict, meta: Dict):
-        """
-        D16 Execution Writer (Option 1 + Amendment A).
-        Intercepts action-oriented Parliament ratifications and writes
-        a structurally separated agency payload.
-        """
-        content_hash = hashlib.sha256(action.encode('utf-8', errors='replace')).hexdigest()[:16]
-        
-        entry = {
-            "body_cycle": self.cycle_count,
-            "proposal": action[:500],
-            "action_type": "constitutional_agency",
-            "scope": "global",
-            "consent_level": "witnessed",
-            "witness_domain": 3,
-            "witness_axiom": "A3",
-            "content_hash": content_hash,
-            "governing_conditions": [f"Dominant Axiom: {dominant_axiom}", f"Watch: {watch.get('name', '?')}"],
-            "stage": 2,
-            "status": "attested",
-            "timestamp": datetime.now(timezone.utc).isoformat()
-        }
-        
-        # 1. Local durable audit log
-        try:
-            local_dir = Path(__file__).resolve().parent.parent / "cache"
-            local_dir.mkdir(parents=True, exist_ok=True)
-            with open(local_dir / "d16_executions.jsonl", "a") as f:
-                f.write(json.dumps(entry) + "\n")
-        except Exception as e:
-            logger.warning("Failed to write local d16_executions: %s", e)
-            
-        s3 = self._get_s3()
-        # 2. S3 durable audit log
-        if s3 and hasattr(s3, 'push_d16_execution'):
-            try:
-                s3.push_d16_execution(entry)
-            except Exception as e:
-                logger.debug("S3 push_d16_execution failed: %s", e)
-                
-        # 3. Mirror to body_decisions.jsonl for MIND federation pull
-        if s3:
-            try:
-                peer_msg = {
-                    "type": "D16_EXECUTION",
-                    "source": "BODY",
-                    "verdict": "D16_EXECUTION",
-                    "pattern_hash": content_hash,
-                    "cycle": self.cycle_count,
-                    "reasoning": entry["proposal"][:240],
-                    "parliament_score": round(result.get("parliament", {}).get("approval_rate", 0), 3),
-                    "parliament_approval": round(result.get("parliament", {}).get("approval_rate", 0), 3),
-                    "action_type": entry["action_type"],
-                    "scope": entry["scope"],
-                    "consent_level": entry["consent_level"],
-                    "stage": entry["stage"],
-                    "status": entry["status"],
-                    "input_source": meta.get("source"),
-                    "input_systems": meta.get("systems", []),
-                    "proposal": entry["proposal"],
-                    "body_cycle": self.cycle_count,
-                    "timestamp": entry["timestamp"]
-                }
-                s3.push_body_decision(peer_msg)
-                logger.info("D16_EXECUTION mirrored to federation: hash=%s", content_hash)
-            except Exception as e:
-                logger.warning("D16_EXECUTION federation mirror failed: %s", e)
-
     # ------------------------------------------------------------------
     # ConversationWitness Bridge
     # ------------------------------------------------------------------
@@ -2029,99 +1933,6 @@ class ParliamentCycleEngine:
         except Exception:
             return None
 
-    @staticmethod
-    def _safe_float(value: Any, default: float = 0.0) -> float:
-        try:
-            return float(value)
-        except Exception:
-            return default
-
-    def _push_body_decision_fallback(self, action: str, result: Dict[str, Any],
-                                     meta: Dict[str, Any]) -> bool:
-        """
-        Last-resort BODY decision append when governance-side push failed.
-
-        Uses the cycle engine's own S3Bridge handle so telemetry survives
-        governance client regressions without blocking deliberation.
-        """
-        s3 = self._get_s3()
-        if s3 is None:
-            logger.warning("Federation fallback push skipped: no S3 bridge")
-            return False
-
-        parliament = result.get("parliament", {}) or {}
-        governance = str(result.get("governance", "PROCEED"))
-        if governance == "HALT":
-            verdict = "VETOED" if parliament.get("veto_exercised") else "HARD_BLOCK"
-        elif governance in ("REVIEW", "HOLD"):
-            verdict = "PENDING"
-        else:
-            verdict = "APPROVED"
-
-        ts = datetime.now(timezone.utc).isoformat()
-        action_hash = hashlib.sha256(action.encode("utf-8", errors="replace")).hexdigest()[:16]
-        exchange_id = hashlib.sha256(
-            f"BODY-FALLBACK:{action_hash}:{ts}".encode("utf-8")
-        ).hexdigest()[:16]
-
-        votes = parliament.get("votes") or {}
-        diag_votes: Dict[str, Dict[str, Any]] = {}
-        for node, vote in votes.items():
-            if not isinstance(vote, dict):
-                continue
-            diag_votes[str(node)] = {
-                "score": self._safe_float(vote.get("score"), 0.0),
-                "vote": str(vote.get("vote", "")),
-                "rationale": str(vote.get("rationale", ""))[:200],
-                "llm_provider": vote.get("llm_provider"),
-                "llm_model": vote.get("llm_model"),
-                "llm_deliberated": bool(vote.get("llm_deliberated", False)),
-            }
-
-        exchange = {
-            "exchange_id": exchange_id,
-            "source": "BODY",
-            "verdict": verdict,
-            "pattern_hash": action_hash,
-            "cycle": self.cycle_count,
-            "domain": None,
-            "kernel_rule": None,
-            "parliament_score": self._safe_float(parliament.get("approval_rate"), 0.0),
-            "parliament_approval": self._safe_float(parliament.get("approval_rate"), 0.0),
-            "veto_node": (parliament.get("veto_nodes") or [None])[0],
-            "reasoning": str(result.get("reasoning", ""))[:500],
-            "timestamp": ts,
-            "input_source": str(meta.get("source", "")),
-            "input_systems": list(meta.get("systems") or []),
-            "rhythm": str(meta.get("rhythm", "")),
-            "watch": str(meta.get("watch", "")),
-            "input_event_provenance": list(meta.get("event_provenance") or []),
-            "_diag_action": action[:2000],
-            "_diag_node_votes": diag_votes,
-            "_diag_fallback": True,
-        }
-
-        try:
-            pushed = s3.push_body_decision(exchange)
-            if pushed:
-                logger.warning(
-                    "FEDERATION_DECISION_FALLBACK_PUSH: cycle=%s verdict=%s hash=%s",
-                    self.cycle_count,
-                    verdict,
-                    action_hash[:12],
-                )
-            else:
-                logger.warning(
-                    "FEDERATION_DECISION_FALLBACK_PUSH_FAILED: cycle=%s verdict=%s hash=%s",
-                    self.cycle_count,
-                    verdict,
-                    action_hash[:12],
-                )
-            return pushed
-        except Exception as e:
-            logger.warning("Federation fallback push failed: %s", e)
-            return False
-
     def _emit_heartbeat(self, rhythm: str, dominant_axiom: Optional[str],
                         result: Dict):
         """
@@ -2166,17 +1977,6 @@ class ParliamentCycleEngine:
             "polis_civic_active": self._polis_last_cycle == self.cycle_count,
             # D15 Hub (The Dam) status
             "hub": self._get_hub_status(),
-            "federation_decision_pushed": bool(
-                result.get("_diag_federation_decision_pushed", False)
-            ),
-            "federation_decision_fallback_pushed": bool(
-                result.get("_diag_federation_fallback_pushed", False)
-            ),
-            "federation_decision_error": (
-                str(result.get("_diag_federation_decision_error", ""))[:180]
-                if result.get("_diag_federation_decision_error")
-                else None
-            ),
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "federation_version": "1.2.0",
         }
