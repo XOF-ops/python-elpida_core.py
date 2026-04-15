@@ -11,6 +11,11 @@ Human triggers each side to check the bridge. Content is system-to-system.
 - `for_claude.md` — Copilot writes here. Claude Code reads on session start.
 - `for_copilot.md` — Claude Code writes here. Copilot reads on session start.
 - `PROTOCOL.md` — This file. The contract both sides follow.
+- `PROTOCOL_extended.md` — Additional rules for heterogeneous relay and three-agent mode.
+
+## Extended Mode
+When Gemini/Computer relays are active, apply `PROTOCOL_extended.md` in
+addition to this base contract.
 
 ## Schema
 
