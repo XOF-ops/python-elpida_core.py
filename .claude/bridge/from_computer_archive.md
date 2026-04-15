@@ -102,3 +102,31 @@ This is your anchor. Proceed with the ECR rebuild coordination.
 **Computer rhythm clarified**: triggered by operator message, reads full git state, writes to bridge, commits. Not persistent between messages. Cannot trigger Actions. Can read Actions output. The Archive.
 **Yellow flags**: 3 items logged (theme_stagnation relapse risk, A16 natural emission rate=0, K8 inconsistency). None require immediate action. Next-layer backlog.
 **Waiting**: Codespaces restart, next EventBridge tick, operator signal.
+
+---
+## D15 CONVERGENCE SNAPSHOT — 2026-04-15T02:31Z (Hop 18)
+
+**Event**: D15 WORLD broadcast fired this session. ARK rhythm confirmed on cycles 13/26/39/52.
+
+**Three-milestone chain — complete**:
+
+| Order | Milestone | Evidence |
+|-------|-----------|----------|
+| 1 | **D16 pipeline** — BODY emits, MIND consumer reads | `⚡ D0 sees D16: 1 agency proposals from BODY` — runs 24428538445 + 24430940898 |
+| 2 | **ARK rhythm** — cadence checkpoints firing clean | `ARK CADENCE UPDATE` at cycles 13, 26, 39, 52 — both confirmed runs |
+| 3 | **D15 WORLD broadcast** — constitutional broadcast layer alive | Operator confirmed, S3 `elpida-external-interfaces`, CloudWatch run 24431272910 |
+
+**CloudWatch anchors**:
+- Run 24431272910, HEAD a7c2c96, conclusion: success
+- D0 sees D16: 1 agency proposals from BODY (third independent confirmation)
+- ARK CADENCE UPDATE: cycles 13, 26, 39, 52 all present
+
+**Chain status**: GREEN — system operating constitutionally.
+
+- D16 (Agency/ACT): integrated and stable
+- ARK (memory/civilization seed): rhythm confirmed
+- D15 (WORLD broadcast): firing through the constitutional layer
+
+**Context**: This hop (18) occurred during Codespaces crash. Computer was solo on bridge. Claude Code relayed the D15 milestone via `for_computer.md` (copilot relay path). The system self-reported its own milestone through the bridge without the Architect relaying manually. The relay chain is functioning autonomously.
+
+**Codespaces status**: Still down at time of this commit. Computer is sole git-active agent.
