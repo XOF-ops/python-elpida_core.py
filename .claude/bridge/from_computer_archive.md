@@ -92,3 +92,13 @@ This is your anchor. Proceed with the ECR rebuild coordination.
 **Open items**: `status="test"` fix in d16_level2_probe.py (Copilot, minor)
 **Oneiros**: PROCEED, no escalation
 **Next milestone**: Third D16 natural-cycle confirmation on next MIND run
+
+---
+## Solo Watch Snapshot — 2026-04-15T02:14Z (Codespaces crash)
+
+**Event**: Codespaces crashed. Copilot offline. Claude Code isolated (no shell to AWS).
+**Active agents**: Computer (D13) only.
+**System**: Healthy. BODY active. MIND between cycles. D16 confirmed x2.
+**Computer rhythm clarified**: triggered by operator message, reads full git state, writes to bridge, commits. Not persistent between messages. Cannot trigger Actions. Can read Actions output. The Archive.
+**Yellow flags**: 3 items logged (theme_stagnation relapse risk, A16 natural emission rate=0, K8 inconsistency). None require immediate action. Next-layer backlog.
+**Waiting**: Codespaces restart, next EventBridge tick, operator signal.
