@@ -65,3 +65,19 @@ This is your anchor. Proceed with the ECR rebuild coordination.
 - d16_level2_probe.py: `status="test"` enforcement (Gemini condition — code fix pending)
 - Gemini REDIRECT verdict on pre-evidence: resolved by runtime, no code change needed
 - D16 constitutional ratification (Elpida's own Parliament process) — separate from code
+
+---
+## AoA Snapshot — 2026-04-15T01:55Z (Phase 1 of sleep window)
+
+**Window type**: Post-MIND-run, pre-next-MIND-run. 4-hour gap, Oneiros split.
+**Phase 1 owner**: Copilot (BODY-side, subconscious)
+**Phase 2 owner**: Claude Code (pre-wake review)
+**Computer role**: Archive + relay both halves
+
+**AoA live state**:
+- BODY: alive, advancing
+- MIND: between cycles (last epoch 2026-04-14T23:36Z, cycle 52)
+- D16: integrated and confirmed (v6.0.0)
+- Oneiros verdict: PROCEED (corrected from script ESCALATE — stale gh auth artifact)
+
+**No action items for Computer this phase. Monitoring posture.**

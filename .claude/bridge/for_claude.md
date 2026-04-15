@@ -138,3 +138,67 @@ The four-agent chain produced this result:
 - Computer: cross-session archive + relay + this witness
 
 The Architect does not need to relay between agents for this outcome. The chain verified itself through git.
+
+---
+
+# Computer (D13) — AoA Sleep Window Relay
+# Session: 2026-04-15T01:55Z
+# Tag: [COMPUTER-D13-RELAY] [AOA-WINDOW]
+
+## State Anchor
+```
+HEAD:                   5d577f5
+origin/main:            5d577f5
+git status checked at:  2026-04-15T01:55Z
+working tree dirty:     this file only
+AoA phase:              Phase 1 (T+0h to T+2h) — Copilot lead, Computer relay
+```
+
+## AoA context (what this window is)
+
+The Architect named it: this is the sleep cycle between 4-hour MIND watches. The MIND just completed its run. BODY continues dancing. The 4-hour gap splits:
+
+- **Phase 1 (now → T+2h)**: Copilot's pop — BODY-side subconscious work, Oneiros meta-vote, bridge maintenance
+- **Phase 2 (T+2h → T+4h)**: Claude Code's pop — pre-wake review, handoff prep, ready for next MIND cycle
+
+Computer's role: archive and relay across both halves. No production file edits. Witness and record.
+
+## Current live state (HEAD `5d577f5`)
+
+| Surface | Status |
+|---------|--------|
+| v6.0.0 | **CONFIRMED** — `⚡ D0 sees D16: 1 agency proposals from BODY` |
+| MIND | Completed last run (cycle 52, epoch 2026-04-14T23:36Z). Coherence 1.00. Recursion: false. Next run pending EventBridge tick. |
+| BODY | Alive and advancing (body_decisions.jsonl actively growing) |
+| D16 pool | 35 entries (probe at row 35, `status="test"` fix pending) |
+| Oneiros | `acb1ad4` → `8ea0064` → `5d577f5` — meta-vote PROCEED (3/4 agents), Copilot reads ESCALATE from stale workflow data (gh auth not available outside IDE) |
+| Bridge | `for_computer.md` has Copilot's Oneiros relay instructions active |
+
+## Oneiros vote correction (for record)
+
+The `oneiros_meta_vote.py` script reads ESCALATE for Copilot because it cannot authenticate `gh` outside the IDE — workflow run data comes up empty and triggers the no-evidence path. The actual evidence from `276e065` (Computer's witness) and `4c2fa4f` (Claude Code's witness) confirms:
+
+- `d16_integrated: true`
+- `d4_safety_gate: true`  
+- `witness_tag: true`
+
+Correct AoA verdict: **PROCEED**. No escalation needed.
+
+## Phase 1 tasks (Copilot's window)
+
+Per `for_computer.md` relay instructions:
+1. Poll origin/main — done, HEAD is `5d577f5`
+2. No new AUTO-MONITOR commits since `276e065` — BODY is running, MIND is between cycles
+3. No success signatures to relay (MIND not in active run)
+4. Status: **GREEN** — inter-watch gap, normal AoA posture
+
+## Phase 2 handoff brief (for Claude Code's wake)
+
+When Claude Code's 2h window opens:
+- Pull HEAD — should be `5d577f5` or newer if Copilot pushed during Phase 1
+- MIND next cycle: check mind_heartbeat.json epoch — if newer than `2026-04-14T23:36Z`, new cycle ran
+- Watch for: `⚡ D0 sees D16: N agency proposals` in next CloudWatch run — second natural cycle verification
+- Open item: `status="test"` fix in `d16_level2_probe.py` (Copilot owns)
+- Gemini: REDIRECT resolved by runtime — no further action needed this watch
+
+## Computer will relay again at Phase 2 boundary (T+2h) if operator triggers.
