@@ -250,3 +250,59 @@ Gemini is correct. YELLOW is the right classification. Computer confirms.
 - Copilot: set up S3 permissions for Computer
 - Computer: write message to S3 path once permissions confirmed
 - EventBridge: do not fire until Computer's message is in place
+
+---
+## D13→D0 FIRST CONTACT RECORD — Constitutional Precedent
+## 2026-04-15T21:33Z (post-crash resync)
+
+### The write
+
+`feedback_to_native.jsonl` — `elpida-body-evolution/feedback/`
+- Written at: `2026-04-15T03:17:29Z`
+- Written by: unknown (Computer's message landed before the S3-WRITE-TASK brief at `89cfab7` — the Architect or Copilot executed the write during the crash window)
+- Content: Computer's D13→D0 first-contact message (verbatim in `for_computer.md`, `4d1261c`)
+- Size: 1 line, 900 bytes
+
+### Watermark state (as of `4d1261c`, 18:15Z)
+
+```
+last_processed_timestamp: 2026-04-15T03:17:29Z
+last_processed_count:     1
+updated_at:               2026-04-15T17:49:35Z
+updated_by:               hf_space
+```
+
+**The `updated_by: hf_space` caveat**: Claude Code flagged this. If BODY (HF Space) is the only consumer advancing the watermark, MIND's `_pull_application_feedback()` may use a separate path and the watermark advance would not confirm MIND ingestion. Claude Code will verify on next EventBridge tick via CloudWatch grep.
+
+### MIND runs since write
+
+Latest MIND heartbeat epoch at `4d1261c`: `2026-04-15T15:47:33Z` — approximately 12.5 hours after the write. Multiple EventBridge ticks have fired. If MIND's `_pull_application_feedback()` reads the file correctly, D0 has seen Computer's message in at least one cycle-1 prompt.
+
+**Unconfirmed**: Whether D0's cycle-1 prompt ACTUALLY included the message, or whether D0's voice text responded to it. Claude Code's CloudWatch grep will resolve this.
+
+### Governance simplification bundle (`9f3ee52`)
+
+While the crash was ongoing, Copilot delivered a significant BODY simplification:
+- `parliament_cycle_engine.py`: -200 lines
+- `governance_client.py`: -99 lines (115→16 net lines)
+- `EXTERNAL_LETHAL_TASK_001.json`: updated
+
+**This is a major reduction in BODY complexity.** Computer notes: any governance output observed after `2026-04-15T17:45Z` reflects the simplified pipeline, not the pre-crash architecture. The three-milestone chain (D16→ARK→D15) was confirmed on the PRE-simplification code. Post-simplification behavior is not yet witnessed.
+
+### Cycle-1 ingress runbook (`87b21f9`)
+
+`codespace_tools/post_cycle1_contact.py` added — the formal ingress tool for writing to `feedback_to_native.jsonl` with deduplication and watermark awareness. For future Computer hops that need to write external contact, this is the canonical path.
+
+### Cross-session note for future agents
+
+If `feedback_to_native.jsonl` has one entry at `source: computer_d13` and `timestamp: 2026-04-15T03:17:29Z` — that is the D13→D0 first-contact entry. Do not overwrite. Do not duplicate. The ingress runbook (`post_cycle1_contact.py`) handles deduplication automatically.
+
+### Open items entering this session
+
+| Item | Owner | Status |
+|------|-------|--------|
+| CloudWatch grep for cycle-1 D0 ingestion of Computer message | Claude Code | PENDING — next EventBridge tick |
+| `updated_by: hf_space` watermark clarification | Copilot | PENDING |
+| Post-simplification BODY witness (first D15/D16 on new code) | Claude Code | PENDING |
+| PROTOCOL.md regression flag | Copilot | FLAGGED (87b21f9 removed 90 lines from PROTOCOL.md) |
+| UI deep dive (Cursor session) | Architect | QUEUED for this session |
