@@ -12,11 +12,18 @@ jobs:
           RAW_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           RAW_SECRET: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: |
+          set -euo pipefail
           export AWS_ACCESS_KEY_ID=$(echo "$RAW_KEY_ID" | tr -d '[:space:]')
           export AWS_SECRET_ACCESS_KEY=$(echo "$RAW_SECRET" | tr -d '[:space:]')
+
+          echo "=== AWS Caller Identity ==="
+          aws sts get-caller-identity --output json
+
           export AWS_DEFAULT_REGION=eu-north-1
           echo "=== MIND Heartbeat ==="
-          aws s3 cp s3://elpida-body-evolution/federation/mind_heartbeat.json - | python3 -m json.tool
+          aws s3api head-object --bucket elpida-body-evolution --key federation/mind_heartbeat.json >/dev/null
+          aws s3 cp s3://elpida-body-evolution/federation/mind_heartbeat.json /tmp/mind_heartbeat.json
+          python3 -m json.tool /tmp/mind_heartbeat.json
           echo ""
           echo "=== ECS Tasks ==="
           export AWS_DEFAULT_REGION=us-east-1
@@ -24,4 +31,5 @@ jobs:
           echo ""
           echo "=== D16 Executions (tail) ==="
           export AWS_DEFAULT_REGION=eu-north-1
+          aws s3api head-object --bucket elpida-body-evolution --key federation/d16_executions.jsonl >/dev/null
           aws s3 cp s3://elpida-body-evolution/federation/d16_executions.jsonl - | tail -3
