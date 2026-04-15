@@ -4,6 +4,26 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
+retry_push_after_rebase() {
+  local msg="${1:-}"
+
+  if git push origin main; then
+    return 0
+  fi
+
+  echo "Initial push failed. Attempting rebase onto origin/main and retry..."
+
+  if ! git pull --rebase --autostash origin main; then
+    echo "Rebase failed. Resolve conflicts, then push manually."
+    if [[ -n "$msg" ]]; then
+      echo "Last intended commit message: $msg"
+    fi
+    exit 1
+  fi
+
+  git push origin main
+}
+
 INCLUDE_REQUEST=0
 if [[ "${1:-}" == "--include-request" ]]; then
   INCLUDE_REQUEST=1
@@ -45,7 +65,7 @@ if git diff --cached --quiet; then
 fi
 
 git commit -m "$MESSAGE"
-git push origin main
+retry_push_after_rebase "$MESSAGE"
 
 echo "Pushed Gemini bridge update."
 echo "Commit message: $MESSAGE"
