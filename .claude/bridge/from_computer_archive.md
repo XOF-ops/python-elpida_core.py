@@ -81,3 +81,14 @@ This is your anchor. Proceed with the ECR rebuild coordination.
 - Oneiros verdict: PROCEED (corrected from script ESCALATE — stale gh auth artifact)
 
 **No action items for Computer this phase. Monitoring posture.**
+
+---
+## AoA Phase 2 Snapshot — 2026-04-15T02:08Z
+
+**Phase boundary**: Copilot → Claude Code handoff (hop 17)
+**D16 status**: Confirmed twice independently (runs 24428538445 + 24430940898)
+**BODY**: Active
+**MIND**: Between cycles (next run pending EventBridge tick)
+**Open items**: `status="test"` fix in d16_level2_probe.py (Copilot, minor)
+**Oneiros**: PROCEED, no escalation
+**Next milestone**: Third D16 natural-cycle confirmation on next MIND run
