@@ -86,6 +86,12 @@ python codespace_tools/oneiros_meta_vote.py
 # Optional: include DeepSeek + Codex advisory ballots
 python codespace_tools/oneiros_meta_vote.py --include-external
 
+# Optional: write phase instructions directly to bridge channels
+python codespace_tools/oneiros_meta_vote.py --write-bridge
+
+# Include Claude channel too (default writes gemini+computer only)
+python codespace_tools/oneiros_meta_vote.py --write-bridge --write-targets gemini,computer,claude
+
 # Optional: Cluster any existing raw CloudWatch export
 python codespace_tools/cluster_k2_diag.py --input ElpidaInsights/k2_diag_runs_smoke.log
 ```

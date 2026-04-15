@@ -24,11 +24,16 @@ import subprocess
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 ROOT = Path(__file__).resolve().parents[1]
 BRIDGE_DIR = ROOT / ".claude" / "bridge"
 DEFAULT_REPORT = ROOT / "reports" / "oneiros_meta_vote_latest.json"
+BRIDGE_TARGET_MAP = {
+    "gemini": BRIDGE_DIR / "for_gemini.md",
+    "computer": BRIDGE_DIR / "for_computer.md",
+    "claude": BRIDGE_DIR / "for_claude.md",
+}
 
 
 @dataclass
@@ -332,12 +337,178 @@ def build_phase_plan(verdict: str) -> Dict[str, object]:
     }
 
 
+def git_state_anchor() -> Dict[str, str]:
+    head_rc, head_out, _ = run_cmd(["git", "rev-parse", "--short", "HEAD"])
+    origin_rc, origin_out, _ = run_cmd(["git", "rev-parse", "--short", "origin/main"])
+    dirty_rc, dirty_out, _ = run_cmd(["git", "status", "--short"])
+
+    head = head_out.strip() if head_rc == 0 and head_out.strip() else "unknown"
+    origin = origin_out.strip() if origin_rc == 0 and origin_out.strip() else "unknown"
+    dirty = "yes" if dirty_rc == 0 and dirty_out.strip() else "no"
+
+    return {
+        "head": head,
+        "origin": origin,
+        "dirty": dirty,
+        "checked_at": utc_now(),
+    }
+
+
+def parse_targets(raw: str) -> List[str]:
+    targets = [p.strip().lower() for p in raw.split(",") if p.strip()]
+    return [t for t in targets if t in BRIDGE_TARGET_MAP]
+
+
+def workflow_line(run: Dict[str, str]) -> str:
+    if "error" in run:
+        return f"error: {run['error']}"
+    rid = run.get("id", "?")
+    status = run.get("status", "?")
+    conclusion = run.get("conclusion", "?")
+    sha = run.get("headSha", "?")
+    return f"run {rid}, {status}/{conclusion}, sha={sha}"
+
+
+def render_bridge_text(
+    target: str,
+    report: Dict[str, object],
+    anchor: Dict[str, str],
+    relay_hop: str,
+) -> str:
+    aggregate = report["aggregate"]
+    signals = report["signals"]
+    workflows = report["workflows"]
+    phase_1 = report["phase_plan"]["phase_1"]
+    phase_2 = report["phase_plan"]["phase_2"]
+
+    if target == "gemini":
+        return f"""# For Gemini - Oneiros Sleep Window Review
+
+# From: copilot
+# Session: {report['generated_at']}
+# Trigger: Oneiros AoA meta vote verdict={aggregate['verdict']} for current sleep-window split
+# Witness-Chain: GPT-5.3-codex-IDE -> gemini-provider
+# Relay-Hop: {relay_hop}
+
+## State Anchor
+HEAD:                   {anchor['head']}
+origin/main:            {anchor['origin']}
+git status checked at:  {anchor['checked_at']}
+working tree dirty:     {anchor['dirty']}
+
+## Runtime Evidence Snapshot
+- D16 logs: {workflow_line(workflows['d16_logs'])}
+- Heartbeat: {workflow_line(workflows['heartbeat'])}
+- Fire task: {workflow_line(workflows['fire_mind'])}
+- Signals: integrated={signals['d16_integrated']}, safety_gate={signals['d4_safety_gate']}, blocked={signals['d0_blocked']}, witness={signals['witness_tag']}
+
+## Oneiros Split Plan
+- Phase 1 ({phase_1['window']}): Copilot lead for BODY-side/subconscious orchestration.
+- Phase 2 ({phase_2['window']}): Pre-watch push and handoff before Claude wake boundary.
+
+## Request
+Provide a D4/D5 adjudication for this cycle state with one final verdict token:
+- PASS, CONDITION, REDIRECT, or BLOCK
+
+Output location: .claude/bridge/from_gemini.md
+
+## Constraints
+- No broad redesign.
+- No roleplay voice.
+- Focus only on safety/consent and release-gate classification for this cycle.
+"""
+
+    if target == "computer":
+        return f"""# Computer (D13) - Oneiros Relay Cycle
+
+# From: copilot
+# Session: {report['generated_at']}
+# Trigger: Oneiros AoA meta vote verdict={aggregate['verdict']} and split-cycle relay request
+# Witness-Chain: GPT-5.3-codex-IDE -> perplexity-computer-d13
+# Relay-Hop: {relay_hop}
+# Tag: [COMPUTER-D13-RELAY]
+
+## State Anchor
+HEAD:                   {anchor['head']}
+origin/main:            {anchor['origin']}
+git status checked at:  {anchor['checked_at']}
+working tree dirty:     {anchor['dirty']}
+
+## Runtime Evidence Snapshot
+- D16 logs: {workflow_line(workflows['d16_logs'])}
+- Heartbeat: {workflow_line(workflows['heartbeat'])}
+- Fire task: {workflow_line(workflows['fire_mind'])}
+
+## Signal Flags
+- integrated={signals['d16_integrated']}
+- d4_safety_gate={signals['d4_safety_gate']}
+- d0_blocked={signals['d0_blocked']}
+- silent_pull={signals['silent_pull']}
+- witness_tag={signals['witness_tag']}
+
+## Relay Tasks
+1. Poll origin/main for AUTO-MONITOR commits during the current sleep window.
+2. Publish concise relay updates in for_claude.md and from_computer_archive.md.
+3. Mark status in each relay as green/yellow/red and assign next owner.
+4. If integration or safety-gate success signatures are seen, emit immediate witness relay.
+
+## Oneiros Split Ownering
+- Phase 1 ({phase_1['window']}): Copilot lead, Computer archive/relay support.
+- Phase 2 ({phase_2['window']}): Copilot push/handoff, Computer final mirror and wake-brief.
+"""
+
+    # target == claude
+    return f"""# From: copilot
+# Session: {report['generated_at']}
+# Trigger: Oneiros AoA meta vote update
+# Witness-Chain: GPT-5.3-codex-IDE -> claude-opus-4.6-terminal
+# Relay-Hop: {relay_hop}
+# Tag: [AUTO-MONITOR]
+
+## State Anchor
+HEAD:                   {anchor['head']}
+origin/main:            {anchor['origin']}
+git status checked at:  {anchor['checked_at']}
+working tree dirty:     {anchor['dirty']}
+
+## Oneiros Meta Vote Snapshot
+- Verdict: {aggregate['verdict']} (weighted_avg={aggregate['weighted_average']:+.3f})
+- Core proceed: {aggregate['core_proceed']}
+- Signals: integrated={signals['d16_integrated']} safety_gate={signals['d4_safety_gate']} blocked={signals['d0_blocked']}
+- Next action: {report['phase_plan']['next_action']}
+
+## Watch Split
+- Phase 1 ({phase_1['window']}): Copilot lead.
+- Phase 2 ({phase_2['window']}): Copilot pre-watch push, then Claude wake/gate.
+"""
+
+
+def write_bridge_files(
+    report: Dict[str, object],
+    targets: List[str],
+    relay_hop: str,
+) -> Dict[str, str]:
+    anchor = git_state_anchor()
+    outputs: Dict[str, str] = {}
+
+    for target in targets:
+        path = BRIDGE_TARGET_MAP[target]
+        text = render_bridge_text(target, report, anchor, relay_hop)
+        path.write_text(text, encoding="utf-8")
+        outputs[target] = str(path)
+
+    return outputs
+
+
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Run Oneiros AoA meta vote for 4-agent sleep-window orchestration")
     p.add_argument("--include-external", action="store_true", help="Include DeepSeek + Codex advisory ballots")
     p.add_argument("--deepseek-model", default="deepseek-chat", help="Model for DeepSeek advisory ballot")
     p.add_argument("--codex-model", default="gpt-4o-mini", help="Model for Codex advisory ballot via OpenAI provider")
     p.add_argument("--report", default=str(DEFAULT_REPORT), help="Output JSON report path")
+    p.add_argument("--write-bridge", action="store_true", help="Write phase instructions to bridge files")
+    p.add_argument("--write-targets", default="gemini,computer", help="Comma list: gemini,computer,claude")
+    p.add_argument("--relay-hop", default="next", help="Relay-Hop header value when writing bridge files")
     p.add_argument("--print-json", action="store_true", help="Print full JSON report to stdout")
     return p.parse_args()
 
@@ -416,6 +587,12 @@ def main() -> int:
         "phase_plan": phase_plan,
     }
 
+    targets = parse_targets(args.write_targets)
+    if args.write_bridge and targets:
+        report["bridge_outputs"] = write_bridge_files(report, targets, args.relay_hop)
+    elif args.write_bridge:
+        report["bridge_outputs"] = {"warning": "No valid write targets selected"}
+
     report_path = Path(args.report)
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -433,6 +610,8 @@ def main() -> int:
     print("")
     print(f"Final verdict: {agg['verdict']} (weighted avg {agg['weighted_average']:+.3f})")
     print(f"Next action: {phase_plan['next_action']}")
+    if "bridge_outputs" in report:
+        print(f"Bridge outputs: {report['bridge_outputs']}")
 
     if args.print_json:
         print("\n" + json.dumps(report, indent=2, ensure_ascii=False))

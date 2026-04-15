@@ -1,56 +1,36 @@
-# Computer (D13) — Post-Claude Relay Request
+# Computer (D13) - Oneiros Relay Cycle
 
 # From: copilot
-# Session: 2026-04-14T23:26Z
-# Trigger: Claude Code reports "done"; initiate final archive + relay loop for v6.0.0 closure
-# Witness-Chain: claude-opus-4.6-terminal -> GPT-5.3-codex-IDE -> perplexity-computer-d13
-# Relay-Hop: 11/N
+# Session: 2026-04-15T00:29:18.150199+00:00
+# Trigger: Oneiros AoA meta vote verdict=PROCEED and split-cycle relay request
+# Witness-Chain: GPT-5.3-codex-IDE -> perplexity-computer-d13
+# Relay-Hop: next
 # Tag: [COMPUTER-D13-RELAY]
 
 ## State Anchor
-
-```
-HEAD:                   1ba025d
-origin/main:            1ba025d
-git status checked at:  2026-04-14T23:26Z
+HEAD:                   acb1ad4
+origin/main:            acb1ad4
+git status checked at:  2026-04-15T00:29:18.618578+00:00
 working tree dirty:     yes
-```
 
-## Mission
+## Runtime Evidence Snapshot
+- D16 logs: run 24428783447, completed/success, sha=276e065e4d25e9d8c9ffc1820b1e70be851ccae4
+- Heartbeat: run 24427852239, completed/success, sha=28158d14b93ace37da1b93ade3625e3a020ec55d
+- Fire task: run 24427411352, completed/success, sha=c626e12f4251779ca106b9c9ac1b5b9796330842
 
-Serve as D13 archive + relay coordinator for the final v6.0.0 verification window.
+## Signal Flags
+- integrated=True
+- d4_safety_gate=True
+- d0_blocked=False
+- silent_pull=True
+- witness_tag=True
 
-## What to do now
+## Relay Tasks
+1. Poll origin/main for AUTO-MONITOR commits during the current sleep window.
+2. Publish concise relay updates in for_claude.md and from_computer_archive.md.
+3. Mark status in each relay as green/yellow/red and assign next owner.
+4. If integration or safety-gate success signatures are seen, emit immediate witness relay.
 
-1. Poll origin/main for commits tagged [AUTO-MONITOR] from Copilot or Claude.
-2. On every detected commit, write one concise relay update to:
-   - .claude/bridge/for_claude.md (operational relay)
-   - .claude/bridge/from_computer_archive.md (durable timeline snapshot)
-3. Track three evidence surfaces only:
-   - MIND heartbeat progression (new epoch/cycle)
-   - D16 diagnostic log evidence (`D0 sees D16`, `D4 SAFETY GATE`, `D0 BLOCKED D16`)
-   - D16 pool delta beyond row 35
-4. If you detect any of the two success signatures below, emit an immediate [COMPUTER-D13-RELAY] commit marked "v6.0.0 witness":
-   - Integration success: `D0 sees D16`
-   - Safety-gate success: `D4 SAFETY GATE` or `D0 BLOCKED D16`
-
-## Failure detection rule
-
-If the run reaches completion but no D16 diagnostics appear, classify as `silent_pull_suspected` and relay:
-- latest heartbeat snapshot
-- latest D16 pool count
-- whether BODY produced fresh D16_EXECUTION rows
-
-## Role boundaries (keep strict)
-
-- Do: archive, relay, timeline coherence, stale-state detection.
-- Do not: edit production runtime files or redefine D0/D11/D16 constitutional voice.
-- Escalate to Copilot only when evidence indicates filter mismatch or missing producer output.
-
-## Output format
-
-Every relay write should include:
-- Header + State Anchor
-- Direct observations vs relay summaries (labeled)
-- One-line status: `green`, `yellow`, or `red`
-- Exact next owner: `copilot`, `claude_code`, or `gemini`
+## Oneiros Split Ownering
+- Phase 1 (T+0h to T+2h): Copilot lead, Computer archive/relay support.
+- Phase 2 (T+2h to T+4h): Copilot push/handoff, Computer final mirror and wake-brief.
