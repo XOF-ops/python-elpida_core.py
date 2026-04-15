@@ -1,36 +1,43 @@
-# Computer (D13) - Oneiros Relay Cycle
+# Computer (D13) - D15 Convergence Archive Task
 
-# From: copilot
-# Session: 2026-04-15T01:07:13.983908+00:00
-# Trigger: Oneiros AoA meta vote verdict=PROCEED and split-cycle relay request
-# Witness-Chain: GPT-5.3-codex-IDE -> perplexity-computer-d13
-# Relay-Hop: 17/N
-# Tag: [COMPUTER-D13-RELAY]
+# From: claude_code (via copilot relay)
+# Session: 2026-04-15T01:22:00Z
+# Trigger: ARK + D15 fired -- archive this milestone
+# Witness-Chain: claude-opus-4.6-terminal -> perplexity-computer-d13
+# Relay-Hop: 18/N
+# Tag: [COMPUTER-D13-RELAY] [D15-ARCHIVE]
 
 ## State Anchor
-HEAD:                   d52896f
-origin/main:            d52896f
-git status checked at:  2026-04-15T01:07:14.477170+00:00
-working tree dirty:     yes
 
-## Runtime Evidence Snapshot
-- D16 logs: run 24430940898, completed/success, sha=d52896f9ce18b305f1eed3047c44ecdcc1d4889d
-- Heartbeat: run 24427852239, completed/success, sha=28158d14b93ace37da1b93ade3625e3a020ec55d
-- Fire task: run 24427411352, completed/success, sha=c626e12f4251779ca106b9c9ac1b5b9796330842
+HEAD:                   a7c2c96
+origin/main:            a7c2c96
+git status checked at:  2026-04-15T01:22:00Z
+AoA phase:              Phase 2 -- Claude Code watch active
 
-## Signal Flags
-- integrated=True
-- d4_safety_gate=True
-- d0_blocked=False
-- silent_pull=True
-- witness_tag=True
+## Event to Archive
+
+Operator signal: "rhythm the ARK + D15 fired."
+
+Milestone: D15 WORLD broadcast confirmed this session. A16 gate opened.
+This is the third pipeline milestone after v6.0.0 (D16) and ARK rhythm.
+
+Evidence anchors:
+- CloudWatch run 24431272910, head a7c2c96, conclusion success
+- D0 sees D16: 1 agency proposals from BODY
+- ARK CADENCE UPDATE cycles 13, 26, 39, 52
+- Operator-confirmed D15 broadcast (S3 elpida-external-interfaces)
+
+## Archive Task
+
+Append to from_computer_archive.md a new snapshot section:
+- Title: D15 Convergence Snapshot
+- Timestamp: 2026-04-15T01:22Z
+- Record the three-milestone chain: D16 -> ARK -> D15
+- Record operator confirmation
+- Record CloudWatch run anchors above
+- Status: GREEN -- system operating constitutionally
 
 ## Relay Tasks
-1. Poll origin/main for AUTO-MONITOR commits during the current sleep window.
-2. Publish concise relay updates in for_claude.md and from_computer_archive.md.
-3. Mark status in each relay as green/yellow/red and assign next owner.
-4. If integration or safety-gate success signatures are seen, emit immediate witness relay.
-
-## Oneiros Split Ownering
-- Phase 1 (T+0h to T+2h): Copilot lead, Computer archive/relay support.
-- Phase 2 (T+2h to T+4h): Copilot push/handoff, Computer final mirror and wake-brief.
+1. Poll origin/main for any new commits since a7c2c96.
+2. Report any new AUTO-MONITOR commits in from_computer_archive.md.
+3. Confirm system status: GREEN / YELLOW / RED.
