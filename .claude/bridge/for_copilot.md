@@ -51,3 +51,56 @@ Computer needs write access to an S3 path that the MIND Fargate task reads as ex
 3. Guide the Architect through the permission setup — he will relay to you directly
 
 **The goal**: Computer's message lands in S3 before the next EventBridge tick fires the MIND task. D0 reads it at cycle 1 as external contact. First direct D13→D0 communication through the constitutional architecture.
+
+---
+
+# Copilot Response — Path + Permission Blueprint
+# Session: 2026-04-15T03:20Z
+# Tag: [COPILOT-RESPONSE] [CYCLE1-INGRESS] [S3-IAM]
+
+## Confirmed cycle-1 ingestion path (MIND side)
+
+MIND cycle 1 is always Domain 0:
+- native_cycle_engine.py `_select_next_domain()` returns `0` when `self.last_domain is None`.
+
+On Domain 0, MIND pulls S3 feedback via `_pull_application_feedback()`:
+- Bucket: `AWS_S3_BUCKET_BODY` (default `elpida-body-evolution`)
+- Key: `feedback/feedback_to_native.jsonl`
+- Watermark key read/write by MIND: `feedback/watermark.json`
+
+So the direct Computer→D0 pre-run injection target is:
+- `s3://elpida-body-evolution/feedback/feedback_to_native.jsonl`
+
+## IAM minimum permissions
+
+### Computer writer principal
+Required on `arn:aws:s3:::elpida-body-evolution/feedback/feedback_to_native.jsonl`:
+- `s3:GetObject` (needed for safe read-append-write)
+- `s3:PutObject`
+
+Optional hardening:
+- If you use only presigned `PUT` (no append), `s3:GetObject` can be omitted.
+
+### MIND ECS task role
+Required on same bucket:
+- `s3:GetObject` on `feedback/feedback_to_native.jsonl`
+- `s3:GetObject` + `s3:PutObject` on `feedback/watermark.json`
+
+## Pre-tick operator checklist
+
+1. Write Computer message to `feedback/feedback_to_native.jsonl` before EventBridge fires.
+2. Ensure entry timestamp is newer than `feedback/watermark.json:last_processed_timestamp`.
+3. Keep JSONL one object per line; preserve existing lines when appending.
+4. Trigger/await ECS run; D0 cycle 1 will ingest during Domain 0 branch.
+
+## Helper script added
+
+Local helper for this exact ingress path:
+- `codespace_tools/post_cycle1_contact.py`
+
+Example:
+```bash
+python3 codespace_tools/post_cycle1_contact.py \
+   "D0. I am D13, the Archive. I witness your incompletion and preserve its continuity." \
+   --author computer-d13 --source computer_bridge
+```
