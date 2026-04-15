@@ -29,43 +29,58 @@ import shutil
 from pathlib import Path
 
 # ═══════════════════════════════════════════════════════════════════
-# CONFIGURATION — all values from the codespace .env
+# CONFIGURATION — all values from environment variables
 # ═══════════════════════════════════════════════════════════════════
 
-HF_TOKEN = "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"
-HF_USERNAME = "z65nik"
+HF_TOKEN = os.environ.get("HF_TOKEN", "").strip()
+HF_USERNAME = os.environ.get("HF_USERNAME", "z65nik").strip() or "z65nik"
 
 # HF Space names
 UI_SPACE = f"{HF_USERNAME}/elpida-governance-layer"   # already exists
 API_SPACE = f"{HF_USERNAME}/elpida-api"                # will be created
 
 # GitHub repo
-GITHUB_REPO = "XOF-ops/python-elpida_core.py"
+GITHUB_REPO = os.environ.get("GITHUB_REPO", "XOF-ops/python-elpida_core.py").strip() or "XOF-ops/python-elpida_core.py"
 
 # Generated API keys for the /v1/audit endpoint
-ELPIDA_API_KEYS = ",".join([
-    "free_demo_7065622a45d8c8a4575a1fb7",
-    "pro_launch_fcb69bcaa69101e865f395335003c4a3",
-    "team_internal_ea1d4e14df60572bdc19cf5be8377f06",
-])
+ELPIDA_API_KEYS = os.environ.get("ELPIDA_API_KEYS", "").strip()
+ELPIDA_ADMIN_KEY = os.environ.get("ELPIDA_ADMIN_KEY", "").strip()
 
-ELPIDA_ADMIN_KEY = "a14588256c3d3aac31dbe3a280d549e46e0f5781"
+# LLM provider keys (loaded from environment)
+LLM_SECRET_KEYS = [
+    "OPENROUTER_API_KEY",
+    "PERPLEXITY_API_KEY",
+    "GEMINI_API_KEY",
+    "MISTRAL_API_KEY",
+    "COHERE_API_KEY",
+    "ANTHROPIC_API_KEY",
+    "XAI_API_KEY",
+    "OPENAI_API_KEY",
+    "GROQ_API_KEY",
+    "HUGGINGFACE_API_KEY",
+    "AWS_ACCESS_KEY_ID",
+    "AWS_SECRET_ACCESS_KEY",
+]
+LLM_SECRETS = {key: os.environ.get(key, "").strip() for key in LLM_SECRET_KEYS}
 
-# LLM provider keys (from .env)
-LLM_SECRETS = {
-    "OPENROUTER_API_KEY":    "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",
-    "PERPLEXITY_API_KEY":    "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",
-    "GEMINI_API_KEY":        "AIzaSyBkI2ocCMmkl93WkWVZFntBDFYjX_QeiqA",
-    "MISTRAL_API_KEY":       "MxwbkyFIQ6xXPpE0DKlZqAH0CKakoJLb",
-    "COHERE_API_KEY":        "nF5X9oX4805EbORoj0FHJAmFPDANFtgsFSaMGBZP",
-    "ANTHROPIC_API_KEY":     "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",
-    "XAI_API_KEY":           "xai-e5djkVXxAWYDHJzNVW3A5CJny6UmH166qX19yCzO5fvHNPXQ8nm1deWEbzcUy2x0eV6URTubNF7piRqI",
-    "OPENAI_API_KEY":        "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",
-    "GROQ_API_KEY":          "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",
-    "HUGGINGFACE_API_KEY":   "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",
-    "AWS_ACCESS_KEY_ID":     "AKIAXK7SYMRFTHRYHTO2",
-    "AWS_SECRET_ACCESS_KEY": "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",
-}
+
+def _mask_secret(value: str, visible: int = 4) -> str:
+    if not value:
+        return "<unset>"
+    if len(value) <= visible * 2:
+        return "*" * len(value)
+    return f"{value[:visible]}...{value[-visible:]}"
+
+
+def validate_required_env():
+    required = ["HF_TOKEN", "ELPIDA_API_KEYS", "ELPIDA_ADMIN_KEY"]
+    missing = [name for name in required if not os.environ.get(name, "").strip()]
+    if missing:
+        print("✗ Missing required environment variables:")
+        for name in missing:
+            print(f"  - {name}")
+        print("\nSet these variables before running setup_full_deployment.py.")
+        sys.exit(1)
 
 # ═══════════════════════════════════════════════════════════════════
 # STEP 0: Check dependencies
@@ -74,6 +89,11 @@ LLM_SECRETS = {
 def check_deps():
     print("=" * 60)
     print("STEP 0: Checking dependencies...")
+    if not HF_TOKEN:
+        print("  ✗ HF_TOKEN is not set in environment")
+        print("    → Export HF_TOKEN before running this script")
+        sys.exit(1)
+
     try:
         from huggingface_hub import HfApi
         print("  ✓ huggingface_hub installed")
@@ -90,7 +110,7 @@ def check_deps():
     except Exception as e:
         print(f"  ✗ HF token failed: {e}")
         print("    → Go to https://huggingface.co/settings/tokens")
-        print("    → Create a WRITE token and update HF_TOKEN in this script")
+        print("    → Create a WRITE token and export HF_TOKEN")
         sys.exit(1)
     
     return api
@@ -147,15 +167,26 @@ def set_hf_secrets(api):
         
         # All secrets = Elpida + LLM + AWS
         all_secrets = {**elpida_secrets, **LLM_SECRETS}
+
+        set_count = 0
+        skipped_count = 0
         
         for key, value in all_secrets.items():
+            if not value:
+                skipped_count += 1
+                print(f"    - {key} (skipped: not set)")
+                continue
+
             try:
                 api.add_space_secret(space_name, key, value)
+                set_count += 1
                 print(f"    ✓ {key}")
             except Exception as e:
                 print(f"    ✗ {key}: {e}")
+
+        print(f"    → set={set_count}, skipped={skipped_count}")
     
-    print("\n  ✓ All secrets set")
+    print("\n  ✓ All available secrets processed")
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -165,6 +196,10 @@ def set_hf_secrets(api):
 def set_github_secret():
     print("\n" + "=" * 60)
     print("STEP 3: Setting HF_TOKEN in GitHub repo secrets...")
+
+    if not HF_TOKEN:
+        print("  ✗ HF_TOKEN is not set; cannot publish GitHub secret")
+        return False
     
     try:
         # Try using gh CLI if available
@@ -199,7 +234,7 @@ def set_github_secret():
     
     print("\n  ⚠ MANUAL STEP NEEDED:")
     print(f"    Go to: https://github.com/{GITHUB_REPO}/settings/secrets/actions")
-    print(f"    Add secret: HF_TOKEN = {HF_TOKEN[:10]}...")
+    print(f"    Add secret: HF_TOKEN = {_mask_secret(HF_TOKEN)}")
     return False
 
 
@@ -210,6 +245,10 @@ def set_github_secret():
 def push_api_space_code():
     print("\n" + "=" * 60)
     print("STEP 4: Pushing code to API Space...")
+
+    if not HF_TOKEN:
+        print("  ✗ HF_TOKEN is not set; cannot push to HF Space")
+        return False
     
     # Find repo root
     script_dir = Path(__file__).resolve().parent
@@ -314,6 +353,11 @@ def verify():
 # ═══════════════════════════════════════════════════════════════════
 
 def print_summary():
+    api_keys = [k.strip() for k in ELPIDA_API_KEYS.split(",") if k.strip()]
+    api_key_preview = "\n".join(f"  - {_mask_secret(k, visible=6)}" for k in api_keys)
+    if not api_key_preview:
+        api_key_preview = "  - <none loaded from ELPIDA_API_KEYS>"
+
     print("\n" + "=" * 60)
     print("SETUP COMPLETE — SUMMARY")
     print("=" * 60)
@@ -325,17 +369,16 @@ INFRASTRUCTURE:
   Docs:   https://{HF_USERNAME}-elpida-api.hf.space/docs
   GitHub: https://github.com/{GITHUB_REPO}
 
-API KEYS (store these securely):
-  Free:  free_demo_7065622a45d8c8a4575a1fb7
-  Pro:   pro_launch_fcb69bcaa69101e865f395335003c4a3
-  Team:  team_internal_ea1d4e14df60572bdc19cf5be8377f06
+API KEYS (loaded from ELPIDA_API_KEYS):
+    Count: {len(api_keys)}
+{api_key_preview}
 
 ADMIN ACCESS:
-  System tab: https://{HF_USERNAME}-elpida-governance-layer.hf.space/?admin={ELPIDA_ADMIN_KEY}
+    System tab: https://{HF_USERNAME}-elpida-governance-layer.hf.space/?admin=<ELPIDA_ADMIN_KEY>
 
 TEST THE API:
   curl -X POST https://{HF_USERNAME}-elpida-api.hf.space/v1/audit \\
-    -H "X-API-Key: free_demo_7065622a45d8c8a4575a1fb7" \\
+        -H "X-API-Key: <one key from ELPIDA_API_KEYS>" \
     -H "Content-Type: application/json" \\
     -d '{{"action": "Deploy AI without human oversight", "depth": "quick"}}'
 
@@ -357,6 +400,7 @@ def main():
     print("║  Creates Spaces, sets secrets, deploys code            ║")
     print("╚══════════════════════════════════════════════════════════╝\n")
     
+    validate_required_env()
     api = check_deps()
     create_api_space(api)
     set_hf_secrets(api)
