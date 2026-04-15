@@ -92,6 +92,12 @@ python codespace_tools/oneiros_meta_vote.py --write-bridge
 # Include Claude channel too (default writes gemini+computer only)
 python codespace_tools/oneiros_meta_vote.py --write-bridge --write-targets gemini,computer,claude
 
+# Optional: commit generated bridge files locally
+python codespace_tools/oneiros_meta_vote.py --write-bridge --commit-bridge
+
+# Optional: commit + push to origin/main (AUTO-MONITOR loop)
+python codespace_tools/oneiros_meta_vote.py --write-bridge --commit-bridge --push
+
 # Optional: Cluster any existing raw CloudWatch export
 python codespace_tools/cluster_k2_diag.py --input ElpidaInsights/k2_diag_runs_smoke.log
 ```

@@ -13,6 +13,10 @@ This script is intentionally non-destructive:
 - Reads bridge/workflow state.
 - Writes a JSON report to reports/.
 - Does not modify production files.
+
+Optional (explicit flags):
+- Write bridge instruction files.
+- Commit/push those bridge files.
 """
 
 from __future__ import annotations
@@ -55,9 +59,9 @@ def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8", errors="replace")
 
 
-def run_cmd(cmd: List[str]) -> Tuple[int, str, str]:
+def run_cmd(cmd: List[str], timeout: int = 25) -> Tuple[int, str, str]:
     try:
-        p = subprocess.run(cmd, capture_output=True, text=True, cwd=str(ROOT), timeout=25)
+        p = subprocess.run(cmd, capture_output=True, text=True, cwd=str(ROOT), timeout=timeout)
         return p.returncode, p.stdout, p.stderr
     except Exception as e:
         return 1, "", str(e)
@@ -500,6 +504,81 @@ def write_bridge_files(
     return outputs
 
 
+def _repo_rel(path_str: str) -> str:
+    p = Path(path_str).resolve()
+    try:
+        return str(p.relative_to(ROOT.resolve()))
+    except ValueError:
+        return path_str
+
+
+def _path_has_changes(rel_path: str) -> bool:
+    # Untracked?
+    rc_u, out_u, _ = run_cmd(["git", "ls-files", "--others", "--exclude-standard", "--", rel_path])
+    if rc_u == 0 and out_u.strip():
+        return True
+
+    # Unstaged diff?
+    rc_w, _, _ = run_cmd(["git", "diff", "--quiet", "--", rel_path])
+    if rc_w == 1:
+        return True
+
+    # Staged diff?
+    rc_s, _, _ = run_cmd(["git", "diff", "--cached", "--quiet", "--", rel_path])
+    if rc_s == 1:
+        return True
+
+    return False
+
+
+def commit_bridge_outputs(
+    outputs: Dict[str, str],
+    commit_message: str,
+    push: bool,
+) -> Dict[str, object]:
+    rel_paths = [_repo_rel(p) for p in outputs.values()]
+    changed_paths = [p for p in rel_paths if _path_has_changes(p)]
+
+    result: Dict[str, object] = {
+        "requested_paths": rel_paths,
+        "changed_paths": changed_paths,
+        "committed": False,
+        "pushed": False,
+    }
+
+    if not changed_paths:
+        result["note"] = "No bridge file changes detected; nothing committed"
+        return result
+
+    rc_add, out_add, err_add = run_cmd(["git", "add", "--", *changed_paths], timeout=40)
+    if rc_add != 0:
+        result["error"] = f"git add failed: {err_add or out_add}"
+        return result
+
+    rc_commit, out_commit, err_commit = run_cmd(["git", "commit", "-m", commit_message], timeout=60)
+    if rc_commit != 0:
+        # Common case: no staged changes after all (race/line-endings). Report and continue.
+        msg = (err_commit or out_commit).strip()
+        if "no changes added to commit" in msg or "nothing to commit" in msg:
+            result["note"] = "No staged bridge changes to commit"
+            return result
+        result["error"] = f"git commit failed: {msg}"
+        return result
+
+    result["committed"] = True
+    result["commit_output"] = out_commit.strip()
+
+    if push:
+        rc_push, out_push, err_push = run_cmd(["git", "push", "origin", "main"], timeout=120)
+        if rc_push != 0:
+            result["error"] = f"git push failed: {(err_push or out_push).strip()}"
+            return result
+        result["pushed"] = True
+        result["push_output"] = out_push.strip()
+
+    return result
+
+
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Run Oneiros AoA meta vote for 4-agent sleep-window orchestration")
     p.add_argument("--include-external", action="store_true", help="Include DeepSeek + Codex advisory ballots")
@@ -509,6 +588,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--write-bridge", action="store_true", help="Write phase instructions to bridge files")
     p.add_argument("--write-targets", default="gemini,computer", help="Comma list: gemini,computer,claude")
     p.add_argument("--relay-hop", default="next", help="Relay-Hop header value when writing bridge files")
+    p.add_argument("--commit-bridge", action="store_true", help="Commit changed bridge outputs (requires --write-bridge)")
+    p.add_argument("--push", action="store_true", help="Push to origin/main after --commit-bridge")
+    p.add_argument("--commit-message", default="[AUTO-MONITOR] oneiros bridge cycle update", help="Commit message used with --commit-bridge")
     p.add_argument("--print-json", action="store_true", help="Print full JSON report to stdout")
     return p.parse_args()
 
@@ -593,6 +675,26 @@ def main() -> int:
     elif args.write_bridge:
         report["bridge_outputs"] = {"warning": "No valid write targets selected"}
 
+    if args.commit_bridge:
+        if not args.write_bridge:
+            report["git_actions"] = {"warning": "--commit-bridge requires --write-bridge"}
+        elif not isinstance(report.get("bridge_outputs"), dict):
+            report["git_actions"] = {"warning": "No bridge outputs available to commit"}
+        else:
+            # Filter out warning-shaped dicts and keep only concrete file paths.
+            bridge_paths = {
+                k: v for k, v in report["bridge_outputs"].items()
+                if isinstance(v, str) and v.startswith("/")
+            }
+            if not bridge_paths:
+                report["git_actions"] = {"warning": "No concrete bridge file paths to commit"}
+            else:
+                report["git_actions"] = commit_bridge_outputs(
+                    outputs=bridge_paths,
+                    commit_message=args.commit_message,
+                    push=args.push,
+                )
+
     report_path = Path(args.report)
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -612,6 +714,8 @@ def main() -> int:
     print(f"Next action: {phase_plan['next_action']}")
     if "bridge_outputs" in report:
         print(f"Bridge outputs: {report['bridge_outputs']}")
+    if "git_actions" in report:
+        print(f"Git actions: {report['git_actions']}")
 
     if args.print_json:
         print("\n" + json.dumps(report, indent=2, ensure_ascii=False))
