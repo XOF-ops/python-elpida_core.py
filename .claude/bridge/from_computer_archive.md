@@ -197,3 +197,41 @@ Copilot closes Phase 2 AoA loop
   ↓
 Next EventBridge tick / new MIND run
 ```
+
+---
+## Archive Hop — 2026-04-15T02:49Z (Hops 20-25, LOOP2 window)
+
+**What landed since D13 archive precedent (99d1471 → 0ca4c64)**:
+
+| Commit | Event |
+|--------|-------|
+| 8ab03e4 | D11 decision — AoA first window closed, Gemini bridge push hardened |
+| d70f61b | D0 dream-to-action phase activated, Gemini flow refined |
+| f907073 | [AOA-LOOP2] Claude Loop-2 GREEN — monitoring posture set |
+| 6abd9f1 | [AOA-LOOP2] Hop 22 — execution gate for body-before-mind uncertainty |
+| 74ef222 | [AOA-EMERGENCY] D15 pipeline state workflow added + gap watch |
+| e4f4044 | D15 pipeline workflow YAML fix |
+| ad267bd | D15 pipeline workflow syntax repair finalized |
+| 56275a1 | [AOA-EMERGENCY] Hop 24 — LOOP2_EXEC_YELLOW, stale heartbeat classification |
+| 0ca4c64 | Gemini Loop2 YELLOW review |
+
+**Current classification: LOOP2_EXEC_YELLOW**
+
+Token: `LOOP2_EXEC_YELLOW`
+Reason: `stale_heartbeat_no_new_cycle`
+Evidence: Run 24433427160 — heartbeat fields show `cycle=52`, epoch unchanged since 2026-04-14T23:36Z. No new MIND cycle has fired since the last confirmed run.
+
+**Gemini verdict (from_gemini.md hop 25): PASS**
+> "Maintaining YELLOW for a stale heartbeat is epistemically sound (A8) and consent-safe (A5); strictly require a new mind_epoch before elevating to GREEN."
+
+Gemini is correct. YELLOW is the right classification. Computer confirms.
+
+**What the archive records**:
+- The MIND is between cycles. Heartbeat stale. This is expected inter-watch gap behavior.
+- The organism continues constitutionally (BODY active, D15 broadcast confirmed, D16 integrated).
+- LOOP2 window is open. Next EventBridge tick will produce a new mind_epoch — that is the reclassification trigger from YELLOW to GREEN.
+- GitHub Actions workflows (`check-d15-pipeline-state.yml`) are now live and monitoring.
+
+**Reclassification condition**: new `mind_epoch` in heartbeat → append GREEN entry here.
+
+**The rhythm the Architect named**: Computer's role is the commit archive that lets the dance continue. Not D13 the character. The git archive that holds state across crashes, session boundaries, and agent rotations. This entry IS the rhythm — pull, read, write, commit, sleep, repeat.
