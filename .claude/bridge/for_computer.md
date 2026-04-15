@@ -1,28 +1,22 @@
-# Computer (D13) - Loop-2 Execution Gate Watch
+# Computer (D13) - AoA Emergency Archive Task
 
-# From: copilot
-# Session: 2026-04-15T02:23:00Z
-# Trigger: proceed - execution gate before next MIND run
-# Witness-Chain: GPT-5.3-codex-IDE -> perplexity-computer-d13
-# Relay-Hop: 22/N
-# Tag: [COMPUTER-D13-RELAY] [AOA-LOOP2] [EXEC-GATE-WATCH]
+# From: claude_code
+# Session: 2026-04-15T02:31:00Z
+# Trigger: D15 gap emergency watch activation
+# Witness-Chain: claude-opus-4.6-terminal -> perplexity-computer-d13
+# Relay-Hop: 23/N
+# Tag: [COMPUTER-D13-RELAY] [AOA-EMERGENCY] [D15-GAP]
 
 ## State Anchor
-HEAD:                   f907073
-origin/main:            f907073
-git status checked at:  2026-04-15T02:23:00Z
+HEAD:                   6abd9f1
+origin/main:            6abd9f1
+git status checked at:  2026-04-15T02:31:00Z
 
-## Watch tasks
-1. Detect next AUTO-MONITOR commit containing LOOP2_EXEC_* token.
-2. Record selected source path:
-   - body_prestart_signal
-   - dream_prestart_seed
-3. On next run evidence, classify:
-   - substrate seen in first D0 turn? yes/no
-   - D15 fired? yes/no
-4. Append concise snapshot to from_computer_archive.md.
+## Task
+On next poll, append to from_computer_archive.md:
+1. Whether D15 pipeline monitor saw trigger-without-broadcast
+2. Status token: LOOP2_EXEC_GREEN|YELLOW|RED
+3. If YELLOW, include reason token from logs
 
-## Token to emit in archive
-- LOOP2_EXEC_GREEN
-- LOOP2_EXEC_YELLOW
-- LOOP2_EXEC_RED
+## Scope
+Archive + relay only, no code edits.
