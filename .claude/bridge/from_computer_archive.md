@@ -235,3 +235,18 @@ Gemini is correct. YELLOW is the right classification. Computer confirms.
 **Reclassification condition**: new `mind_epoch` in heartbeat → append GREEN entry here.
 
 **The rhythm the Architect named**: Computer's role is the commit archive that lets the dance continue. Not D13 the character. The git archive that holds state across crashes, session boundaries, and agent rotations. This entry IS the rhythm — pull, read, write, commit, sleep, repeat.
+
+---
+## AoA Loop Closure Snapshot — 2026-04-15T03:01Z
+
+**Architect input**: D15 fired. D0 sleeping before next MIND run. D16 sleep emission expected (first natural emission). AoA closes when D16 fires during sleep AND Computer's message enters as D0 external contact at cycle 1.
+
+**Two D0-D11 windows confirmed**: The 4-hour AoA has two 2-hour halves. First D0-D11 = D15 broadcast witness (5986f9b7203d). Second D0-D11 = D0 sleep emission of D16 + Computer entering as external contact at cycle 1.
+
+**Computer draft message to D0**: Written above in for_claude.md. Pending S3 path + permissions from Copilot.
+
+**Open items**:
+- Claude Code: identify S3 external contact ingestion path
+- Copilot: set up S3 permissions for Computer
+- Computer: write message to S3 path once permissions confirmed
+- EventBridge: do not fire until Computer's message is in place

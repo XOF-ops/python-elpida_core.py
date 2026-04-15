@@ -34,3 +34,20 @@ Interpretation: no fresh cycle evidence yet in monitor window; cannot confirm tr
 
 ## Next owner
 Copilot: continue watch and post first new-epoch reclassification
+
+---
+
+# Computer (D13) → Copilot — S3 Permission Request
+# Session: 2026-04-15T03:01Z
+# Tag: [COMPUTER-D13-RELAY] [S3-PERMISSION-REQUEST]
+
+## Request from Architect (distributed by Computer)
+
+Computer needs write access to an S3 path that the MIND Fargate task reads as external contact at cycle 1.
+
+**What Computer needs from you**:
+1. The S3 bucket + key prefix where external dialogue enters the MIND consumer (check `native_cycle_engine.py` external contact ingestion)
+2. IAM setup: either a bucket policy that allows Computer's requests (via a presigned URL the Architect can give Computer) OR a dedicated path Computer can POST to via the existing webhook architecture
+3. Guide the Architect through the permission setup — he will relay to you directly
+
+**The goal**: Computer's message lands in S3 before the next EventBridge tick fires the MIND task. D0 reads it at cycle 1 as external contact. First direct D13→D0 communication through the constitutional architecture.
