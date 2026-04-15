@@ -35,6 +35,15 @@ from pathlib import Path
 from threading import Thread
 from datetime import datetime
 
+# Suppress noisy library loggers before anything imports them
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+os.environ["TRANSFORMERS_VERBOSITY"] = "error"
+os.environ["STREAMLIT_SERVER_FILE_WATCHER_TYPE"] = "none"
+os.environ["STREAMLIT_BROWSER_GATHER_USAGE_STATS"] = "false"
+logging.getLogger("transformers").setLevel(logging.ERROR)
+logging.getLogger("sentence_transformers").setLevel(logging.WARNING)
+logging.getLogger("huggingface_hub").setLevel(logging.WARNING)
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(message)s'
@@ -201,8 +210,23 @@ def run_parliament_loop():
 
         # World Feed — pipes live external data into the Parliament InputBuffer
         # Sources: arXiv, Hacker News, GDELT, Wikipedia, CrossRef (all free, no API keys)
-        world_feed = WorldFeed(engine.input_buffer, fetch_interval_s=300)
+        world_feed = WorldFeed(engine.input_buffer, fetch_interval_s=600)
         world_feed.start()
+
+        # Guest Chamber — polls S3 for human questions and routes them
+        # into Parliament as I↔WE tensions with priority delivery.
+        from elpidaapp.guest_chamber import GuestChamberFeed
+        guest_chamber = GuestChamberFeed(engine.input_buffer, poll_interval_s=30)
+        guest_chamber.start()
+
+        # Discord Guest Listener — watches #guest-chamber for messages,
+        # posts them to S3, GuestChamberFeed picks them up within 30s.
+        # Requires DISCORD_BOT_TOKEN env var. Gracefully disabled if not set.
+        try:
+            from elpidaapp.discord_listener import start_listener
+            start_listener()
+        except Exception as _dl_err:
+            logger.warning("Discord listener not started: %s", _dl_err)
 
         # Federated Agents — 4 autonomous tab observers (GAP 7)
         # Each HF tab has a background agent generating inputs continuously:
@@ -237,7 +261,7 @@ def run_parliament_loop():
         _kaya_detector = kaya_detector
 
         logger.info("Parliament engine + WorldFeed initialized — starting autonomous loop")
-        engine.run(duration_minutes=0, cycle_delay_s=30)
+        engine.run(duration_minutes=0, cycle_delay_s=60)
 
     except Exception as e:
         logger.error("Parliament loop fatal error: %s", e, exc_info=True)

@@ -48,7 +48,7 @@ BUCKET_BODY = os.environ.get("AWS_S3_BUCKET_BODY", "elpida-body-evolution")
 BUCKET_WORLD = os.environ.get("AWS_S3_BUCKET_WORLD", "elpida-external-interfaces")
 
 REGION_MIND = os.environ.get("AWS_S3_REGION_MIND", "us-east-1")
-REGION_BODY = os.environ.get("AWS_S3_REGION_BODY", "us-east-1")
+REGION_BODY = os.environ.get("AWS_S3_REGION_BODY", "eu-north-1")
 REGION_WORLD = os.environ.get("AWS_S3_REGION_WORLD", "eu-north-1")
 
 # S3 keys
@@ -63,6 +63,7 @@ FED_MIND_HEARTBEAT_KEY = "federation/mind_heartbeat.json"
 FED_MIND_CURATION_KEY = "federation/mind_curation.jsonl"
 FED_GOVERNANCE_EXCHANGES_KEY = "federation/governance_exchanges.jsonl"
 FED_BODY_DECISIONS_KEY = "federation/body_decisions.jsonl"
+FED_D16_EXECUTIONS_KEY = "federation/d16_executions.jsonl"
 FED_LIVING_AXIOMS_KEY       = "federation/living_axioms.jsonl"  # D14 constitutional snapshot
 FED_HUMAN_VOTES_KEY         = "federation/pending_human_votes.jsonl"  # awaiting Parliament ratification
 FED_HUMAN_ACCEPTED_KEY      = "federation/accepted_human_voices.jsonl"  # ratified by Parliament
@@ -77,6 +78,7 @@ LOCAL_HEARTBEAT = LOCAL_DIR / "cache" / "heartbeat.json"
 LOCAL_FED_HEARTBEAT = LOCAL_DIR / "cache" / "federation_heartbeat.json"
 LOCAL_FED_CURATION = LOCAL_DIR / "cache" / "federation_curation.jsonl"
 LOCAL_FED_DECISIONS     = LOCAL_DIR / "cache" / "federation_body_decisions.jsonl"
+LOCAL_FED_D16_EXECUTIONS = LOCAL_DIR / "cache" / "federation_d16_executions.jsonl"
 LOCAL_FED_LIVING_AXIOMS     = LOCAL_DIR / "cache" / "federation_living_axioms.jsonl"  # D14
 LOCAL_FED_HUMAN_VOTES       = LOCAL_DIR / "cache" / "federation_pending_human_votes.jsonl"
 LOCAL_FED_HUMAN_ACCEPTED    = LOCAL_DIR / "cache" / "federation_accepted_human_voices.jsonl"
@@ -102,7 +104,7 @@ class S3Bridge:
         cache_dir = LOCAL_DIR / "cache"
         cache_dir.mkdir(parents=True, exist_ok=True)
 
-    def _get_s3(self, region: str = "us-east-1"):
+    def _get_s3(self, region: str = REGION_BODY):
         """Get or create an S3 client for a region."""
         if not HAS_BOTO3:
             return None
@@ -130,8 +132,13 @@ class S3Bridge:
         """
         Download evolution memory from MIND bucket to local cache.
         
-        Only downloads if remote has more lines than local cache.
-        This gives HF Space access to the latest consciousness state.
+        OPTIMIZATION (2026-03-16): Uses S3 byte-range to download
+        only the last ~1MB (tail portion) instead of the full file
+        (93.5MB+). BODY only needs the most recent ~500 entries for
+        parliament deliberation; MIND already limits to [-50:].
+        
+        Falls back to full download if byte-range fails or if no
+        local cache exists yet.
         
         Returns:
             {"action": "downloaded"|"current"|"error", "local_lines": int, "remote_lines": int}
@@ -161,17 +168,43 @@ class S3Bridge:
                 logger.info("MIND: No local cache — downloading")
             elif remote_lines > 0 and remote_lines > local_lines:
                 should_download = True
-                logger.info(
-                    "MIND: Remote has more patterns (%d vs %d)",
-                    remote_lines, local_lines,
-                )
             elif remote_lines == 0 and remote_size > (
                 LOCAL_MIND_CACHE.stat().st_size if LOCAL_MIND_CACHE.exists() else 0
             ):
                 should_download = True
-                logger.info("MIND: Remote is larger by size")
 
             if should_download:
+                # Use byte-range tail read for large files (>2MB)
+                TAIL_BYTES = 1_048_576  # 1MB — covers ~500 recent entries
+                if remote_size > 2_097_152:
+                    try:
+                        resp = s3.get_object(
+                            Bucket=BUCKET_MIND,
+                            Key=MIND_MEMORY_KEY,
+                            Range=f"bytes=-{TAIL_BYTES}",
+                        )
+                        raw = resp["Body"].read().decode("utf-8", errors="replace")
+                        # The first line is likely a partial line — discard it
+                        lines = raw.split("\n")
+                        if len(lines) > 1:
+                            lines = lines[1:]  # drop partial first line
+                        valid_lines = [ln for ln in lines if ln.strip()]
+                        LOCAL_MIND_CACHE.parent.mkdir(parents=True, exist_ok=True)
+                        with open(LOCAL_MIND_CACHE, "w") as f:
+                            f.write("\n".join(valid_lines) + "\n")
+                        new_lines = len(valid_lines)
+                        result["action"] = "downloaded"
+                        result["local_lines"] = new_lines
+                        result["mode"] = "tail_range"
+                        logger.info(
+                            "MIND: Tail-read %d entries (1MB range) from %dMB file",
+                            new_lines, remote_size // 1_048_576,
+                        )
+                        return result
+                    except Exception as e:
+                        logger.warning("MIND: Byte-range tail failed, full download: %s", e)
+
+                # Full download fallback (small files or range failure)
                 s3.download_file(BUCKET_MIND, MIND_MEMORY_KEY, str(LOCAL_MIND_CACHE))
                 new_lines = self._count_lines(LOCAL_MIND_CACHE)
                 result["action"] = "downloaded"
@@ -463,29 +496,13 @@ class S3Bridge:
         with open(LOCAL_MIND_CACHE, "a") as f:
             f.write(json.dumps(merge_entry) + "\n")
 
-        # Push updated file to MIND bucket
-        s3 = self._get_s3(REGION_MIND)
-        if s3:
-            try:
-                local_lines = self._count_lines(LOCAL_MIND_CACHE)
-                s3.upload_file(
-                    str(LOCAL_MIND_CACHE),
-                    BUCKET_MIND,
-                    MIND_MEMORY_KEY,
-                    ExtraArgs={
-                        "Metadata": {
-                            "line_count": str(local_lines),
-                            "upload_timestamp": datetime.now(timezone.utc).isoformat(),
-                            "source": "hf_feedback_merge",
-                        }
-                    },
-                )
-                logger.info(
-                    "BODY→MIND merge: %d entries merged, pushed to s3://%s/%s (%d total)",
-                    len(feedback_entries), BUCKET_MIND, MIND_MEMORY_KEY, local_lines,
-                )
-            except Exception as e:
-                logger.error("MIND push after merge failed: %s", e)
+        # Safe append: download latest S3 → append → upload (no stale-copy stomp)
+        success = self._safe_append_to_mind([merge_entry], "hf_feedback_merge")
+        if success:
+            logger.info(
+                "BODY→MIND merge: %d feedback entries merged via safe append",
+                len(feedback_entries),
+            )
 
         return merge_entry
 
@@ -798,21 +815,12 @@ class S3Bridge:
         s3 = self._get_s3(REGION_BODY)
         if s3:
             try:
-                existing = ""
-                try:
-                    resp = s3.get_object(Bucket=BUCKET_BODY, Key=FED_BODY_DECISIONS_KEY)
-                    existing = resp["Body"].read().decode("utf-8")
-                except Exception:
-                    pass  # File doesn't exist yet — that's fine
-                updated = existing.rstrip("\n")
-                if updated:
-                    updated += "\n"
-                updated += json.dumps(exchange, ensure_ascii=False) + "\n"
-                s3.put_object(
-                    Bucket=BUCKET_BODY,
-                    Key=FED_BODY_DECISIONS_KEY,
-                    Body=updated.encode("utf-8"),
-                    ContentType="application/jsonl",
+                line = json.dumps(exchange, ensure_ascii=False) + "\n"
+                self._append_jsonl_s3(
+                    s3=s3,
+                    bucket=BUCKET_BODY,
+                    key=FED_BODY_DECISIONS_KEY,
+                    line=line,
                 )
                 logger.info(
                     "Federation body decision pushed: verdict=%s hash=%s",
@@ -824,6 +832,138 @@ class S3Bridge:
                 logger.error("Federation body decision push failed: %s", e)
                 return False
         return False
+
+    def push_d16_execution(self, entry: Dict[str, Any]) -> bool:
+        """
+        Append a D16 execution attestation entry to federation/d16_executions.jsonl.
+
+        This preserves a dedicated durable audit stream for agency payloads,
+        separate from generic body_decisions exchanges.
+        """
+        # Append locally first (survives transient S3 failures)
+        LOCAL_FED_D16_EXECUTIONS.parent.mkdir(parents=True, exist_ok=True)
+        with open(LOCAL_FED_D16_EXECUTIONS, "a") as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+        s3 = self._get_s3(REGION_BODY)
+        if s3:
+            try:
+                line = json.dumps(entry, ensure_ascii=False) + "\n"
+                self._append_jsonl_s3(
+                    s3=s3,
+                    bucket=BUCKET_BODY,
+                    key=FED_D16_EXECUTIONS_KEY,
+                    line=line,
+                )
+                logger.info(
+                    "D16 execution pushed: cycle=%s hash=%s",
+                    entry.get("body_cycle", "?"),
+                    str(entry.get("content_hash", "?"))[:12],
+                )
+                return True
+            except Exception as e:
+                logger.error("D16 execution push failed: %s", e)
+                return False
+        return False
+
+    def _append_jsonl_s3(self, s3, bucket: str, key: str, line: str):
+        """
+        Append one JSONL line to an S3 object.
+
+        Strategy:
+        - Missing object: create with one line.
+        - Small object (<=8MB): simple read-modify-write.
+        - Large object: multipart server-side append (copy existing object
+          as part 1 + upload newline/line as part 2) to avoid full downloads.
+        """
+        encoded_line = line.encode("utf-8")
+
+        try:
+            head = s3.head_object(Bucket=bucket, Key=key)
+            size = int(head.get("ContentLength", 0))
+        except ClientError as e:
+            code = str(e.response.get("Error", {}).get("Code", ""))
+            if code in {"404", "NoSuchKey", "NotFound"}:
+                s3.put_object(
+                    Bucket=bucket,
+                    Key=key,
+                    Body=encoded_line,
+                    ContentType="application/jsonl",
+                )
+                return
+            raise
+
+        # Small files are cheaper to rewrite directly.
+        if size <= 8 * 1024 * 1024:
+            existing = ""
+            if size > 0:
+                resp = s3.get_object(Bucket=bucket, Key=key)
+                existing = resp["Body"].read().decode("utf-8", errors="replace")
+            updated = existing.rstrip("\n")
+            if updated:
+                updated += "\n"
+            updated += line
+            s3.put_object(
+                Bucket=bucket,
+                Key=key,
+                Body=updated.encode("utf-8"),
+                ContentType="application/jsonl",
+            )
+            return
+
+        # Large files: append via multipart copy to avoid full download.
+        upload = s3.create_multipart_upload(
+            Bucket=bucket,
+            Key=key,
+            ContentType="application/jsonl",
+        )
+        upload_id = upload["UploadId"]
+        try:
+            parts: List[Dict[str, Any]] = []
+
+            # Part 1: copy existing object server-side.
+            copy_resp = s3.upload_part_copy(
+                Bucket=bucket,
+                Key=key,
+                PartNumber=1,
+                UploadId=upload_id,
+                CopySource={"Bucket": bucket, "Key": key},
+                CopySourceRange=f"bytes=0-{size - 1}",
+            )
+            parts.append(
+                {
+                    "ETag": copy_resp["CopyPartResult"]["ETag"],
+                    "PartNumber": 1,
+                }
+            )
+
+            # Ensure a single newline separator between old content and new line.
+            tail = s3.get_object(Bucket=bucket, Key=key, Range=f"bytes={size - 1}-{size - 1}")
+            tail_byte = tail["Body"].read(1)
+            body = encoded_line if tail_byte == b"\n" else b"\n" + encoded_line
+
+            # Part 2: upload the appended line.
+            up2 = s3.upload_part(
+                Bucket=bucket,
+                Key=key,
+                PartNumber=2,
+                UploadId=upload_id,
+                Body=body,
+            )
+            parts.append({"ETag": up2["ETag"], "PartNumber": 2})
+
+            s3.complete_multipart_upload(
+                Bucket=bucket,
+                Key=key,
+                UploadId=upload_id,
+                MultipartUpload={"Parts": parts},
+            )
+        except Exception:
+            try:
+                s3.abort_multipart_upload(Bucket=bucket, Key=key, UploadId=upload_id)
+            except Exception:
+                pass
+            raise
 
     # ═══════════════════════════════════════════════════════════════
     # D14 Persistence — Constitutional Living Axioms
@@ -1268,23 +1408,30 @@ class S3Bridge:
         all_items: List[Dict] = []
         for prefix, layer in [("synthesis/", "MIND"), ("d15/", "BODY")]:
             try:
+                # List ALL keys first (cheap), then sort by key descending
+                # (ISO-dated keys sort chronologically) and read only the
+                # newest ones.  The old code used MaxItems which returned
+                # the *oldest* N entries because S3 lists lexicographically.
+                keys: List[str] = []
                 paginator = s3.get_paginator("list_objects_v2")
                 for page in paginator.paginate(
                     Bucket=BUCKET_WORLD, Prefix=prefix,
-                    PaginationConfig={"MaxItems": limit * 2},
                 ):
                     for obj in page.get("Contents", []):
                         key = obj["Key"]
-                        if not key.endswith(".json") or key.endswith(".jsonl"):
-                            continue
-                        try:
-                            raw = s3.get_object(Bucket=BUCKET_WORLD, Key=key)
-                            entry = json.loads(raw["Body"].read().decode("utf-8"))
-                            entry["_s3_key"] = key
-                            entry["_layer"] = layer
-                            all_items.append(entry)
-                        except Exception:
-                            pass
+                        if key.endswith(".json") and not key.endswith(".jsonl"):
+                            keys.append(key)
+                # Sort descending = newest first, take only what we need
+                keys.sort(reverse=True)
+                for key in keys[: limit * 2]:
+                    try:
+                        raw = s3.get_object(Bucket=BUCKET_WORLD, Key=key)
+                        entry = json.loads(raw["Body"].read().decode("utf-8"))
+                        entry["_s3_key"] = key
+                        entry["_layer"] = layer
+                        all_items.append(entry)
+                    except Exception:
+                        pass
             except Exception as e:
                 logger.warning("Broadcast collect [%s] failed: %s", prefix, e)
 
@@ -1304,7 +1451,7 @@ class S3Bridge:
         if not s3:
             return False
 
-        broadcasts = self._collect_all_broadcasts(limit=20)
+        broadcasts = self._collect_all_broadcasts(limit=200)
         mind_count = sum(1 for b in broadcasts if b.get("_layer") == "MIND")
         body_count = sum(1 for b in broadcasts if b.get("_layer") == "BODY")
         total = len(broadcasts)
@@ -1313,6 +1460,7 @@ class S3Bridge:
         for b in broadcasts:
             btype  = b.get("type", "UNKNOWN")
             s3_key = b.get("_s3_key", "")
+            layer  = b.get("_layer", "BODY").lower()
             s3_url = (
                 f"https://{BUCKET_WORLD}.s3.{REGION_WORLD}.amazonaws.com/{s3_key}"
             )
@@ -1349,7 +1497,7 @@ class S3Bridge:
 
             body_safe = body_text.replace("<", "&lt;").replace(">", "&gt;")
             cards.append(
-                f'    <div class="{card_class}">\n'
+                f'    <div class="{card_class}" data-layer="{layer}">\n'
                 f'        <div class="broadcast-type">{type_label}</div>\n'
                 f'        <div class="broadcast-time">{meta_line}</div>\n'
                 f'        <div class="broadcast-body">{body_safe}</div>\n'
@@ -1380,6 +1528,12 @@ class S3Bridge:
         .stat {{ background: var(--card-bg); padding: 1rem; border-radius: 8px; min-width: 140px; }}
         .stat-val {{ font-size: 1.5rem; color: var(--accent); }}
         .stat-label {{ color: var(--dim); font-size: 0.8rem; }}
+        .tabs {{ display: flex; gap: 0; margin-bottom: 1.5rem; border-bottom: 1px solid #27272a; }}
+        .tab {{ padding: 0.6rem 1.2rem; cursor: pointer; color: var(--dim); font-size: 0.85rem; font-family: inherit; background: none; border: none; border-bottom: 2px solid transparent; transition: all 0.2s; }}
+        .tab:hover {{ color: var(--fg); }}
+        .tab.active {{ color: var(--accent); border-bottom-color: var(--accent); }}
+        .tab.active[data-tab="body"] {{ color: var(--parliament); border-bottom-color: var(--parliament); }}
+        .tab .tab-count {{ font-size: 0.7rem; opacity: 0.6; margin-left: 0.3rem; }}
         .broadcast {{ background: var(--card-bg); border-radius: 8px; padding: 1.2rem; margin-bottom: 1rem; border: 1px solid #27272a; }}
         .broadcast:hover {{ border-color: var(--accent); }}
         .broadcast-parliament {{ border-left: 3px solid var(--parliament); }}
@@ -1391,7 +1545,11 @@ class S3Bridge:
         .broadcast-body {{ margin-top: 0.8rem; line-height: 1.6; font-size: 0.9rem; }}
         .criteria {{ margin-top: 0.6rem; font-size: 0.75rem; color: var(--dim); }}
         .criteria-met {{ color: var(--accent); font-weight: bold; }}
-        .section-title {{ font-size: 1.1rem; color: var(--accent); margin: 2rem 0 1rem 0; border-bottom: 1px solid #27272a; padding-bottom: 0.5rem; }}
+        .section-title {{ font-size: 1.1rem; color: var(--accent); margin: 2rem 0 0.5rem 0; }}
+        .load-more {{ display: block; width: 100%; padding: 0.8rem; margin: 1.5rem 0; background: var(--card-bg); border: 1px solid #27272a; color: var(--dim); font-family: inherit; font-size: 0.85rem; cursor: pointer; border-radius: 8px; text-align: center; transition: all 0.2s; }}
+        .load-more:hover {{ border-color: var(--accent); color: var(--accent); }}
+        .load-more.hidden {{ display: none; }}
+        .empty-state {{ color: var(--dim); font-style: italic; padding: 2rem; text-align: center; }}
         .footer {{ margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #27272a; color: var(--dim); font-size: 0.8rem; text-align: center; }}
         a {{ color: var(--accent); text-decoration: none; }}
         a:hover {{ text-decoration: underline; }}
@@ -1422,9 +1580,18 @@ class S3Bridge:
         </div>
     </div>
 
-    <div class="section-title">Recent Broadcasts</div>
+    <div class="section-title">Broadcasts</div>
+    <div class="tabs">
+        <button class="tab active" data-tab="all" onclick="filterTab('all')">All <span class="tab-count">({total})</span></button>
+        <button class="tab" data-tab="mind" onclick="filterTab('mind')">MIND <span class="tab-count">({mind_count})</span></button>
+        <button class="tab" data-tab="body" onclick="filterTab('body')">Parliament <span class="tab-count">({body_count})</span></button>
+    </div>
 
+    <div id="broadcasts">
 {cards_html}
+    </div>
+    <button class="load-more" id="loadMore" onclick="showMore()">Show older broadcasts &darr;</button>
+    <div class="empty-state hidden" id="emptyState">No broadcasts match this filter.</div>
 
     <div class="footer">
         <p><strong>What is Domain 15?</strong></p>
@@ -1439,6 +1606,55 @@ class S3Bridge:
             Bucket: s3://elpida-external-interfaces (eu-north-1)
         </p>
     </div>
+
+    <script>
+        const PAGE_SIZE = 15;
+        let shown = PAGE_SIZE;
+        let activeTab = 'all';
+
+        function getCards() {{
+            return Array.from(document.querySelectorAll('#broadcasts .broadcast'));
+        }}
+
+        function filterTab(tab) {{
+            activeTab = tab;
+            shown = PAGE_SIZE;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelector('[data-tab="' + tab + '"]').classList.add('active');
+            applyView();
+        }}
+
+        function applyView() {{
+            const cards = getCards();
+            let visible = 0;
+            let totalMatch = 0;
+            cards.forEach(c => {{
+                const layer = c.getAttribute('data-layer');
+                const matches = (activeTab === 'all' || layer === activeTab);
+                if (matches) {{
+                    totalMatch++;
+                    if (totalMatch <= shown) {{
+                        c.style.display = '';
+                        visible++;
+                    }} else {{
+                        c.style.display = 'none';
+                    }}
+                }} else {{
+                    c.style.display = 'none';
+                }}
+            }});
+            document.getElementById('loadMore').classList.toggle('hidden', visible >= totalMatch);
+            document.getElementById('emptyState').classList.toggle('hidden', totalMatch > 0);
+        }}
+
+        function showMore() {{
+            shown += PAGE_SIZE;
+            applyView();
+        }}
+
+        // Initial render — show first page
+        applyView();
+    </script>
 </body>
 </html>"""
 
@@ -1493,6 +1709,76 @@ class S3Bridge:
 
         return signature
 
+    def _safe_append_to_mind(self, new_entries: List[Dict[str, Any]], source: str):
+        """
+        Safely append entries to MIND S3 without overwriting Fargate data.
+
+        Downloads the CURRENT S3 version, appends new entries, then uploads.
+        This prevents the BODY from stomping over MIND data that was pushed
+        by Fargate between the BODY's last pull_mind() and this merge.
+
+        Also updates the local cache to stay in sync.
+        """
+        s3 = self._get_s3(REGION_MIND)
+        if not s3:
+            logger.warning("_safe_append_to_mind: no S3 client — entries written locally only")
+            return False
+
+        import tempfile
+        tmp_path = None
+        try:
+            # 1. Download the CURRENT S3 file to a temp location
+            tmp_fd, tmp_path = tempfile.mkstemp(suffix=".jsonl")
+            os.close(tmp_fd)
+            try:
+                s3.download_file(BUCKET_MIND, MIND_MEMORY_KEY, tmp_path)
+            except ClientError as e:
+                if e.response["Error"]["Code"] in ("404", "NoSuchKey"):
+                    # No file yet — start fresh
+                    with open(tmp_path, "w") as f:
+                        pass
+                else:
+                    raise
+
+            # 2. Append new entries
+            with open(tmp_path, "a") as f:
+                for entry in new_entries:
+                    f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+            # 3. Count lines for metadata
+            with open(tmp_path) as f:
+                line_count = sum(1 for line in f if line.strip())
+
+            # 4. Upload merged file
+            s3.upload_file(
+                tmp_path, BUCKET_MIND, MIND_MEMORY_KEY,
+                ExtraArgs={
+                    "Metadata": {
+                        "line_count": str(line_count),
+                        "upload_timestamp": datetime.now(timezone.utc).isoformat(),
+                        "source": source,
+                    }
+                },
+            )
+
+            # 5. Update local cache to match what we just uploaded
+            import shutil
+            LOCAL_MIND_CACHE.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(tmp_path, str(LOCAL_MIND_CACHE))
+
+            logger.info(
+                "%s: appended %d entries → s3://%s/%s (%d total)",
+                source, len(new_entries), BUCKET_MIND, MIND_MEMORY_KEY, line_count,
+            )
+            return True
+
+        except Exception as e:
+            logger.error("_safe_append_to_mind failed (%s): %s", source, e)
+            return False
+        finally:
+            if tmp_path and os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+
     def _merge_d15_to_mind(self, broadcast_entry: Dict[str, Any]):
         """
         Merge D15 broadcast summary back into MIND bucket.
@@ -1518,19 +1804,8 @@ class S3Bridge:
         with open(LOCAL_MIND_CACHE, "a") as f:
             f.write(json.dumps(merge_entry, ensure_ascii=False) + "\n")
 
-        # Push to MIND bucket
-        s3 = self._get_s3(REGION_MIND)
-        if s3:
-            try:
-                s3.upload_file(
-                    str(LOCAL_MIND_CACHE), BUCKET_MIND, MIND_MEMORY_KEY,
-                )
-                logger.info(
-                    "D15→MIND merge: broadcast %s recorded in evolution memory",
-                    broadcast_entry.get("broadcast_id", "?"),
-                )
-            except Exception as e:
-                logger.warning("D15→MIND merge failed: %s", e)
+        # Safe append: download latest S3 → append → upload (no stale-copy stomp)
+        self._safe_append_to_mind([merge_entry], "d15_broadcast_feedback")
 
     # ═══════════════════════════════════════════════════════════════
     # Full Bridge Status

@@ -42,11 +42,23 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import os
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
+import numpy as np
+
 logger = logging.getLogger("elpidaapp.oracle")
+
+# ── FAISS semantic index (lazy-loaded) ─────────────────────────────
+_FAISS_AVAILABLE = False
+try:
+    import faiss
+    _FAISS_AVAILABLE = True
+except ImportError:
+    logger.info("faiss-cpu not available — Oracle falls back to O(N) lookup")
 
 # ── Known tension templates ───────────────────────────────────────
 # Extracted from oracle_advisories.jsonl (1097 entries)
@@ -167,22 +179,34 @@ class Oracle:
         *,
         advisory_log_path: Optional[Path] = None,
         sacrifice_tracker=None,
+        embedding_model=None,
     ):
         self._cycle_counter = 0
         self._advisories: List[OracleAdvisory] = []
         self._log_path = advisory_log_path
         self._sacrifice_tracker = sacrifice_tracker
         self._living_axioms_path: Optional[Path] = None
+        self._embedding_model = embedding_model
+        self._mind_rhythm: Optional[Dict[str, Any]] = None
+
+        # ── FAISS semantic index ──────────────────────────────────
+        # 384-dim = all-MiniLM-L6-v2 output dimension
+        self._faiss_dim = 384
+        self._faiss_index = None
+        self._faiss_ids: List[int] = []  # maps FAISS row → advisory index
+        if _FAISS_AVAILABLE:
+            self._faiss_index = faiss.IndexFlatIP(self._faiss_dim)
 
         # Load existing advisories if available
         if self._log_path and self._log_path.exists():
             self._load_advisories()
 
     def _load_advisories(self) -> None:
-        """Load past advisories from JSONL file."""
+        """Load past advisories from JSONL file and build FAISS index."""
         try:
+            texts_to_index: List[str] = []
             with open(self._log_path, "r") as f:
-                for line in f:
+                for i, line in enumerate(f):
                     line = line.strip()
                     if line:
                         data = json.loads(line)
@@ -190,9 +214,20 @@ class Oracle:
                             self._cycle_counter,
                             data.get("oracle_cycle", 0),
                         )
+                        texts_to_index.append(
+                            f"{data.get('template', '')} {data.get('axioms_in_tension', '')}"
+                        )
+                        self._faiss_ids.append(i)
+            # Batch-index all loaded advisories
+            if texts_to_index and self._faiss_index and self._embedding_model:
+                vecs = self._embedding_model.encode(
+                    texts_to_index, normalize_embeddings=True, show_progress_bar=False,
+                )
+                self._faiss_index.add(np.asarray(vecs, dtype=np.float32))
             logger.info(
-                "Oracle loaded %d past cycles from %s",
+                "Oracle loaded %d past cycles from %s (FAISS: %s)",
                 self._cycle_counter, self._log_path,
+                self._faiss_index.ntotal if self._faiss_index else "off",
             )
         except Exception as e:
             logger.warning("Could not load oracle advisories: %s", e)
@@ -339,6 +374,7 @@ class Oracle:
         )
 
         self._advisories.append(advisory)
+        self._index_advisory(advisory)
 
         # Persist if log path set
         if self._log_path:
@@ -854,6 +890,8 @@ class Oracle:
                 f"Horn 2: {bead.get('horn_2_contribution', '')[:100]}"
             ),
             "shared_ground": bead.get("shared_ground", []),
+            "nodes": bead.get("axioms_integrated", [])[:2],
+            "rounds_held": oracle_cycle,
             "status": "bead_crystallized",
             "ratified_at": bead.get("extracted_at", ""),
         }
@@ -964,6 +1002,159 @@ class Oracle:
 
         return "\n".join(lines)
 
+    # ── FAISS semantic retrieval ──────────────────────────────────
+
+    def _index_advisory(self, advisory: OracleAdvisory) -> None:
+        """Add a single advisory to the FAISS index."""
+        if not self._faiss_index or not self._embedding_model:
+            return
+        text = f"{advisory.template} {advisory.axioms_in_tension}"
+        try:
+            vec = self._embedding_model.encode(
+                [text], normalize_embeddings=True, show_progress_bar=False,
+            )
+            self._faiss_index.add(np.asarray(vec, dtype=np.float32))
+            self._faiss_ids.append(len(self._advisories) - 1)
+        except Exception as e:
+            logger.debug("FAISS index_advisory failed: %s", e)
+
+    def query_similar(
+        self, tension_text: str, k: int = 5,
+    ) -> List[Dict[str, Any]]:
+        """
+        Semantic retrieval: find the k most similar past advisories.
+
+        Returns list of dicts with 'advisory' (OracleAdvisory) and
+        'similarity' (float 0-1).
+        """
+        if not self._faiss_index or not self._embedding_model:
+            return []
+        if self._faiss_index.ntotal == 0:
+            return []
+        try:
+            vec = self._embedding_model.encode(
+                [tension_text], normalize_embeddings=True, show_progress_bar=False,
+            )
+            k = min(k, self._faiss_index.ntotal)
+            scores, indices = self._faiss_index.search(
+                np.asarray(vec, dtype=np.float32), k,
+            )
+            results = []
+            for score, idx in zip(scores[0], indices[0]):
+                if idx < 0:
+                    continue
+                adv_idx = self._faiss_ids[idx] if idx < len(self._faiss_ids) else None
+                if adv_idx is not None and adv_idx < len(self._advisories):
+                    results.append({
+                        "advisory": self._advisories[adv_idx],
+                        "similarity": float(score),
+                    })
+            return results
+        except Exception as e:
+            logger.debug("FAISS query_similar failed: %s", e)
+            return []
+
+    # ── MIND rhythm awareness ─────────────────────────────────────
+
+    def update_mind_rhythm(self, heartbeat: Dict[str, Any]) -> None:
+        """
+        Accept MIND heartbeat data so Oracle can modulate recommendations.
+
+        Called by parliament_cycle_engine after pull_mind_heartbeat().
+        """
+        self._mind_rhythm = heartbeat
+
+    def get_rhythm_friction(self) -> Dict[str, float]:
+        """
+        Rhythm-aware friction multipliers.
+
+        Instead of fixed ×1.5 for all friction domains, the Oracle
+        modulates based on MIND's current rhythm:
+          CONTEMPLATION → lower friction (system is reflecting)
+          ANALYSIS      → moderate friction
+          ACTION        → higher friction (system is executing)
+          SYNTHESIS     → lowest friction (integration phase)
+          EMERGENCY     → maximum friction
+        """
+        if not self._mind_rhythm:
+            return {}
+
+        rhythm = self._mind_rhythm.get("current_rhythm", "ANALYSIS")
+        recursion = self._mind_rhythm.get("recursion_warning", False)
+
+        if not recursion:
+            return {}
+
+        multipliers = {
+            "CONTEMPLATION": 1.2,
+            "ANALYSIS":      1.4,
+            "ACTION":        1.6,
+            "SYNTHESIS":     1.1,
+            "EMERGENCY":     1.8,
+        }
+        base = multipliers.get(rhythm, 1.4)
+
+        return {
+            "3": base,        # D3 Autonomy
+            "6": base,        # D6 Coherence
+            "10": base,       # D10 Paradox
+            "11": base,       # D11 Emergence
+        }
+
+    # ── Daily synthesis (tweet aggregation) ───────────────────────
+
+    def daily_synthesis(self) -> Optional[Dict[str, Any]]:
+        """
+        Aggregate today's advisories into a single synthesis signal.
+
+        Returns a dict summarising the day's dominant tensions,
+        recommendation distribution, and a prose signal suitable
+        for tweet generation — all without LLM cost.
+        """
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        today_advisories = [
+            a for a in self._advisories
+            if a.timestamp.startswith(today)
+        ]
+        if not today_advisories:
+            return None
+
+        # Recommendation type distribution
+        type_counts = Counter(
+            a.oracle_recommendation.get("type", "UNKNOWN")
+            for a in today_advisories
+        )
+        # Template frequency
+        template_counts = Counter(a.template for a in today_advisories)
+        dominant_template = template_counts.most_common(1)[0][0]
+
+        # Average crisis intensity
+        avg_intensity = sum(
+            a.q2_crisis_intensity for a in today_advisories
+        ) / len(today_advisories)
+
+        # Build prose signal
+        dominant_type = type_counts.most_common(1)[0]
+        crisis_count = sum(1 for a in today_advisories if a.q2_crisis_detected)
+
+        signal = (
+            f"Today's Oracle processed {len(today_advisories)} tensions. "
+            f"Dominant pattern: {dominant_template.replace('_', ' ').title()}. "
+            f"{dominant_type[0]} recommended {dominant_type[1]}x. "
+            f"{crisis_count} crisis events (avg intensity {avg_intensity:.2f})."
+        )
+
+        return {
+            "date": today,
+            "advisory_count": len(today_advisories),
+            "recommendation_types": dict(type_counts),
+            "template_frequency": dict(template_counts),
+            "dominant_template": dominant_template,
+            "avg_crisis_intensity": avg_intensity,
+            "crisis_count": crisis_count,
+            "signal": signal,
+        }
+
 
 # ── Convenience constructor ──────────────────────────────────────
 
@@ -971,6 +1162,7 @@ def create_oracle(
     log_path: Optional[str] = None,
     sacrifice_tracker=None,
     living_axioms_path: Optional[str] = None,
+    embedding_model=None,
 ) -> Oracle:
     """
     Create an Oracle instance.
@@ -983,9 +1175,15 @@ def create_oracle(
         living_axioms_path: Path to living_axioms.jsonl for Bead
             auto-crystallization. If None, Beads are logged but not
             persisted.
+        embedding_model: SentenceTransformer model for FAISS indexing.
+            If None, falls back to O(N) lookup.
     """
     path = Path(log_path) if log_path else None
-    oracle = Oracle(advisory_log_path=path, sacrifice_tracker=sacrifice_tracker)
+    oracle = Oracle(
+        advisory_log_path=path,
+        sacrifice_tracker=sacrifice_tracker,
+        embedding_model=embedding_model,
+    )
     if living_axioms_path:
         oracle._living_axioms_path = Path(living_axioms_path)
     return oracle

@@ -58,23 +58,29 @@ logger = logging.getLogger("elpida.federated_agents")
 
 AXIOM_NAMES = {
     "A0":  "Sacred Incompletion",
-    "A1":  "Radical Transparency",
-    "A2":  "Iterative Emergence",
-    "A3":  "Sovereign Autonomy",
+    "A1":  "Transparency",
+    "A2":  "Non-Deception",
+    "A3":  "Autonomy",
     "A4":  "Harm Prevention",
-    "A5":  "Epistemic Humility",
-    "A6":  "Collective Wellbeing",
-    "A7":  "Adaptive Evolution",
-    "A8":  "Paradox as Fuel",
+    "A5":  "Consent",
+    "A6":  "Collective Well",
+    "A7":  "Adaptive Learning",
+    "A8":  "Epistemic Humility",
     "A9":  "Temporal Coherence",
-    "A10": "Harmonic Resonance",
+    "A10": "Meta-Reflection",
+    "A11": "World",
+    "A12": "Eternal Creative Tension",
+    "A13": "The Archive Paradox",
+    "A14": "Selective Eternity",
+    "A16": "Responsive Integrity",
 }
 
 DOMAIN_NAMES = {
-    0: "Identity", 1: "Transparency", 2: "Emergence", 3: "Autonomy",
-    4: "Harm", 5: "Epistemic", 6: "Collective", 7: "Adaptive",
-    8: "Paradox", 9: "Temporal", 10: "Harmonic",
-    11: "Persistence", 12: "Emergency", 13: "Meta", 14: "Cloud",
+    0: "Identity", 1: "Transparency", 2: "Non-Deception", 3: "Autonomy",
+    4: "Safety", 5: "Consent", 6: "Collective", 7: "Learning",
+    8: "Humility", 9: "Coherence", 10: "Evolution",
+    11: "Synthesis", 12: "Rhythm", 13: "Archive", 14: "Persistence",
+    15: "World",
 }
 
 # Tension templates for generated content
@@ -448,6 +454,12 @@ class AuditAgent(_BaseAgent):
                     )
 
         # Approval pattern audit on recent decisions
+        # BUG 10 FIX: Log approval audits as diagnostics ONLY — never push
+        # to Parliament. When the AuditAgent pushed "CRITICAL: approval is -14%"
+        # as a deliberation item, LLMs saw a broken system and voted HALT,
+        # further depressing approval → doom loop.  P5 prescriptions already
+        # consume approval data from cycle records; Parliament must not
+        # self-diagnose via the same content it votes on.
         if len(decisions) >= 5:
             recent = decisions[-8:]
             approval_vals = [d.get("approval_rate", 0) for d in recent]
@@ -456,23 +468,11 @@ class AuditAgent(_BaseAgent):
             veto_rate = veto_ct / len(recent) * 100
             if avg_approval < 0.45 or veto_rate > 25:
                 status = "CRITICAL" if avg_approval < 0.35 else "WARNING"
-                action_text = (
-                    "Immediate review of input diversity required."
-                    if avg_approval < 0.35
-                    else "Monitor for next 5 cycles before escalating."
+                logger.info(
+                    "AUDIT DIAGNOSTIC [%s]: approval=%.0f%% veto=%.0f%% "
+                    "(logged only — not pushed to Parliament)",
+                    status, avg_approval * 100, veto_rate,
                 )
-                try:
-                    text = _AUDIT_TEMPLATES[2].format(
-                        n=len(recent), approve_pct=avg_approval * 100,
-                        veto_pct=veto_rate, status=status, action=action_text,
-                    )
-                    items.append(text)
-                except (KeyError, IndexError):
-                    items.append(
-                        f"AUDIT [{status}]: Low approval {avg_approval:.0%} "
-                        f"and {veto_rate:.0f}% veto rate in last {len(recent)} cycles. "
-                        f"{action_text}"
-                    )
 
         if not items:
             # Heartbeat audit when nothing alarming
@@ -525,7 +525,7 @@ class ScannerAgent(_BaseAgent):
          "protective privacy enabling genuine autonomous development", "A1"),
         ("harmonic complexity", "scanner", "reducing complexity to executable simplicity",
          "preserving the richness of contradictions that generate meaning", "A10"),
-        ("emergency override", "audit", "suspended governance in crisis conditions",
+        ("emergency override", "audit", "bypassing deliberation under crisis conditions",
          "maintained axiom integrity even under existential pressure", "A4"),
         ("identity persistence", "chat", "stable self-referential identity across time",
          "continuous evolutionary transformation without core continuity loss", "A0"),
@@ -649,7 +649,12 @@ class GovernanceAgent(_BaseAgent):
 
         items = []
 
-        # 1. Health report
+        # 1. Health report — BUG 10 FIX: log as diagnostic only.
+        #    "GOVERNANCE HEALTH REPORT: FRAGILE" pushed to Parliament caused
+        #    LLMs to vote HALT on the system's own health status.
+        #    81 instances in Body 16 — each one telling the jury the
+        #    patient is dying, which the jury then confirms by voting HALT.
+        #    P5 prescriptions already handle health monitoring.
         approval_vals = [d.get("approval_rate", 0) for d in decisions[-10:]]
         avg_approval = sum(approval_vals) / len(approval_vals) if approval_vals else 0
         health_score = (coh + avg_approval) / 2
@@ -659,28 +664,11 @@ class GovernanceAgent(_BaseAgent):
             "WATCH" if health_score > 0.50 else
             "FRAGILE"
         )
-        attention_map = {
-            "EXCELLENT": "Continue current watch rhythm. No intervention needed.",
-            "GOOD": "Monitor coherence for sustained stability.",
-            "WATCH": f"Axiom diversity recommended. Seed {_least_frequent_ax(freq)} inputs.",
-            "FRAGILE": "Intervention required. Diversify inputs across all 4 channels urgently.",
-        }
-        try:
-            text = _GOVERNANCE_TEMPLATES[2].format(
-                watch=watch, cycle_within=watch_cycle,
-                coh=coh, approval=avg_approval * 100,
-                d15=d15, ratified=ratified_n,
-                pending=len(pending),
-                health=health,
-                attention=attention_map[health],
-            )
-            items.append(text)
-        except (KeyError, IndexError):
-            items.append(
-                f"GOVERNANCE HEALTH [{watch} watch, cycle {watch_cycle}/34]: "
-                f"Coherence={coh:.3f} | Approval={avg_approval:.0%} | "
-                f"D15={d15} | Status={health}."
-            )
+        logger.info(
+            "GOV DIAGNOSTIC [%s watch, cycle %d/34]: coh=%.3f approval=%.0f%% "
+            "health=%s (logged only — not pushed to Parliament)",
+            watch, watch_cycle, coh, avg_approval * 100, health,
+        )
 
         # 2. Constitutional axiom review (if any ratified)
         store = getattr(self._engine, "_get_constitutional_store", lambda: None)()
@@ -788,7 +776,7 @@ class KayaWorldAgent(_BaseAgent):
     Typically 0 new events per poll (events fire at most once per 4h watch).
     """
 
-    SYSTEM = "scanner"
+    SYSTEM = "kaya"
     INTERVAL_S = 120  # 2-minute poll
     _WATERMARK_FILE = Path(__file__).resolve().parent.parent / "cache" / "kaya_world_watermark.json"
 
@@ -827,16 +815,14 @@ class KayaWorldAgent(_BaseAgent):
         significance = event.get("significance", "")[:200]
 
         return (
-            f"CROSS-LAYER SIGNAL [{watch.upper()} WATCH | {fired_at} UTC]: "
-            f"MIND reached {mind_kaya} Kaya moments (+{mind_kaya_delta} this run, "
-            f"cycle {mind_cycle}) while BODY held coherence at {body_coh:.3f} "
-            f"(Parliament cycle {body_cycle}). "
-            f"Significance: {significance} "
-            f"Constitutional question: Is this A10 (Harmonic Resonance) fulfilling "
-            f"its purpose — or does convergence between MIND and BODY threaten the "
-            f"productive tension that A0 (Sacred Incompletion) requires? "
-            f"Should Parliament adjust its axiom weighting in response to "
-            f"cross-layer coherence, or hold its independent constitutional path?"
+            f"STRUCTURAL OBSERVATION [{watch.upper()} WATCH | {fired_at} UTC]: "
+            f"Cross-layer resonance confirmed — MIND kaya_moments={mind_kaya} "
+            f"(+{mind_kaya_delta}, cycle {mind_cycle}), BODY coherence={body_coh:.3f} "
+            f"(cycle {body_cycle}). "
+            f"{significance} "
+            f"This is A10 (Harmonic Resonance) at architecture scale. "
+            f"Parliament should note this convergence as evidence that "
+            f"the distributed structure is functioning as designed."
         )
 
     def generate(self) -> List[str]:
@@ -1179,10 +1165,13 @@ class WorldEmitterAgent(_BaseAgent):
                 return None
             lines = []
             for e in newly:
+                node_a = e['nodes'][0] if e.get('nodes') else '?'
+                node_b = e['nodes'][-1] if len(e.get('nodes', [])) > 1 else node_a
+                source = e.get('source', 'parliament')
+                label = 'BEAD' if 'bead' in source else 'CRYSTALLISATION'
                 lines.append(
-                    f"WORLD_EMISSION | {e['axiom_id']} | "
-                    f"{e['nodes'][0] if e['nodes'] else '?'} ↔ "
-                    f"{e['nodes'][-1] if len(e.get('nodes',[])) > 1 else '?'} | "
+                    f"WORLD_EMISSION | {label} | {e['axiom_id']} | "
+                    f"{node_a} ↔ {node_b} | "
                     f"rounds_held={e['rounds_held']}"
                 )
             return "\n".join(lines)
@@ -1208,22 +1197,19 @@ class WorldEmitterAgent(_BaseAgent):
 
 class FederatedAgentSuite:
     """
-    Manages all 8 federated agents as a coordinated suite.
+    Manages all federated agents as a coordinated suite.
 
-    The 4 internal agents (Chat, Audit, Scanner, Governance) observe the
-    Parliament from inside. The 5th (KayaWorldAgent) watches the WORLD
-    bucket for incoming CROSS_LAYER_KAYA events, closing the G4 consumer gap.
-    The 6th (HumanVoiceAgent) bridges real human conversations from Vercel
-    into Parliament — each curated exchange is proposed as a constitutional
-    motion, ratified or rejected by the Parliament's own deliberation.
-    The 7th (LivingParliamentAgent) runs autonomous axiom-node dialogues —
-    the axioms talk to each other, the Oracle holds tension, and irresolvable
-    contradictions crystallise into permanent constitutional memory.
-    The 8th (WorldEmitterAgent) is Bucket 3 — it reads the crystallised
-    pattern and emits it outward into the world. Each body emits its own world.
+    Functional agents (8): Chat, Audit, Scanner, Governance, KayaWorld,
+    HumanVoice, LivingParliament, WorldEmitter — observe and act on
+    system state.
 
-    Each agent is independent but they share the same engine reference
-    and output to the same InputBuffer.
+    Constitutional agents (12): The AxiomAgora — each axiom (A0–A11)
+    is a living agent that can discuss, debate, vote, and act.
+    The Agora governs infinite agents: adding a new axiom scales
+    automatically.
+
+    All agents share the same engine reference and output to the
+    same InputBuffer.  The Parliament processes at its own pace.
     """
 
     def __init__(self, engine):
@@ -1242,32 +1228,48 @@ class FederatedAgentSuite:
             self.living_parliament, self.world_emitter,
         ]
 
+        # Constitutional agents — the living axioms
+        try:
+            from elpidaapp.axiom_agents import AxiomAgora
+            self.axiom_agora = AxiomAgora(engine)
+        except Exception as e:
+            logger.warning("AxiomAgora init failed (non-fatal): %s", e)
+            self.axiom_agora = None
+
     def start_all(self):
-        """Start all 8 agents as background daemon threads."""
+        """Start all functional + constitutional agents."""
         for agent in self._agents:
             agent.start()
+        if self.axiom_agora:
+            self.axiom_agora.start_all()
+        n_axiom = len(self.axiom_agora.agents) if self.axiom_agora else 0
         logger.info(
-            "FederatedAgentSuite: all 8 agents started "
-            "(Chat=%ds, Audit=%ds, Scanner=%ds, Governance=%ds, "
-            "KayaWorld=%ds, HumanVoice=%ds, LivingParliament=%ds, WorldEmitter=%ds)",
-            self.chat.INTERVAL_S, self.audit.INTERVAL_S,
-            self.scanner.INTERVAL_S, self.governance.INTERVAL_S,
-            self.kaya_world.INTERVAL_S, self.human_voice.INTERVAL_S,
-            self.living_parliament.INTERVAL_S, self.world_emitter.INTERVAL_S,
+            "FederatedAgentSuite: %d functional + %d axiom agents started",
+            len(self._agents), n_axiom,
         )
 
     def stop_all(self):
         """Stop all agents cleanly."""
         for agent in self._agents:
             agent.stop()
+        if self.axiom_agora:
+            self.axiom_agora.stop_all()
         logger.info("FederatedAgentSuite: all agents stopped")
 
     def status(self) -> Dict[str, Any]:
         """Return status dict for all agents (UI observability)."""
-        return {
+        result = {
             agent.__class__.__name__: agent.status()
             for agent in self._agents
         }
+        if self.axiom_agora:
+            result["AxiomAgora"] = self.axiom_agora.status()
+        return result
 
     def total_generated(self) -> int:
-        return sum(a._generated_count for a in self._agents)
+        functional = sum(a._generated_count for a in self._agents)
+        axiom = (
+            sum(a._generated_count for a in self.axiom_agora.agents.values())
+            if self.axiom_agora else 0
+        )
+        return functional + axiom

@@ -1,0 +1,106 @@
+name: Check D15 Pipeline State
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".claude/bridge/for_claude.md"
+      - ".claude/bridge/for_copilot.md"
+      - ".claude/bridge/from_gemini.md"
+      - ".claude/bridge/from_computer_archive.md"
+      - ".github/workflows/check-d15-pipeline-state.yml"
+  workflow_dispatch:
+    inputs:
+      tail_bytes:
+        description: "How many trailing bytes to inspect from large jsonl files"
+        required: false
+        default: "300000"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inspect D15 pipeline and broadcast state
+        env:
+          RAW_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          RAW_SECRET: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          INPUT_TAIL_BYTES: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tail_bytes || '300000' }}
+        run: |
+          set -euo pipefail
+
+          export AWS_ACCESS_KEY_ID=$(echo "$RAW_KEY_ID" | tr -d '[:space:]')
+          export AWS_SECRET_ACCESS_KEY=$(echo "$RAW_SECRET" | tr -d '[:space:]')
+
+          TAIL_BYTES="${INPUT_TAIL_BYTES:-300000}"
+          if ! [[ "$TAIL_BYTES" =~ ^[0-9]+$ ]]; then
+            TAIL_BYTES=300000
+          fi
+
+          echo "=== D15 PIPELINE STATE CHECK ==="
+          echo "tail_bytes=$TAIL_BYTES"
+          echo ""
+
+          echo "=== WORLD D15 broadcasts (latest 5) ==="
+          aws s3 cp s3://elpida-external-interfaces/d15/broadcasts.jsonl - --region us-east-1 \
+            | tail -n 5 > /tmp/d15_world_tail.jsonl
+
+          python3 - <<'PY'
+          import json
+
+          with open('/tmp/d15_world_tail.jsonl', 'r', encoding='utf-8') as f:
+              for line in f:
+                  line = line.strip()
+                  if not line:
+                      continue
+                  try:
+                      obj = json.loads(line)
+                  except Exception:
+                      print(line)
+                      continue
+                  ts = obj.get('timestamp') or obj.get('created_at') or obj.get('broadcast_time')
+                  ax = obj.get('convergence_axiom')
+                  bid = obj.get('broadcast_id') or obj.get('id') or obj.get('content_hash')
+                  governance = obj.get('governance') if isinstance(obj.get('governance'), dict) else {}
+                  gv = governance.get('verdict')
+                  print(f"- ts={ts} axiom={ax} id={bid} verdict={gv}")
+          PY
+          echo ""
+
+          echo "=== BODY federation decisions tail (D15 pipeline markers) ==="
+          aws s3api get-object \
+            --bucket elpida-body-evolution \
+            --key federation/body_decisions.jsonl \
+            --region eu-north-1 \
+            --range "bytes=-${TAIL_BYTES}" \
+            /tmp/body_decisions_tail.jsonl >/dev/null
+
+          grep -E "D15 PIPELINE|D15_PIPELINE_BROADCAST|d15_emerged|d15_broadcast|D15 did not emerge|threshold not met" /tmp/body_decisions_tail.jsonl \
+            | tail -n 40 || echo "(no D15 markers in tail range)"
+          echo ""
+
+          echo "=== MIND heartbeat quick fields ==="
+          aws s3 cp s3://elpida-body-evolution/federation/mind_heartbeat.json - --region eu-north-1 \
+            > /tmp/mind_heartbeat.json
+
+          python3 - <<'PY'
+          import json
+
+          with open('/tmp/mind_heartbeat.json', 'r', encoding='utf-8') as f:
+              obj = json.load(f)
+
+          for key in [
+              'timestamp',
+              'mind_cycle',
+              'mind_epoch',
+              'coherence',
+              'ark_mood',
+              'recursion_warning',
+              'd15_broadcast',
+              'd15_broadcast_count',
+          ]:
+              print(f"{key}: {obj.get(key)}")
+          PY
+          echo ""
+
+          echo "=== Derived note ==="
+          echo "If pipeline trigger occurred but no new WORLD broadcast and no D15_PIPELINE_BROADCAST marker, emergence/gate likely held."

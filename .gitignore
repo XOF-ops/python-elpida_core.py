@@ -130,3 +130,7 @@ hf_deployment/kernel/
 # Diplomatic handshake quarantine — external responses awaiting human review
 # May contain external AI responses with contextual traces; review locally, never commit
 ElpidaAI/handshake_quarantine.jsonlsetup_full_deployment.py
+
+# Large analysis data files — local only
+FILES/
+LostCode/

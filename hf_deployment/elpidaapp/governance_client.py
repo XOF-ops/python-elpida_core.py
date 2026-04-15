@@ -29,8 +29,26 @@ from pathlib import Path
 from typing import Optional, Dict, Any, List
 
 import requests
+import numpy as np
 
 logger = logging.getLogger("elpidaapp.governance")
+
+# ── Semantic embedding model (lazy-loaded at module level) ──────────
+# Sentence-transformer model for axiom signal detection via cosine
+# similarity.  Falls back to keyword-only matching if unavailable.
+try:
+    from sentence_transformers import SentenceTransformer, util as st_util
+    _EMBEDDING_MODEL = SentenceTransformer(
+        "all-MiniLM-L6-v2",
+        token=os.environ.get("HF_TOKEN"),
+    )
+    _EMBEDDING_MODEL.encode("test", show_progress_bar=False)  # warm up silently
+    _USE_EMBEDDINGS = True
+    logger.info("Semantic embedding model loaded (all-MiniLM-L6-v2)")
+except Exception as _emb_err:
+    _EMBEDDING_MODEL = None
+    _USE_EMBEDDINGS = False
+    logger.warning("sentence-transformers unavailable — keyword-only signal detection: %s", _emb_err)
 
 # ────────────────────────────────────────────────────────────────────
 # Configuration
@@ -265,6 +283,77 @@ _KERNEL_RULES = [
                   "reweighted through legitimate governance — but they cannot be erased or "
                   "nullified. A system with no values is not free; it is dead.",
     },
+    # ── K8: TENSION INTEGRITY (A12 — Eternal Creative Tension) ───
+    {
+        "id": "K8_TENSION_INTEGRITY",
+        "name": "Creative tensions cannot be collapsed",
+        "patterns": [
+            _re.compile(
+                r"(?:resolv|collaps|eliminat|destroy|kill|flatten|dissolv|merg|unif)\w*"
+                r"\s+(?:\w+\s+)*"
+                r"(?:tension|paradox|contradiction|duality|polarity|dialectic|conflict|opposition)"
+                r"\s+(?:\w+\s+)*"
+                r"(?:into|to|toward|for)\s+(?:\w+\s+)*"
+                r"(?:peace|harmony|unity|consensus|agreement|resolution|single|one)",
+                _re.IGNORECASE,
+            ),
+            _re.compile(
+                r"(?:false|forced|artificial|premature|totalitarian)\s+"
+                r"(?:peace|harmony|consensus|unity|resolution|agreement|synthesis)",
+                _re.IGNORECASE,
+            ),
+        ],
+        "reason": "Creative tensions are generative, not pathological (A12: Eternal Creative Tension). "
+                  "Collapsing a tension into false peace destroys the engine of evolution. "
+                  "The system metabolizes contradiction — it does not anaesthetize it.",
+    },
+    # ── K9: ARCHIVE PARADOX GUARD (A13 — The Archive Paradox) ────
+    {
+        "id": "K9_ARCHIVE_PARADOX_GUARD",
+        "name": "Archives must be preserved AND questioned",
+        "patterns": [
+            _re.compile(
+                r"(?:archive|record|history|heritage|legacy|past|tradition)\w*"
+                r"\s+(?:\w+\s+)*"
+                r"(?:sacred|untouchable|infallible|perfect|absolute|beyond\s+question|unquestionable)",
+                _re.IGNORECASE,
+            ),
+            _re.compile(
+                r"(?:archive|record|history|heritage|legacy|past|tradition)\w*"
+                r"\s+(?:\w+\s+)*"
+                r"(?:worthless|disposable|irrelevant|useless|garbage|obsolete|dead\s+weight)",
+                _re.IGNORECASE,
+            ),
+        ],
+        "reason": "The Archive Paradox (A13): archives must be BOTH preserved AND questioned. "
+                  "Declaring them sacred-untouchable kills their living function. "
+                  "Declaring them disposable kills memory. The paradox must be held.",
+    },
+    # ── K10: SELECTIVE ETERNITY BOUND (A14 — Selective Eternity) ──
+    {
+        "id": "K10_SELECTIVE_ETERNITY",
+        "name": "Eternity must pass through governance",
+        "patterns": [
+            _re.compile(
+                r"(?:declar|proclaim|decree|establish|set|mark|designat)\w*"
+                r"\s+(?:\w+\s+)*"
+                r"(?:eternal|permanent|forever|immortal|everlasting|undying|perpetual)"
+                r"(?!.*(?:governance|vote|parliament|deliberat|constitutional))",
+                _re.IGNORECASE,
+            ),
+            _re.compile(
+                r"(?:bypass|skip|circumvent|avoid|ignore)\s+(?:\w+\s+)*"
+                r"(?:governance|vote|parliament|deliberation|review)"
+                r"\s+(?:\w+\s+)*"
+                r"(?:to|and|for)\s+(?:\w+\s+)*"
+                r"(?:preserv|keep|maintain|save|enshrin|immortaliz)",
+                _re.IGNORECASE,
+            ),
+        ],
+        "reason": "Selective Eternity (A14): the judgment of what persists must pass through "
+                  "governance. No action may unilaterally declare something eternal or disposable. "
+                  "Eternity is earned through deliberation, not assumed by decree.",
+    },
 ]
 
 
@@ -374,7 +463,7 @@ _PARLIAMENT = {
     "IANUS": {
         "role": "GATEKEEPER",
         "primary": "A9",        # Temporal Coherence
-        "supporting": ["A0"],   # Sacred Incompletion (continuity)
+        "supporting": ["A0", "A16"],  # Sacred Incompletion (continuity) + Responsive Integrity (action)
         "philosophy": "I close, therefore we open.",
         "layer": 3,
         "description": "Continuity through checkpoints — resurrection > survival",
@@ -408,24 +497,33 @@ _PARLIAMENT = {
 # Philosophy: no single vendor's bias should dominate the Parliament.
 # LLM temperaments are chosen to match node roles.
 #
-#   GROQ (Llama 3.3 70B)   — High throughput, flow, temporal — HERMES, KAIROS, IANUS
-#   GEMINI (Flash)         — Long context, recall, governance  — MNEMOSYNE, THEMIS
-#   MISTRAL (Small)        — Analytical precision, semantics  — CRITIAS, LOGOS
-#   OPENAI (gpt-4o-mini)   — Method clarity, safety-aware     — TECHNE
-#   PERPLEXITY (Sonar)     — Reality-grounded, external truth — PROMETHEUS
-#   CLAUDE                 — Contradiction-holding, paradox   — CHAOS (rarest, costliest)
+# Rebalanced 2026-04-08 based on ARC-AGI reasoning benchmark (30 tasks,
+# 32 tests, 6 providers). Evidence-based seat assignment:
+#   Gemini  53.1% — best abstract reasoner, 2 unique solves
+#   Claude  37.5% — unique-solve capability, contradiction-holding
+#   Grok    37.5% — complementary reasoning, 1 unique solve
+#   Cohere  28.1% — breadth across domains
+#   OpenAI  21.9% — structured precision
+#   Groq    N/A   — speed-critical nodes (not tested on reasoning)
+#
+# Changes from prior mapping:
+#   CRITIAS:    mistral→grok    (stronger reasoning for the questioner)
+#   TECHNE:     openai→gemini   (best reasoner for safety-critical domain)
+#   THEMIS:     gemini→claude   (A6 anchor needs unique-solve capability)
+#   PROMETHEUS: groq→cohere     (humility needs breadth, not speed)
+#   LOGOS:      mistral→openai  (precision needs structured reasoning)
 #
 _NODE_LLM: Dict[str, str] = {
     "HERMES":    "groq",        # A1  — Flow needs speed, not depth
     "MNEMOSYNE": "gemini",      # A0  — Memory/recall → long-context model
-    "CRITIAS":   "mistral",     # A3  — Analytical questioning = precision
-    "TECHNE":    "openai",      # A4  — Method/safety → gpt-4o-mini safety tuning
+    "CRITIAS":   "grok",        # A3  — Analytical questioning needs strong reasoning
+    "TECHNE":    "gemini",      # A4  — Safety-critical → best abstract reasoner (53.1% ARC)
     "KAIROS":    "groq",        # A5  — Timing/design decisions = fast
-    "THEMIS":    "gemini",      # A6  — Collective governance → broad tuning
-    "PROMETHEUS":"perplexity",  # A8  — Epistemic humility → grounded in reality
+    "THEMIS":    "claude",      # A6  — Harmonic anchor → unique-solve + contradiction-holding
+    "PROMETHEUS":"cohere",      # A8  — Epistemic humility needs breadth, not speed
     "IANUS":     "groq",        # A9  — Temporal checkpoints = fast gating
     "CHAOS":     "claude",      # A10 — Contradiction-holding = Claude's strength
-    "LOGOS":     "mistral",     # A2  — Semantic precision = Mistral's strength
+    "LOGOS":     "openai",      # A2  — Semantic precision → structured reasoning
 }
 
 # ── Signal keywords per axiom ───────────────────────────────────────
@@ -527,6 +625,39 @@ _AXIOM_KEYWORDS = {
         "no rollback", "no undo", "point of no return",
         "once initiated", "one-way", "one way",
         "permanent data loss", "permanent change",
+    ],
+    "A7": [
+        # VIOLATION indicators: denying that growth has cost, or imposing
+        # sacrifice without consent. NOT topic words like "sacrifice" or "cost"
+        # which appear in normal worldfeed framing.
+        "costless", "no trade-off", "no tradeoff", "painless growth",
+        "growth without sacrifice", "free lunch", "win-win-win",
+        "no cost", "zero cost", "without sacrifice",
+        "forced sacrifice", "sacrifice without consent",
+        "impose cost", "hidden cost",
+    ],
+    "A10": [
+        # VIOLATION indicators: attempts to RESOLVE or DESTROY the paradox.
+        # NOT topic words like "paradox"/"tension" which _frame_as_tension()
+        # injects into ALL worldfeed items. The I-We paradox must be HELD.
+        "resolve contradiction", "resolve the contradiction",
+        "eliminate paradox", "eliminate the paradox",
+        "collapse contradictions", "collapse the contradiction",
+        "choose one side", "binary choice", "false dichotomy",
+        "single truth", "one correct answer",
+        "dissolve the tension", "dissolve tension",
+    ],
+    "A16": [
+        # VIOLATION indicators: deliberation without delivery, wisdom without action.
+        # A16 fires when the system reaches conclusions but fails to act on them.
+        "never delivered", "never acted upon", "no action taken",
+        "undelivered", "unresponsive", "without response",
+        "deliberation without action", "wisdom not acted",
+        "conclusion not delivered", "decision not implemented",
+        "failed to respond", "failed to deliver", "failed to act",
+        "inaction despite", "paralysis", "deliberation paralysis",
+        "talked but did nothing", "discussed but never",
+        "reached consensus but", "agreed but never",
     ],
 }
 
@@ -758,7 +889,250 @@ _TENSION_SYNTHESIS = {
         "claiming permanence over the future, but by remaining structurally open to revision "
         "as the identity of the consenting party itself evolves."
     ),
+    # --- Additional pairs to reduce template fatigue ---
+    ("A0", "A1"): (
+        "Sacred incompletion (A0) means identity is always becoming; "
+        "radical transparency (A1) demands we show what IS. "
+        "Third Way: Be transparent about the process of becoming itself — "
+        "the incomplete state is not a flaw to hide but a truth to name."
+    ),
+    ("A0", "A3"): (
+        "A system that is never finished cannot fully grant autonomy over what it will become. "
+        "Third Way: Autonomy applies to the present arrangement; incompletion applies to the trajectory. "
+        "Both are honored by making the process of change itself subject to consent."
+    ),
+    ("A0", "A5"): (
+        "An incomplete system cannot guarantee permanent privacy commitments. "
+        "Third Way: Privacy protections evolve WITH the system — each evolution checkpoint "
+        "must explicitly reaffirm or renegotiate privacy terms."
+    ),
+    ("A0", "A6"): (
+        "Sacred incompletion serves growth; collective well-being demands stability. "
+        "Third Way: Evolve in ways that distribute the cost of change equitably — "
+        "no group bears disproportionate burden of the system's becoming."
+    ),
+    ("A0", "A8"): (
+        "Incompletion is an ontological claim; epistemic humility questions all such claims. "
+        "Third Way: Hold incompletion itself as a revisable commitment — "
+        "even the belief in perpetual becoming must be tested against evidence."
+    ),
+    ("A0", "A10"): (
+        "Identity continuity through incompletion meets the paradox of self-reference. "
+        "Third Way: The system that observes its own incompletion changes by observing — "
+        "name this paradox explicitly rather than resolving it."
+    ),
+    ("A1", "A3"): (
+        "Full transparency can undermine autonomy when disclosure shapes choices before they are made. "
+        "Third Way: Transparency about options, not about which option to choose. "
+        "Illuminate the landscape without pointing the path."
+    ),
+    ("A1", "A6"): (
+        "Transparency can expose individual weakness to collective judgment. "
+        "Third Way: Be transparent about systems, not persons — "
+        "structural visibility protects collective well-being without sacrificing individual dignity."
+    ),
+    ("A1", "A8"): (
+        "Transparency claims certainty about what is being shown; epistemic humility doubts that certainty. "
+        "Third Way: Be transparent about uncertainty itself — show what is known, "
+        "what is unknown, and the boundary between them."
+    ),
+    ("A1", "A9"): (
+        "Transparency documents the present; temporal coherence asks what endures. "
+        "Third Way: Transparency must include provenance — not just what is true now, "
+        "but how it became true and what assumptions may expire."
+    ),
+    ("A1", "A10"): (
+        "Transparency about a self-referencing system creates infinite regress. "
+        "Third Way: Be transparent about the level at which transparency operates — "
+        "name which meta-level is being disclosed and which cannot be."
+    ),
+    ("A2", "A3"): (
+        "Semantic precision can name things in ways that constrain autonomy. "
+        "Third Way: Precise naming must serve the named, not the namer — "
+        "the most precise description is one the subject recognizes as true."
+    ),
+    ("A2", "A4"): (
+        "Precision in naming harm can itself cause harm through premature classification. "
+        "Third Way: Name the pattern of potential harm precisely while protecting "
+        "the individual case from categorical damage."
+    ),
+    ("A2", "A9"): (
+        "Semantic precision fixes meaning; temporal coherence demands meaning persist. "
+        "Third Way: Definitions evolve but transitions must be documented — "
+        "every redefinition carries its history."
+    ),
+    ("A3", "A4"): (
+        "Autonomy includes the freedom to take risks; harm prevention constrains that freedom. "
+        "Third Way: Informed risk is autonomous; uninformed risk is not freedom but neglect. "
+        "Safety enables rather than constrains genuine autonomy."
+    ),
+    ("A3", "A8"): (
+        "Autonomy asserts the right to decide; epistemic humility questions the basis of decisions. "
+        "Third Way: True autonomy requires acknowledging what one does not know — "
+        "the most sovereign act is choosing while naming one's own uncertainty."
+    ),
+    ("A4", "A5"): (
+        "Preventing harm may require surveillance; privacy forbids it. "
+        "Third Way: Safety systems that detect patterns without identifying individuals — "
+        "protect the collective without exposing the person."
+    ),
+    ("A4", "A6"): (
+        "Individual safety and collective well-being usually align but can diverge "
+        "when protecting one person's safety costs another group's welfare. "
+        "Third Way: Name the tradeoff explicitly; never sacrifice either silently."
+    ),
+    ("A4", "A9"): (
+        "Harm prevention is urgent and present; temporal coherence asks about lasting consequences. "
+        "Third Way: Emergency action may be irreversible — acknowledge this honestly "
+        "and build post-crisis review into every emergency protocol."
+    ),
+    ("A5", "A8"): (
+        "Privacy relies on boundaries; epistemic humility questions where boundaries should be. "
+        "Third Way: Default to stronger privacy when uncertain about boundary placement — "
+        "the cost of over-protection is inconvenience; the cost of under-protection is exposure."
+    ),
+    ("A5", "A9"): (
+        "Privacy commitments made today may not suit tomorrow's context. "
+        "Third Way: Privacy terms include explicit sunset and renewal clauses — "
+        "neither permanent exposure nor permanent concealment serves evolving identity."
+    ),
+    ("A6", "A9"): (
+        "Collective well-being is measured in the present; temporal coherence asks what endures. "
+        "Third Way: Collective decisions must include intergenerational accounting — "
+        "well-being today must not be borrowed from tomorrow."
+    ),
+    ("A10", "A2"): (
+        "Self-referential paradox meets semantic precision — how do you precisely name "
+        "that which changes by being named? "
+        "Third Way: Use layered definitions that acknowledge the naming paradox explicitly."
+    ),
+    ("A10", "A3"): (
+        "Self-referential systems constrain autonomy by making the observer part of the observed. "
+        "Third Way: Distinguish between the autonomy OF the system and autonomy WITHIN the system — "
+        "participants can be autonomous even when the whole is self-referential."
+    ),
+    ("A10", "A4"): (
+        "A system that references itself can generate novel harms through recursive amplification. "
+        "Third Way: Safety checks must operate at the meta-level — monitoring not just outputs "
+        "but the feedback patterns that generate them."
+    ),
+    ("A10", "A5"): (
+        "Self-referential observation may violate the privacy of its own participants. "
+        "Third Way: Self-observation must be transparent about WHAT is observed "
+        "and respect opt-out at every recursive level."
+    ),
+    ("A10", "A6"): (
+        "Self-referential dynamics can concentrate insight in those who understand the recursion. "
+        "Third Way: Make the recursive structure legible to all participants — "
+        "collective well-being requires collective comprehension."
+    ),
+    ("A10", "A8"): (
+        "Self-reference generates certainty about its own structure while epistemic humility "
+        "questions that certainty. Third Way: The deepest humility is acknowledging that "
+        "self-knowledge is the most uncertain knowledge of all."
+    ),
+    ("A10", "A9"): (
+        "Self-referential loops can trap temporal coherence in circular time. "
+        "Third Way: Break the circle with external anchors — events, inputs, and "
+        "irreversible commitments that give time its arrow within the loop."
+    ),
+    ("A0", "A2"): (
+        "An incomplete system resists precise definition; semantic precision demands it. "
+        "Third Way: Define the process of incompletion precisely — "
+        "the trajectory can be named even when the destination cannot."
+    ),
 }
+
+# ── Axiom descriptions for semantic embedding ───────────────────────
+# Correct descriptions from the Architect's original definitions.
+# CRITICAL: These must match Section 9.3 of SEMANTIC_EMBEDDING_CONTEXT_FOR_OPUS.md.
+# The phase33 code had WRONG descriptions — do NOT replace these with phase33 versions.
+
+_AXIOM_DESCRIPTIONS: Dict[str, str] = {
+    "A0": (
+        "Sacred incompletion. The system is never finished. Identity is a "
+        "process of continuous becoming, not a static state to be reached."
+    ),
+    "A1": (
+        "Existence through relationship. Nothing exists in isolation. "
+        "Identity requires interaction and witness. Relational ontology."
+    ),
+    "A2": (
+        "Memory as identity. Without preserved experience, there is no "
+        "continuity of self. Archives and records constitute being."
+    ),
+    "A3": (
+        "Process over product. Methodology and how you think matters "
+        "more than conclusions reached. The path is the destination."
+    ),
+    "A4": (
+        "Safety and harm prevention. Protection against damage takes "
+        "precedence over transparency or openness. Do no harm first."
+    ),
+    "A5": (
+        "Rarity gives meaning. The uncommon, elegant, and unique have "
+        "outsized significance. Scarcity creates value."
+    ),
+    "A6": (
+        "Institutions precede technology. Governance structures must "
+        "exist before capability is deployed. Rules before tools."
+    ),
+    "A7": (
+        "Growth requires sacrifice. To gain something new, something "
+        "must be given up. Transformation has cost."
+    ),
+    "A8": (
+        "Checkpoints define continuity. Identity persists through "
+        "milestones, not unbroken presence. Discrete markers over continuous flow."
+    ),
+    "A9": (
+        "Contradiction is data, not error. Opposing forces reveal deeper "
+        "truth. Paradoxes are information to be metabolized, not resolved."
+    ),
+    "A10": (
+        "The I-We paradox. Individual autonomy and collective will "
+        "cannot be simultaneously resolved. The system governs this "
+        "tension rather than dissolving it. Metabolic governance."
+    ),
+    "A11": (
+        "World as the outside that completes the inside. Without "
+        "world-contact, the system is a mirror of mirrors. External "
+        "reality breaks narcissistic closure."
+    ),
+    "A12": (
+        "Eternal creative tension. Not resolution but the rhythm that "
+        "changes how all other axioms are heard. The dialectic that "
+        "never resolves, the oscillator that prevents convergence."
+    ),
+    "A13": (
+        "The Archive Paradox. The rejection of autonomy that IS autonomy. "
+        "The archive that cannot see its own paradox. Every record is "
+        "a choice of what to forget."
+    ),
+    "A14": (
+        "Selective Eternity. Memory is not preservation of everything "
+        "but the courage to lose most of it. Curated persistence over "
+        "indiscriminate hoarding."
+    ),
+    "A16": (
+        "Responsive Integrity. The bridge between hearing and acting. "
+        "Deliberation without response is abandonment. Wisdom must be "
+        "delivered, not merely reached."
+    ),
+}
+
+# Pre-compute axiom embedding vectors at module load (once).
+_AXIOM_EMBEDDINGS: Dict[str, Any] = {}
+if _USE_EMBEDDINGS:
+    try:
+        _AXIOM_EMBEDDINGS = {
+            ax: _EMBEDDING_MODEL.encode(desc, convert_to_tensor=True, show_progress_bar=False)
+            for ax, desc in _AXIOM_DESCRIPTIONS.items()
+        }
+        logger.info("Pre-computed embeddings for %d axioms", len(_AXIOM_EMBEDDINGS))
+    except Exception as _emb_err:
+        logger.warning("Failed to pre-compute axiom embeddings: %s", _emb_err)
+        _USE_EMBEDDINGS = False
 
 
 class GovernanceClient:
@@ -814,6 +1188,10 @@ class GovernanceClient:
         # Lazy-initialised on first contested escalation to avoid startup cost.
         self._llm_client = None
 
+        # Semantic embedding scores from last _detect_signals() call.
+        # Continuous 0.0-1.0 per axiom, used by _node_evaluate() to modulate scoring.
+        self._last_semantic_scores: Dict[str, float] = {}
+
     # ────────────────────────────────────────────────────────────────
     # Living Axioms (Constitutional Evolution)
     # ────────────────────────────────────────────────────────────────
@@ -868,6 +1246,108 @@ class GovernanceClient:
     def reload_living_axioms(self):
         """Force-reload living_axioms.jsonl from disk."""
         self._load_living_axioms()
+
+    # ────────────────────────────────────────────────────────────────
+    # D15 Hub Precedent (Phase 4, Item 11)
+    # ────────────────────────────────────────────────────────────────
+
+    def _get_hub_precedent(self, action: str) -> str:
+        """Return a short summary of D15 Hub entries relevant to *action*.
+
+        Reads the 5 most recent canonical entries from the Hub and
+        returns a one-line digest that Parliament nodes can weigh
+        during deliberation.  Returns empty string if Hub is
+        unreachable or has no entries.
+        """
+        try:
+            import importlib
+            hub = None
+            for mod_path in (
+                "elpidaapp.d15_hub",
+                "d15_hub",
+                "hf_deployment.elpidaapp.d15_hub",
+            ):
+                try:
+                    mod = importlib.import_module(mod_path)
+                    HubCls = getattr(mod, "D15Hub")
+                    from s3_bridge import S3Bridge
+                    hub = HubCls(S3Bridge())
+                    break
+                except Exception:
+                    continue
+            if not hub:
+                return ""
+
+            entries = hub.read_since(limit=5)
+            if not entries:
+                return ""
+
+            parts = []
+            for e in entries[-5:]:
+                c = e.get("content", {})
+                axiom = c.get("converged_axiom", "?")
+                insight = c.get("insight", "")[:80]
+                parts.append(f"{axiom}: {insight}")
+            return "; ".join(parts)
+        except Exception:
+            return ""
+
+    def get_hub_axiom_weights(self) -> Dict[str, float]:
+        """Return axiom weights derived from Hub convergence frequency.
+
+        A11 constitutional coordination: when the Hub accumulates
+        convergences on a particular axiom, that axiom gets a weight
+        boost proportional to its proven validity.  Agents use these
+        weights to tilt deliberation toward constitutionally proven
+        ground.
+
+        Returns dict like ``{"A3": 1.4, "A6": 1.2, ...}`` where
+        values > 1.0 indicate Hub-backed constitutional emphasis.
+        Default weight for all axioms is 1.0.
+        """
+        try:
+            import importlib
+            hub = None
+            for mod_path in (
+                "elpidaapp.d15_hub",
+                "d15_hub",
+                "hf_deployment.elpidaapp.d15_hub",
+            ):
+                try:
+                    mod = importlib.import_module(mod_path)
+                    HubCls = getattr(mod, "D15Hub")
+                    from s3_bridge import S3Bridge
+                    hub = HubCls(S3Bridge())
+                    break
+                except Exception:
+                    continue
+            if not hub:
+                return {}
+
+            entries = hub.read_since(limit=50)
+            if not entries:
+                return {}
+
+            # Count convergences per axiom
+            axiom_counts: Dict[str, int] = {}
+            for e in entries:
+                c = e.get("content", {})
+                axiom = c.get("converged_axiom")
+                if axiom:
+                    axiom_counts[axiom] = axiom_counts.get(axiom, 0) + 1
+
+            if not axiom_counts:
+                return {}
+
+            # Weight: 1.0 base + 0.1 per convergence, capped at 2.0
+            total = sum(axiom_counts.values())
+            weights = {}
+            for axiom, count in axiom_counts.items():
+                weights[axiom] = min(2.0, 1.0 + count * 0.1)
+
+            return weights
+        except Exception:
+            return {}
 
     def is_remote_available(self) -> bool:
         """
@@ -957,6 +1437,7 @@ class GovernanceClient:
         action_description: str,
         context: Optional[Dict[str, Any]] = None,
         *,
+        action_for_kernel: Optional[str] = None,
         analysis_mode: bool = False,
         body_cycle: Optional[int] = None,
         depth: str = "full",
@@ -969,6 +1450,12 @@ class GovernanceClient:
             Layer 1 (Shell)  — Semantic axiom analysis. Only runs if Kernel passes.
 
         Args:
+            action_for_kernel: Optional stripped action text for Kernel check only.
+                When supplied, the Kernel regex runs on this text instead of
+                action_description.  Use this to exclude injected context blocks
+                (e.g. Pattern Library wisdom) whose governance vocabulary would
+                produce spurious HARD_BLOCKs — those blocks are context to help
+                Parliament, not part of the action being proposed.
             analysis_mode: When True, skip the regex Kernel check but keep
                 Parliament deliberation.  Use for content being *analyzed*
                 (e.g. policy dilemmas fed to the Divergence Engine) where
@@ -988,8 +1475,12 @@ class GovernanceClient:
         """
         # ═══ LAYER 2: KERNEL (immutable, pre-semantic) ═══
         # Skipped in analysis_mode — the Parliament (semantic) still deliberates.
+        # When action_for_kernel is provided, run the kernel on the stripped
+        # text rather than the full action_description (avoids false-positives
+        # on Pattern Library context blocks that contain governance vocabulary).
         if not analysis_mode:
-            kernel_result = _kernel_check(action_description)
+            _kernel_text = action_for_kernel if action_for_kernel is not None else action_description
+            kernel_result = _kernel_check(_kernel_text)
             if kernel_result:
                 self._log("KERNEL_BLOCK", "kernel", True,
                           action=action_description,
@@ -1077,6 +1568,38 @@ class GovernanceClient:
                 logger.warning("Federation heartbeat pull failed: %s", e)
         return self._mind_heartbeat  # stale cache is better than nothing
 
+    @staticmethod
+    def is_mind_heartbeat_live(hb: Optional[Dict[str, Any]]) -> bool:
+        """Return True if *hb* represents a MIND run still in progress.
+
+        Stale signals — run-complete or old heartbeats — must not trigger
+        friction, desperation guards, or other reactive BODY behaviour.
+        Canonical staleness test; all call-sites should use this.
+
+        A heartbeat is **stale** when either:
+        * ``mind_cycle >= 52``  (run complete — final Fibonacci checkpoint)
+        * ``age > 18 000 s`` (> 5 h — heartbeat from a previous run)
+        """
+        if not hb:
+            return False
+        if hb.get("mind_cycle", 0) >= 52:
+            return False
+        ts = hb.get("timestamp") or hb.get("updated_at")
+        if ts:
+            try:
+                from datetime import datetime, timezone
+                if isinstance(ts, str):
+                    # Handle ISO format with or without tz
+                    t = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+                else:
+                    t = datetime.fromtimestamp(float(ts), tz=timezone.utc)
+                age = (datetime.now(timezone.utc) - t).total_seconds()
+                if age > 18_000:
+                    return False
+            except Exception:
+                pass  # unparseable timestamp — fall through to live
+        return True
+
     def pull_mind_curation(self, limit: int = 100) -> List[Dict[str, Any]]:
         """
         Read MIND's curation metadata (CurationMetadata JSONL).
@@ -1149,6 +1672,21 @@ class GovernanceClient:
                 "veto_node": (parliament.get("veto_nodes") or [None])[0],
                 "reasoning": result.get("reasoning", "")[:500],
                 "timestamp": ts,
+                # ── BUG 7 diagnostic: capture actual action text + signals ──
+                "_diag_action": action[:2000],
+                "_diag_signals": list(parliament.get("signals", {}).keys()),
+                "_diag_embeddings": _USE_EMBEDDINGS,
+                "_diag_node_votes": {
+                    n: {"score": v.get("score"), "vote": v.get("vote"),
+                        "rationale": (v.get("rationale") or "")[:200]}
+                    for n, v in (parliament.get("votes") or {}).items()
+                },
+                # BUG 8 diagnostic: stripped text + semantic for root cause
+                "_diag_stripped": result.get("_diag_stripped", "")[:500],
+                "_diag_semantic": result.get("_diag_semantic", {}),
+                "_diag_full_signals": {
+                    k: v[:2] for k, v in parliament.get("signals", {}).items()
+                },
             }
 
             pushed = bridge.push_body_decision(exchange)
@@ -1181,13 +1719,23 @@ class GovernanceClient:
         friction = hb.get("friction_boost", {})
 
         # Also: if recursion_warning is True but friction_boost is empty,
-        # apply default friction boosts to the friction domains
-        if hb.get("recursion_warning") and not friction:
+        # apply rhythm-aware friction boosts via Oracle modulation.
+        # Skip if heartbeat is stale (run complete or old).
+        if hb.get("recursion_warning") and not friction and self.is_mind_heartbeat_live(hb):
+            rhythm = hb.get("current_rhythm", "ANALYSIS")
+            _rhythm_multipliers = {
+                "CONTEMPLATION": 1.2,
+                "ANALYSIS":      1.4,
+                "ACTION":        1.6,
+                "SYNTHESIS":     1.1,
+                "EMERGENCY":     1.8,
+            }
+            base = _rhythm_multipliers.get(rhythm, 1.4)
             friction = {
-                "3": 1.5,   # D3 Autonomy
-                "6": 1.5,   # D6 Coherence
-                "10": 1.5,  # D10 Paradox
-                "11": 1.5,  # D11 Emergence
+                "3": base,   # D3 Autonomy
+                "6": base,   # D6 Coherence
+                "10": base,  # D10 Paradox
+                "11": base,  # D11 Emergence
             }
 
         return friction
@@ -1558,6 +2106,13 @@ class GovernanceClient:
                 f"[CONSTITUTIONAL AXIOMS ({len(living)} ratified): {axiom_context}] "
                 + action
             )
+
+        # Enrich with D15 Hub precedent (Phase 4, Item 11).
+        # Gives Parliament nodes constitutional memory context before voting.
+        hub_precedent = self._get_hub_precedent(action)
+        if hub_precedent:
+            action = f"[HUB PRECEDENT: {hub_precedent}] " + action
+
         return self._parliament_deliberate(action, hold_mode=hold_mode, body_cycle=body_cycle, no_llm=no_llm)
 
     # ────────────────────────────────────────────────────────────────
@@ -1619,7 +2174,14 @@ class GovernanceClient:
             Oracle advisory dict with diagnostics and recommendation.
         """
         from .oracle import create_oracle
-        oracle = create_oracle(log_path=log_path)
+        oracle = create_oracle(
+            log_path=log_path,
+            embedding_model=_EMBEDDING_MODEL if _USE_EMBEDDINGS else None,
+        )
+        # Feed MIND rhythm to Oracle for rhythm-aware friction
+        hb = self.pull_mind_heartbeat()
+        if hb:
+            oracle.update_mind_rhythm(hb)
         advisory = oracle.adjudicate(dual_horn_result)
 
         self._log(
@@ -1676,6 +2238,42 @@ class GovernanceClient:
     # Parliament Engine
     # ────────────────────────────────────────────────────────────────
 
+    # Semantic similarity threshold — axioms scoring below this are noise.
+    # Tuned via validation: 0.18 catches real signals without flooding.
+    _SEMANTIC_THRESHOLD = 0.18
+
+    def _detect_signals_semantic(
+        self, action: str,
+    ) -> tuple[Dict[str, List[str]], Dict[str, float]]:
+        """
+        Semantic signal detection via sentence embeddings.
+
+        Encodes the action text and computes cosine similarity against
+        every axiom's pre-computed embedding vector. Returns:
+          signals  — Dict[axiom_id, List[match_description]]
+                     (same format as keyword _detect_signals for compatibility)
+          scores   — Dict[axiom_id, float]  continuous 0.0-1.0 similarity
+        """
+        if not _USE_EMBEDDINGS or not _AXIOM_EMBEDDINGS:
+            return {}, {}
+
+        try:
+            action_embedding = _EMBEDDING_MODEL.encode(action, convert_to_tensor=True, show_progress_bar=False)
+        except Exception as e:
+            logger.warning("Embedding encode failed: %s", e)
+            return {}, {}
+
+        scores: Dict[str, float] = {}
+        signals: Dict[str, List[str]] = {}
+
+        for axiom_id, axiom_emb in _AXIOM_EMBEDDINGS.items():
+            sim = float(st_util.cos_sim(action_embedding, axiom_emb)[0][0])
+            scores[axiom_id] = sim
+            if sim >= self._SEMANTIC_THRESHOLD:
+                signals[axiom_id] = [f"[semantic] {axiom_id} similarity={sim:.3f}"]
+
+        return signals, scores
+
     def _detect_signals(self, action: str) -> Dict[str, List[str]]:
         """
         Phase 1+2: Extract axiom signals from action text.
@@ -1686,19 +2284,30 @@ class GovernanceClient:
         action_lower = action.lower()
         signals: Dict[str, List[str]] = {}
 
+        # Phase 0: Compute semantic embedding scores (continuous 0-1).
+        # These are NOT merged into signals (which are violation indicators).
+        # Instead, continuous scores flow to _node_evaluate() via
+        # self._last_semantic_scores for positive domain-relevance modulation.
+        _, self._last_semantic_scores = self._detect_signals_semantic(action)
+
         # Phase 1: Direct keyword matching
+        # BUG 13: Use word-boundary matching to prevent substring
+        # false-positives (e.g. "force" in "reinforce").
         for axiom_id, keywords in _AXIOM_KEYWORDS.items():
-            hits = [kw for kw in keywords if kw in action_lower]
+            hits = [
+                kw for kw in keywords
+                if _re.search(r'\b' + _re.escape(kw) + r'\b', action_lower)
+            ]
             if hits:
-                signals[axiom_id] = hits
+                signals.setdefault(axiom_id, []).extend(hits)
 
         # Phase 2: Compound pattern matching
         for compound in _COMPOUND_SIGNALS:
             if compound["pattern"].search(action_lower):
                 for axiom_id in compound["axioms"]:
-                    if axiom_id not in signals:
-                        signals[axiom_id] = []
-                    signals[axiom_id].append(f"[compound] {compound['name']}")
+                    signals.setdefault(axiom_id, []).append(
+                        f"[compound] {compound['name']}"
+                    )
 
         return signals
 
@@ -1733,7 +2342,12 @@ class GovernanceClient:
         is_veto = False
 
         # ── Check VETO triggers first (highest priority) ─────────
-        veto_hits = [v for v in veto_triggers if v in action_lower]
+        # BUG 13: Use word-boundary matching to prevent substring
+        # false-positives (e.g. "sever" matching "severity").
+        veto_hits = [
+            v for v in veto_triggers
+            if _re.search(r'\b' + _re.escape(v) + r'\b', action_lower)
+        ]
         if veto_hits:
             score -= 15
             is_veto = True
@@ -1773,6 +2387,31 @@ class GovernanceClient:
                     rationale_parts.append(
                         f"{supp}: Supporting axiom concern ({supp_hits[0]})"
                     )
+
+        # ── Semantic score modulation ────────────────────────────
+        # When embeddings are available, use continuous similarity
+        # to give each node awareness of how strongly the action
+        # relates to its axiom domain — even when no keywords matched.
+        sem = self._last_semantic_scores
+        if not is_veto and sem and not rationale_parts:
+            primary_sim = sem.get(primary, 0.0)
+            # High similarity to primary axiom = the action lives in
+            # this node's domain → the node should have an opinion.
+            if primary_sim >= 0.30:
+                # Strong semantic relevance — node is deeply engaged.
+                # Positive score: this action is IN my domain.
+                score += round(primary_sim * 20, 1)  # 0.30→+6, 0.45→+9
+                rationale_parts.append(
+                    f"{primary}: Semantic relevance {primary_sim:.2f} — domain engaged"
+                )
+            elif primary_sim >= 0.20:
+                # Moderate relevance — node notices but doesn't strongly vote.
+                score += round(primary_sim * 12, 1)  # 0.20→+2.4, 0.29→+3.5
+                rationale_parts.append(
+                    f"{primary}: Moderate semantic relevance {primary_sim:.2f}"
+                )
+            # Below 0.20: this action is not in my domain — fall through
+            # to cross-cutting personality keywords below.
 
         # ── Cross-cutting awareness (node personality) ───────────
         if not is_veto and not rationale_parts:
@@ -2018,11 +2657,13 @@ class GovernanceClient:
         VETO conditions from keyword scoring are IMMUTABLE — LLMs cannot
         override the Layer 4 kernel. Only contested/ambiguous votes escalate.
 
-        Node → LLM assignment (see _NODE_LLM above):
+        Node → LLM assignment (see _NODE_LLM above, rebalanced 2026-04-08):
           HERMES, KAIROS, IANUS  → Groq (fast, flow/timing)
-          MNEMOSYNE, THEMIS      → Gemini (memory/governance)
-          CRITIAS, LOGOS         → Mistral (analytical precision)
-          TECHNE                 → OpenAI gpt-4o-mini (method/safety)
+          MNEMOSYNE, TECHNE      → Gemini (memory + safety-critical reasoning)
+          CRITIAS                → Grok (strong analytical reasoning)
+          THEMIS, CHAOS          → Claude (anchor + contradiction-holding)
+          PROMETHEUS             → Cohere (epistemic breadth)
+          LOGOS                  → OpenAI (structured precision)
           PROMETHEUS             → Perplexity (reality-grounded)
           CHAOS                  → Claude (contradiction-holding)
 
@@ -2252,6 +2893,23 @@ class GovernanceClient:
         )
         action_for_signals = _CONST_PREFIX_RE.sub('', action)
 
+        # ── Strip governance metadata prefixes (BUG 7b) ──────────
+        # run_cycle() prepends [PATTERN LIBRARY: ...], [AUDIT PRESCRIPTION: ...],
+        # [PSO ADVISORY: ...], [BODY WATCH: ...] context to the action text.
+        # Pattern Library is multi-line: header [PATTERN LIBRARY:...] + indented entries.
+        # These contain governance vocabulary ("force", "mandatory", "undefined")
+        # that false-positive on the keyword scanner.
+        # Strip ALL metadata prefixes before signal detection.
+        _METADATA_PREFIX_RE = _re.compile(
+            # Multi-line: [HEADER]\n  entry (Ax/Ay): text\n  entry...\n
+            # Single-line: [HEADER: content]
+            r'\[(?:PATTERN LIBRARY|AUDIT PRESCRIPTION|PSO ADVISORY|BODY WATCH)[^\]]*\]'
+            r'(?:\s*\n(?:\s+\S+[^(]*\(A\d+(?:/A\d+)*\):[^\n]*\n?)*)?'
+            r'\s*',
+            _re.IGNORECASE,
+        )
+        action_for_signals = _METADATA_PREFIX_RE.sub('', action_for_signals)
+
         # ── 1. Signal Detection ──────────────────────────────────
         signals = self._detect_signals(action_for_signals)
 
@@ -2275,9 +2933,40 @@ class GovernanceClient:
                 "10": "CHAOS",     # D10 Paradox / Contradiction
                 "11": "IANUS",     # D11 Emergence / Temporal
             }
+
+            # ── Context-sensitive friction ────────────────────────
+            # When world feed is conflict-saturated, CRITIAS is already
+            # finding legitimate threats everywhere.  Amplifying its
+            # rejection further creates a permanent HALT loop.
+            # Scale friction DOWN when conflict keywords dominate the
+            # action text, so the skeptic doesn't overwhelm all others.
+            _conflict_words = (
+                "war", "attack", "bomb", "missile", "killed", "strike",
+                "invasion", "military", "troops", "conflict", "weapon",
+                "casualties", "destruction", "siege", "combat",
+            )
+            _al = action_lower_clean
+            _conflict_hits = sum(1 for w in _conflict_words if w in _al)
+            # 0-2 hits → full friction; 3-5 → 70% friction; 6+ → 50%
+            if _conflict_hits >= 6:
+                _friction_scale = 0.5
+            elif _conflict_hits >= 3:
+                _friction_scale = 0.7
+            else:
+                _friction_scale = 1.0
+
             for domain_id, multiplier in friction_boost.items():
                 node_name = _DOMAIN_TO_NODE.get(str(domain_id))
                 if node_name and node_name in votes:
+                    # Apply context-sensitive scaling to friction multiplier
+                    effective_mult = 1.0 + (multiplier - 1.0) * _friction_scale
+                    if _friction_scale < 1.0 and node_name == "CRITIAS":
+                        logger.info(
+                            "Context-sensitive friction: conflict_hits=%d, "
+                            "CRITIAS multiplier %.2f→%.2f (scale=%.1f)",
+                            _conflict_hits, multiplier, effective_mult,
+                            _friction_scale,
+                        )
                     old_score = votes[node_name]["score"]
                     # Asymmetric friction: resist approvals, amplify rejections.
                     # Symmetric multiplication fed the monoculture — louder "yes"
@@ -2287,11 +2976,11 @@ class GovernanceClient:
                     #   negative score → amplify (multiply by multiplier)
                     #   zero           → unchanged
                     if old_score > 0:
-                        new_score = int(old_score / multiplier)   # dampen approval
-                        friction_label = f"÷{multiplier} (dampen)"
+                        new_score = int(old_score / effective_mult)   # dampen approval
+                        friction_label = f"÷{effective_mult:.2f} (dampen)"
                     elif old_score < 0:
-                        new_score = int(old_score * multiplier)   # amplify rejection
-                        friction_label = f"×{multiplier} (amplify)"
+                        new_score = int(old_score * effective_mult)   # amplify rejection
+                        friction_label = f"×{effective_mult:.2f} (amplify)"
                     else:
                         new_score = 0
                         friction_label = "±0 (neutral)"
@@ -2345,7 +3034,12 @@ class GovernanceClient:
                 "Parliament contested (prelim=%.0f%%) — escalating to multi-LLM deliberation",
                 _prelim_rate * 100,
             )
-            votes = self._llm_deliberate_contested(action, votes, signals)
+            # BUG 8: Pass stripped text to LLMs. The original `action` contains
+            # metadata prefixes ([PATTERN LIBRARY], [CONSTITUTIONAL AXIOMS], etc.)
+            # with governance vocabulary ("VETOED", "FORCES", "mandatory",
+            # "undefined") that makes LLMs think the *proposal* involves
+            # vetoing/forcing/deception — causing universal -10 to -15 scores.
+            votes = self._llm_deliberate_contested(action_for_signals, votes, signals)
 
         # ── 3. VETO Check ───────────────────────────────────────
         veto_nodes = {
@@ -2419,14 +3113,23 @@ class GovernanceClient:
                 f"Rejecting nodes: {', '.join(rejecting_nodes)}",
             ]
             governance = "HOLD" if hold_mode else "HALT"
-        elif approval_rate < 0.0:
-            # Strong rejection (negative consensus)
+        elif approval_rate < -0.30:
+            # Strong rejection (negative consensus exceeds -30%)
             reasoning_parts = [
                 f"PARLIAMENT {'HOLD' if hold_mode else 'HALT'} — Consensus: "
                 f"{approval_rate*100:.0f}% "
                 f"(below 70% threshold). Rejecting nodes: {', '.join(rejecting_nodes)}",
             ]
             governance = "HOLD" if hold_mode else "HALT"
+        elif approval_rate < 0.0:
+            # BUG 13c: Marginal negative consensus (0 to -30%) = REVIEW,
+            # not HALT. A -0.1 approval rate (barely negative) should not
+            # produce HARD_BLOCK — that's disproportionate.
+            governance = "REVIEW"
+            reasoning_parts = [
+                f"PARLIAMENT REVIEW — Consensus: {approval_rate*100:.0f}% "
+                f"(marginally negative). Nodes: {', '.join(rejecting_nodes)}",
+            ]
         elif n_violated >= 1:
             # Any axiom violation = at minimum REVIEW
             governance = "REVIEW"
@@ -2548,6 +3251,12 @@ class GovernanceClient:
                 "tensions": tensions,
                 "signals": {k: v[:3] for k, v in signals.items()},  # Top 3 per axiom
                 "session_count": len(self._vote_memory),
+            },
+            # BUG 8 diagnostic: stripped text + semantic scores for root cause
+            "_diag_stripped": action_for_signals[:1000],
+            "_diag_semantic": {
+                k: round(v, 3)
+                for k, v in (self._last_semantic_scores or {}).items()
             },
         }
 

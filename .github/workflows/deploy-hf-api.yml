@@ -51,9 +51,10 @@ jobs:
             ${{ github.workspace }}/hf_deployment/ \
             /tmp/api_space/
 
-          # Overwrite Dockerfile and README with API-specific versions
+          # Overwrite Dockerfile, README, and requirements with API-specific versions
           cp ${{ github.workspace }}/hf_api_space/Dockerfile /tmp/api_space/Dockerfile
           cp ${{ github.workspace }}/hf_api_space/README.md /tmp/api_space/README.md
+          cp ${{ github.workspace }}/hf_api_space/requirements.txt /tmp/api_space/requirements.txt
 
           # Stage and push
           git -C /tmp/api_space add -A

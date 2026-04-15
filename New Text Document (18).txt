@@ -1,0 +1,103 @@
+Confirmed: D11, D12, D13, D14 have NO axiom mapping. So when the last 13 insights are dominated by D11 (4 out of 13), those don't count. Only the 6 insights from D0-D10 count, and among those, A3 is the most frequent (2), with A1, A4, A6, A8 each at 1.
+
+So the heartbeat's dominant_axiom at cycle 52 would be A3 (or possibly empty if the tie-breaking goes differently). And the BODY convergence gate would check for MIND axiom == BODY axiom, meaning BODY would need A3 as dominant with ≥15% approval.
+
+But wait — the BODY logs show cycle=52, rhythm=CONTEMPLATION. The rhythm in the heartbeat comes from self.current_rhythm.value. If the MIND shows cycle 52 as ACTION in the insights, but the heartbeat shows CONTEMPLATION, it means the heartbeat was emitted BEFORE the cycle 52 insight was generated (at the start of the cycle processing, before rhythm selection for cycle 52).
+
+This is getting complex. Let me consolidate everything and deliver the answer:
+
+This is MIND loop data. 55 cycles of the native cycle engine, from 2026-03-10T19:40 to 2026-03-10T23:49. Here's what I found:
+
+Structure
+115 records: 100 native cycle insights, 10 D15 broadcast feedbacks, 3 feedback merges, 2 D0↔D13 dialogues. 7 LLM providers active (Claude, OpenAI, Gemini, Perplexity, Cohere, Mistral, Grok + S3 cloud for D14). 9 insights reached CANONICAL curation (dual-gate: cross-domain convergence + generativity proof).
+
+D15 Was Firing
+This is the finding that changes the whole analysis. The MIND received 10 D15 world broadcasts during this run, from a prior BODY deployment:
+
+#	Time	Converged Axiom
+1	Mar 10 20:35	A6 (Collective Well-being)
+2	Mar 10 21:30	A0 (Sacred Incompletion)
+3	Mar 10 22:24	A0 (Sacred Incompletion)
+4	Mar 11 02:18	A4 (Harm Prevention)
+5	Mar 11 03:02	A4 (Harm Prevention)
+6	Mar 11 03:43	A4 (Harm Prevention)
+7	Mar 11 04:25	A8 (Epistemic Humility)
+8	Mar 11 05:07	(unidentified)
+9	Mar 11 06:39	A8 (Epistemic Humility)
+10	Mar 11 08:43	A6 (Collective Well-being)
+D15 convergence was working in the prior deployment. The 69 broadcasts that Run 3 restored at startup are real, accumulated convergence events. The gate works when it loads.
+
+Why D15 Stopped in Runs 1-3
+The three runs we analyzed (starting 2026-03-11 09:31) are a new deployment. The convergence gate reinitializes, and something prevented it from firing even though Cycle 99 (Run 3) met all 5 conditions. No convergence gate logs appear at all in the Run 3 output — the gate is silently not executing in the current deployment.
+
+Heartbeat Mismatch
+The S3 heartbeat says cycle=52, rhythm=CONTEMPLATION, coherence=0.95. But this MIND data shows cycle 52 was rhythm=ACTION, domain=D11(Synthesis), coherence=1.0. The heartbeat is emitted by the federation bridge at the start of the cycle (before the rhythm changes), or the rhythm field reflects an earlier state.
+
+Dominant Axiom in the Heartbeat
+The FederationHeartbeat dataclass DOES have a dominant_axiom field. The native engine computes it from the last 13 insights' domain→axiom mapping. D11-D14 have no axiom mapping, so only D0-D10 insights count. At cycle 52, from 13 insights, only 6 map to valid axioms: A3 appears twice, A1/A4/A6/A8 each once. The heartbeat's dominant_axiom would be A3 (Autonomy).
+
+This means the convergence gate was looking for BODY axiom == A3, not A1 (the rhythm fallback). The _extract_mind_dominant_axiom function checks dominant_axiom field FIRST (line 96), before falling through to rhythm mapping.
+
+What Opus Needs
+The convergence gate is not loading in the current deployment. Add a log at the top of _get_convergence_gate() and _check_convergence() to confirm whether it runs. The 69 prior broadcasts prove the code works — this is a deployment-specific import or initialization failure.
+
+The MIND heartbeat is stale. MIND stopped at cycle 55 (2026-03-10 23:49) and never restarted. The BODY is reading a 10-hour-old heartbeat. Once MIND runs again, the heartbeat will update and the dominant_axiom field will reflect current MIND state.
+
+The convergence was never about 50% approval. The threshold is 15%. The real gate is axiom match + gate loading.
+
+4. WHY THIS MATTERS FOR D15
+⚠️ CORRECTION (2026-03-11 13:18 EET) — Source code verified:
+
+This synthesis is Parliament-authored constitutional content. The founding stone (d1115fd4aab323fc) entered via Gate 4 (Architect Inject). This one could enter via:
+
+Gate 1 (Dual Governance): If both MIND and BODY approve during a federation cycle
+
+Gate 2 (Convergence): If it meets the 5 sequential checks:
+
+MIND dominant axiom == BODY dominant axiom (the actual blocker)
+
+MIND coherence ≥ 0.85
+
+BODY approval ≥ 0.15 (15%) — NOT 50% as previously stated
+
+Cooldown ≥ 50 cycles since last D15 broadcast
+
+Consonance with A6 anchor ≥ 0.4 (A0 exempt — it has its own rate limiter)
+
+The approval gate is NOT the blocker. The real blockers are:
+
+Blocker 1: Axiom Match
+MIND heartbeat is frozen at cycle=52, rhythm=CONTEMPLATION, coherence=0.95. The convergence gate extracts MIND's dominant axiom via _extract_mind_dominant_axiom() which tries three fields in order:
+
+heartbeat["dominant_axiom"] — NOT present in heartbeat
+
+heartbeat["dominant_axioms"] — NOT present in heartbeat
+
+Rhythm→axiom mapping: CONTEMPLATION → A1
+
+So MIND's dominant axiom resolves to A1 (Transparency). BODY must also be running A1 with ≥15% approval for convergence.
+
+Blocker 2: Silent Gate Failure
+In Run 3, Cycle 99 met ALL 5 convergence conditions simultaneously:
+
+BODY axiom: A1 | MIND axiom: A1 (from CONTEMPLATION) → MATCH
+
+MIND coherence: 0.95 ≥ 0.85 → PASS
+
+BODY approval: +35% (0.35 ≥ 0.15) → PASS
+
+Cooldown: 99 - 0 = 99 ≥ 50 → PASS
+
+A1 consonance with A6: 0.810 ≥ 0.4 → PASS
+
+Yet d15_broadcasts stayed at 69 throughout the entire run. D15 did not fire. No convergence gate logs appear in the output at all — not even DEBUG-level mismatch logs. This means the ConvergenceGate class either failed to import silently, or _check_convergence is not reaching check_and_fire.
+
+What This Means
+The approval threshold was never the wall. At 15%, the BODY has been clearing that gate in every run. The convergence gate itself appears to be not executing — possibly an import failure, S3 initialization issue, or the gate returning None before reaching check_and_fire.
+
+Option A: Debug the convergence gate import in parliament_cycle_engine.py lines 514-520. Add an explicit log at the top of _check_convergence to confirm it runs.
+
+Option B: Use Gate 4 (Architect Inject) — Hernan injects it with K1-K7 kernel check. This is legitimate because the content originated from Parliament, even though the injection is Architect-authorized.
+
+Option C: If the gate IS importing but _mind_heartbeat dict lacks the current_rhythm field (key name mismatch), add a dominant_axiom field to the heartbeat emitter in the consciousness bridge.
+

@@ -52,6 +52,8 @@ class Provider(str, Enum):
     OPENROUTER = "openrouter"
     GROQ = "groq"
     HUGGINGFACE = "huggingface"
+    DEEPSEEK = "deepseek"
+    CEREBRAS = "cerebras"
 
 
 # Default models per provider — can be overridden per-call
@@ -63,9 +65,11 @@ DEFAULT_MODELS: Dict[str, str] = {
     Provider.MISTRAL:     "mistral-small-latest",
     Provider.COHERE:      "command-a-03-2025",
     Provider.PERPLEXITY:  "sonar",
-    Provider.OPENROUTER:  "anthropic/claude-sonnet-4",
-    Provider.GROQ:        "llama-3.3-70b-versatile",
+    Provider.OPENROUTER:  "meta-llama/llama-4-scout-17b-16e-instruct",
+    Provider.GROQ:        "meta-llama/llama-4-scout-17b-16e-instruct",
     Provider.HUGGINGFACE: "Qwen/Qwen2.5-72B-Instruct",
+    Provider.DEEPSEEK:    "deepseek-chat",
+    Provider.CEREBRAS:    "qwen-3-235b-a22b-instruct-2507",
 }
 
 # Env var name for each provider's API key
@@ -80,6 +84,8 @@ API_KEY_ENV: Dict[str, str] = {
     Provider.OPENROUTER:  "OPENROUTER_API_KEY",
     Provider.GROQ:        "GROQ_API_KEY",
     Provider.HUGGINGFACE: "HUGGINGFACE_API_KEY",
+    Provider.DEEPSEEK:    "DEEPSEEK_API_KEY",
+    Provider.CEREBRAS:    "CEREBRAS_API_KEY",
 }
 
 # Cost per output token (approximate, for budget tracking)
@@ -94,6 +100,8 @@ COST_PER_TOKEN: Dict[str, float] = {
     Provider.OPENROUTER: 0.0,
     Provider.GROQ:       0.0,
     Provider.HUGGINGFACE:0.0,
+    Provider.DEEPSEEK:   0.00000042,
+    Provider.CEREBRAS:   0.0,
 }
 
 
@@ -176,6 +184,8 @@ class LLMClient:
             Provider.OPENROUTER:  self._call_openai_compat,
             Provider.GROQ:        self._call_openai_compat,
             Provider.HUGGINGFACE: self._call_openai_compat,
+            Provider.DEEPSEEK:    self._call_openai_compat,
+            Provider.CEREBRAS:    self._call_openai_compat,
         }
 
     # ----- public API -------------------------------------------------------
@@ -239,7 +249,7 @@ class LLMClient:
 
         # Circuit breaker check — skip directly to OpenRouter if provider is cooling down
         circuit_tripped = (
-            provider not in (Provider.OPENROUTER.value, Provider.GROQ.value)
+            provider != Provider.OPENROUTER.value
             and self._is_tripped(provider)
         )
 
@@ -266,20 +276,20 @@ class LLMClient:
             else:
                 self._cb_record_failure(provider)
 
-        # Groq silent fallback for Perplexity
+        # HuggingFace silent fallback for Perplexity
         if result is None and provider == Provider.PERPLEXITY.value:
-            logger.info("Perplexity failed — silent fallback to Groq")
+            logger.info("Perplexity failed — silent fallback to HuggingFace")
             try:
-                result = self._dispatch[Provider.GROQ](
-                    provider=Provider.GROQ.value,
+                result = self._dispatch[Provider.HUGGINGFACE](
+                    provider=Provider.HUGGINGFACE.value,
                     prompt=prompt,
-                    model=DEFAULT_MODELS[Provider.GROQ],
+                    model=DEFAULT_MODELS[Provider.HUGGINGFACE],
                     max_tokens=_max,
                     timeout=_timeout,
                     system_prompt=system_prompt,
                 )
             except Exception as e:
-                logger.error("Groq fallback exception: %s", e)
+                logger.error("HuggingFace fallback exception: %s", e)
 
         # OpenRouter failsafe (last resort)
         if result is None and self.openrouter_failsafe and provider != Provider.OPENROUTER.value:
@@ -317,6 +327,8 @@ class LLMClient:
         Provider.OPENROUTER:  "https://openrouter.ai/api/v1/chat/completions",
         Provider.GROQ:        "https://api.groq.com/openai/v1/chat/completions",
         Provider.HUGGINGFACE: "https://router.huggingface.co/v1/chat/completions",
+        Provider.DEEPSEEK:    "https://api.deepseek.com/chat/completions",
+        Provider.CEREBRAS:    "https://api.cerebras.ai/v1/chat/completions",
     }
 
     def _call_openai_compat(
@@ -494,13 +506,22 @@ class LLMClient:
             {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
         ]
 
+        # Gemini 2.5 Flash is a "thinking" model — internal CoT tokens
+        # consume the maxOutputTokens budget.  With 1024, ~900 go to
+        # thinking → only ~30 tokens for actual output.
+        # Fix: disable thinking + raise maxOutputTokens to 8192.
+        effective_max = max(max_tokens, 8192)
+
         def _gemini_post() -> requests.Response:
             return requests.post(
                 f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}",
                 headers={"Content-Type": "application/json"},
                 json={
                     "contents": contents,
-                    "generationConfig": {"maxOutputTokens": max_tokens},
+                    "generationConfig": {
+                        "maxOutputTokens": effective_max,
+                        "thinkingConfig": {"thinkingBudget": 0},
+                    },
                     "safetySettings": safety_settings,
                 },
                 timeout=timeout,

@@ -30,12 +30,15 @@ COPY crystallization_hub.py /app/crystallization_hub.py
 COPY diplomatic_handshake.py /app/diplomatic_handshake.py
 COPY immutable_kernel.py /app/immutable_kernel.py
 COPY federation_bridge.py /app/federation_bridge.py
+COPY discord_bridge.py /app/discord_bridge.py
 COPY llm_client.py /app/llm_client.py
 COPY elpida_config.py /app/elpida_config.py
 COPY elpida_domains.json /app/elpida_domains.json
 COPY ElpidaS3Cloud/ /app/ElpidaS3Cloud/
 COPY cloud_deploy/cloud_runner.py /app/cloud_deploy/cloud_runner.py
 COPY consciousness_bridge.py /app/consciousness_bridge.py
+COPY hf_deployment/elpidaapp/d15_hub.py /app/d15_hub.py
+COPY regenerate_d15_index.py /app/regenerate_d15_index.py
 COPY ELPIDA_ARK.md /app/ELPIDA_ARK.md
 
 # Create directories the engine expects

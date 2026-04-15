@@ -22,3 +22,17 @@ streamlit>=1.37.0       # UI frontend (>=1.37 required for @st.fragment auto-ref
 
 # ── Utilities ──
 pydantic>=2.0.0         # Data validation
+
+# ── Semantic embedding for axiom signal detection ──
+sentence-transformers>=2.2.0   # Parliament semantic signal detection
+numpy>=1.24.0                  # Required by sentence-transformers
+faiss-cpu>=1.7.4               # Oracle FAISS semantic retrieval over advisories
+
+# ── Domain Internet Grounding (P4) ──
+ddgs>=9.0.0                    # DuckDuckGo web search for domain grounding
+
+# ── Discord Guest Chamber ──
+discord.py>=2.3.0
+
+# ── Replicate Vision (Flux image generation) ──
+replicate>=0.25.0               # Bot listener for #guest-chamber channel

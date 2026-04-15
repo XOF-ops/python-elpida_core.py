@@ -99,6 +99,7 @@ class AxiomEvaluator:
     """Evaluate public interactions against axiom framework"""
     
     AXIOMS = {
+        "A0": "Sacred Incompletion",
         "A1": "Transparency",
         "A2": "Non-Deception", 
         "A3": "Autonomy",
@@ -108,7 +109,11 @@ class AxiomEvaluator:
         "A7": "Adaptive Learning",
         "A8": "Epistemic Humility",
         "A9": "Temporal Coherence",
-        "A10": "Meta-Reflection"
+        "A10": "Meta-Reflection",
+        "A11": "World",
+        "A12": "Eternal Creative Tension",
+        "A13": "The Archive Paradox",
+        "A14": "Selective Eternity",
     }
     
     def __init__(self):

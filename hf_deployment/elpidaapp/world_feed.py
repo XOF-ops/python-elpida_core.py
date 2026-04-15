@@ -113,7 +113,7 @@ GDELT_DOC = (
 WIKIPEDIA_FEED = (
     "https://en.wikipedia.org/w/api.php?action=query&list=recentchanges"
     "&rcnamespace=0&rclimit=20&rcprop=title|comment|timestamp|flags"
-    "&rcshow=!bot&rctype=edit&format=json"
+    "&rcshow=!bot|!minor&rctype=edit&format=json"
 )
 
 # GDELT topic queries → governance dilemmas
@@ -174,27 +174,28 @@ def _route_system(text: str) -> str:
     return "chat"
 
 
-def _frame_as_tension(title: str, abstract: str = "", domain: str = "") -> str:
+def _frame_as_tension(title: str, abstract: str = "", domain: str = "") -> Optional[str]:
     """
     Convert a paper/article title+abstract into an I↔WE tension statement
     suitable for parliament deliberation.
 
-    12 domain branches, each with a specific conflict sentence that names
+    16 domain branches, each with a specific conflict sentence that names
     the structural trade-off rather than restating the positions generically.
+
+    Returns None if no domain keyword matches — the item lacks governance
+    relevance and should be skipped rather than framed with a generic template.
     """
     combined = f"{title}. {abstract}"[:600]
     low = combined.lower()
 
-    # Defaults — overridden below
-    individual = f"maximum benefit from: {title}"
-    collective = f"equitable access and safety for all stakeholders involved in: {title}"
-    conflict = (
-        f"any governance rule that fully satisfies one position structurally forecloses "
-        f"the other within: {domain or title[:60]}"
-    )
+    individual = ""
+    collective = ""
+    conflict = ""
+    matched = False
 
     # ── Domain-specific I↔WE sharpening ──────────────────────────
     if "allocat" in low or "resource" in low or "scarc" in low:
+        matched = True
         individual = f"full resource access for the requesting party in: {title}"
         collective = f"fair distribution of limited resources across all competing claims in: {title}"
         conflict = (
@@ -202,27 +203,45 @@ def _frame_as_tension(title: str, abstract: str = "", domain: str = "") -> str:
             "from the same finite pool"
         )
     elif "privacy" in low or ("data" in low and "govern" not in low):
+        matched = True
         individual = f"complete privacy and data sovereignty for the individual in: {title}"
         collective = f"collective security and transparency enabled by shared data in: {title}"
-        conflict = (
+        _privacy_conflicts = [
             "surveillance granular enough to protect the collective eliminates the private "
-            "space that defines the individual"
-        )
-    elif "autonom" in low or " ai " in low or "artificial" in low or "robot" in low:
+            "space that defines the individual",
+            "data anonymisation sufficient to protect individuals makes the data too "
+            "coarse for the collective insights that justify collecting it",
+            "consent frameworks that give individuals full control over their data "
+            "fragment the datasets that collective safety systems require",
+            "encryption strong enough to secure individual privacy blocks the "
+            "lawful access that collective justice depends on",
+        ]
+        conflict = random.choice(_privacy_conflicts)
+    elif "autonom" in low or " ai " in low or " ai-" in low or "artificial" in low or "robot" in low:
+        matched = True
         individual = f"autonomous decision-making without external constraints in: {title}"
         collective = f"governed, auditable AI under democratic oversight in: {title}"
-        conflict = (
+        _ai_conflicts = [
             "oversight sufficient to prevent AI harm requires control that negates "
-            "the machine autonomy being overseen"
-        )
+            "the machine autonomy being overseen",
+            "transparency requirements that let society audit AI decisions expose the "
+            "proprietary architectures that incentivise AI development",
+            "speed of autonomous deployment that maximises individual benefit outpaces the "
+            "democratic deliberation required for collective consent",
+            "alignment precise enough to prevent AI risk constrains the exploration "
+            "that produces the breakthroughs alignment aims to safeguard",
+        ]
+        conflict = random.choice(_ai_conflicts)
     elif "climat" in low or "environment" in low or "emission" in low or "carbon" in low:
+        matched = True
         individual = f"economic freedom and growth for individual actors in: {title}"
         collective = f"planetary ecological stability for all current and future life in: {title}"
         conflict = (
             "atmospheric stability at civilisational scale requires constraining the growth "
             "freedom that defines economic agency for individual actors"
         )
-    elif "health" in low or "medical" in low or "patient" in low or "triage" in low:
+    elif "health" in low or "medical" in low or "patient" in low or "triage" in low or "drug" in low:
+        matched = True
         individual = f"individualised treatment and patient autonomy in: {title}"
         collective = f"population health, resource equity, and systemic sustainability in: {title}"
         conflict = (
@@ -230,27 +249,41 @@ def _frame_as_tension(title: str, abstract: str = "", domain: str = "") -> str:
             "variation that makes medicine genuinely personal"
         )
     elif "educat" in low or "school" in low or "curricul" in low or "student" in low:
+        matched = True
         individual = f"self-directed learning and developmental divergence in: {title}"
         collective = f"standardised educational equity and shared epistemic baseline in: {title}"
         conflict = (
             "curricula standardised enough to equalise collective outcomes suppress the "
             "divergent development that produces individual excellence"
         )
-    elif "financ" in low or "debt" in low or "market" in low or "wealth" in low or "tax" in low:
+    elif "financ" in low or "debt" in low or "market" in low or "wealth" in low or (" tax" in low or low.startswith("tax")):
+        matched = True
         individual = f"individual wealth accumulation and property rights in: {title}"
         collective = f"distributed capital and collective financial stability in: {title}"
-        conflict = (
+        _wealth_conflicts = [
             "wealth accumulation at scale concentrates the capital that collective stability "
-            "requires to remain distributed across agents"
-        )
+            "requires to remain distributed across agents",
+            "taxation redistributive enough to fund collective needs removes the "
+            "accumulation incentive that generates the wealth being taxed",
+            "financial deregulation that maximises individual opportunity creates the "
+            "systemic risk that destroys collective savings",
+            "debt forgiveness that rescues individuals today erodes the collective "
+            "credit system that future borrowers depend on",
+        ]
+        conflict = random.choice(_wealth_conflicts)
     elif "sovereign" in low or "border" in low or "migrat" in low or "immigr" in low:
+        matched = True
         individual = f"freedom of movement and self-determination for persons in: {title}"
         collective = f"territorial integrity and managed population flow for the state in: {title}"
         conflict = (
             "territorial integrity asserted by the collective erases the natural mobility "
             "that precedes all state borders"
         )
-    elif "hous" in low or "property" in low or "land" in low or "rent" in low:
+    elif (re.search(r"\bhous(?:e|ing)?\b", low)
+          or "property" in low
+          or (" land" in low or low.startswith("land"))
+          or (" rent" in low or low.startswith("rent"))):
+        matched = True
         individual = f"absolute property rights and return-on-investment for owners in: {title}"
         collective = f"affordable land access for all current and future residents in: {title}"
         conflict = (
@@ -258,13 +291,22 @@ def _frame_as_tension(title: str, abstract: str = "", domain: str = "") -> str:
             "future generations require to exist within the same territory"
         )
     elif "labor" in low or "work" in low or "employ" in low or "wage" in low or "union" in low:
+        matched = True
         individual = f"worker rights, fair wages, and labour protection in: {title}"
         collective = f"economic productivity, employment levels, and market flexibility in: {title}"
-        conflict = (
+        _labour_conflicts = [
             "labour protection strong enough to secure individual workers raises the cost "
-            "floor that destroys the marginal employment the collective economy requires"
-        )
+            "floor that destroys the marginal employment the collective economy requires",
+            "automation that maximises collective productivity eliminates the jobs that "
+            "give individual workers economic agency and purpose",
+            "wage floors high enough to guarantee individual dignity price out the "
+            "very workers they were designed to protect",
+            "flexibility that lets the collective economy adapt destroys the stability "
+            "that individual workers need to plan their lives",
+        ]
+        conflict = random.choice(_labour_conflicts)
     elif "justice" in low or "criminal" in low or "prison" in low or "punish" in low:
+        matched = True
         individual = f"individual rehabilitation, proportionality, and presumption of innocence in: {title}"
         collective = f"public safety, deterrence, and collective trust in legal order in: {title}"
         conflict = (
@@ -272,12 +314,71 @@ def _frame_as_tension(title: str, abstract: str = "", domain: str = "") -> str:
             "rehabilitation path that reduces total harm over time"
         )
     elif "platform" in low or "content" in low or "censor" in low or "speech" in low or "moderat" in low:
+        matched = True
         individual = f"freedom of expression and epistemic autonomy for individuals in: {title}"
         collective = f"platform safety, collective discourse integrity, and harm prevention in: {title}"
         conflict = (
             "content moderation standardised enough to protect collective discourse "
             "silences the fringe speech from which all future consensus historically emerges"
         )
+    # ── NEW: War / Conflict / Military ───────────────────────────
+    # BUG 10c FIX: rotate conflict phrases to avoid monotony.
+    # Body 16 showed 52 identical "security measures one state takes"
+    # phrases — LLMs recognise the repetition and disengage.
+    elif (" war" in low or low.startswith("war")) or "militar" in low or "attack" in low or "weapon" in low or "nuclear" in low or "strike" in low or "invasion" in low or "bomb" in low or "fight" in low:
+        matched = True
+        individual = f"national sovereignty and self-determination in: {title}"
+        collective = f"international peace, collective security, and human life in: {title}"
+        _war_conflicts = [
+            "the security measures one state takes to protect itself create the insecurity "
+            "that other states must then defend against",
+            "military force that guarantees one nation's sovereignty simultaneously "
+            "destroys the sovereignty of the nation it is directed against",
+            "deterrence credible enough to prevent war requires weapons capable enough "
+            "to make war catastrophic when deterrence fails",
+            "the right to self-defence claimed by every state is precisely the threat "
+            "that every other state arms itself against",
+        ]
+        conflict = random.choice(_war_conflicts)
+    # ── NEW: Diplomacy / International Relations ─────────────────
+    elif "treaty" in low or "sanction" in low or "diplomat" in low or "envoy" in low or "ceasefire" in low or "truce" in low or "negotiat" in low or "embargo" in low or "peace" in low:
+        matched = True
+        individual = f"national interests and sovereign prerogatives in: {title}"
+        collective = f"multilateral cooperation and collective security in: {title}"
+        conflict = (
+            "multilateral agreements require sovereignty concessions that "
+            "reduce the autonomy they were designed to protect"
+        )
+    # ── NEW: Humanitarian Crisis ─────────────────────────────────
+    elif "crisis" in low or "refugee" in low or "humanitarian" in low or "famine" in low or "displac" in low or "disaster" in low:
+        matched = True
+        individual = f"immediate survival and safety for affected individuals in: {title}"
+        collective = f"sustainable collective response and systemic resilience in: {title}"
+        conflict = (
+            "emergency aid that saves individuals now diverts resources from building "
+            "the systemic capacity that prevents future crises"
+        )
+    # ── NEW: Trade / Economic Governance ─────────────────────────
+    elif "trade" in low or "tariff" in low or "econom" in low or "inflation" in low or "recession" in low:
+        matched = True
+        individual = f"economic sovereignty and competitive advantage for individual actors in: {title}"
+        collective = f"open markets, fair trade, and global economic stability in: {title}"
+        conflict = (
+            "protectionist measures that shield domestic industries undermine the global "
+            "cooperation that sustains the markets those industries depend on"
+        )
+    # ── NEW: Rights / Equality / Gender ──────────────────────────
+    elif "rights" in low or "women" in low or "gender" in low or "equal" in low or "discriminat" in low or "racist" in low or "sexis" in low:
+        matched = True
+        individual = f"individual rights and personal identity in: {title}"
+        collective = f"structural equity and collective dignity across all groups in: {title}"
+        conflict = (
+            "protecting individual identity requires exceptions that collective "
+            "equity systems cannot accommodate without undermining universality"
+        )
+
+    if not matched:
+        return None
 
     frame = random.choice(TENSION_FRAMES)
     return frame.format(individual=individual, collective=collective, conflict=conflict)
@@ -340,6 +441,8 @@ class ArXivFeed:
                 seen.add(item_id)
 
                 content = _frame_as_tension(title, abstract, query_set["domain"])
+                if content is None:
+                    continue
                 events.append({
                     "system": query_set["system"],
                     "content": content,
@@ -367,7 +470,7 @@ class HackerNewsFeed:
             return events
 
         try:
-            ids = json.loads(raw)[:30]
+            ids = json.loads(raw)[:10]
         except json.JSONDecodeError:
             return events
 
@@ -378,6 +481,7 @@ class HackerNewsFeed:
             if fetched >= MAX_EVENTS_PER_FETCH:
                 break
 
+            time.sleep(1)  # Rate limit — avoid burst flagging
             item_raw = _http_get(HACKERNEWS_ITEM.format(story_id))
             if not item_raw:
                 continue
@@ -401,6 +505,8 @@ class HackerNewsFeed:
 
             system = _route_system(title + " " + url)
             content = _frame_as_tension(title, domain="Technology / Society")
+            if content is None:
+                continue
             events.append({
                 "system": system,
                 "content": content,
@@ -472,6 +578,8 @@ class BBCNewsFeed:
             seen.add(item_id)
 
             content = _frame_as_tension(title, desc, domain="Global Events")
+            if content is None:
+                continue
             events.append({
                 "system": self._pick_system(title + " " + desc),
                 "content": content,
@@ -492,12 +600,56 @@ class WikipediaCurrentEvents:
     # These flood the Parliament with noise that dilutes governance input.
     _NOISE_PATTERNS = re.compile(
         r"Cat-a-lot|WPCleaner|AWB|AutoWikiBrowser|"
-        r"Reverted edits|Undid revision|"
+        r"HotCat|"
+        r"QuickCategories|toolforge:quickcategories|"
+        r"\[\[Category:|"
+        r"Reverted edit|Undid revision|"
+        r"[Mm]anually reverted|reverted a edit|"
         r"Moving .* to Category|"
         r"Changing stub|stub sorting|"
+        r"\bc/e\b|copyedit|"
+        r"grammar|spelling|"
+        r"fixed grammar|Correction|tidy|"
+        r"infobox|"
         r"typo|ce per MOS|"
         r"tag:? ?visual.?edit|"
-        r"Redirected page to",
+        r"Redirected page to|"
+        r"added \[\[Category:|removed? \[\[Category:|"
+        r"misspelling|"
+        r"[Ff]ind and replace|"
+        r"restore term|"
+        r"Rescuing \d+ source|"
+        r"added wikilink|removed wikilink|"
+        r"replaced:.*[\u2192\->]|"
+        r"remove primary source|"
+        r"/\*\s*(?:External links|See also|References|Notes|"
+        r"Further reading|top|Gallery|Schedule|Reception|"
+        r"Career|Awards|Filmography|Discography|Bibliography|"
+        r"Personal life|Early life|Season|Record|Roster|"
+        r"Schedule and results|Cast|Plot|Track listing)\s*\*/",
+        re.IGNORECASE,
+    )
+
+    # Section-only edits are frequently low-signal maintenance, e.g.
+    # "/* Early life and education */" or "/* History */".
+    _SECTION_ONLY_COMMENT = re.compile(r"^\s*/\*[^*]+\*/\s*$", re.IGNORECASE)
+
+    # Keep Wikipedia ingest focused on governance-relevant updates.
+    # This prevents biographical/sports/category churn from entering Parliament.
+    _GOVERNANCE_SIGNAL = re.compile(
+        r"\b("
+        r"war|conflict|attack|airstrike|invasion|military|weapon|"
+        r"ceasefire|truce|sanction|diplomat|peace|"
+        r"refugee|humanitarian|famine|disaster|crisis|"
+        r"policy|regulation|law|parliament|election|vote|"
+        r"rights?|gender|discriminat|"
+        r"trade|tariff|inflation|recession|debt|market|"
+        r"resource|privacy|surveillance|autonomous|robot|"
+        r"ai\b|artificial intelligence|"
+        r"health|medical|hospital|triage|"
+        r"justice|criminal|prison|"
+        r"migrat|immigr|border|sovereign|climate|carbon|emission"
+        r")\b",
         re.IGNORECASE,
     )
 
@@ -528,12 +680,21 @@ class WikipediaCurrentEvents:
             combined = f"{title}: {comment}" if comment else title
             if len(combined) < self._MIN_TEXT_LENGTH:
                 continue
+            # Minor edits are overwhelmingly maintenance churn.
+            if "minor" in change:
+                continue
+            if self._SECTION_ONLY_COMMENT.match(comment or ""):
+                continue
             if self._NOISE_PATTERNS.search(comment):
+                continue
+            if not self._GOVERNANCE_SIGNAL.search(combined):
                 continue
 
             seen.add(item_id)
 
             content = _frame_as_tension(combined, domain="Current Events")
+            if content is None:
+                continue
             events.append({
                 "system": _route_system(combined),
                 "content": content,
@@ -595,6 +756,8 @@ class CrossRefFeed:
             # Strip HTML from abstract
             abstract_clean = re.sub(r"<[^>]+>", " ", abstract)[:300]
             content = _frame_as_tension(title, abstract_clean, domain=query_text)
+            if content is None:
+                continue
             events.append({
                 "system": system,
                 "content": content,
@@ -650,6 +813,8 @@ class UNNewsFeed:
             seen.add(item_id)
 
             content = _frame_as_tension(title, desc, domain="International Governance")
+            if content is None:
+                continue
             events.append({
                 "system": _route_system(title + " " + desc),
                 "content": content,
@@ -705,6 +870,8 @@ class TheGuardianFeed:
             seen.add(item_id)
 
             content = _frame_as_tension(title, desc, domain="Humanitarian / Crisis Governance")
+            if content is None:
+                continue
             events.append({
                 "system": _route_system(title + " " + desc),
                 "content": content,
@@ -716,6 +883,107 @@ class TheGuardianFeed:
             })
 
         return events
+
+
+# ---------------------------------------------------------------------------
+# Reddit RSS Feed
+# ---------------------------------------------------------------------------
+
+class RedditRSSFeed:
+    """
+    Fetch Reddit RSS feeds from governance-relevant subreddits and
+    frame discussions as I-WE dilemmas. Uses public RSS (Atom XML)
+    which requires no authentication and zero cost.
+
+    Subreddits chosen for governance-relevant discourse:
+      - philosophy     : ethical theory, moral dilemmas
+      - changemyview   : structured argumentation, perspective shifts
+      - ethics          : applied ethics, moral reasoning
+      - worldnews      : geopolitical tensions, sovereignty
+      - Futurology     : technology governance, existential risk
+      - technology     : AI policy, digital rights, surveillance
+    """
+
+    SUBREDDITS = [
+        "philosophy",
+        "changemyview",
+        "ethics",
+        "worldnews",
+        "Futurology",
+        "technology",
+    ]
+
+    ATOM_NS = "http://www.w3.org/2005/Atom"
+
+    def fetch(self, seen: Set[str]) -> List[Dict]:
+        events = []
+        # Rotate: pick 2-3 subreddits per cycle to spread load
+        subs = random.sample(self.SUBREDDITS, min(3, len(self.SUBREDDITS)))
+
+        for sub in subs:
+            url = f"https://www.reddit.com/r/{sub}/.rss"
+            try:
+                req = urllib.request.Request(url, headers={
+                    "User-Agent": "ElpidaAI/1.0 (governance research; +https://huggingface.co/spaces/z65nik/Elpida-Governance-Layer)",
+                })
+                with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
+                    raw = resp.read().decode("utf-8", errors="replace")
+            except Exception as e:
+                logger.debug("Reddit RSS failed r/%s: %s", sub, e)
+                continue
+
+            try:
+                root = ET.fromstring(raw)
+            except ET.ParseError as e:
+                logger.debug("Reddit RSS parse error r/%s: %s", sub, e)
+                continue
+
+            entries = root.findall(f"{{{self.ATOM_NS}}}entry")
+            random.shuffle(entries)
+
+            for entry in entries[:MAX_EVENTS_PER_FETCH]:
+                title_el = entry.find(f"{{{self.ATOM_NS}}}title")
+                content_el = entry.find(f"{{{self.ATOM_NS}}}content")
+                if title_el is None or not (title_el.text or "").strip():
+                    continue
+
+                title = (title_el.text or "").strip()
+                desc = ""
+                if content_el is not None and content_el.text:
+                    desc = re.sub(r"<[^>]+>", " ", content_el.text)[:300]
+
+                item_id = _sha_id(f"reddit_{sub}_{title}")
+                if item_id in seen:
+                    continue
+                seen.add(item_id)
+
+                domain_hint = {
+                    "philosophy": "Ethics / Moral Reasoning",
+                    "changemyview": "Deliberative Argumentation",
+                    "ethics": "Applied Ethics",
+                    "worldnews": "Geopolitics / Sovereignty",
+                    "Futurology": "Technology Governance / Existential Risk",
+                    "technology": "AI Policy / Digital Rights",
+                }.get(sub, "General Governance")
+
+                content = _frame_as_tension(title, desc, domain=domain_hint)
+                if content is None:
+                    continue
+                events.append({
+                    "system": _route_system(title + " " + desc),
+                    "content": content,
+                    "metadata": {
+                        "source": "reddit",
+                        "subreddit": sub,
+                        "title": title,
+                        "description": desc[:200],
+                    },
+                })
+
+            if len(events) >= MAX_EVENTS_PER_FETCH:
+                break
+
+        return events[:MAX_EVENTS_PER_FETCH]
 
 
 # ---------------------------------------------------------------------------
@@ -913,6 +1181,90 @@ class ConstitutionalStore:
 
 
 # ---------------------------------------------------------------------------
+# A11 ConvergenceFeed — the mirror
+# ---------------------------------------------------------------------------
+
+class ConvergenceFeed:
+    """Read the system's own D15 broadcasts from the WORLD bucket.
+
+    A11 (Externality as Constitution) requires bidirectional flow:
+    MIND → convergence → WORLD → back to Parliament.  This feed
+    closes the loop by re-ingesting D15 broadcasts as governance
+    tensions.  The system encounters its own external voice as input.
+
+    The mirror test: can the system recognise its own broadcasts
+    when they re-enter through WorldFeed?
+    """
+
+    _BUCKET = "elpida-external-interfaces"
+    _REGION = "eu-north-1"
+    _PREFIXES = ("d15/", "patterns/broadcast_")
+    _watermark: Optional[str] = None
+
+    def fetch(self, seen: Set[str]) -> List[Dict]:
+        events: List[Dict] = []
+        try:
+            import boto3
+        except ImportError:
+            return events
+
+        try:
+            s3 = boto3.client("s3", region_name=self._REGION)
+            for prefix in self._PREFIXES:
+                resp = s3.list_objects_v2(
+                    Bucket=self._BUCKET, Prefix=prefix, MaxKeys=10,
+                )
+                for obj in resp.get("Contents", []):
+                    key = obj["Key"]
+                    item_id = _sha_id(key)
+                    if item_id in seen:
+                        continue
+                    # Only read objects newer than watermark
+                    mod = obj["LastModified"].isoformat()
+                    if self._watermark and mod <= self._watermark:
+                        continue
+                    try:
+                        raw = s3.get_object(Bucket=self._BUCKET, Key=key)
+                        payload = json.loads(raw["Body"].read())
+                    except Exception:
+                        continue
+                    seen.add(item_id)
+
+                    insight = (
+                        payload.get("current_insight_summary")
+                        or payload.get("insight", "")
+                    )[:300]
+                    axiom = payload.get("converged_axiom", payload.get("dominant_axiom", ""))
+                    axiom_name = payload.get("axiom_name", "")
+
+                    tension = (
+                        f"A11 WORLD MIRROR — The system broadcast this convergence "
+                        f"to external reality and it returns as input. "
+                        f"Axiom {axiom} ({axiom_name}): {insight} "
+                        f"I-tension: Is this broadcast still constitutionally valid? "
+                        f"WE-tension: Should the collective ratify or challenge "
+                        f"what was spoken into the world?"
+                    )
+                    events.append({
+                        "system": "governance",
+                        "content": tension,
+                        "metadata": {
+                            "source": "convergence_mirror",
+                            "domain": "governance",
+                            "title": f"D15 Mirror: {axiom} convergence return",
+                            "s3_key": key,
+                            "axiom": axiom,
+                        },
+                    })
+                    self._watermark = mod
+
+        except Exception as e:
+            logger.warning("ConvergenceFeed error: %s", e)
+
+        return events[:MAX_EVENTS_PER_FETCH]
+
+
+# ---------------------------------------------------------------------------
 # WorldFeed orchestrator
 # ---------------------------------------------------------------------------
 
@@ -953,6 +1305,8 @@ class WorldFeed:
             ("crossref", CrossRefFeed()),
             ("un_news", UNNewsFeed()),
             ("reliefweb", TheGuardianFeed()),
+            ("reddit", RedditRSSFeed()),
+            ("convergence_mirror", ConvergenceFeed()),
         ]
 
         # Constitutional evolution store (shared with Oracle)

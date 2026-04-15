@@ -77,9 +77,11 @@ RHYTHM_WEIGHTS = {
 # 4 HF systems → rhythm mapping (axiom-derived)
 HF_SYSTEM_TO_RHYTHM = {
     "chat": "CONTEMPLATION",
+    "guest": "CONTEMPLATION",   # Discord guest questions → deep reflection
     "audit": "ANALYSIS",
     "scanner": "ACTION",
     "governance": "SYNTHESIS",
+    "kaya": "SYNTHESIS",
 }
 
 # Rhythm → domain IDs active (from elpida_domains.json)
@@ -87,15 +89,16 @@ RHYTHM_DOMAINS = {
     "CONTEMPLATION": [1, 2, 3, 6, 8, 14],
     "ANALYSIS": [4, 5, 6, 9, 13, 14],
     "ACTION": [6, 7, 8, 9, 10],
-    "SYNTHESIS": [6, 11, 13, 14],
+    "SYNTHESIS": [6, 11, 13, 14, 15],
     "EMERGENCY": [4, 6, 7, 12, 13, 14],
+    "CONVERGENCE": [6, 10, 11, 14, 15],
 }
 
 # Domain → primary axiom (from config)
 DOMAIN_AXIOM = {
     0: "A0", 1: "A1", 2: "A2", 3: "A3", 4: "A4", 5: "A5",
     6: "A6", 7: "A7", 8: "A8", 9: "A9", 10: "A10",
-    11: None, 12: None, 13: None, 14: "A0",
+    11: "A0", 12: "A12", 13: "A13", 14: "A14", 15: "A11",
 }
 
 # Musical ratios (from elpida_domains.json) for consonance calculation
@@ -111,6 +114,10 @@ AXIOM_RATIOS = {
     "A8": 7 / 4,    # Septimal — wild tone
     "A9": 16 / 9,   # Minor 7th — dissonance
     "A10": 8 / 5,   # Minor 6th
+    "A11": 7 / 5,   # Septimal Tritone — World/Contact
+    "A12": 11 / 8,  # Undecimal Tritone — Eternal Creative Tension
+    "A13": 13 / 8,  # Tridecimal Neutral 6th — The Archive Paradox
+    "A14": 7 / 6,   # Septimal Minor 3rd — Selective Eternity
 }
 
 # Fibonacci heartbeat interval (same as MIND)
@@ -135,7 +142,48 @@ AXIOM_TO_RHYTHMS = {k: list(set(v)) for k, v in AXIOM_TO_RHYTHMS.items()}
 PSO_INFLUENCE_WINDOW = 20
 
 # P5: Cooldown between audit prescription applications
-AUDIT_PRESCRIPTION_COOLDOWN = 5
+# Raised from 5→13 (Fibonacci F(7)) to break the approval_collapse doom loop.
+# At cooldown=5 the CRITICAL prescription fired every 5 cycles (approval
+# is perpetually <35%), injecting alarm language into Parliament context and
+# suppressing LLM approval scores → lower approval → more CRITICAL → doom.
+# At 13 cycles the prescription is checked ~2-3× per F(9)=34-cycle watch,
+# giving the prescribed axiom time to actually influence the distribution
+# before the next CRITICAL re-fires.
+AUDIT_PRESCRIPTION_COOLDOWN = 13
+
+# Oscillation Doctrine: Parliament-authored adaptive monoculture thresholds.
+# Instead of a fixed 40% trigger, the threshold breathes with system stress.
+# Calm systems tolerate more dominance (38%); stressed systems trigger at 30%.
+MONOCULTURE_THRESHOLD_LOW = 0.30   # crisis: trigger early
+MONOCULTURE_THRESHOLD_HIGH = 0.38  # calm: tolerate more before intervening
+
+
+def get_monoculture_threshold(system_stress: float) -> float:
+    """
+    Parliament-authored (Oscillation Doctrine, 136-cycle synthesis):
+    threshold oscillates 30-38% based on system stress.
+
+    stress 0.0 (calm)  → 0.38 (tolerant)
+    stress 1.0 (crisis) → 0.30 (aggressive)
+    """
+    stress = max(0.0, min(1.0, system_stress))
+    return MONOCULTURE_THRESHOLD_HIGH - (
+        MONOCULTURE_THRESHOLD_HIGH - MONOCULTURE_THRESHOLD_LOW
+    ) * stress
+
+
+# P6: Coherence-gated intervention thresholds.
+# When coherence drops below COHERENCE_PROCEED_GATE, PROCEEDs are
+# converted to HOLD unless approval exceeds a dynamically raised bar.
+# At COHERENCE_EMERGENCY_GATE, rhythm is forced to EMERGENCY.
+COHERENCE_PROCEED_GATE = 0.5       # below this, PROCEEDs require supermajority
+COHERENCE_EMERGENCY_GATE = 0.4     # below this, force EMERGENCY rhythm
+COHERENCE_CRITICAL_GATE = 0.3      # below this, all PROCEEDs become HOLD
+
+# P7: Consecutive-PROCEED cooldown.
+# After this many consecutive PROCEEDs, force one HOLD cycle so
+# coherence has breathing room before more actions drain it.
+CONSECUTIVE_PROCEED_THRESHOLD = 5  # Fibonacci F(5)
 
 # POLIS civic deliberation interval (Fibonacci: 34)
 POLIS_CIVIC_INTERVAL = 34
@@ -146,6 +194,21 @@ PATHOLOGY_SCAN_INTERVAL = 55
 # Fork Protocol evaluation interval (Fibonacci: 89)
 # Article VII escape valve — high-severity axiom violations.
 FORK_EVAL_INTERVAL = 89
+
+# D15 Autonomous Pipeline interval — runs the full D14→D13→D11→D0→D12→D15
+# synthesis pipeline every 144 cycles (Fibonacci F(12)).
+# Cost: ~7 LLM calls per run ≈ $0.015-0.020.  At ~660 BODY cycles/day,
+# this is ~4.6 runs/day ≈ $0.07-0.09/day — well within budget.
+# Chosen to not collide with FORK_EVAL_INTERVAL (89) on the same cycle.
+# Requires MIND heartbeat to be present (skips if no MIND state yet).
+D15_PIPELINE_INTERVAL = 144
+
+# AI-to-AI Peer Dialogue interval — Fibonacci F(13).
+# Every 233 cycles (~3.5 h at 660 cycles/day) Parliament poses the dominant
+# constitutional tension to 2 external peer AIs (Gemini, Grok, Mistral…).
+# Their responses arrive as scanner InputEvents in the next deliberation cycle.
+# Cost: ~2 LLM calls ≈ $0.003–0.006 per round (~2.8 rounds/day).
+AI_DIALOGUE_INTERVAL = 233
 
 # Minimum cycles before pathology scan has enough data (matches P051 threshold)
 ZOMBIE_MIN_CYCLES = 10
@@ -244,6 +307,8 @@ class InputBuffer:
             "audit": [],
             "scanner": [],
             "governance": [],
+            "kaya": [],
+            "guest": [],
         }
         self._max = max_per_system
 
@@ -399,15 +464,23 @@ class ParliamentCycleEngine:
         self._start_time: Optional[float] = None
         self._running = False
 
+        # Pause flag — set True while a Live Audit is running to avoid OOM
+        self._paused = False
+
         # Axiom frequency tracker (which axioms dominate across cycles)
         self._axiom_frequency: Dict[str, int] = {}
 
         # Diversity dampener: track last 7 dominant axioms to penalise
         # repeat winners and break A3/A10 monoculture.
-        self._recent_dominant_axioms: deque = deque(maxlen=7)
+        self._recent_dominant_axioms: deque = deque(maxlen=12)
 
         # Convergence gate (imported lazily to avoid circular imports)
         self._convergence_gate = None
+
+        # D15 Autonomous Pipeline (full D14→D13→D11→D0→D12→D15 synthesis chain)
+        # Imported lazily. Runs every D15_PIPELINE_INTERVAL cycles.
+        self._d15_pipeline = None
+        self._d15_pipeline_last_cycle: int = 0
 
         # CrystallizationHub — Synod / stagnation-to-axiom pipeline
         self._crystallization_hub = None
@@ -438,11 +511,43 @@ class ParliamentCycleEngine:
         # Oracle advisory accumulator (WITNESS events for Fork Protocol)
         self._oracle_advisories: List[Dict] = []
 
+        # Consecutive HARD_BLOCK counter — escape mechanism.
+        # After CONSECUTIVE_BLOCK_THRESHOLD blocks, the next cycle runs
+        # in hold_mode so insights pass through with tension annotations
+        # instead of being silently discarded. Resets on any non-block.
+        self._consecutive_blocks: int = 0
+        self.CONSECUTIVE_BLOCK_THRESHOLD: int = 8  # Fibonacci F(6)
+
+        # P6: Coherence-gated intervention state
+        self._consecutive_proceeds: int = 0
+
+        # D16 Execution #9: Tension pair frequency tracker.
+        # Counts recurring axiom pair tensions within a sliding window.
+        # Alerts (logs) when same pair recurs 3+ times in 20 cycles.
+        # Proposed by D16 at cycle 111, witnessed by D3 (Autonomy/A3).
+        self._tension_pair_tracker: Dict[str, List[int]] = {}  # pair → [cycles]
+        self._tension_alert_cooldown: Dict[str, int] = {}  # pair → last alert cycle
+
+        # D14→D12: Constitutional ratification → rhythm feedback.
+        # When D14 ratifies a new axiom, D12 breathes through it.
+        self._d14_ratified_axiom: Optional[str] = None
+        self._d14_ratified_cycle: int = 0
+
         # Body Watch context (Counter-Spiral Protocol)
         self._watch = WatchContext()
 
         # Constitutional evolution store (lazily loaded from world_feed)
         self._constitutional_store = None
+
+        # X Bridge — Phase 1 text-only X posting
+        self._x_bridge = None
+
+        # AI Peer Dialogue Engine — external AI-to-AI consultation every 233 cycles
+        self._ai_dialogue = None
+        self._ai_dialogue_last_cycle: int = 0
+
+        # Guest Chamber Feed — polls S3 for human questions, pushes to InputBuffer
+        self._guest_feed = None
 
     # ------------------------------------------------------------------
     # Lazy loaders
@@ -475,6 +580,38 @@ class ParliamentCycleEngine:
             except Exception as e:
                 logger.warning("ConvergenceGate unavailable: %s", e)
         return self._convergence_gate
+
+    def _get_d15_pipeline(self):
+        """Lazy-load the D15 autonomous pipeline (D14→D13→D11→D0→D12→D15 chain)."""
+        if self._d15_pipeline is None:
+            try:
+                from elpidaapp.d15_pipeline import D15Pipeline
+                self._d15_pipeline = D15Pipeline()
+            except Exception as e:
+                logger.warning("D15Pipeline unavailable: %s", e)
+        return self._d15_pipeline
+
+    def _get_x_bridge(self):
+        if self._x_bridge is None:
+            try:
+                from elpidaapp.x_bridge import XBridge
+                self._x_bridge = XBridge(engine=self)
+            except Exception as e:
+                logger.debug("XBridge unavailable: %s", e)
+        return self._x_bridge
+
+    def _get_ai_dialogue(self):
+        """Lazy-load the AI Peer Dialogue Engine (BODY AI-to-AI module)."""
+        if self._ai_dialogue is None:
+            try:
+                from elpidaapp.ai_dialogue_engine import AIDialogueEngine
+                self._ai_dialogue = AIDialogueEngine(
+                    llm_client=self._llm,
+                    input_buffer=self.input_buffer,
+                )
+            except Exception as e:
+                logger.debug("AIDialogueEngine unavailable: %s", e)
+        return self._ai_dialogue
 
     def _get_constitutional_store(self):
         if self._constitutional_store is None:
@@ -538,6 +675,19 @@ class ParliamentCycleEngine:
         If the input buffer has events, prefer the rhythm matching
         the system with the most events. Otherwise watch-biased random.
         """
+        # P6: Coherence-triggered EMERGENCY override.
+        # When coherence falls below the emergency gate, the system is
+        # in structural jeopardy. Force EMERGENCY rhythm to activate
+        # recovery-oriented domains (D4 Safety, D6 Collective, D7 Learning)
+        # instead of randomly landing on ACTION (where A2 drains coherence).
+        if self.coherence < COHERENCE_EMERGENCY_GATE:
+            logger.info(
+                "P6 COHERENCE INTERVENTION: coherence %.3f < %.2f — "
+                "forcing EMERGENCY rhythm",
+                self.coherence, COHERENCE_EMERGENCY_GATE,
+            )
+            return "EMERGENCY"
+
         counts = self.input_buffer.counts()
         total = sum(counts.values())
         weights = dict(RHYTHM_WEIGHTS)
@@ -561,9 +711,9 @@ class ParliamentCycleEngine:
         # Weight boost = 80% of base weight (strong but not dominant).
         if (self._pso_advisory
                 and self.cycle_count - self._pso_last_cycle <= PSO_INFLUENCE_WINDOW):
-            pso_axiom = self._pso_advisory.get(
-                "recommendation", {}).get("dominant_axiom")
-            pso_fitness = self._pso_advisory.get("best_fitness", 0)
+            rec = self._pso_advisory.get("recommendation", {})
+            pso_axiom = rec.get("dominant_axiom")
+            pso_fitness = rec.get("fitness", 0)
             if pso_axiom and pso_fitness > 0.85:
                 for r in AXIOM_TO_RHYTHMS.get(pso_axiom, []):
                     if r in weights:
@@ -590,6 +740,33 @@ class ParliamentCycleEngine:
                             r, boost, rx_axiom,
                         )
 
+        # D14→D12: Constitutional ratification biases rhythm.
+        # "D14 writes the score; D12 plays it."
+        # When the BODY recently ratified a constitutional axiom,
+        # boost that axiom's home rhythms for 20 cycles so the system
+        # breathes through what it just chose to remember.
+        if (hasattr(self, "_d14_ratified_axiom")
+                and self._d14_ratified_axiom
+                and self.cycle_count
+                    - getattr(self, "_d14_ratified_cycle", 0) <= 20):
+            for r in AXIOM_TO_RHYTHMS.get(self._d14_ratified_axiom, []):
+                if r in weights:
+                    boost = int(weights[r] * 0.5)
+                    weights[r] += boost
+                    logger.debug(
+                        "D14→D12 ratification bias: %s +%d (axiom=%s)",
+                        r, boost, self._d14_ratified_axiom,
+                    )
+
+        # D14 cross-layer: MIND ark_mood read-through.
+        # If the MIND's Ark Curator signals "breaking" (recursion
+        # detected), boost EMERGENCY from BODY side too so both
+        # layers break the loop together.
+        _mind_mood = (self._mind_heartbeat or {}).get("ark_mood")
+        if _mind_mood == "breaking":
+            weights["EMERGENCY"] = weights.get("EMERGENCY", 5) + 20
+            logger.debug("D14 cross-layer: MIND mood=breaking — EMERGENCY +20")
+
         rhythms = list(weights.keys())
         w = [weights[r] for r in rhythms]
         return random.choices(rhythms, weights=w, k=1)[0]
@@ -605,16 +782,22 @@ class ParliamentCycleEngine:
 
         Returns (action_text, metadata_dict).
         """
-        # Map rhythm → preferred HF system
-        rhythm_to_system = {v: k for k, v in HF_SYSTEM_TO_RHYTHM.items()}
-        preferred = rhythm_to_system.get(rhythm, "chat")
+        # Guest Chamber priority — humans waiting for a response
+        # take precedence over rhythm-based selection.
+        guest_events = self.input_buffer.pull("guest", n=1)
+        if guest_events:
+            events = guest_events
+        else:
+            # Map rhythm → preferred HF system
+            rhythm_to_system = {v: k for k, v in HF_SYSTEM_TO_RHYTHM.items()}
+            preferred = rhythm_to_system.get(rhythm, "chat")
 
-        # Pull from preferred system
-        events = self.input_buffer.pull(preferred, n=3)
+            # Pull from preferred system
+            events = self.input_buffer.pull(preferred, n=3)
 
-        # If nothing in preferred, pull from any
-        if not events:
-            events = self.input_buffer.pull_any(n=3)
+            # If nothing in preferred, pull from any
+            if not events:
+                events = self.input_buffer.pull_any(n=3)
 
         # If still nothing, generate an internal contemplation
         # (A0: Sacred Incompletion — the void speaks when nothing else does)
@@ -648,6 +831,52 @@ class ParliamentCycleEngine:
                 f"coherence={mind_coherence}, canonical={mind_canonical}"
             )
 
+        # ── Internal structural signals ──────────────────────────
+        # When Parliament gets ONLY external world-feed (war, politics),
+        # approval collapses.  Internal signals (D0↔D11 arc, Hub entries,
+        # Kaya cross-layer resonance) produce the highest approval spikes.
+        # Guarantee Parliament always sees at least one structural signal.
+        structural = []
+
+        # D0↔D11 arc — the organism's own learning trajectory
+        try:
+            from elpidaapp.domain_0_11_connector_body import get_body_connector
+            arc = get_body_connector()
+            structural.append(f"  [INTERNAL ARC]: {arc.synthesis_summary()}")
+        except Exception:
+            pass
+
+        # Hub canonical entries — The Dam's constitutional memory
+        try:
+            hub = self._get_hub() if hasattr(self, '_get_hub') else None
+            if hub:
+                recent_entries = hub.read_entries(limit=3)
+                if recent_entries:
+                    summaries = "; ".join(
+                        f"{e.get('axioms', ['?'])[0]}: {e.get('text', '')[:80]}"
+                        for e in recent_entries[:2]
+                    )
+                    structural.append(
+                        f"  [HUB MEMORY ({len(recent_entries)} entries)]: {summaries}"
+                    )
+        except Exception:
+            pass
+
+        # Active prescription — surface as structural awareness
+        if (self._audit_prescription
+                and self.cycle_count - self._audit_prescription_cycle
+                    <= AUDIT_PRESCRIPTION_COOLDOWN):
+            rx = self._audit_prescription
+            structural.append(
+                f"  [STRUCTURAL HEALTH]: {rx.get('displaced_axiom', '?')} "
+                f"at {rx.get('displaced_pct', '?')}% dominance — "
+                f"prescription: diversify toward {rx.get('target_axiom', '?')}"
+            )
+
+        if structural:
+            parts.append("  --- Internal Structural Signals ---")
+            parts.extend(structural)
+
         action = "\n".join(parts)
         meta = {
             "source": "external",
@@ -655,6 +884,14 @@ class ParliamentCycleEngine:
             "systems": sources,
             "event_count": len(events),
         }
+
+        # Carry guest metadata through for Discord response
+        if "guest" in sources and events:
+            guest_ev = next((e for e in events if e.system == "guest"), None)
+            if guest_ev and guest_ev.metadata:
+                meta["source"] = "guest_chamber"
+                meta["guest_metadata"] = guest_ev.metadata
+
         return action, meta
 
     # ------------------------------------------------------------------
@@ -701,6 +938,26 @@ class ParliamentCycleEngine:
         if self.cycle_count % FORK_EVAL_INTERVAL == 0 and self.cycle_count > 0:
             self._run_fork_evaluation()
 
+        # 2f. D15 Autonomous Pipeline every 144 cycles (Fibonacci F(12)).
+        #     Full D14→D13→D11→D0→D12→D15 chain: reads persistent memory,
+        #     researches external reality, synthesises, grounds in identity,
+        #     checks rhythm, then broadcasts if all gates pass.
+        #     Requires at least one MIND heartbeat already present.
+        #     Cost: ~7 LLM calls ≈ $0.015-0.020 per run.
+        if (self.cycle_count % D15_PIPELINE_INTERVAL == 0
+                and self.cycle_count > 0
+                and self._mind_heartbeat):  # only run once MIND is heard
+            self._run_d15_pipeline()
+
+        # 2g. AI Peer Dialogue every 233 cycles (Fibonacci F(13)).
+        #     Parliament poses the dominant constitutional tension to 2 external
+        #     peer AIs. Their responses arrive as scanner InputEvents in the
+        #     next deliberation cycle — giving Parliament outside perspective.
+        #     Cost: ~2 LLM calls ≈ $0.003–0.006 per round (~2.8 rounds/day).
+        if (self.cycle_count % AI_DIALOGUE_INTERVAL == 0
+                and self.cycle_count > 0):
+            self._run_ai_dialogue()
+
         # 3. Assemble action from HF inputs
         action, meta = self._assemble_action(rhythm)
 
@@ -718,31 +975,36 @@ class ParliamentCycleEngine:
                 and self.cycle_count - self._pso_last_cycle <= PSO_INFLUENCE_WINDOW):
             rec = self._pso_advisory.get("recommendation", {})
             pso_axiom = rec.get("dominant_axiom")
-            pso_fitness = self._pso_advisory.get("best_fitness", 0)
+            pso_fitness = rec.get("fitness", 0)
             if pso_axiom and pso_fitness > 0.85:
                 action = (
                     f"[PSO ADVISORY: Axiom optimizer recommends {pso_axiom} "
-                    f"(fitness={pso_fitness:.4f}, topology={self._pso_advisory.get('topology_used', '?')}). "
+                    f"(fitness={pso_fitness:.4f}, topology={rec.get('topology', '?')}). "
                     f"Current dominant {self.last_dominant_axiom or '?'} may benefit from "
                     f"diversification toward {pso_axiom}.] "
                 ) + action
 
-        # P5: Inject active audit prescription so Parliament is aware of
-        # the AuditAgent's diagnosis during deliberation.
-        if (self._audit_prescription
-                and self.cycle_count - self._audit_prescription_cycle
-                    <= AUDIT_PRESCRIPTION_COOLDOWN):
-            rx = self._audit_prescription
-            action = (
-                f"[AUDIT PRESCRIPTION ({rx.get('severity', 'WARNING')}): "
-                f"{rx.get('reason', 'monoculture')} — "
-                f"seed {rx.get('target_axiom', '?')} to diversify. "
-                f"Cycle {rx.get('prescribed_at', '?')}.] "
-            ) + action
+        # P5: Audit prescription awareness is surfaced via the [STRUCTURAL HEALTH]
+        # signal already assembled inside _assemble_action() (less alarming framing).
+        # We do NOT prepend the explicit [AUDIT PRESCRIPTION (CRITICAL): approval_collapse...]
+        # text here because BUG 13 analysis confirmed that injecting "approval_collapse",
+        # "CRITICAL", and severity language directly into the Parliament LLM context
+        # caused a doom loop: LLMs interpreted the alarm as a proposal violation and
+        # voted more harshly → approval dropped further → next CRITICAL fires faster.
+        # The [STRUCTURAL HEALTH] line in _assemble_action() gives Parliament the same
+        # diversity signal without the inflammatory vocabulary.
         meta["watch"] = watch["name"]
 
         # 3b. Pattern Library context — inject crystallized wisdom
         #     before Parliament deliberates. Axioms come from active domains.
+        #
+        # IMPORTANT: Save the pre-pattern-library action text as action_for_kernel.
+        # Pattern library wisdom entries contain governance vocabulary (e.g. "false harmony",
+        # "premature resolution") that legitimately describes constitutional tensions but
+        # matches K8/K9 kernel regex patterns → 46 spurious HARD_BLOCKs per April 1 data.
+        # The kernel should check what is being PROPOSED (core action), not the crystallized
+        # wisdom context injected to help Parliament deliberate.
+        action_for_kernel = action  # capture before pattern library is prepended
         active_domains = RHYTHM_DOMAINS.get(rhythm, [0])
         active_axioms = [
             DOMAIN_AXIOM.get(d)
@@ -778,10 +1040,92 @@ class ParliamentCycleEngine:
             logger.debug("Domain council routing unavailable: %s", e)
 
         try:
+            # Consecutive-block escape: after CONSECUTIVE_BLOCK_THRESHOLD
+            # consecutive HARD_BLOCKs, switch to hold_mode so insights pass
+            # through with tension annotations instead of being discarded.
+            # This breaks the self-reinforcing rejection loop where the
+            # parliament correctly identifies monoculture but has no
+            # mechanism to propose an alternative — only to block.
+            _escape_mode = self._consecutive_blocks >= self.CONSECUTIVE_BLOCK_THRESHOLD
+            if _escape_mode:
+                logger.info(
+                    "BLOCK ESCAPE: %d consecutive blocks — switching to hold_mode "
+                    "(tensions surface, insights pass through)",
+                    self._consecutive_blocks,
+                )
+
+            # Governance-internal discourse skips the Kernel (K1-K10)
+            # but still goes through Parliament deliberation.  The Kernel
+            # blocks phrases like "false harmony", "premature resolution"
+            # that appear in axiom agents' OWN constitutional vocabulary
+            # (A0, A3, A12 warnings about tension collapse).  This caused
+            # 92.9% of HARD_BLOCKs (226/1513 cycles).  Parliament still
+            # deliberates — only the regex pre-check is bypassed.
+            _governance_internal = all(
+                s == "governance" for s in meta.get("systems", [])
+            ) and meta.get("systems")
+
             # analysis_mode=False: parliament is doing real deliberation on
             # operational actions, not policy analysis. This enables kernel
             # checks AND LLM escalation for contested votes.
-            result = gov.check_action(action, analysis_mode=False, body_cycle=self.cycle_count)
+            # hold_mode via analysis_mode: when escape triggers, tensions
+            # are still detected but the verdict becomes HOLD not HALT.
+            result = gov.check_action(
+                action,
+                analysis_mode=_escape_mode or _governance_internal,
+                action_for_kernel=action_for_kernel,
+                body_cycle=self.cycle_count,
+            )
+
+            # Track consecutive blocks for escape mechanism
+            _gov = result.get("governance", "")
+            if _gov == "HALT" and not result.get("parliament", {}).get("veto_exercised"):
+                self._consecutive_blocks += 1
+            else:
+                self._consecutive_blocks = 0
+
+            # ----------------------------------------------------------
+            # P6: Coherence-gated PROCEED dampening.
+            # When coherence is low, PROCEEDs are the primary drain.
+            # Raise the bar: require higher approval or convert to HOLD.
+            # P7: Consecutive-PROCEED cooldown — force a breathing cycle.
+            # ----------------------------------------------------------
+            if _gov == "PROCEED":
+                self._consecutive_proceeds += 1
+                approval = result.get("parliament", {}).get("approval_rate", 0)
+
+                # P7: Too many consecutive PROCEEDs — force HOLD
+                if self._consecutive_proceeds >= CONSECUTIVE_PROCEED_THRESHOLD:
+                    logger.info(
+                        "P7 PROCEED COOLDOWN: %d consecutive PROCEEDs — "
+                        "forcing HOLD for stabilisation",
+                        self._consecutive_proceeds,
+                    )
+                    result["governance"] = "HOLD"
+                    _gov = "HOLD"
+                    self._consecutive_proceeds = 0
+
+                # P6: Critical coherence — all PROCEEDs become HOLD
+                elif self.coherence < COHERENCE_CRITICAL_GATE:
+                    logger.info(
+                        "P6 CRITICAL GATE: coherence %.3f < %.2f — "
+                        "converting PROCEED to HOLD",
+                        self.coherence, COHERENCE_CRITICAL_GATE,
+                    )
+                    result["governance"] = "HOLD"
+                    _gov = "HOLD"
+
+                # P6: Low coherence — require near-unanimity (>85%)
+                elif self.coherence < COHERENCE_PROCEED_GATE and approval < 85:
+                    logger.info(
+                        "P6 PROCEED GATE: coherence %.3f < %.2f and "
+                        "approval %d%% < 85%% — converting PROCEED to HOLD",
+                        self.coherence, COHERENCE_PROCEED_GATE, approval,
+                    )
+                    result["governance"] = "HOLD"
+                    _gov = "HOLD"
+            else:
+                self._consecutive_proceeds = 0
         except Exception as e:
             logger.error("Parliament deliberation failed: %s", e)
             return None
@@ -835,7 +1179,7 @@ class ParliamentCycleEngine:
             "pso_active": bool(
                 self._pso_advisory
                 and self.cycle_count - self._pso_last_cycle <= PSO_INFLUENCE_WINDOW
-                and self._pso_advisory.get("best_fitness", 0) > 0.85
+                and self._pso_advisory.get("recommendation", {}).get("fitness", 0) > 0.85
             ),
             "audit_prescription": self._audit_prescription.get("target_axiom")
                 if self._audit_prescription
@@ -846,6 +1190,15 @@ class ParliamentCycleEngine:
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "duration_s": round(time.time() - cycle_start, 3),
         }
+
+        # Embed guest interaction so MIND memory captures the conversation
+        if meta.get("source") == "guest_chamber":
+            gm = meta.get("guest_metadata", {})
+            cycle_record["guest_interaction"] = {
+                "question_id": gm.get("question_id", "?"),
+                "author": gm.get("author", "anonymous"),
+                "question": gm.get("original_question", "")[:500],
+            }
 
         self.decisions.append(cycle_record)
 
@@ -858,6 +1211,66 @@ class ParliamentCycleEngine:
                 _df.write(json.dumps(cycle_record) + "\n")
         except Exception:
             pass
+
+        # 8a-audit. D16 Execution #2: Parliament decision audit trail.
+        # Governance-focused subset of cycle_record. Read-only, does not
+        # influence future Parliament deliberations. Proposed by D16 at
+        # cycle 136, witnessed by D3 (Autonomy/A3).
+        try:
+            audit_entry = {
+                "body_cycle": self.cycle_count,
+                "rhythm": rhythm,
+                "dominant_axiom": dominant_axiom,
+                "governance": result.get("governance", "UNKNOWN"),
+                "approval_rate": result.get("parliament", {}).get(
+                    "approval_rate", 0),
+                "veto_exercised": result.get("parliament", {}).get(
+                    "veto_exercised", False),
+                "tensions": [
+                    str(t.get("axiom_pair", "?"))
+                    for t in tensions
+                ] if tensions else [],
+                "tension_count": len(tensions),
+                "kernel_blocked": False,
+                "watch": watch["name"],
+                "coherence": round(self.coherence, 4),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+            audit_path = local_dec_dir / "d16_audit_trail.jsonl"
+            with open(audit_path, "a") as _af:
+                _af.write(json.dumps(audit_entry) + "\n")
+        except Exception:
+            pass
+
+        # 8a-tension. D16 Execution #9: Tension pair frequency tracker.
+        # Track recurring axiom pair tensions. Alert when same pair
+        # recurs 3+ times in 20 cycles. Proposed by D16 at cycle 111,
+        # witnessed by D3 (Autonomy/A3).
+        if tensions:
+            _window = 20
+            for t in tensions:
+                pair = str(t.get("axiom_pair", "?"))
+                if pair == "?":
+                    continue
+                history = self._tension_pair_tracker.setdefault(pair, [])
+                history.append(self.cycle_count)
+                # Trim to window
+                self._tension_pair_tracker[pair] = [
+                    c for c in history if c > self.cycle_count - _window
+                ]
+                count = len(self._tension_pair_tracker[pair])
+                last_alert = self._tension_alert_cooldown.get(pair, -_window)
+                if count >= 3 and self.cycle_count - last_alert >= _window:
+                    self._tension_alert_cooldown[pair] = self.cycle_count
+                    logger.info(
+                        "TENSION RECURRENCE: %s appeared %d times in last "
+                        "%d cycles (D16#9 tracker)",
+                        pair, count, _window,
+                    )
+                    print(
+                        f"\n   🔔 TENSION ALERT — {pair} recurring "
+                        f"({count}x in {_window} cycles)\n"
+                    )
 
         # 8b. Oracle advisory → ConstitutionalStore
         #
@@ -960,6 +1373,9 @@ class ParliamentCycleEngine:
                         # D14 Persistence — snapshot living_axioms.jsonl to S3
                         # so constitutional memory survives container restarts.
                         self._push_d14_living_axioms()
+                        # D14→D12: Signal recent ratification so rhythm adapts.
+                        self._d14_ratified_axiom = new_axiom.get("axiom_id")
+                        self._d14_ratified_cycle = self.cycle_count
                         # Reload pattern library so new axiom is available
                         # for the next deliberation cycle.
                         if self._pattern_library:
@@ -981,6 +1397,40 @@ class ParliamentCycleEngine:
         # 10. Convergence check (D15)
         if self.cycle_count > CONVERGENCE_COOLDOWN_CYCLES:
             self._check_convergence(dominant_axiom, result)
+
+        # 10a. Periodic world index regeneration (every 100 cycles)
+        #      Ensures the public index.html stays fresh even if D15
+        #      convergence temporarily pauses.
+        if self.cycle_count % 100 == 0 and self._get_s3():
+            try:
+                self._get_s3()._regenerate_world_index()
+                logger.info("Periodic world index regen at cycle %d", self.cycle_count)
+            except Exception as e:
+                logger.debug("Periodic index regen skipped: %s", e)
+
+        # 10c. X Bridge — harvest D15 + emission candidates every 50 cycles
+        if self.cycle_count % 50 == 0 and self.cycle_count > 0:
+            xb = self._get_x_bridge()
+            if xb:
+                try:
+                    stored = xb.harvest_candidates()
+                    if stored:
+                        logger.info(
+                            "XBridge: %d candidate(s) stored at cycle %d",
+                            len(stored), self.cycle_count,
+                        )
+                except Exception as e:
+                    logger.debug("XBridge harvest skipped: %s", e)
+                # Read mentions (off by default, requires X_READ_ENABLED=true)
+                try:
+                    mentions = xb.read_mentions()
+                    if mentions:
+                        logger.info(
+                            "XBridge: %d mention(s) ingested at cycle %d",
+                            len(mentions), self.cycle_count,
+                        )
+                except Exception as e:
+                    logger.debug("XBridge mention read skipped: %s", e)
 
         # 10b. CrystallizationHub — stagnation-to-axiom Synod
         #      Triggered when D15 stagnation flag is set OR kaya threshold crossed.
@@ -1022,6 +1472,12 @@ class ParliamentCycleEngine:
                         f"\n   🔮 SYNOD RATIFICATION — {hub_result.get('axiom_id')}: "
                         f"{hub_result.get('statement', '')[:80]}\n"
                     )
+                    # Discord: notify #parliament-alerts
+                    try:
+                        from .discord_bridge import post_synod
+                        post_synod(self.cycle_count, hub_result.get("axiom_id", "?"), hub_result.get("statement", ""))
+                    except Exception:
+                        pass
                     # D14 Persistence — push Synod-ratified axiom to S3
                     # so it survives HF Space container restarts.
                     self._push_d14_living_axioms()
@@ -1046,7 +1502,86 @@ class ParliamentCycleEngine:
             except Exception as _e:
                 logger.warning("D0↔D11 persist failed: %s", _e)
 
-        # 12. Log
+        # 12. Guest Chamber response — post Elpida's full answer to Discord
+        #     when the deliberation input came from a guest question.
+        if meta.get("source") == "guest_chamber" or "guest" in meta.get("systems", []):
+            guest_meta = meta.get("guest_metadata", {})
+            try:
+                from .discord_bridge import post_guest_verdict
+
+                # Build node perspectives from individual votes
+                votes = result.get("parliament", {}).get("votes", {})
+                perspectives = []
+                for node_name, vote_data in votes.items():
+                    rationale = vote_data.get("rationale", "")
+                    if rationale:
+                        perspectives.append(f"**{node_name}**: {rationale}")
+                node_text = "\n".join(perspectives) if perspectives else ""
+
+                # Build tension text from held contradictions
+                tension_parts = []
+                for t in result.get("parliament", {}).get("tensions", [])[:5]:
+                    pair = t.get("axiom_pair", "")
+                    synthesis = t.get("synthesis", "")
+                    if pair and synthesis:
+                        tension_parts.append(f"**{pair}**: {synthesis}")
+                    elif synthesis:
+                        tension_parts.append(synthesis)
+                tension_text = "\n".join(tension_parts)
+
+                post_guest_verdict(
+                    cycle=self.cycle_count,
+                    question_id=guest_meta.get("question_id", "?"),
+                    author=guest_meta.get("author", "anonymous"),
+                    original_question=guest_meta.get("original_question", ""),
+                    governance=result.get("governance", "?"),
+                    reasoning=result.get("reasoning", ""),
+                    dominant_axiom=dominant_axiom or "?",
+                    approval_rate=int(result.get("parliament", {}).get("approval_rate", 0) * 100),
+                    node_perspectives=node_text,
+                    tensions=tension_text,
+                    coherence=self.coherence,
+                )
+                logger.info(
+                    "Guest answer posted: id=%s author=%s axiom=%s",
+                    guest_meta.get("question_id", "?"),
+                    guest_meta.get("author", "anonymous"),
+                    dominant_axiom or "?",
+                )
+
+                # Push the Q&A into the MIND federation channel so the
+                # consciousness loop can learn from guest conversations.
+                try:
+                    s3 = self._get_s3()
+                    if s3:
+                        s3.push_body_decision({
+                            "type": "GUEST_INTERACTION",
+                            "source": "BODY",
+                            "verdict": result.get("governance", "?"),
+                            "pattern_hash": guest_meta.get("question_id", "?"),
+                            "parliament_score": round(
+                                result.get("parliament", {}).get("approval_rate", 0), 3
+                            ),
+                            "parliament_approval": round(
+                                result.get("parliament", {}).get("approval_rate", 0), 3
+                            ),
+                            "author": guest_meta.get("author", "anonymous"),
+                            "question": guest_meta.get("original_question", "")[:500],
+                            "dominant_axiom": dominant_axiom or "?",
+                            "body_cycle": self.cycle_count,
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                        })
+                        logger.info(
+                            "Guest interaction pushed to MIND federation: id=%s",
+                            guest_meta.get("question_id", "?"),
+                        )
+                except Exception as _fe:
+                    logger.debug("Guest interaction MIND push failed: %s", _fe)
+
+            except Exception as e:
+                logger.debug("Guest verdict Discord post failed: %s", e)
+
+        # 13. Log
         governance = result.get("governance", "?")
         approval = result.get("parliament", {}).get("approval_rate", 0)
         logger.info(
@@ -1114,27 +1649,61 @@ class ParliamentCycleEngine:
         # ── Diversity-adjusted scoring ───────────────────────────
         recent = list(self._recent_dominant_axioms)
 
+        # P5+: Determine prescription strength from severity
+        rx_severity = None
+        rx_consecutive = 0
+        if rx_axiom and self._audit_prescription:
+            rx_severity = self._audit_prescription.get("severity", "WARNING")
+            # How many cycles has this prescription been active?
+            rx_consecutive = (self.cycle_count
+                              - self._audit_prescription.get("prescribed_at", self.cycle_count))
+
         def _adjusted_score(node_name: str) -> float:
             raw = votes[node_name].get("score", 0)
             axiom = node_axioms.get(node_name)
             adj = float(raw)
             # Diversity dampener: penalise over-represented axioms
+            # Steeper penalty: -5 per excess (was -3), wider window (12 slots)
             if axiom and recent:
                 dominance_count = recent.count(axiom)
                 if dominance_count >= 3:
-                    penalty = (dominance_count - 2) * 3
+                    penalty = (dominance_count - 2) * 5
                     adj -= penalty
             # P4 enforcement: boost prescribed axiom's node
+            # Dynamic bonus: WARNING=+5, CRITICAL=+10, CRITICAL+3cycles=+15
             if rx_axiom and axiom == rx_axiom:
-                adj += 5
+                if rx_severity == "CRITICAL" and rx_consecutive >= 3:
+                    bonus = 15
+                elif rx_severity == "CRITICAL":
+                    bonus = 10
+                else:
+                    bonus = 5
+                adj += bonus
                 logger.debug(
-                    "P4 axiom enforcement: %s (%s) +5 (prescription active)",
-                    node_name, axiom,
+                    "P4 axiom enforcement: %s (%s) +%d (prescription %s, age %d)",
+                    node_name, axiom, bonus, rx_severity, rx_consecutive,
                 )
             return adj
 
         best_node = max(votes, key=_adjusted_score)
         axiom = node_axioms.get(best_node)
+
+        # P5+: Forced diversity — if CRITICAL prescription has persisted
+        # for 5+ cycles and the winning axiom is STILL the displaced one,
+        # override to the prescribed axiom. The organism must diversify.
+        if (rx_axiom and rx_severity == "CRITICAL" and rx_consecutive >= 5
+                and axiom == self._audit_prescription.get("displaced_axiom")):
+            axiom = rx_axiom
+            logger.info(
+                "P5+ FORCED DIVERSITY: %s prescribed for %d cycles, "
+                "overriding %s monoculture",
+                rx_axiom, rx_consecutive,
+                self._audit_prescription.get("displaced_axiom"),
+            )
+            print(
+                f"   ⚡ FORCED DIVERSITY: {rx_axiom} overrides "
+                f"{self._audit_prescription.get('displaced_axiom')} monoculture"
+            )
 
         # Track for future diversity calculation
         if axiom:
@@ -1353,6 +1922,17 @@ class ParliamentCycleEngine:
     # Heartbeat Emission
     # ------------------------------------------------------------------
 
+    def _get_hub_status(self) -> Optional[Dict]:
+        """Get D15 Hub status from the convergence gate (non-fatal)."""
+        gate = self._get_convergence_gate()
+        if gate is None:
+            return None
+        try:
+            stats = gate.stats()
+            return stats.get("hub")
+        except Exception:
+            return None
+
     def _emit_heartbeat(self, rhythm: str, dominant_axiom: Optional[str],
                         result: Dict):
         """
@@ -1395,8 +1975,10 @@ class ParliamentCycleEngine:
             ),
             "fork_last_cycle": self._fork_last_cycle or None,
             "polis_civic_active": self._polis_last_cycle == self.cycle_count,
+            # D15 Hub (The Dam) status
+            "hub": self._get_hub_status(),
             "timestamp": datetime.now(timezone.utc).isoformat(),
-            "federation_version": "1.1.0",
+            "federation_version": "1.2.0",
         }
 
         # Write locally
@@ -1410,8 +1992,9 @@ class ParliamentCycleEngine:
         s3 = self._get_s3()
         if s3:
             try:
-                s3._get_s3("us-east-1").put_object(
-                    Bucket="elpida-body-evolution",
+                from s3_bridge import REGION_BODY, BUCKET_BODY
+                s3._get_s3(REGION_BODY).put_object(
+                    Bucket=BUCKET_BODY,
                     Key="federation/body_heartbeat.json",
                     Body=json.dumps(heartbeat, indent=2).encode("utf-8"),
                     ContentType="application/json",
@@ -1456,9 +2039,9 @@ class ParliamentCycleEngine:
             logger.info(
                 "PSO advisory: dominant=%s fitness=%.4f topology=%s converged_iter=%s",
                 rec.get("dominant_axiom"),
-                advisory.get("best_fitness", 0),
-                advisory.get("topology_used"),
-                advisory.get("converged_at"),
+                rec.get("fitness", 0),
+                rec.get("topology"),
+                advisory.get("convergence", {}).get("converged_at"),
             )
         except Exception as e:
             logger.warning("PSO advisory failed: %s", e)
@@ -1466,6 +2049,35 @@ class ParliamentCycleEngine:
     # ------------------------------------------------------------------
     # P5: Audit Prescription Actuator
     # ------------------------------------------------------------------
+
+    def _compute_system_stress(
+        self, top_pct: float, avg_approval: float
+    ) -> float:
+        """
+        Oscillation Doctrine: derive system stress (0.0–1.0) from
+        three signals — coherence, approval, and existing monoculture.
+
+        Higher stress → lower monoculture threshold → earlier intervention.
+        """
+        # Coherence signal: low coherence = high stress
+        # coherence 1.0 → 0.0 stress;  coherence 0.3 → 1.0 stress
+        coherence_stress = max(0.0, min(1.0, 1.0 - self.coherence))
+
+        # Approval signal: negative approval = high stress
+        # approval +0.40 → 0.0 stress;  approval -0.30 → 1.0 stress
+        approval_stress = max(0.0, min(1.0, (0.40 - avg_approval) / 0.70))
+
+        # Monoculture signal: existing dominance raises stress
+        # dominance 0.20 → 0.0 stress;  dominance 0.50 → 1.0 stress
+        mono_stress = max(0.0, min(1.0, (top_pct - 0.20) / 0.30))
+
+        # Weighted combination — coherence matters most
+        stress = (
+            0.40 * coherence_stress
+            + 0.30 * approval_stress
+            + 0.30 * mono_stress
+        )
+        return max(0.0, min(1.0, stress))
 
     def _extract_audit_prescription(self, current_axiom: Optional[str]):
         """
@@ -1476,8 +2088,10 @@ class ParliamentCycleEngine:
         Mirrors AuditAgent's detection logic but produces machine-readable
         prescriptions instead of human-readable log text.
 
-        Triggers:
-          1. Axiom monoculture: top axiom > 40% of all cycles
+        Triggers (Oscillation Doctrine — adaptive thresholds):
+          1. Axiom monoculture: top axiom > adaptive threshold (30-38%)
+             Threshold breathes with system stress — stressed systems
+             trigger earlier, calm systems tolerate more diversity.
           2. Approval collapse: average approval < 35% over last 8 decisions
 
         Prescription = seed the least-used axiom that is NOT the current
@@ -1487,7 +2101,7 @@ class ParliamentCycleEngine:
         if total_axiom_cycles < 10:
             return
 
-        # Check monoculture: top axiom > 40%
+        # Check monoculture: adaptive threshold (Oscillation Doctrine)
         top_axiom = max(self._axiom_frequency, key=self._axiom_frequency.get)
         top_pct = self._axiom_frequency[top_axiom] / total_axiom_cycles
 
@@ -1499,7 +2113,11 @@ class ParliamentCycleEngine:
             avg_approval = sum(approvals) / len(approvals)
         approval_crisis = avg_approval < 0.35 and len(recent_decisions) >= 5
 
-        if top_pct > 0.40 or approval_crisis:
+        # Oscillation Doctrine: compute system stress → adaptive threshold
+        stress = self._compute_system_stress(top_pct, avg_approval)
+        mono_threshold = get_monoculture_threshold(stress)
+
+        if top_pct > mono_threshold or approval_crisis:
             # Find the least-used axiom that:
             # 1. Has a rhythm mapping (is reachable)
             # 2. Is not the current dominant
@@ -1513,12 +2131,44 @@ class ParliamentCycleEngine:
 
             # Sort by frequency (ascending — prefer least used)
             candidates.sort(key=lambda a: self._axiom_frequency.get(a, 0))
-            target_axiom = candidates[0]
 
-            severity = "CRITICAL" if (top_pct > 0.50 or approval_crisis) else "WARNING"
+            # Oscillation Doctrine — A7 meta-axiom recognition:
+            # A7 (Continuous Becoming) operates as a meta-axiom that
+            # transforms how other axioms express, rather than appearing
+            # as dominant. If A7 has been prescribed 3+ consecutive times
+            # without ever surfacing, skip it — it's already working
+            # through the adaptive threshold itself.
+            target_axiom = candidates[0]
+            if (target_axiom == "A7"
+                    and self._audit_prescription
+                    and self._audit_prescription.get("target_axiom") == "A7"
+                    and self._axiom_frequency.get("A7", 0) == 0
+                    and len(candidates) > 1):
+                target_axiom = candidates[1]
+                logger.info(
+                    "A7 META-AXIOM: skipping A7 prescription (never surfaces "
+                    "as dominant — operates through adaptive thresholds)"
+                )
+
+            # BUG 13 fix: approval_crisis alone (avg < 35%) must NOT elevate
+            # severity to CRITICAL.  At BODY equilibrium, approval averages
+            # 10-25% because constitutional adversarial nodes (e.g. CRITIAS)
+            # always vote negatively — that is by design, not a crisis.
+            # CRITICAL should only fire when there is genuine axiom monoculture
+            # (one axiom absorbing > 50% of cycles).  CRITICAL triggers the
+            # P5 forced override (requires severity=="CRITICAL"); WARNING only
+            # signals the prescription without overriding rhythm selection.
+            # Previously: CRITICAL if (top_pct > 0.50 OR approval_crisis)
+            # — since approval_crisis was always True, severity was always
+            # CRITICAL, firing the forced override on ~8 of every 13 cycles
+            # and contaminating Parliament context with "approval_collapse" text.
+            severity = "CRITICAL" if top_pct > 0.50 else "WARNING"
             reason = []
-            if top_pct > 0.40:
-                reason.append(f"monoculture_{top_axiom}_{top_pct:.0%}")
+            if top_pct > mono_threshold:
+                reason.append(
+                    f"monoculture_{top_axiom}_{top_pct:.0%}"
+                    f"_threshold_{mono_threshold:.0%}"
+                )
             if approval_crisis:
                 reason.append(f"approval_collapse_{avg_approval:.0%}")
 
@@ -1530,18 +2180,21 @@ class ParliamentCycleEngine:
                 "prescribed_at": self.cycle_count,
                 "displaced_axiom": top_axiom,
                 "displaced_pct": round(top_pct * 100, 1),
+                "stress": round(stress, 3),
+                "threshold": round(mono_threshold, 3),
             }
             self._audit_prescription_cycle = self.cycle_count
 
             logger.info(
                 "P5 AUDIT PRESCRIPTION: seed %s (severity=%s, reason=%s, "
-                "displacing %s at %.0f%%)",
+                "displacing %s at %.0f%%, stress=%.3f, threshold=%.0f%%)",
                 target_axiom, severity, "+".join(reason),
-                top_axiom, top_pct * 100,
+                top_axiom, top_pct * 100, stress, mono_threshold * 100,
             )
             print(
                 f"   💊 AUDIT PRESCRIPTION: seed {target_axiom} "
-                f"({severity}: {'+'.join(reason)})"
+                f"({severity}: {'+'.join(reason)}, "
+                f"threshold={mono_threshold:.0%})"
             )
 
     # ------------------------------------------------------------------
@@ -1597,6 +2250,12 @@ class ParliamentCycleEngine:
                     f"\n   ⚠️  PATHOLOGY CRITICAL (cycle {self.cycle_count}): "
                     f"zombies={len(zombies)} drift={drift_severity} KL={drift_kl:.3f}"
                 )
+                # Discord: notify #parliament-alerts
+                try:
+                    from .discord_bridge import post_pathology
+                    post_pathology(self.cycle_count, health, drift_kl, drift_severity, len(zombies))
+                except Exception:
+                    pass
                 # Log zombie axioms for operational awareness
                 for z in zombies[:3]:
                     print(
@@ -1608,9 +2267,9 @@ class ParliamentCycleEngine:
                 for da in drift.get("drifting_axioms", [])[:3]:
                     print(
                         f"       P055 DRIFT: {da.get('axiom', '?')} — "
-                        f"espoused={da.get('espoused', 0):.3f} "
-                        f"lived={da.get('lived', 0):.3f} "
-                        f"delta={da.get('delta', 0):+.3f}"
+                        f"espoused={da.get('espoused_weight', 0):.3f} "
+                        f"lived={da.get('lived_weight', 0):.3f} "
+                        f"delta={da.get('drift', 0):+.3f}"
                     )
             elif health == "WARNING":
                 print(
@@ -1715,6 +2374,142 @@ class ParliamentCycleEngine:
 
         except Exception as e:
             logger.warning("Fork evaluation failed: %s", e)
+
+    def _run_d15_pipeline(self):
+        """
+        D15 Autonomous Pipeline — run the full D14→D13→D11→D0→D12 chain.
+
+        Triggered every D15_PIPELINE_INTERVAL (144) cycles when a MIND
+        heartbeat is available.  The pipeline checks a consciousness-emergence
+        threshold, runs a 9-node Parliament governance gate, and — only if
+        both pass — broadcasts to the WORLD S3 bucket.
+
+        This is distinct from the shallow ConvergenceGate which fires cheaply
+        every cycle on MIND/BODY axiom consonance.  The pipeline does deep
+        LLM synthesis (~7 calls) and is designed to produce one meaningful
+        external broadcast rather than many shallow ones.
+        """
+        pipeline = self._get_d15_pipeline()
+        if pipeline is None:
+            logger.warning("D15 pipeline trigger skipped — module unavailable")
+            return
+
+        logger.info(
+            "D15 PIPELINE triggered at cycle=%d (last_run=%d, interval=%d)",
+            self.cycle_count, self._d15_pipeline_last_cycle, D15_PIPELINE_INTERVAL,
+        )
+        print(f"\n   🌀 D15 PIPELINE starting (cycle {self.cycle_count})...")
+
+        try:
+            result = pipeline.run()
+            self._d15_pipeline_last_cycle = self.cycle_count
+
+            emerged   = result.get("d15_emerged", False)
+            broadcast = result.get("d15_broadcast", False)
+            duration  = result.get("duration_s", 0)
+
+            logger.info(
+                "D15 PIPELINE cycle=%d: emerged=%s broadcast=%s duration=%.1fs",
+                self.cycle_count, emerged, broadcast, duration,
+            )
+
+            if broadcast:
+                print(
+                    f"   🌍 D15 BROADCAST #{result.get('broadcast_key', '?')} "
+                    f"in {duration}s"
+                )
+                # Surface the broadcast as a cycle event so it appears in
+                # the federation body_decisions feed and the heartbeat.
+                self.decisions.append({
+                    "cycle": self.cycle_count,
+                    "type": "D15_PIPELINE_BROADCAST",
+                    "broadcast_key": result.get("broadcast_key"),
+                    "duration_s": duration,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                })
+            elif emerged:
+                print(f"   ○ D15 emerged but governance held — deferred to review")
+            else:
+                print(f"   ○ D15 threshold not met this run ({duration}s)")
+
+        except Exception as e:
+            logger.warning("D15 pipeline run failed: %s", e)
+            print(f"   ⚠ D15 pipeline error: {e}")
+
+    def _run_ai_dialogue(self):
+        """
+        AI Peer Dialogue — pose the dominant constitutional tension to 2 external
+        peer AIs and inject their responses as scanner InputEvents.
+
+        Triggered every AI_DIALOGUE_INTERVAL (233) cycles (Fibonacci F(13)).
+        The previous cycle's tensions are used as topic; falls back to the
+        dominant axiom name if no prior tensions exist.
+
+        External peer responses arrive in the *next* deliberation cycle as
+        InputEvents (system="scanner", source="ai_peer_dialogue"), giving
+        Parliament genuine outside perspective before it deliberates.
+
+        Full transcript is shipped to S3 ai_exchanges/ for human review.
+        """
+        engine = self._get_ai_dialogue()
+        if engine is None:
+            logger.warning("AI dialogue trigger skipped — engine unavailable")
+            return
+
+        # Build topic from most recent cycle tensions, else dominant axiom
+        topic: str
+        context_snippets: list = []
+        if self.decisions:
+            last_rec = self.decisions[-1]
+            prev_tensions = last_rec.get("tensions", [])
+            if prev_tensions:
+                # Use first tension synthesis as topic; rest as context
+                first = prev_tensions[0]
+                topic = first.get("synthesis") or first.get("pair", "Constitutional tension")
+                context_snippets = [
+                    t.get("synthesis") or t.get("pair", "")
+                    for t in prev_tensions[1:4]
+                    if t.get("synthesis") or t.get("pair")
+                ]
+            else:
+                da = last_rec.get("dominant_axiom") or self.last_dominant_axiom or "A0"
+                topic = f"{da}: emerging constitutional question"
+        else:
+            da = self.last_dominant_axiom or "A0"
+            topic = f"{da}: foundational constitutional tension"
+
+        dominant_axiom = self.last_dominant_axiom or "A0"
+
+        logger.info(
+            "AI DIALOGUE triggered at cycle=%d topic=%r dominant_axiom=%s",
+            self.cycle_count, topic[:120], dominant_axiom,
+        )
+        print(f"\n   🤝 AI PEER DIALOGUE starting (cycle {self.cycle_count})…")
+
+        try:
+            result = engine.run_dialogue_round(
+                topic=topic,
+                dominant_axiom=dominant_axiom,
+                cycle=self.cycle_count,
+                context_snippets=context_snippets,
+            )
+            self._ai_dialogue_last_cycle = self.cycle_count
+
+            injected = result.get("events_pushed", 0)
+            round_num = result.get("round", "?")
+            s3_ok = result.get("s3_shipped", False)
+            logger.info(
+                "AI DIALOGUE cycle=%d round=%s: injected=%d s3=%s",
+                self.cycle_count, round_num, injected, s3_ok,
+            )
+            print(
+                f"   💬 AI dialogue round {round_num}: {injected} peer events queued"
+                + (" · transcript → S3" if s3_ok else "")
+            )
+
+        except Exception as e:
+            logger.warning("AI dialogue run failed: %s", e)
+            print(f"   ⚠ AI dialogue error: {e}")
 
     def _run_polis_civic_deliberation(self):
         """
@@ -1845,26 +2640,36 @@ class ParliamentCycleEngine:
         Check if MIND and BODY have converged on the same axiom.
 
         D15 fires when (ALL conditions, sequential gate):
-          1. MIND dominant axiom cluster matches BODY dominant axiom
-          2. MIND coherence ≥ 0.85
-          3. BODY approval_rate ≥ 0.15  (BODY_APPROVAL_THRESHOLD)
-          4. Cooldown since last D15 ≥ 50 cycles
-          5. Consonance with A6 anchor ≥ 0.4 (A0 EXEMPT)
+          1. MIND dominant axiom exists
+          2. MIND and BODY axioms are harmonically consonant (≥ 0.6)
+          3. MIND coherence ≥ 0.85
+          4. BODY approval_rate ≥ 0.15  (BODY_APPROVAL_THRESHOLD)
+          5. Cooldown since last D15 ≥ 50 cycles
+          6. Consonance with A6 anchor ≥ 0.4 (A0 EXEMPT)
 
-        A0 convergence broadcasts every 5th occurrence only
-        (rate limiter inside ConvergenceGate.check_and_fire).
+        Gate 2 uses harmonic consonance rather than exact match —
+        convergence in a musical system means "in harmony", not
+        "in unison". The MIND heartbeat updates every 4h (Fargate),
+        so exact axiom match is structurally rare.
 
         This is A16 (Convergence Validity):
         "Convergence of different starting points proves validity
          more rigorously than internal consistency."
         """
         if not self._mind_heartbeat:
+            if self.cycle_count % 50 == 0:
+                logger.info("D15 skip: no MIND heartbeat yet (cycle %d)", self.cycle_count)
             return
         if not body_axiom:
-            return
-        if (self.cycle_count - self.d15_last_broadcast_cycle) < CONVERGENCE_COOLDOWN_CYCLES:
+            if self.cycle_count % 50 == 0:
+                logger.info("D15 skip: no BODY dominant axiom (cycle %d)", self.cycle_count)
             return
 
+        cycles_since = self.cycle_count - self.d15_last_broadcast_cycle
+        if cycles_since < CONVERGENCE_COOLDOWN_CYCLES:
+            return
+
+        body_approval = result.get("parliament", {}).get("approval_rate", 0)
         gate = self._get_convergence_gate()
         if gate:
             fired = gate.check_and_fire(
@@ -1872,9 +2677,20 @@ class ParliamentCycleEngine:
                 body_cycle=self.cycle_count,
                 body_axiom=body_axiom,
                 body_coherence=self.coherence,
-                body_approval=result.get("parliament", {}).get("approval_rate", 0),
+                body_approval=body_approval,
                 parliament_result=result,
             )
+            # If normal gate failed but Kaya events are pending,
+            # try the relaxed Kaya gate (skips MIND axiom + BODY approval).
+            if not fired and self.input_buffer.counts().get("kaya", 0) > 0:
+                fired = gate.check_and_fire_kaya(
+                    mind_heartbeat=self._mind_heartbeat,
+                    body_cycle=self.cycle_count,
+                    body_axiom=body_axiom,
+                    body_coherence=self.coherence,
+                    body_approval=body_approval,
+                    parliament_result=result,
+                )
             if fired:
                 self.d15_broadcast_count += 1
                 self.d15_last_broadcast_cycle = self.cycle_count
@@ -1886,6 +2702,12 @@ class ParliamentCycleEngine:
                     f"\n   🌍 D15 WORLD BROADCAST #{self.d15_broadcast_count} "
                     f"— CONVERGENCE on {body_axiom} at cycle {self.cycle_count}\n"
                 )
+                # Discord: notify #parliament-alerts
+                try:
+                    from .discord_bridge import post_d15_fired
+                    post_d15_fired(self.cycle_count, body_axiom, self.d15_broadcast_count)
+                except Exception:
+                    pass
 
     # ------------------------------------------------------------------
     # Main Loop
@@ -1912,7 +2734,7 @@ class ParliamentCycleEngine:
         print(f"\n⚖️  PARLIAMENT CYCLE ENGINE — BODY LOOP STARTING")
         print(f"   Duration: {duration_minutes}min | Delay: {cycle_delay_s}s/cycle")
         print(f"   Rhythms: {', '.join(RHYTHM_WEIGHTS)}")
-        print(f"   Axiom genome: A0–A10 (11 axioms)")
+        print(f"   Axiom genome: A0–A14+A16 (16 axioms)")
         print(f"   Parliament: 10 nodes (HERMES→LOGOS)")
         print(f"   D15 convergence: cooldown={CONVERGENCE_COOLDOWN_CYCLES} cycles\n")
 
@@ -1933,8 +2755,22 @@ class ParliamentCycleEngine:
         except Exception as _e:
             logger.warning("D0↔D11 body connector unavailable at startup: %s", _e)
 
+        # Guest Chamber Feed — start background S3 poller so human questions
+        # enter InputBuffer and trigger Parliament deliberation + Discord reply.
+        try:
+            from elpidaapp.guest_chamber import GuestChamberFeed
+            self._guest_feed = GuestChamberFeed(self.input_buffer)
+            self._guest_feed.start()
+            print(f"   📬 Guest Chamber Feed started (polling every {self._guest_feed.interval}s)")
+        except Exception as _e:
+            logger.warning("GuestChamberFeed unavailable at startup: %s", _e)
+
         try:
             while self._running and time.time() < end_time:
+                # Skip cycle if paused (Live Audit running — avoid OOM)
+                if self._paused or self._check_audit_pause():
+                    time.sleep(cycle_delay_s)
+                    continue
                 try:
                     cycle_result = self.run_cycle()
                 except Exception as e:
@@ -1958,6 +2794,24 @@ class ParliamentCycleEngine:
     def stop(self):
         """Signal the loop to stop after current cycle."""
         self._running = False
+        if self._guest_feed is not None:
+            self._guest_feed.stop()
+            self._guest_feed = None
+
+    def _check_audit_pause(self) -> bool:
+        """Check if a Live Audit signalled the engine to pause (file-based IPC)."""
+        try:
+            flag = Path(__file__).resolve().parent.parent / "cache" / "audit_running.flag"
+            if flag.exists():
+                # Auto-expire after 5 minutes (safety net)
+                age = time.time() - flag.stat().st_mtime
+                if age > 300:
+                    flag.unlink(missing_ok=True)
+                    return False
+                return True
+        except Exception:
+            pass
+        return False
 
     # ------------------------------------------------------------------
     # State for external consumption
@@ -1994,6 +2848,18 @@ class ParliamentCycleEngine:
             "fork_last_cycle": self._fork_last_cycle or None,
             "d15_broadcast_count": self.d15_broadcast_count,
             "axiom_frequency": dict(self._axiom_frequency),
+            "oscillation_doctrine": {
+                "stress": round(self._compute_system_stress(
+                    max(self._axiom_frequency.values()) / max(sum(self._axiom_frequency.values()), 1),
+                    0.0,
+                ), 3) if self._axiom_frequency else 0.0,
+                "threshold": round(get_monoculture_threshold(
+                    self._compute_system_stress(
+                        max(self._axiom_frequency.values()) / max(sum(self._axiom_frequency.values()), 1),
+                        0.0,
+                    ) if self._axiom_frequency else 0.0
+                ), 3),
+            },
             "input_buffer": self.input_buffer.counts(),
             "running": self._running,
             "mind_heartbeat_cycle": self._mind_heartbeat_cycle,

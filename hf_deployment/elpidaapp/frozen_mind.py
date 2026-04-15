@@ -286,6 +286,14 @@ class FrozenMind:
             data = json.loads(resp["Body"].read().decode("utf-8"))
             self._kernel = data
             logger.info("Frozen mind loaded from S3 %s/%s", S3_BUCKET, S3_KERNEL_KEY)
+            # Cache locally so subsequent loads skip S3
+            try:
+                LOCAL_KERNEL.parent.mkdir(parents=True, exist_ok=True)
+                with open(LOCAL_KERNEL, "w") as f:
+                    json.dump(data, f)
+                logger.info("Cached kernel.json locally at %s", LOCAL_KERNEL)
+            except Exception as cache_err:
+                logger.debug("Could not cache kernel locally: %s", cache_err)
         except Exception as e:
             logger.warning("S3 kernel fetch failed: %s", e)
 

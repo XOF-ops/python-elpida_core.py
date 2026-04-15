@@ -56,15 +56,15 @@ SCAN_TOPICS = [
 
 class ProblemScanner:
     """
-    Finds real-world policy dilemmas by querying Perplexity
-    for current events, then reformats them into structured
-    problem statements with competing plans.
+    Finds real-world policy dilemmas by searching the web via
+    DuckDuckGo (free, no API key) and structuring results with
+    a free LLM (Groq).
     """
 
     def __init__(
         self,
         llm: Optional[LLMClient] = None,
-        research_provider: str = "perplexity",
+        research_provider: str = "groq",
         structure_provider: str = "claude",
     ):
         self.llm = llm or LLMClient(rate_limit_seconds=1.0)
@@ -157,13 +157,44 @@ class ProblemScanner:
 
     def _research_dilemmas(self, topic: str) -> Dict[str, Any]:
         """
-        Use Perplexity to find real-world active dilemmas
-        with genuine competing interests.
+        Use DuckDuckGo web search + Groq to find real-world active
+        dilemmas with genuine competing interests.
 
         Returns {"text": str, "citations": list[str]}.
         """
+        from elpidaapp.domain_grounding import _search_ddg, _rate_limit
+
+        # ── Step 1: free web search via DDG ──
+        _rate_limit()
+        raw_results = []
+        try:
+            from ddgs import DDGS
+            ddgs = DDGS()
+            raw_results = list(ddgs.text(
+                f"{topic} policy dilemma controversy 2026",
+                max_results=6,
+            ))
+        except Exception:
+            pass
+
+        # Extract URLs as citations and build context
+        citations = [r.get("href", "") for r in raw_results if r.get("href")]
+        snippets = []
+        for r in raw_results[:5]:
+            title = r.get("title", "")
+            body = r.get("body", "")
+            href = r.get("href", "")
+            if title and body:
+                snippets.append(f"• {title}: {body} [Source: {href}]")
+
+        web_context = "\n".join(snippets) if snippets else ""
+
+        # ── Step 2: ask free LLM to synthesize into a dilemma ──
         prompt = f"""Find ONE specific, currently active real-world policy dilemma
 related to: {topic}
+
+Here is recent web context to ground your answer:
+{web_context}
 
 Requirements:
 - It must be a REAL situation happening NOW (not hypothetical)
@@ -179,25 +210,15 @@ Provide:
 4. Why neither plan fully solves the problem
 5. What makes this genuinely hard (not just politics)
 
-Be specific.  Use real data.  No generalities.
-At the end, list all source URLs you used (one per line, prefixed with "Source: ")."""
+Be specific.  Use real data.  No generalities."""
 
-        # Use citation-aware call to capture Perplexity sources
-        if hasattr(self.llm, 'call_with_citations'):
-            return self.llm.call_with_citations(
-                self.research_provider,
-                prompt,
-                max_tokens=800,
-                timeout=30,
-            )
-        # Fallback for older LLMClient
         text = self.llm.call(
             self.research_provider,
             prompt,
             max_tokens=800,
             timeout=30,
         )
-        return {"text": text, "citations": []}
+        return {"text": text or "", "citations": citations}
 
     def _structure_problem(self, raw_research: str, topic: str) -> Optional[str]:
         """

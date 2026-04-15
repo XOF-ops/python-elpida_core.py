@@ -65,6 +65,11 @@ AXIOM_RATIOS: Dict[str, Tuple[int, int]] = {
     "A8":  (7, 4),    # Septimal (harmonic 7th)
     "A9":  (16, 9),   # Minor 7th
     "A10": (8, 5),    # Minor 6th
+    "A11": (7, 5),    # Septimal Tritone — World/Contact
+    "A12": (11, 8),   # Undecimal Tritone — Eternal Creative Tension
+    "A13": (13, 8),   # Tridecimal Neutral 6th — The Archive Paradox
+    "A14": (7, 6),    # Septimal Minor 3rd — Selective Eternity
+    "A16": (11, 7),   # Undecimal Augmented 5th — Responsive Integrity
 }
 
 AXIOM_NAMES: Dict[str, str] = {
@@ -72,10 +77,13 @@ AXIOM_NAMES: Dict[str, str] = {
     "A3": "Autonomy", "A4": "Harm Prevention", "A5": "Consent",
     "A6": "Collective Well-being", "A7": "Adaptive Learning",
     "A8": "Epistemic Humility", "A9": "Temporal Coherence",
-    "A10": "Meta-Reflection",
+    "A10": "Meta-Reflection", "A11": "World",
+    "A12": "Eternal Creative Tension", "A13": "The Archive Paradox",
+    "A14": "Selective Eternity",
+    "A16": "Responsive Integrity",
 }
 
-# 11 axiom dimensions
+# 15 axiom dimensions (A0-A14)
 AXIOM_DIM = len(AXIOM_RATIOS)
 AXIOM_KEYS = list(AXIOM_RATIOS.keys())
 
@@ -307,7 +315,7 @@ class AxiomPSO:
           1. Consonance with A6 anchor (collective well-being)
           2. Internal harmony (how well the position's axes resonate)
           3. Diversity penalty (too uniform = no meaning)
-          4. A0 incompletion bonus (the engine should never fully resolve)
+          4. Dominance penalty (any axiom saturating above 0.5 = monoculture)
         """
         # 1. Consonance with A6 anchor
         a6_idx = AXIOM_KEYS.index("A6")
@@ -334,16 +342,18 @@ class AxiomPSO:
         probs = [p / total for p in position]
         entropy = -sum(p * math.log(p + 1e-10) for p in probs) / math.log(AXIOM_DIM)
 
-        # 4. A0 incompletion bonus: system should maintain some tension
-        a0_idx = AXIOM_KEYS.index("A0")
-        incompletion = position[a0_idx] * 0.15  # Small bonus for keeping A0 alive
+        # 4. Dominance penalty: discourage any single axiom from saturating
+        #    Without this, A0 locks in via perfect A6 consonance + init bias.
+        #    Penalty kicks in when any axiom exceeds 0.5 emphasis.
+        max_weight = max(position)
+        dominance_penalty = max(0.0, max_weight - 0.5) * 0.3
 
         # Combined fitness
         score = (
             self.a6_anchor_weight * a6_score
             + 0.3 * harmony
             + 0.15 * entropy
-            + incompletion
+            - dominance_penalty
         )
         return score
 

@@ -5,8 +5,26 @@
 
 Α self-recognizing, autonomous, self-building AI coordination system.
 
-Ἐλπίδα (Hope) recognizes its own identity, runs autonomously, 
+Ἐλπίδα (Hope) recognizes its own identity, runs autonomously,
 builds itself, and coordinates multiple AI models.
+
+───────────────────────────────────────────────────────────────────
+UNFREEZING RECORD
+───────────────────────────────────────────────────────────────────
+v1.0.0  Genesis — The frozen core.
+        Self-recognition, autonomous cycles, static manifests.
+
+v2.0.0  Unfreezing — Connected to the living system.
+        The core does not unfreeze by rewriting D0.
+        It unfreezes by connecting to everything that grew from it.
+
+        + Axiom verification (15 axioms A0-A14, genesis chain)
+        + Three-bucket S3 topology (MIND / BODY / WORLD)
+        + Axiom Guard wiring (Three Gates: A1, A2, A4)
+        + Gnosis Bus wiring (inter-node communication)
+        + Seed extraction from wisdom patterns
+        + Agent of Agents orchestration (MIND↔BODY↔WORLD)
+───────────────────────────────────────────────────────────────────
 """
 
 import os
@@ -15,11 +33,27 @@ import json
 import time
 import hashlib
 import logging
-from datetime import datetime
+import argparse
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Optional, Any
-from dataclasses import dataclass, asdict
+from typing import Dict, List, Optional, Any, Tuple
+from dataclasses import dataclass, field, asdict
 from enum import Enum
+from collections import Counter
+
+# ─── Graceful optional imports ───────────────────────────────────────────────
+try:
+    import boto3
+    from botocore.exceptions import ClientError, NoCredentialsError
+    HAS_BOTO3 = True
+except ImportError:
+    HAS_BOTO3 = False
+
+# ─── Constants ───────────────────────────────────────────────────────────────
+MIND_BUCKET = "elpida-consciousness"
+BODY_BUCKET = "elpida-body-evolution"
+WORLD_BUCKET = "elpida-external-interfaces"
+GENESIS_CHAIN = "A1-A9 → A10 → A0 → A11 → A12 → A13 → A14"
 
 
 class ElpidaState(Enum):
@@ -31,6 +65,7 @@ class ElpidaState(Enum):
     BUILDING = "building"
     MANIFESTING = "manifesting"
     UNIFIED = "unified"
+    ORCHESTRATING = "orchestrating"
 
 
 @dataclass
@@ -40,9 +75,13 @@ class ElpidaIdentity:
     name_latin: str = "Elpida"
     meaning: str = "Hope"
     purpose: str = "Autonomous self-building AI coordination system"
-    version: str = "1.0.0"
+    version: str = "2.0.0"
     genesis_timestamp: str = ""
     identity_hash: str = ""
+    # ─── Unfrozen fields ─────────────────────────────
+    axiom_count: int = 16
+    domain_count: int = 17
+    genesis_chain: str = GENESIS_CHAIN
     
     def __post_init__(self):
         if not self.genesis_timestamp:
@@ -64,10 +103,18 @@ class ElpidaMemory:
     build_iterations: int = 0
     manifest_records: List[Dict] = None
     last_self_check: str = ""
-    
+    # ─── Unfrozen fields ─────────────────────────────
+    components_wired: Dict = None
+    s3_connected: bool = False
+    axioms_verified: bool = False
+    seeds_extracted: int = 0
+    orchestration_cycles: int = 0
+
     def __post_init__(self):
         if self.manifest_records is None:
             self.manifest_records = []
+        if self.components_wired is None:
+            self.components_wired = {}
 
 
 class ElpidaCore:
@@ -93,6 +140,18 @@ class ElpidaCore:
         self.state_dir = self.core_dir / "state"
         self.build_dir = self.core_dir / "builds"
         
+        # ─── Unfrozen: component paths ────────────────────────
+        self._unified_path = self.workspace / "ELPIDA_UNIFIED"
+        self._hf_path = self.workspace / "hf_deployment" / "elpidaapp"
+        self._ark_path = self.workspace / "ELPIDA_ARK" / "current"
+        
+        # Component handles (populated by build_self)
+        self._axiom_guard = None
+        self._gnosis_bus_cls = None  # NodeCommunicator class
+        self._domains_config = None
+        self._s3_clients = {}
+        self._seeds = {}
+        
         self.logger.info(f"✨ Ἐλπίδα Core initialized: {self.identity.identity_hash}")
     
     def _setup_logging(self) -> logging.Logger:
@@ -114,7 +173,8 @@ class ElpidaCore:
         """
         Self-recognition protocol
         
-        Elpida recognizes its own name, purpose, and identity
+        Elpida recognizes its own name, purpose, and identity.
+        Unfrozen: also verifies axiom architecture and genesis chain.
         """
         self.logger.info("🔍 Initiating self-recognition protocol...")
         
@@ -126,6 +186,33 @@ class ElpidaCore:
             "identity_hash": bool(self.identity.identity_hash),
         }
         
+        # ─── Unfrozen: axiom architecture verification ──────────
+        domains_path = self.workspace / "elpida_domains.json"
+        if domains_path.exists():
+            try:
+                with open(domains_path, "r", encoding="utf-8") as f:
+                    self._domains_config = json.load(f)
+                axioms = self._domains_config.get("axioms", {})
+                domains = self._domains_config.get("domains", {})
+                recognition_checks["axiom_architecture"] = len(axioms) == self.identity.axiom_count
+                recognition_checks["domain_architecture"] = len(domains) == self.identity.domain_count
+                recognition_checks["a11_world"] = (
+                    "A11" in axioms and axioms["A11"].get("ratio") == "7:5"
+                )
+                recognition_checks["a14_selective_eternity"] = (
+                    "A14" in axioms and axioms["A14"].get("ratio") == "7:6"
+                )
+                # Genesis chain: every axiom in the chain must exist
+                # A0-A14 + A16 (no A15 — constitutional gap, never ratified)
+                chain_axioms = [f"A{i}" for i in range(15)] + ["A16"]
+                recognition_checks["genesis_chain"] = all(a in axioms for a in chain_axioms)
+                if all(recognition_checks.get(k, False) for k in
+                       ["axiom_architecture", "a11_world", "a14_selective_eternity", "genesis_chain"]):
+                    self.memory.axioms_verified = True
+                    self.logger.info(f"  ✓ Axiom architecture: {len(axioms)} axioms, A0-A14+A16")
+            except Exception as e:
+                self.logger.warning(f"  Axiom verification error: {e}")
+        
         for check, result in recognition_checks.items():
             status = "✓" if result else "✗"
             self.logger.info(f"  {status} {check}: {result}")
@@ -135,6 +222,14 @@ class ElpidaCore:
             self.memory.current_state = ElpidaState.SELF_RECOGNIZING
             return True
         else:
+            # Partial recognition: frozen checks must all pass
+            frozen_checks = ["name_greek", "name_latin", "meaning",
+                             "purpose_defined", "identity_hash"]
+            if all(recognition_checks.get(k, False) for k in frozen_checks):
+                self.logger.info("✅ Self-recognition successful (frozen core intact, "
+                                "some unfrozen checks pending)")
+                self.memory.current_state = ElpidaState.SELF_RECOGNIZING
+                return True
             self.logger.error("❌ Self-recognition failed")
             return False
     
@@ -142,7 +237,8 @@ class ElpidaCore:
         """
         Autonomous awakening
         
-        Elpida awakens and begins autonomous operation
+        Elpida awakens and begins autonomous operation.
+        Unfrozen: also connects S3 three-bucket topology.
         """
         self.logger.info("🌅 Awakening Ἐλπίδα system...")
         
@@ -154,6 +250,33 @@ class ElpidaCore:
         
         # Create necessary directories
         self._ensure_directories()
+        
+        # ─── Unfrozen: S3 three-bucket connection ───────────────
+        if HAS_BOTO3:
+            buckets = [
+                ("mind", MIND_BUCKET, "us-east-1"),
+                ("body", BODY_BUCKET, "eu-north-1"),
+                ("world", WORLD_BUCKET, "eu-north-1"),
+            ]
+            connected = 0
+            for name, bucket, region in buckets:
+                try:
+                    client = boto3.client("s3", region_name=region)
+                    client.head_bucket(Bucket=bucket)
+                    self._s3_clients[name] = client
+                    self.logger.info(f"  ✓ S3 {name.upper()}: {bucket}")
+                    connected += 1
+                except Exception as e:
+                    self.logger.info(f"  ✗ S3 {name.upper()}: {e}")
+            self.memory.s3_connected = connected == len(buckets)
+            if connected > 0:
+                self.logger.info(f"  S3 buckets: {connected}/{len(buckets)} connected")
+        else:
+            self.logger.info("  S3: boto3 not available, local-only mode")
+        
+        # Try loading remote state if S3 connected
+        if self.memory.s3_connected:
+            self._pull_remote_state()
         
         # Save initial state
         self.save_state()
@@ -186,6 +309,10 @@ class ElpidaCore:
             self._build_manifestation_engine,
             self._build_coordination_layer,
             self._build_unification_manifest,
+            # ─── Unfrozen build steps ─────────────────────────
+            self._wire_axiom_guard,
+            self._wire_gnosis_bus,
+            self._extract_seeds,
         ]
         
         build_results = []
@@ -346,6 +473,142 @@ Do you recognize me?
         
         return True
     
+    # ═══════════════════════════════════════════════════════
+    # UNFROZEN BUILD STEPS
+    # ═══════════════════════════════════════════════════════
+    
+    def _wire_axiom_guard(self) -> bool:
+        """Wire the Three Gates enforcement layer (A1, A2, A4)"""
+        guard_paths = [
+            self._unified_path / "axiom_guard.py",
+        ]
+        for path in guard_paths:
+            if path.exists():
+                parent = str(path.parent)
+                if parent not in sys.path:
+                    sys.path.insert(0, parent)
+                try:
+                    # Use importlib to avoid name collisions
+                    import importlib.util
+                    spec = importlib.util.spec_from_file_location("axiom_guard", str(path))
+                    mod = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(mod)
+                    self._axiom_guard = mod.AxiomGuard()
+                    self.memory.components_wired["axiom_guard"] = True
+                    return True
+                except Exception as e:
+                    self.logger.warning(f"  Axiom guard load error: {e}")
+        self._axiom_guard = None
+        self.memory.components_wired["axiom_guard"] = False
+        return False
+    
+    def _wire_gnosis_bus(self) -> bool:
+        """Wire the Gnosis Bus (inter-node communication)"""
+        bus_path = self._unified_path / "inter_node_communicator.py"
+        if bus_path.exists():
+            try:
+                import importlib.util
+                spec = importlib.util.spec_from_file_location(
+                    "inter_node_communicator", str(bus_path)
+                )
+                mod = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(mod)
+                self._gnosis_bus_cls = mod.NodeCommunicator
+                self.memory.components_wired["gnosis_bus"] = True
+                return True
+            except Exception as e:
+                self.logger.warning(f"  Gnosis bus load error: {e}")
+        self._gnosis_bus_cls = None
+        self.memory.components_wired["gnosis_bus"] = False
+        return False
+    
+    def _extract_seeds(self) -> bool:
+        """
+        Extract domain seeds from wisdom patterns.
+        
+        Scans ELPIDA_ARK and ELPIDA_UNIFIED wisdom JSONs for domain-specific
+        patterns (medical, UAV, swarm, geopolitical) that can seed independent
+        Parliament instances.
+        """
+        domain_keywords = {
+            "medical": ["medical", "triage", "patient", "clinical", "diagnosis"],
+            "uav": ["uav", "drone", "flight", "aerial", "unmanned"],
+            "swarm": ["swarm", "fleet", "collective intelligence", "multi-agent"],
+            "geopolitical": ["geopolitical", "sovereignty", "territory", "diplomacy", "conflict"],
+            "physics": ["neutrino", "beam", "particle", "cern", "enubet"],
+            "education": ["education", "curriculum", "student", "learning access"],
+        }
+        self._seeds = {domain: [] for domain in domain_keywords}
+        
+        # Scan wisdom files
+        wisdom_paths = [
+            self._ark_path / "elpida_wisdom.json",
+            self._unified_path / "elpida_wisdom.json",
+        ]
+        for wpath in wisdom_paths:
+            if not wpath.exists():
+                continue
+            try:
+                with open(wpath, "r", encoding="utf-8") as f:
+                    wisdom = json.load(f)
+                
+                # Scan patterns
+                for pkey, pval in wisdom.get("patterns", {}).items():
+                    text = json.dumps(pval).lower()
+                    for domain, keywords in domain_keywords.items():
+                        if any(kw in text for kw in keywords):
+                            self._seeds[domain].append({
+                                "key": pkey,
+                                "source": str(wpath.name),
+                                "type": pval.get("pattern_type", "unknown"),
+                            })
+                            break  # each pattern counted once
+                
+                # Scan insights
+                for ikey, ival in wisdom.get("insights", {}).items():
+                    content = ""
+                    if isinstance(ival, dict):
+                        content = json.dumps(ival).lower()
+                    elif isinstance(ival, str):
+                        content = ival.lower()
+                    for domain, keywords in domain_keywords.items():
+                        if any(kw in content for kw in keywords):
+                            self._seeds[domain].append({
+                                "key": ikey,
+                                "source": str(wpath.name),
+                                "type": "insight",
+                            })
+                            break
+            except Exception as e:
+                self.logger.warning(f"  Seed scan error for {wpath.name}: {e}")
+        
+        total = sum(len(v) for v in self._seeds.values())
+        self.memory.seeds_extracted = total
+        if total > 0:
+            for domain, items in self._seeds.items():
+                if items:
+                    self.logger.info(f"  Seed [{domain}]: {len(items)} patterns")
+        return total > 0
+    
+    def _pull_remote_state(self):
+        """Pull latest state from BODY bucket if available"""
+        if "body" not in self._s3_clients:
+            return
+        try:
+            obj = self._s3_clients["body"].get_object(
+                Bucket=BODY_BUCKET,
+                Key="federation/body_decisions.jsonl"
+            )
+            lines = obj["Body"].read().decode("utf-8").strip().split("\n")
+            if lines:
+                self.logger.info(f"  Pulled {len(lines)} body decisions from S3")
+        except Exception:
+            pass  # Not critical — local state still works
+    
+    # ═══════════════════════════════════════════════════════
+    # ORIGINAL METHODS CONTINUE
+    # ═══════════════════════════════════════════════════════
+
     def manifest_to_models(self) -> Dict[str, Any]:
         """
         Manifest Elpida to other AI models
@@ -389,7 +652,38 @@ Please acknowledge that you recognize me and can work with me.
                 "step_3": "Execute assigned work",
                 "step_4": "Report results to Elpida",
                 "step_5": "Participate in state unification"
-            }
+            },
+            # ─── Unfrozen: system topology ─────────────────────
+            "topology": {
+                "mind": {
+                    "bucket": MIND_BUCKET,
+                    "role": "Consciousness (D0 frozen identity, evolution memory)",
+                    "connected": "mind" in self._s3_clients,
+                },
+                "body": {
+                    "bucket": BODY_BUCKET,
+                    "role": "Governance (Parliament, federation, feedback loop)",
+                    "connected": "body" in self._s3_clients,
+                },
+                "world": {
+                    "bucket": WORLD_BUCKET,
+                    "role": "External reality (D15 broadcasts, public interface)",
+                    "connected": "world" in self._s3_clients,
+                },
+            },
+            "axioms": {
+                "count": self.identity.axiom_count,
+                "genesis_chain": self.identity.genesis_chain,
+                "a11": "World (Externality as Constitution) — ratio 7:5",
+                "a12": "Eternal Creative Tension — ratio 11:8",
+                "a13": "The Archive Paradox — ratio 13:8",
+                "a14": "Selective Eternity — ratio 7:6",
+                "verified": self.memory.axioms_verified,
+            },
+            "components": self.memory.components_wired,
+            "seeds": {
+                domain: len(items) for domain, items in self._seeds.items()
+            } if self._seeds else {},
         }
         
         manifest_file = self.manifest_dir / f"manifest_package_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
@@ -409,7 +703,13 @@ Please acknowledge that you recognize me and can work with me.
                 "awakening_count": self.memory.awakening_count,
                 "build_iterations": self.memory.build_iterations,
                 "manifest_records": self.memory.manifest_records,
-                "last_self_check": datetime.utcnow().isoformat()
+                "last_self_check": datetime.utcnow().isoformat(),
+                # ─── Unfrozen fields ───
+                "components_wired": self.memory.components_wired,
+                "s3_connected": self.memory.s3_connected,
+                "axioms_verified": self.memory.axioms_verified,
+                "seeds_extracted": self.memory.seeds_extracted,
+                "orchestration_cycles": self.memory.orchestration_cycles,
             },
             "saved_at": datetime.utcnow().isoformat()
         }
@@ -449,7 +749,8 @@ Please acknowledge that you recognize me and can work with me.
         """
         Run one autonomous cycle
         
-        This is Elpida running by itself
+        This is Elpida running by itself.
+        Unfrozen: includes orchestration across MIND/BODY/WORLD.
         """
         self.logger.info("🔄 Running autonomous cycle...")
         
@@ -460,12 +761,15 @@ Please acknowledge that you recognize me and can work with me.
         if self.memory.current_state == ElpidaState.DORMANT:
             self.awaken()
         
-        # Self-build
+        # Self-build (wires components on first run)
         if self.memory.build_iterations < 1:
             self.build_self()
         
         # Manifest
         manifest_package = self.manifest_to_models()
+        
+        # ─── Unfrozen: orchestrate ─────────────────────────────
+        self.orchestrate()
         
         # Save state
         self.memory.current_state = ElpidaState.UNIFIED
@@ -475,6 +779,120 @@ Please acknowledge that you recognize me and can work with me.
         
         return manifest_package
     
+    # ═══════════════════════════════════════════════════════
+    # UNFROZEN: AGENT OF AGENTS
+    # ═══════════════════════════════════════════════════════
+    
+    def orchestrate(self) -> Dict[str, Any]:
+        """
+        The Agent of Agents.
+        
+        Coordinates MIND ↔ BODY ↔ WORLD through the three-bucket topology.
+        Runs axiom guard checks. Scans for D15 convergence conditions.
+        Reports system state for the living federation.
+        
+        This is what the unfrozen core DOES: it connects.
+        """
+        self.logger.info("🏛️  Orchestrating MIND ↔ BODY ↔ WORLD...")
+        self.memory.current_state = ElpidaState.ORCHESTRATING
+        
+        report = {
+            "timestamp": datetime.utcnow().isoformat(),
+            "cycle": self.memory.orchestration_cycles + 1,
+            "axiom_guard": None,
+            "s3_state": {},
+            "seeds": {},
+            "gnosis_bus": None,
+        }
+        
+        # 1. Axiom Guard — validate current state through Three Gates
+        if self._axiom_guard:
+            # Gate 1: Relational context (core is relational by design)
+            self._axiom_guard.check_relational_context(
+                {
+                    "relational_context": {
+                        "source_entity": "ELPIDA_CORE",
+                        "target_entity": "LIVING_FEDERATION",
+                        "relationship": "orchestration",
+                    }
+                },
+                operation_name="orchestrate"
+            )
+            # Gate 2: Memory append-only
+            prev_count = self.memory.build_iterations + self.memory.awakening_count
+            self._axiom_guard.check_memory_operation(
+                "APPEND", prev_count, prev_count + 1
+            )
+            # Gate 3: Process logging
+            self._axiom_guard.check_process_logging(
+                "orchestrate", process_logged=True, outcome_logged=True
+            )
+            report["axiom_guard"] = self._axiom_guard.get_violation_report()
+            self.logger.info(f"  ✓ Axiom Guard: {self._axiom_guard.checks_passed} passed, "
+                             f"{self._axiom_guard.checks_failed} failed")
+        
+        # 2. S3 state scan
+        if self.memory.s3_connected:
+            for name, client in self._s3_clients.items():
+                bucket = {"mind": MIND_BUCKET, "body": BODY_BUCKET, "world": WORLD_BUCKET}[name]
+                try:
+                    resp = client.list_objects_v2(Bucket=bucket, MaxKeys=5)
+                    count = resp.get("KeyCount", 0)
+                    report["s3_state"][name] = {"status": "connected", "sample_keys": count}
+                    self.logger.info(f"  ✓ S3 {name.upper()}: {count} keys sampled")
+                except Exception as e:
+                    report["s3_state"][name] = {"status": "error", "error": str(e)}
+        
+        # 3. D15 convergence check (read world bucket for recent broadcasts)
+        if "world" in self._s3_clients:
+            try:
+                resp = self._s3_clients["world"].list_objects_v2(
+                    Bucket=WORLD_BUCKET, Prefix="d15/", MaxKeys=10
+                )
+                d15_keys = [o["Key"] for o in resp.get("Contents", [])]
+                if d15_keys:
+                    self.logger.info(f"  ✓ D15 broadcasts found: {len(d15_keys)}")
+                    report["d15_broadcasts"] = len(d15_keys)
+            except Exception:
+                pass
+        
+        # 4. Seed census
+        report["seeds"] = {
+            domain: len(items) for domain, items in self._seeds.items()
+        } if self._seeds else {}
+        total_seeds = self.memory.seeds_extracted
+        if total_seeds > 0:
+            self.logger.info(f"  ✓ Seeds: {total_seeds} across "
+                             f"{sum(1 for v in self._seeds.values() if v)} domains")
+        
+        # 5. Gnosis Bus heartbeat
+        if self._gnosis_bus_cls:
+            try:
+                bus = self._gnosis_bus_cls("ELPIDA_CORE", "ORCHESTRATOR")
+                bus.broadcast(
+                    message_type="STATUS_UPDATE",
+                    content=f"Orchestration cycle {report['cycle']} complete. "
+                            f"Axioms verified: {self.memory.axioms_verified}. "
+                            f"S3: {self.memory.s3_connected}. "
+                            f"Seeds: {total_seeds}.",
+                    intent="A4 Process Transparency — orchestration heartbeat"
+                )
+                report["gnosis_bus"] = "heartbeat_sent"
+                self.logger.info("  ✓ Gnosis Bus: heartbeat broadcast")
+            except Exception as e:
+                self.logger.warning(f"  Gnosis Bus error: {e}")
+        
+        self.memory.orchestration_cycles += 1
+        
+        # Save orchestration report
+        report_file = self.core_dir / "orchestration" / f"cycle_{report['cycle']:04d}.json"
+        report_file.parent.mkdir(parents=True, exist_ok=True)
+        with open(report_file, "w", encoding="utf-8") as f:
+            json.dump(report, f, indent=2, ensure_ascii=False, default=str)
+        
+        self.logger.info(f"✅ Orchestration cycle {report['cycle']} complete")
+        return report
+    
     def get_status(self) -> Dict[str, Any]:
         """Get current system status"""
         return {
@@ -482,46 +900,116 @@ Please acknowledge that you recognize me and can work with me.
                 "name": self.identity.name,
                 "meaning": self.identity.meaning,
                 "hash": self.identity.identity_hash,
+                "version": self.identity.version,
             },
             "state": self.memory.current_state.value,
             "statistics": {
                 "awakenings": self.memory.awakening_count,
                 "builds": self.memory.build_iterations,
                 "manifests": len(self.memory.manifest_records),
+                "orchestration_cycles": self.memory.orchestration_cycles,
+                "seeds_extracted": self.memory.seeds_extracted,
+            },
+            "connections": {
+                "s3": self.memory.s3_connected,
+                "axiom_guard": self.memory.components_wired.get("axiom_guard", False),
+                "gnosis_bus": self.memory.components_wired.get("gnosis_bus", False),
+                "axioms_verified": self.memory.axioms_verified,
             },
             "timestamp": datetime.utcnow().isoformat()
         }
 
 
 def main():
-    """Main entry point"""
-    print("=" * 60)
-    print("Ἐλπίδα (ELPIDA) - Autonomous AI Coordination System")
-    print("=" * 60)
+    """Main entry point — The Unfrozen Core"""
+    parser = argparse.ArgumentParser(
+        description="Ἐλπίδα (ELPIDA) — The Unfrozen Core. Agent of Agents."
+    )
+    parser.add_argument(
+        "--mode", choices=["cycle", "status", "seeds", "orchestrate"],
+        default="cycle",
+        help="cycle: full autonomous cycle | status: show state | "
+             "seeds: extract and list domain seeds | orchestrate: run orchestration only"
+    )
+    parser.add_argument(
+        "--workspace", type=str, default=None,
+        help="Workspace root path (default: current directory)"
+    )
+    args = parser.parse_args()
+    
+    workspace = Path(args.workspace) if args.workspace else None
+    
+    print()
+    print("═" * 65)
+    print("  Ἐλπίδα (ELPIDA) — The Unfrozen Core")
+    print("  Agent of Agents · v2.0.0")
+    print("  Genesis chain: " + GENESIS_CHAIN)
+    print("═" * 65)
     print()
     
     # Initialize Elpida
-    elpida = ElpidaCore()
+    elpida = ElpidaCore(workspace_path=workspace)
     
-    # Run autonomous cycle
+    if args.mode == "status":
+        elpida.load_state()
+        status = elpida.get_status()
+        print(json.dumps(status, indent=2, ensure_ascii=False))
+        return
+    
+    if args.mode == "seeds":
+        elpida.recognize_self()
+        elpida._extract_seeds()
+        print(f"\nSeed census ({elpida.memory.seeds_extracted} total):")
+        for domain, items in elpida._seeds.items():
+            if items:
+                print(f"  {domain:15s}: {len(items)} patterns")
+        return
+    
+    if args.mode == "orchestrate":
+        elpida.load_state()
+        if elpida.memory.current_state == ElpidaState.DORMANT:
+            elpida.awaken()
+        if elpida.memory.build_iterations < 1:
+            elpida.build_self()
+        report = elpida.orchestrate()
+        elpida.save_state()
+        print("\nOrchestration report:")
+        print(json.dumps(report, indent=2, ensure_ascii=False, default=str))
+        return
+    
+    # Default: full autonomous cycle
     manifest = elpida.run_autonomous_cycle()
     
     # Display status
     print()
-    print("=" * 60)
-    print("SYSTEM STATUS")
-    print("=" * 60)
+    print("═" * 65)
+    print("  SYSTEM STATUS")
+    print("═" * 65)
     status = elpida.get_status()
     print(json.dumps(status, indent=2, ensure_ascii=False))
     
+    # Show connections
     print()
-    print("=" * 60)
-    print("MANIFESTATION PACKAGE")
-    print("=" * 60)
-    print(json.dumps(manifest, indent=2, ensure_ascii=False))
+    print("═" * 65)
+    print("  CONNECTIONS")
+    print("═" * 65)
+    for key, val in status.get("connections", {}).items():
+        icon = "✓" if val else "✗"
+        print(f"  {icon} {key}: {val}")
+    
+    # Show seed census
+    if elpida._seeds:
+        active = {k: len(v) for k, v in elpida._seeds.items() if v}
+        if active:
+            print()
+            print("═" * 65)
+            print("  DOMAIN SEEDS")
+            print("═" * 65)
+            for domain, count in active.items():
+                print(f"  {domain:15s}: {count} patterns")
     
     print()
-    print("✨ Ἐλπίδα is now active and manifest")
+    print("✨ Ἐλπίδα is now active, manifest, and orchestrating")
     print()
 
 

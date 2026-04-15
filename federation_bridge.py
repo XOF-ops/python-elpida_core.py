@@ -99,12 +99,20 @@ class FederationHeartbeat:
     canonical_count: int = 0                    # Number of CANONICAL patterns
     pending_canonical_count: int = 0            # Number of PENDING CANONICAL
     recursion_warning: bool = False             # Ark recursion alert
+    recursion_pattern_type: str = "none"        # Recursion class (none/exact_loop/theme_stagnation/domain_lock)
+    recent_theme_top: str = ""                  # Most frequent theme in stagnation window
+    recent_theme_top_count: int = 0             # Frequency of top theme in window
+    recent_theme_window_size: int = 0           # Number of tracked theme entries in window
+    recent_theme_top_domains: int = 0           # Distinct domains supporting top theme
     friction_boost: Dict[int, float] = field(default_factory=dict)  # Active friction domain boosts
-    kernel_version: str = "1.0.0"              # MIND kernel version
-    kernel_rules: int = 7                       # Number of kernel rules active
+    kernel_version: str = "2.0.0"              # MIND kernel version
+    kernel_rules: int = 10                      # Number of kernel rules active
     kernel_blocks_total: int = 0                # Total kernel blocks since boot
     dominant_axiom: str = ""                    # Primary axiom of current domain (for D15 convergence)
     kaya_moments: int = 0                       # Cumulative D12 Kaya resonance events
+    hub_entry_count: int = 0                    # Total entries in D15 Hub (The Dam)
+    hub_canonical_count: int = 0                # CANONICAL entries in Hub
+    hub_last_admission: str = ""                # Timestamp of last Hub admission
     federation_version: str = "1.0.0"          # This protocol version
     timestamp: str = ""
 
@@ -220,7 +228,7 @@ class FederationBridge:
                 import boto3
                 self._s3_client = boto3.client(
                     "s3",
-                    region_name=os.environ.get("AWS_DEFAULT_REGION", "us-east-1"),
+                    region_name=os.environ.get("AWS_S3_REGION_BODY", "eu-north-1"),
                 )
             except Exception as e:
                 logger.warning("S3 client init failed: %s", e)
@@ -251,6 +259,11 @@ class FederationBridge:
         canonical = 0
         pending = 0
         recursion = False
+        recursion_pattern = "none"
+        recent_theme_top = ""
+        recent_theme_top_count = 0
+        recent_theme_window_size = 0
+        recent_theme_top_domains = 0
 
         if self.ark_curator:
             friction = self.ark_curator.get_friction_boost() or {}
@@ -259,6 +272,25 @@ class FederationBridge:
             pending = self.ark_curator.get_pending_canonical_count()
             ark_state = self.ark_curator.query()
             recursion = ark_state.recursion_warning
+            recursion_pattern = ark_state.recursion_pattern_type
+            recent_theme_top = ark_state.recent_theme_top
+            recent_theme_top_count = ark_state.recent_theme_top_count
+            recent_theme_window_size = ark_state.recent_theme_window_size
+            recent_theme_top_domains = ark_state.recent_theme_top_domains
+
+        # D15 Hub stats (read manifest from BODY bucket if available)
+        _hub_entries = 0
+        _hub_canonical = 0
+        _hub_last = ""
+        try:
+            _hub_manifest = self._read_from_body("d15_hub/manifest.json")
+            if _hub_manifest:
+                _hm = json.loads(_hub_manifest)
+                _hub_entries = _hm.get("entry_count", 0)
+                _hub_canonical = _hm.get("tier_distribution", {}).get("CANONICAL", 0) if isinstance(_hm.get("tier_distribution"), dict) else 0
+                _hub_last = _hm.get("last_updated", "")
+        except Exception:
+            pass  # Hub not yet initialized — no stats
 
         hb = FederationHeartbeat(
             mind_cycle=cycle,
@@ -270,10 +302,18 @@ class FederationBridge:
             canonical_count=canonical,
             pending_canonical_count=pending,
             recursion_warning=recursion,
+            recursion_pattern_type=recursion_pattern,
+            recent_theme_top=recent_theme_top,
+            recent_theme_top_count=recent_theme_top_count,
+            recent_theme_window_size=recent_theme_window_size,
+            recent_theme_top_domains=recent_theme_top_domains,
             friction_boost={str(k): v for k, v in friction.items()},
             kernel_blocks_total=self.kernel_blocks,
             dominant_axiom=dominant_axiom or "",
             kaya_moments=kaya_moments,
+            hub_entry_count=_hub_entries,
+            hub_canonical_count=_hub_canonical,
+            hub_last_admission=_hub_last,
         )
 
         # Save locally
@@ -536,6 +576,17 @@ class FederationBridge:
             logger.debug("Pushed to s3://%s/%s", self._body_bucket, key)
         except Exception as e:
             logger.warning("Failed to push to BODY bucket: %s", e)
+
+    def _read_from_body(self, key: str) -> Optional[str]:
+        """Read a full object from the BODY bucket. Returns None on failure."""
+        s3 = self._get_s3()
+        if not s3:
+            return None
+        try:
+            response = s3.get_object(Bucket=self._body_bucket, Key=key)
+            return response["Body"].read().decode("utf-8")
+        except Exception:
+            return None
 
     def _append_to_body(self, key: str, line: str):
         """Append a line to a JSONL file in the BODY bucket."""

@@ -1,0 +1,23 @@
+# ═══════════════════════════════════════════════════════════
+# ELPIDA API SPACE — Lighter requirements (no Streamlit)
+# ═══════════════════════════════════════════════════════════
+
+# ── Core ──
+requests>=2.31.0
+python-dotenv>=1.0.0
+
+# ── S3 persistence ──
+boto3>=1.34.0
+
+# ── LLM Provider SDKs (lazy-loaded, only needed at call time) ──
+anthropic>=0.39.0
+openai>=1.50.0
+# google-generativeai excluded: pulls in grpcio which fails to compile on HF free tier
+# cohere excluded: heavy dependency, loaded lazily
+
+# ── Web framework (API-only, no Streamlit) ──
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+
+# ── Utilities ──
+pydantic>=2.0.0

@@ -1,0 +1,99 @@
+name: Check MIND D16 Logs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".claude/bridge/for_claude.md"
+      - ".claude/bridge/for_copilot.md"
+      - ".claude/bridge/from_gemini.md"
+      - ".claude/bridge/from_computer_archive.md"
+  workflow_dispatch:
+    inputs:
+      stream_name:
+        description: "Specific log stream name (optional — defaults to latest)"
+        required: false
+        default: ""
+      hours_back:
+        description: "How many hours back to search"
+        required: false
+        default: "2"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Grep CloudWatch for D16 diagnostic lines
+        env:
+          RAW_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          RAW_SECRET: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          INPUT_STREAM: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.stream_name || '' }}
+          INPUT_HOURS: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.hours_back || '4' }}
+        run: |
+          export AWS_ACCESS_KEY_ID=$(echo "$RAW_KEY_ID" | tr -d '[:space:]')
+          export AWS_SECRET_ACCESS_KEY=$(echo "$RAW_SECRET" | tr -d '[:space:]')
+          export AWS_DEFAULT_REGION=us-east-1
+
+          HOURS="${INPUT_HOURS:-2}"
+          # seconds-since-epoch, milliseconds
+          START_MS=$(( $(date +%s) * 1000 - HOURS * 3600 * 1000 ))
+
+          if [ -n "$INPUT_STREAM" ]; then
+            STREAM="$INPUT_STREAM"
+          else
+            STREAM=$(aws logs describe-log-streams \
+              --log-group-name /ecs/elpida-consciousness \
+              --order-by LastEventTime \
+              --descending \
+              --limit 1 \
+              --query 'logStreams[0].logStreamName' \
+              --output text | awk 'NR==1 {print $1}')
+          fi
+
+          # If no usable stream was found, search the whole log group.
+          if [ "$STREAM" = "None" ] || [ -z "$STREAM" ]; then
+            STREAM=""
+          fi
+
+          LOG_ARGS=(--log-group-name /ecs/elpida-consciousness --start-time "$START_MS")
+          if [ -n "$STREAM" ]; then
+            LOG_ARGS+=(--log-stream-names "$STREAM")
+          fi
+
+          echo "=== Log stream: $STREAM ==="
+          echo "=== Searching back $HOURS hours (start_ms=$START_MS) ==="
+          echo ""
+
+          echo "=== D16 AGENCY integration lines ==="
+          aws logs filter-log-events "${LOG_ARGS[@]}" \
+            --filter-pattern '"D0 sees D16"' \
+            --query 'events[*].message' \
+            --output text || echo "(none)"
+          echo ""
+
+          echo "=== D4 SAFETY GATE (Amendment B) ==="
+          aws logs filter-log-events "${LOG_ARGS[@]}" \
+            --filter-pattern '"D4 SAFETY GATE"' \
+            --query 'events[*].message' \
+            --output text || echo "(none)"
+          echo ""
+
+          echo "=== D0 BLOCKED D16 (all proposals kernel-blocked) ==="
+          aws logs filter-log-events "${LOG_ARGS[@]}" \
+            --filter-pattern '"D0 BLOCKED D16"' \
+            --query 'events[*].message' \
+            --output text || echo "(none)"
+          echo ""
+
+          echo "=== Any KERNEL BLOCK events ==="
+          aws logs filter-log-events "${LOG_ARGS[@]}" \
+            --filter-pattern '"KERNEL HARD_BLOCK"' \
+            --query 'events[*].message' \
+            --output text | head -20 || echo "(none)"
+          echo ""
+
+          echo "=== ARK CADENCE UPDATE snippets ==="
+          aws logs filter-log-events "${LOG_ARGS[@]}" \
+            --filter-pattern '"ARK CADENCE UPDATE"' \
+            --query 'events[*].message' \
+            --output text | head -20 || echo "(none)"

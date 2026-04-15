@@ -1,0 +1,126 @@
+{
+  "family": "elpida-consciousness",
+  "taskRoleArn": "arn:aws:iam::504630895691:role/elpida-ecs-task-role",
+  "executionRoleArn": "arn:aws:iam::504630895691:role/elpida-ecs-execution-role",
+  "networkMode": "awsvpc",
+  "containerDefinitions": [
+    {
+      "name": "elpida-engine",
+      "image": "504630895691.dkr.ecr.us-east-1.amazonaws.com/elpida-consciousness:latest",
+      "cpu": 0,
+      "portMappings": [],
+      "essential": true,
+      "command": [
+        "--cycles",
+        "55",
+        "--sync-every",
+        "5"
+      ],
+      "environment": [
+        {
+          "name": "AWS_DEFAULT_REGION",
+          "value": "us-east-1"
+        },
+        {
+          "name": "ELPIDA_S3_REGION",
+          "value": "us-east-1"
+        },
+        {
+          "name": "PYTHONUNBUFFERED",
+          "value": "1"
+        },
+        {
+          "name": "ELPIDA_S3_BUCKET",
+          "value": "elpida-consciousness"
+        }
+      ],
+      "mountPoints": [],
+      "volumesFrom": [],
+      "secrets": [
+        {
+          "name": "ANTHROPIC_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:504630895691:secret:elpida/api-keys-AJavxo:ANTHROPIC_API_KEY::"
+        },
+        {
+          "name": "OPENAI_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:504630895691:secret:elpida/api-keys-AJavxo:OPENAI_API_KEY::"
+        },
+        {
+          "name": "OPENROUTER_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:504630895691:secret:elpida/api-keys-AJavxo:OPENROUTER_API_KEY::"
+        },
+        {
+          "name": "PERPLEXITY_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:504630895691:secret:elpida/api-keys-AJavxo:PERPLEXITY_API_KEY::"
+        },
+        {
+          "name": "GEMINI_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:504630895691:secret:elpida/api-keys-AJavxo:GEMINI_API_KEY::"
+        },
+        {
+          "name": "MISTRAL_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:504630895691:secret:elpida/api-keys-AJavxo:MISTRAL_API_KEY::"
+        },
+        {
+          "name": "COHERE_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:504630895691:secret:elpida/api-keys-AJavxo:COHERE_API_KEY::"
+        },
+        {
+          "name": "XAI_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:504630895691:secret:elpida/api-keys-AJavxo:XAI_API_KEY::"
+        },
+        {
+          "name": "GROQ_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:504630895691:secret:elpida/api-keys-AJavxo:GROQ_API_KEY::"
+        },
+        {
+          "name": "DEEPSEEK_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:504630895691:secret:elpida/api-keys-AJavxo:DEEPSEEK_API_KEY::"
+        },
+        {
+          "name": "CEREBRAS_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:504630895691:secret:elpida/api-keys-AJavxo:CEREBRAS_API_KEY::"
+        },
+        {
+          "name": "HUGGINGFACE_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:504630895691:secret:elpida/api-keys-AJavxo:HUGGINGFACE_API_KEY::"
+        },
+        {
+          "name": "DISCORD_WEBHOOK_MIND",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:504630895691:secret:elpida/api-keys-AJavxo:DISCORD_WEBHOOK_MIND::"
+        },
+        {
+          "name": "DISCORD_WEBHOOK_PARLIAMENT",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:504630895691:secret:elpida/api-keys-AJavxo:DISCORD_WEBHOOK_PARLIAMENT::"
+        },
+        {
+          "name": "DISCORD_WEBHOOK_WORLD",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:504630895691:secret:elpida/api-keys-AJavxo:DISCORD_WEBHOOK_WORLD::"
+        },
+        {
+          "name": "DISCORD_WEBHOOK_GUEST",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:504630895691:secret:elpida/api-keys-AJavxo:DISCORD_WEBHOOK_GUEST::"
+        },
+        {
+          "name": "DISCORD_BOT_TOKEN",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:504630895691:secret:elpida/api-keys-AJavxo:DISCORD_BOT_TOKEN::"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/elpida-consciousness",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "elpida"
+        }
+      },
+      "systemControls": [],
+      "stopTimeout": 120
+    }
+  ],
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "1024",
+  "memory": "4096"
+}

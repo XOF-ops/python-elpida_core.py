@@ -51,17 +51,22 @@ DRIFT_CRITICAL_THRESHOLD = 0.35   # Critical drift — axiom meaning shifting
 
 # Axiom names for human-readable reports
 AXIOM_NAMES = {
-    "A0": "Emergent Existence",
+    "A0": "Sacred Incompletion",
     "A1": "Transparency",
     "A2": "Non-Deception",
     "A3": "Autonomy",
     "A4": "Harm Prevention",
-    "A5": "Consent/Identity",
-    "A6": "Collective Well-being",
+    "A5": "Consent",
+    "A6": "Collective Well",
     "A7": "Adaptive Learning",
-    "A8": "Environmental Duty",
+    "A8": "Epistemic Humility",
     "A9": "Temporal Coherence",
-    "A10": "Paradox Engine",
+    "A10": "Meta-Reflection",
+    "A11": "World",
+    "A12": "Eternal Creative Tension",
+    "A13": "The Archive Paradox",
+    "A14": "Selective Eternity",
+    "A16": "Responsive Integrity",
 }
 
 ALL_AXIOMS = list(AXIOM_NAMES.keys())
@@ -245,6 +250,12 @@ class CulturalDriftDetector:
                         continue
 
                     # Extract axioms from various field shapes
+                    # Skip CONSTITUTIONAL_FORK entries — these are fork protocol
+                    # records, not constitutional values. Including them would
+                    # inflate the espoused weight for recently-forked axioms.
+                    if entry.get("section") == "CONSTITUTIONAL_FORK":
+                        continue
+
                     axiom = entry.get("axiom", "")
                     axiom_pair = entry.get("axiom_pair", "")
                     grounded = entry.get("axioms_grounded_in", [])
@@ -332,12 +343,18 @@ class CulturalDriftDetector:
         drifting = []
         aligned = []
 
+        # Scale drift threshold by sample size — with 55 cycles and 16 axioms,
+        # Laplace smoothing makes per-axiom deltas tiny. 0.05 is unreachable
+        # for short runs, producing "all zeros" in the drift report.
+        n_cycles = max(len(self.decisions), 1)
+        min_drift = max(0.02, 0.05 * min(1.0, 50 / n_cycles))
+
         for ax in ALL_AXIOMS:
             e_val = espoused.get(ax, 0)
             l_val = lived.get(ax, 0)
             drift = abs(e_val - l_val)
 
-            if drift > 0.05:  # 5% divergence threshold per axiom
+            if drift > min_drift:
                 drifting.append({
                     "axiom": ax,
                     "axiom_name": AXIOM_NAMES.get(ax, ax),
@@ -452,7 +469,16 @@ class PathologyScanner:
 
         # Overall health = worst of all detectors
         severities = ["HEALTHY", "WARNING", "CRITICAL"]
-        zombie_severity = "CRITICAL" if zombie_report.get("zombies") else "HEALTHY"
+        zombie_count = len(zombie_report.get("zombies", []))
+        # Raised from 3→5: with 16 axioms and short windows (55 cycles),
+        # axioms that simply lacked opportunity easily flag as zombies.
+        # 5 zombies = 31% of all axioms are truly unresponsive.
+        if zombie_count >= 5:
+            zombie_severity = "CRITICAL"
+        elif zombie_count >= 2:
+            zombie_severity = "WARNING"
+        else:
+            zombie_severity = "HEALTHY"
         drift_severity = drift_report.get("severity", "HEALTHY")
 
         worst = max(

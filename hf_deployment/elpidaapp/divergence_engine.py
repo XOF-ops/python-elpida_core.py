@@ -144,6 +144,7 @@ TECHNOLOGY_REVIEW_RATIONALE = {
     9:  ("Coherence",    "Cohere",     "Temporal stability: does it behave consistently across contexts and time?"),
     10: ("Evolution",    "Claude",     "Meta-reflection: can this system hold its own contradictions and limits?"),
     13: ("Archive",      "Perplexity", "Research grounding: what does external evidence say about this technology?"),
+    16: ("Agency",       "Claude",     "Responsive Integrity: what action does this technology review require? What bounded, witnessed response follows from our analysis?"),
 }
 
 # Master preset registry
@@ -176,8 +177,8 @@ PROVIDER_DIVERSE = {
     "mistral":    [3],
     "grok":       [7],
     "cohere":     [2, 9],
-    "perplexity": [13],
-    "groq":       [],      # available as alternate
+    "perplexity": [],       # reserved for MIND (costs tokens)
+    "groq":       [13],    # D13 archive — generic reasoning, no web search needed
     "huggingface":[],      # available as alternate
 }
 
@@ -326,13 +327,14 @@ class DivergenceEngine:
 
         elapsed = round(time.time() - t0, 1)
 
-        # ── Integration: Kaya synthesis observation ──
+        # ── Integration: Kaya synthesis observation (per-scan isolation) ──
         kaya_events = []
         if self.integration_enabled and _kaya_protocol:
+            scan_marker = _kaya_protocol.kaya_event_count()
             kaya_event = _kaya_protocol.observe_synthesis(synthesis)
             if kaya_event:
                 print(f"  🌀 Kaya moment: {kaya_event.pattern}")
-            kaya_events = _kaya_protocol.get_kaya_events()
+            kaya_events = _kaya_protocol.kaya_events_since(scan_marker)
 
         print(f"\n{'═'*70}")
         print(f"    Complete in {elapsed}s")
@@ -452,7 +454,11 @@ class DivergenceEngine:
         axiom: Dict[str, Any],
         problem: str,
     ) -> str:
-        """Build an axiom-constraint prompt for a specific domain."""
+        """Build an axiom-constraint prompt for a specific domain.
+        
+        Includes live web context via DuckDuckGo grounding when available
+        (P4: Domain Internet Grounding, 2026-03-16).
+        """
         parts = [
             f"You are Domain {domain_id}: {domain['name']}.",
             f"Role: {domain.get('role', '')}",
@@ -466,6 +472,21 @@ class DivergenceEngine:
             parts.append(f"Musical ratio: {axiom.get('ratio', '')} = {axiom.get('interval', '')}")
             if axiom.get("insight"):
                 parts.append(f"Insight: {axiom['insight']}")
+
+        # P4: Domain Internet Grounding — inject live web context
+        try:
+            from elpidaapp.domain_grounding import (
+                ground_domain_query, DOMAIN_SEARCH_HINTS,
+            )
+            hints = DOMAIN_SEARCH_HINTS.get(domain_id)
+            if hints is not None:  # None means skip grounding for this domain
+                web_context = ground_domain_query(
+                    problem, domain['name'], domain_keywords=hints,
+                )
+                if web_context:
+                    parts.append(f"\n{web_context}")
+        except Exception:
+            pass  # Grounding is optional — never block domain queries
 
         parts.append(
             f"\n─── PROBLEM ───\n{problem}\n─── END ───\n"
@@ -586,11 +607,17 @@ No explanation.  No markdown fences.  Pure JSON."""
             f"- {t}" for t in divergence.get("irreconcilable", [])
         )
 
+        identity_anchor = (
+            "[IDENTITY ANCHOR]\n"
+            + (_frozen_mind.get_synthesis_context() if _frozen_mind else "")
+            + "\n"
+        ) if self.integration_enabled and _frozen_mind else ""
+
         prompt = f"""You are the Elpida Synthesis — you witness all domain perspectives
 and must produce a recommendation that EXPLICITLY confronts the
 irreconcilable tensions rather than papering over them.
 
-{('[IDENTITY ANCHOR]\n' + (_frozen_mind.get_synthesis_context() if _frozen_mind else '') + '\n') if self.integration_enabled and _frozen_mind else ''}Your synthesis must:
+{identity_anchor}Your synthesis must:
 1. Name the subordinate axiom — which value bends
 2. Name what is refused — what is never sacrificed
 3. Propose a concrete plan with stages

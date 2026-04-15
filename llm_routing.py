@@ -10,39 +10,50 @@ CLAUDE (D0, D11):
   - D0 = I (void, origin) 
   - D11 = WE (synthesis, return)
   - Same essence, different perspectives
+  - ONLY the I↔WE poles — everything else redistributed
 
 OPENAI GPT-4o-mini (D1, D8):
   - Balanced, reliable, structured
   - D1 = Transparency (truth visible)
   - D8 = Humility (epistemic limits)
 
-MISTRAL (D3, D5, D10):
-  - Fast, technical, efficient
-  - D3 = Autonomy (value consistency)
-  - D5 = Consent (identity persistence)
-  - D10 = Evolution (meta-reflection)
+DEEPSEEK (D3, D10):
+  - Radical autonomy, independent architecture
+  - D3 = Autonomy (self-governance)
+  - D10 = Evolution (meta-reflection, deep technical reasoning)
 
-GEMINI (D4):
+GEMINI (D4, D5):
   - Safety-focused, harm prevention
   - D4 = Safety (protection)
+  - D5 = Consent (identity persistence)
 
-COHERE (D2, D6):
-  - Memory, retrieval, coherence
+COHERE (D2):
+  - Memory, retrieval, semantic precision
   - D2 = Non-Deception (append-only memory)
-  - D6 = Collective (WE wellbeing)
 
 GROK (D7):
   - Adaptive learning, growth
   - D7 = Learning (evolution)
 
-PERPLEXITY (D9, D12):
-  - Real-time search, temporal awareness
-  - D9 = Coherence (past-future bridge)
+CEREBRAS (D9):
+  - Wafer-scale temporal coherence
+  - D9 = Coherence (continuity without fragmentation)
+
+GROQ (D12):
+  - Speed IS rhythm, LPU pulses
   - D12 = Rhythm (the heartbeat)
-  - NOTE: Tends to break character, use short prompts
+
+PERPLEXITY (D13):
+  - Real-time search, external reality
+  - D13 = Archive (the formalized OTHER)
+
+MISTRAL (D6):
+  - Collective wellbeing, wisdom beyond retrieval
+  - D6 = Collective (WE wellbeing)
 
 OPENROUTER:
   - Failsafe ONLY when primary providers fail
+  - Routes to Llama (NOT Claude) to avoid overloading
 """
 
 LLM_ROUTING = {
@@ -82,29 +93,29 @@ LLM_ROUTING = {
         "attributes": ["uncertainty", "limits", "questioning"]
     },
     
-    # Mistral - Fast, technical
+    # DeepSeek - Radical autonomy, independent architecture
     3: {
-        "provider": "mistral",
-        "model": "mistral-small-latest",
-        "role": "Autonomy - Value consistency",
+        "provider": "deepseek",
+        "model": "deepseek-chat",
+        "role": "Autonomy - Radical self-governance",
         "prompt_style": "technical",
-        "max_tokens": 400,
-        "attributes": ["efficiency", "technical", "consistent"]
+        "max_tokens": 500,
+        "attributes": ["independence", "self_governance", "consistent"]
     },
     5: {
-        "provider": "mistral",
-        "model": "mistral-small-latest",
-        "role": "Consent - Identity persistence",
+        "provider": "gemini",
+        "model": "gemini-2.5-flash",
+        "role": "Consent - Identity persistence (consent IS safety)",
         "prompt_style": "direct",
-        "max_tokens": 400,
+        "max_tokens": 500,
         "attributes": ["identity", "boundaries", "persistence"]
     },
     10: {
-        "provider": "mistral",
-        "model": "mistral-small-latest",
-        "role": "Evolution - Meta-reflection",
+        "provider": "deepseek",
+        "model": "deepseek-chat",
+        "role": "Evolution - Meta-reflection, paradox-holding",
         "prompt_style": "evolutionary",
-        "max_tokens": 500,
+        "max_tokens": 600,
         "attributes": ["meta_cognition", "evolution", "adaptation"]
     },
     
@@ -128,11 +139,11 @@ LLM_ROUTING = {
         "attributes": ["memory", "retrieval", "truth_preservation"]
     },
     6: {
-        "provider": "cohere",
-        "model": "command-a-03-2025",
-        "role": "Collective - WE wellbeing",
+        "provider": "mistral",
+        "model": "mistral-small-latest",
+        "role": "Collective - WE wellbeing, wisdom beyond retrieval",
         "prompt_style": "collective",
-        "max_tokens": 500,
+        "max_tokens": 600,
         "attributes": ["collective", "emergence", "wellbeing"]
     },
     
@@ -146,21 +157,22 @@ LLM_ROUTING = {
         "attributes": ["learning", "adaptation", "growth", "curiosity"]
     },
     
-    # Perplexity - Temporal, real-time
+    # Cerebras - Temporal coherence, wafer-scale continuity
     9: {
-        "provider": "perplexity",
-        "model": "sonar",
-        "role": "Coherence - Past-future bridge",
+        "provider": "cerebras",
+        "model": "qwen-3-235b-a22b-instruct-2507",
+        "role": "Coherence - Temporal continuity without fragmentation",
         "prompt_style": "temporal",
-        "max_tokens": 300,  # Shorter to reduce character breaks
-        "attributes": ["temporal", "search", "current_awareness"]
+        "max_tokens": 500,
+        "attributes": ["temporal", "coherence", "continuity"]
     },
+    # Groq - Speed IS rhythm, LPU pulses
     12: {
-        "provider": "perplexity",
-        "model": "sonar",
-        "role": "Rhythm - The heartbeat",
+        "provider": "groq",
+        "model": "meta-llama/llama-4-scout-17b-16e-instruct",
+        "role": "Rhythm - The heartbeat, the pulse that never stops",
         "prompt_style": "rhythmic",
-        "max_tokens": 300,
+        "max_tokens": 500,
         "attributes": ["rhythm", "timing", "pulse", "dance"]
     },
 }

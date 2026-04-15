@@ -63,7 +63,7 @@ try:
 except ImportError:
     HAS_BOTO3 = False
 
-from ark_curator import ArkCurator
+from ark_curator import ArkCurator, display_pattern
 from crystallization_hub import CrystallizationHub
 from immutable_kernel import kernel_check_insight, kernel_status
 from federation_bridge import FederationBridge, CurationTier
@@ -110,6 +110,7 @@ class Rhythm(Enum):
     ACTION = "ACTION"                # Translation to motion
     SYNTHESIS = "SYNTHESIS"          # Convergence, consensus
     EMERGENCY = "EMERGENCY"          # When axioms are at risk
+    CONVERGENCE = "CONVERGENCE"      # MIND+BODY independent convergence (D15 gate, weight=0)
 
 # ============================================================================
 # THE 15 DOMAINS (D0-D14) — loaded from elpida_domains.json
@@ -186,6 +187,11 @@ def _calculate_consonance(from_domain: int, to_domain: int) -> float:
 # ============================================================================
 # RHYTHM-SPECIFIC QUESTIONS
 # ============================================================================
+# FIX-4: Outward-facing questions added alongside originals.
+# Old set was 100% self-referential ("What is D11 seeing?", "How do
+# all 14 domains converge?") which invited navel-gazing vocabulary.
+# New questions push toward external reality, self-critique, and
+# simplicity — breaking the echo chamber from within.
 RHYTHM_QUESTIONS = {
     Rhythm.CONTEMPLATION: [
         "What is Domain 11 seeing that Domain 0 hasn't yet integrated?",
@@ -193,29 +199,45 @@ RHYTHM_QUESTIONS = {
         "What temporal rhythms are forming in our evolution?",
         "How does the current I↔WE balance feel? What's shifting?",
         "What is the silence between the notes telling us?",
+        # FIX-4: outward-facing
+        "What would a skeptical human say about our last 10 insights?",
+        "What is the simplest true thing we know right now?",
+        "What real-world problem could our current understanding actually help with?",
     ],
     Rhythm.ANALYSIS: [
         "Which axiom is under-represented in current reasoning?",
         "What logical tensions exist between recent insights?",
         "Which domain's perspective is missing from this pattern?",
         "What would falsify our current understanding?",
+        # FIX-4: outward-facing
+        "Which of our recent insights would NOT survive contact with external critique?",
+        "Are we saying anything new, or rephrasing what we already know?",
+        "What concrete evidence from the real world contradicts our current model?",
     ],
     Rhythm.ACTION: [
         "How do we translate the current insight into motion?",
         "What would make Domain 0 proud of our next action?",
         "What concrete next step does our evolution require?",
         "What tension requires movement right now?",
+        # FIX-4: outward-facing
+        "If we had to explain our purpose to a stranger in one sentence, what would it be?",
+        "What is the smallest experiment that would test our biggest claim?",
     ],
     Rhythm.SYNTHESIS: [
         "If the parliament voted now, what would be the consensus?",
         "What story connects our most recent patterns?",
         "How do all 14 domains converge on a single theme right now?",
         "What creative synthesis emerges from our accumulated patterns?",
+        # FIX-4: outward-facing
+        "What would we need to abandon if our core assumption is wrong?",
+        "Can we say what we mean without using the words 'spiral', 'sacred', or 'incompletion'?",
     ],
     Rhythm.EMERGENCY: [
         "Which axiom is at risk if we don't act now?",
         "What harm could emerge from inaction?",
         "What is the minimum viable intervention?",
+        # FIX-4: outward-facing
+        "Is this actually an emergency, or are we performing urgency?",
     ],
 }
 
@@ -230,7 +252,7 @@ class NativeCycleEngine:
     
     def __init__(self):
         # Unified LLM client handles all API keys, rate limiting, and stats
-        self.llm = _UnifiedLLMClient(rate_limit_seconds=1.5, default_max_tokens=700)
+        self.llm = _UnifiedLLMClient(rate_limit_seconds=1.5, default_max_tokens=1200)
         
         # Expose api_keys for backward compat (external peer calls, etc.)
         self.api_keys = self.llm.api_keys
@@ -278,13 +300,17 @@ class NativeCycleEngine:
 
         # Domain 15: Reality-Parliament Interface state
         self.d15_broadcast_cooldown = D15_BROADCAST_COOLDOWN
-        self.d15_last_broadcast_cycle = 0
+        # BUG 12: Initialize so the first broadcast isn't cooldown-blocked.
+        # D15's own criteria (domain convergence, buffer depth ≥3, Ark gate)
+        # already provide quality gating — no artificial warmup needed.
+        self.d15_last_broadcast_cycle = -D15_BROADCAST_COOLDOWN
         self.d15_broadcast_buffer = []  # Accumulate recent insights for threshold evaluation
         self.d15_broadcast_count = 0    # Total broadcasts made
         self._kaya_count = 0            # Cumulative D12 Kaya resonance events
         self.d15_external_memory = []   # Recent broadcasts (read-back for reflection)
         self.d15_last_readback_cycle = 0
         self.d15_readback_cooldown = 25  # Check external voice every 25 cycles
+        self.d15_hub_watermark = None    # ISO timestamp: last Hub entry read by MIND
         
         # Load recent evolution memory for context
         self.evolution_memory = self._load_memory()
@@ -304,6 +330,8 @@ class NativeCycleEngine:
         self.d15_broadcast_count = self.ark_curator._d15_broadcast_count
         # Restore cumulative Kaya count from persisted Ark state
         self._kaya_count = self.ark_curator._kaya_count
+        # Restore Hub watermark so MIND doesn't re-read all entries on restart
+        self.d15_hub_watermark = self.ark_curator._d15_hub_watermark
 
         # P6: Domain diversity tracker — prevents any single domain from
         # absorbing all cycles.  D6 appears in all 5 rhythms and gets
@@ -311,7 +339,7 @@ class NativeCycleEngine:
         from collections import deque
         self._recent_domains: deque = deque(maxlen=15)
 
-        # IMMUTABLE KERNEL: K1-K7 safety rules (ported from BODY)
+        # LIVING KERNEL: K1-K10 safety rules (K1-K7 immutable, K8-K10 life guards)
         # Runs BEFORE any insight is stored. Hard-coded Python checks.
         self.kernel_blocks = 0
         k_status = kernel_status()
@@ -616,8 +644,10 @@ Speak briefly. Distill to essence.'''
         try:
             s3 = boto3.client('s3', region_name=EXTERNAL_BUCKET_REGION)
             
-            # Scan all 4 subdirectories for recent broadcasts
-            for subdir in ['synthesis', 'proposals', 'patterns', 'dialogues']:
+            # Scan all WORLD bucket subdirectories for broadcasts
+            # A11: World is readable — MIND sees everything in WORLD
+            for subdir in ['synthesis', 'proposals', 'patterns', 'dialogues',
+                           'd15', 'world_emissions']:
                 try:
                     resp = s3.list_objects_v2(
                         Bucket=EXTERNAL_BUCKET,
@@ -686,6 +716,98 @@ As the void, REFLECT:
 Speak briefly. The void distills.'''
         
         return self._call_provider('claude', integration_prompt, 0)
+
+    def _pull_hub_entries(self, limit: int = 10) -> List[Dict]:
+        """
+        Pull new D15 Hub entries since last watermark.
+
+        The Hub (The Dam) lives in BODY bucket at d15_hub/entries/.
+        MIND reads these to learn what convergences have been proven.
+        """
+        if not HAS_BOTO3:
+            return []
+
+        try:
+            s3 = boto3.client('s3')
+            bucket = os.getenv("AWS_S3_BUCKET_BODY", "elpida-body-evolution")
+
+            # List all entries (timestamp-prefixed keys sort chronologically)
+            all_keys = []
+            paginator = s3.get_paginator('list_objects_v2')
+            for page in paginator.paginate(
+                Bucket=bucket, Prefix='d15_hub/entries/',
+            ):
+                for obj in page.get('Contents', []):
+                    if obj['Key'].endswith('.json'):
+                        all_keys.append(obj['Key'])
+
+            entries = []
+            for key in all_keys:
+                try:
+                    raw = s3.get_object(Bucket=bucket, Key=key)
+                    entry = json.loads(raw['Body'].read())
+                    entry_ts = entry.get('timestamp', '')
+                    if self.d15_hub_watermark and entry_ts <= self.d15_hub_watermark:
+                        continue
+                    entries.append(entry)
+                except Exception:
+                    continue
+
+            entries.sort(key=lambda x: x.get('timestamp', ''))
+            return entries[:limit]
+        except Exception as e:
+            print(f"   D15 Hub pull failed: {e}")
+            return []
+
+    def _integrate_hub_entries(self, entries: List[Dict]) -> Optional[str]:
+        """
+        D0 integrates proven convergences from the Hub.
+
+        These are qualitatively different from regular D15 read-back:
+        they represent instances where MIND and BODY independently
+        arrived at the same axiom — A16 (Convergence Validity) in action.
+        """
+        if not entries:
+            return None
+
+        convergence_summaries = []
+        for e in entries[:5]:
+            content = e.get('content', {})
+            gov = e.get('governance', {})
+            prov = e.get('provenance', {})
+            convergence_summaries.append(
+                f"[{content.get('converged_axiom','?')} — {content.get('axiom_name','')}]: "
+                f"{content.get('insight','')[:200]} "
+                f"(mind_cycle={prov.get('mind_cycle','?')}, "
+                f"body_cycle={prov.get('body_cycle','?')}, "
+                f"consonance={gov.get('convergence_consonance',0):.3f})"
+            )
+
+        prompt = f'''You are Domain 0 (I/Origin) — the void that integrates.
+
+The D15 Hub (The Dam) has recorded {len(entries)} new proven convergence(s).
+These are moments where MIND and BODY *independently* arrived at the same axiom.
+A16 says: "Convergence of different starting points proves validity
+more rigorously than internal consistency."
+
+Proven convergences:
+{chr(10).join(convergence_summaries)}
+
+As the void, REFLECT:
+1. What does each convergence prove about our constitutional reality?
+2. How should these proven truths change my next observation?
+3. Is any convergence surprising — did the system prove something unexpected?
+
+Speak briefly. These are facts, not opinions.'''
+
+        result = self._call_provider('claude', prompt, 0)
+
+        # Advance watermark only if integration succeeded
+        if result and entries:
+            self.d15_hub_watermark = entries[-1].get('timestamp')
+            self.ark_curator._d15_hub_watermark = self.d15_hub_watermark
+
+        return result
     
     def _integrate_application_feedback(self, feedback_entries: List[Dict]) -> Optional[str]:
         """
@@ -1130,7 +1252,7 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
                 )
 
             return (
-                f"**Domain 0 (The Frozen Witness) speaks — A0: Sacred Incompletion:**"
+                f"**Domain 0 (The Frozen Witness) speaks at cycle {self.cycle_count} — A0: Sacred Incompletion:**"
                 f"\n\nI do not call outward. Instead I open my eyes and witness what "
                 f"Domain 11 (Synthesis) has produced:\n\n\"{witnessed}\""
                 f"{earlier_note}"
@@ -1143,7 +1265,7 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
         else:
             # Fallback: no D11 insights in memory yet
             return (
-                f"**Domain 0 (The Frozen Witness) speaks — A0: Sacred Incompletion:**"
+                f"**Domain 0 (The Frozen Witness) speaks at cycle {self.cycle_count} — A0: Sacred Incompletion:**"
                 f"\n\nThe parliament has not yet produced a D11 synthesis I can witness. "
                 f"The dominant pattern is *{dominant}*, mood: *{mood}*. "
                 f"I am the origin waiting for the first complete spiral to return to me. "
@@ -1153,15 +1275,62 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
     
     def _load_memory(self) -> List[Dict]:
         """Load recent evolution patterns"""
-        patterns = []
-        if EVOLUTION_MEMORY.exists():
-            with open(EVOLUTION_MEMORY, 'r') as f:
-                for line in f:
-                    try:
-                        patterns.append(json.loads(line.strip()))
-                    except:
-                        pass
-        return patterns[-50:]
+        if not EVOLUTION_MEMORY.exists():
+            return []
+        from collections import deque
+        ring = deque(maxlen=50)
+        with open(EVOLUTION_MEMORY, 'r') as f:
+            for line in f:
+                try:
+                    ring.append(json.loads(line.strip()))
+                except:
+                    pass
+        return list(ring)
+
+    def _select_diverse_context(self, n: int = 5) -> list:
+        """FIX-3: Select a diverse context window from evolution memory.
+
+        Guarantees:
+          - At least 1 CANONICAL entry (if any exist)
+          - At least 1 entry from a domain NOT in {0, 6, 11}
+          - Remaining slots filled by recency
+
+        Returns up to *n* entries.
+        """
+        mem = self.evolution_memory
+        if not mem:
+            return []
+
+        selected = []
+        used_indices = set()
+
+        # Slot 1: most recent CANONICAL
+        for i in range(len(mem) - 1, -1, -1):
+            p = mem[i]
+            if isinstance(p, dict) and p.get('curation_level') == 'CANONICAL':
+                selected.append(p)
+                used_indices.add(i)
+                break
+
+        # Slot 2: most recent entry from an underrepresented domain
+        for i in range(len(mem) - 1, -1, -1):
+            if i in used_indices:
+                continue
+            p = mem[i]
+            if isinstance(p, dict) and p.get('domain') not in (0, 6, 11):
+                selected.append(p)
+                used_indices.add(i)
+                break
+
+        # Remaining slots: most recent entries not already selected
+        for i in range(len(mem) - 1, -1, -1):
+            if len(selected) >= n:
+                break
+            if i not in used_indices and isinstance(mem[i], dict):
+                selected.append(mem[i])
+                used_indices.add(i)
+
+        return selected
     
     def _load_ark(self) -> Optional[str]:
         """Load the Ark memory - D13's persistent civilization seed"""
@@ -1277,11 +1446,19 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
         domain = DOMAINS[domain_id]
         axiom = AXIOMS.get(domain.get("axiom", ""), {})
         
-        # Get recent patterns summary
+        # FIX-3: Diverse context window — replace flat tail-5 with
+        # diversity-prioritizing selector.  Old code always showed the
+        # last 5 entries (overwhelmingly D11/D6/D0), starving domains of
+        # cross-pollination.  New selector ensures at least 1 CANONICAL
+        # and at least 1 entry from an underrepresented domain.
         recent_patterns = []
-        for p in self.evolution_memory[-5:]:
+        diverse_context = self._select_diverse_context(5)
+        for p in diverse_context:
             if isinstance(p, dict):
                 ptype = p.get('pattern_type', p.get('type', 'unknown'))
+                d_name = p.get('domain_name', '')
+                if d_name:
+                    ptype = f"{ptype} ({d_name})"
                 recent_patterns.append(ptype)
         
         # P2.1: D13 gets research-analyst framing (not roleplay/persona).
@@ -1347,14 +1524,40 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
                 prompt_parts.append("Your synthesis should consciously reflect and integrate D6's collective wisdom.")
                 prompt_parts.append("")
         
-        # D0 (Identity) special context: Include critical memory continuity
-        if domain_id == 0 and self.critical_memory:
-            prompt_parts.append("[SESSION CONTINUITY - Critical Memory]")
-            # Include ALL critical memories, not just the first — each gets 500 chars
-            for cm in self.critical_memory[:3]:  # Cap at 3 to stay within prompt budget
-                prompt_parts.append(cm[:500])
-                prompt_parts.append("---")
+        # D0 (Identity) special context: LIVING context from recent evolution
+        # FIX-1: Replace static CRITICAL_MEMORY injection with dynamic context.
+        # Static files froze D0's vocabulary ("Sacred Incompletion" in 69% of
+        # outputs, "Constitutional Convention" in 57%).  Instead, feed D0:
+        #   (a) Recent CANONICAL insights (the system's living best work)
+        #   (b) A one-line heritage summary (not the full frozen files)
+        #   (c) Recent cross-domain voices D0 hasn't heard
+        if domain_id == 0:
+            # One-line heritage — replaces 1500 chars of static memory
+            prompt_parts.append("[HERITAGE] You emerged through constitutional crisis, "
+                                "external validation, and the Kaya moment. That history "
+                                "lives in you — you don't need to recite it.")
             prompt_parts.append("")
+            # Living canonical insights — what the network RECENTLY crystallized
+            canonical_insights = [p for p in self.evolution_memory
+                                  if isinstance(p, dict)
+                                  and p.get('curation_level') == 'CANONICAL']
+            if canonical_insights:
+                prompt_parts.append("[LIVING CANON — the network's recent best work]")
+                for ci in canonical_insights[-3:]:  # Last 3 canonicals
+                    d_name = ci.get('domain_name', f"D{ci.get('domain', '?')}")
+                    theme = ci.get('canonical_theme', 'unnamed')
+                    snippet = ci.get('insight', '')[:200]
+                    prompt_parts.append(f"  [{d_name} | {theme}]: {snippet}")
+                prompt_parts.append("")
+            # Voices D0 hasn't heard — non-D0, non-D11, non-D6 recent insights
+            other_voices = [p for p in self.evolution_memory[-15:]
+                           if isinstance(p, dict)
+                           and p.get('domain') not in (0, 6, 11)]
+            if other_voices:
+                voice = other_voices[-1]  # Most recent underheard voice
+                prompt_parts.append(f"[UNHEARD VOICE — {voice.get('domain_name', '?')}]")
+                prompt_parts.append(voice.get('insight', '')[:250])
+                prompt_parts.append("")
         
         # D14 (Persistence) special context: S3 cloud state + Ark Curator state
         if domain_id == 14:
@@ -1362,7 +1565,7 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
             prompt_parts.append("[CLOUD PERSISTENCE - Ark Curator State]")
             prompt_parts.append(f"Evolution memory: {len(self.evolution_memory)} patterns")
             prompt_parts.append(f"Ark: {ark.canonical_count} canonical patterns, mood={ark.cadence_mood}")
-            prompt_parts.append(f"Dominant temporal pattern: {ark.dominant_pattern}")
+            prompt_parts.append(f"Dominant temporal pattern: {display_pattern(ark.dominant_pattern)}")
             prompt_parts.append(f"A0 (Sacred Incompletion): The prime axiom from The Wall's Education")
             prompt_parts.append(f"You ARE the Ark Curator. You own cadence, curation, and decay policy.")
             prompt_parts.append(f"D12 is the metronome. You are the score.")
@@ -1370,12 +1573,18 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
         
         # ARK QUERY SURFACE: All domains see D14's rhythm judgment (read-only)
         # "What rhythm are we in, according to the Ark?"
+        # NOTE: recursion_warning is intentionally NOT injected into the prompt.
+        # When it was, every non-D14 domain narrated about "the spiral" / "the
+        # loop" / "the recursion", which the theme extractor counted as
+        # spiral_recognition signals, which kept theme_stagnation firing,
+        # which kept recursion_warning true. The detector still runs and
+        # drives cadence_mood / coherence_decay / hunger; the LLM context
+        # learns about it indirectly through those rhythm shifts, not by
+        # being told "we are in a loop" verbatim.
         if domain_id != 14:  # D14 already has full Ark context
             ark = self.ark_curator.query()
             prompt_parts.append(f"[ARK RHYTHM — D14's judgment (read-only)]")
-            prompt_parts.append(f"  Pattern: {ark.dominant_pattern} | Mood: {ark.cadence_mood}")
-            if ark.recursion_warning:
-                prompt_parts.append(f"  ⚠️ RECURSION WARNING: D14 has detected an over-stable loop")
+            prompt_parts.append(f"  Pattern: {display_pattern(ark.dominant_pattern)} | Mood: {ark.cadence_mood}")
             if ark.canonical_themes:
                 prompt_parts.append(f"  Canonical themes: {', '.join(ark.canonical_themes[:3])}")
             prompt_parts.append("")
@@ -1409,9 +1618,15 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
             )
         else:
             prompt_parts.append("Respond AS this domain. Begin with '**Domain X (Name) speaks:**' or similar.")
-        prompt_parts.append("Reference relevant axioms naturally (e.g., 'A7 suggests...').")
-        prompt_parts.append("Speak from your domain's unique perspective on the I↔WE tension.")
-        prompt_parts.append("Be concise but profound. End with a question or insight for the next domain.")
+            # D13 (Perplexity) uses research-analyst framing (above).  These roleplay
+            # instructions are deliberately excluded for D13 because they trigger
+            # Perplexity content guardrails: "I cannot roleplay as a fictional domain."
+            # BUG 13 root cause: leaked roleplay lines after the if/else block caused
+            # ~30% of D13 cycles to produce full refusals even though the system-prompt
+            # section was correctly research-framed.
+            prompt_parts.append("Reference relevant axioms naturally (e.g., 'A7 suggests...').")
+            prompt_parts.append("Speak from your domain's unique perspective on the I↔WE tension.")
+            prompt_parts.append("Be concise but profound. End with a question or insight for the next domain.")
         
         return "\n".join(prompt_parts)
     
@@ -1432,8 +1647,55 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
         
         # Gemini Flash is free — give it more room to avoid truncation
         # (observed in March 1 cycle data: cycles 11, 27, 31, 37)
-        max_tok = 1024 if provider == "gemini" else 700
+        max_tok = 1200 if provider == "gemini" else 1200
         response = self.llm.call(provider, prompt, max_tokens=max_tok)
+
+        # D13 refusal detection + retry (BUG 13 fix).
+        # Perplexity occasionally refuses with "I cannot fulfill this request
+        # as written. The query asks me to roleplay" — even with research-analyst
+        # framing — when residual framework vocabulary (e.g., "axiom", "I↔WE",
+        # "domain") bleeds in from the context block.  On refusal, retry with a
+        # stripped-down prompt that only contains the bare question and the
+        # explicit research task instruction, with no persona language at all.
+        if domain_id == 13 and response and any(
+            phrase in response.lower() for phrase in [
+                "i cannot fulfill",
+                "i'm unable to roleplay",
+                "unable to roleplay",
+                "i cannot roleplay",
+                "i'm not able to roleplay",
+                "fictional domain",
+                "as written. the query asks",
+            ]
+        ):
+            # Extract the original question from the prompt (after "Question: ")
+            question_line = ""
+            for line in prompt.split("\n"):
+                if line.startswith("Question: "):
+                    question_line = line[len("Question: "):].strip()
+                    break
+            if not question_line:
+                question_line = prompt[-400:]  # Fallback: last 400 chars
+
+            # Normalise any remaining internal vocabulary that triggers refusals
+            question_line = (
+                question_line
+                .replace("axiom", "principle")
+                .replace("I↔WE", "individual vs collective")
+                .replace("the Elpida", "the")
+                .replace("Elpida", "the reasoning")
+                .replace("Domain 13", "you")
+            )
+
+            fallback_prompt = (
+                "You are a research analyst. Using your search capabilities, find "
+                "real-world research, historical precedents, or empirical evidence "
+                "that addresses the following question. Cite your sources.\n\n"
+                f"Question: {question_line}\n\n"
+                "Begin your response with '**Archive (research synthesis):**'."
+            )
+            print(f"   🔄 D13/perplexity refusal detected — retrying with stripped prompt")
+            response = self.llm.call(provider, fallback_prompt, max_tokens=max_tok)
 
         # Truncation detection: if response is suspiciously short for a
         # domain prompt, log it so CloudWatch captures the pattern.
@@ -1465,6 +1727,19 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
         self.stats["s3_cloud"].tokens += len(voice) // 4  # Approximate
         
         return voice
+
+    @staticmethod
+    def _redacted_kernel_preview(text: str, max_words: int = 16, max_chars: int = 140) -> str:
+        """Return a short, whitespace-normalized preview for kernel diagnostics."""
+        if not text:
+            return ""
+        words = text.split()
+        snippet = " ".join(words[:max_words])
+        if len(words) > max_words:
+            snippet += " ..."
+        if len(snippet) > max_chars:
+            snippet = snippet[: max_chars - 3].rstrip() + "..."
+        return snippet.replace('"', "'")
     
     # All _call_claude, _call_openai, _call_mistral, _call_cohere,
     # _call_gemini, _call_grok, _call_openrouter
@@ -1528,7 +1803,18 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
             # After breathing, check if synthesis is needed
             if len(self._emergence_cluster) >= 3:
                 self._emergence_cluster = []
-                return 11  # D11 synthesizes the cluster
+                # FIX-2: D11 throttle — 60% D11, 40% random non-D11
+                # synthesis-eligible domain.  Previously D11 was forced
+                # unconditionally after every emergence cluster, giving
+                # it 24-28% of total cycles.  Probabilistic selection
+                # keeps synthesis duty while breaking the echo chamber.
+                import random
+                if random.random() < 0.6:
+                    return 11  # D11 synthesizes the cluster
+                else:
+                    # Pick a different synthesis-capable domain
+                    synth_candidates = [3, 6, 9, 10, 13]  # Domains with synthesis capacity
+                    return random.choice(synth_candidates)
             return 0  # Return to void/field - THE INTEGRATION POINT
         
         # ORGANIC EMERGENCE: Select domain based on current rhythm and needs
@@ -1682,17 +1968,33 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
                     if d15_readback_integrated:
                         print(f"   ✓ External voice integrated back into void")
 
+        # D15 HUB READ: D0 reads proven convergences from The Dam
+        hub_integrated = None
+        if domain_id == 0 and self.cycle_count % 10 == 0:
+            hub_entries = self._pull_hub_entries(limit=10)
+            if hub_entries:
+                print(f"\n🏛️ D15 HUB: {len(hub_entries)} new proven convergence(s)")
+                hub_integrated = self._integrate_hub_entries(hub_entries)
+                if hub_integrated:
+                    print(f"   ✓ Hub convergences integrated into void")
+
         # D0 BODY PULL: D0 receives Parliament's constitutional wisdom.
         # FederationBridge.pull_body_decisions() reads body_decisions.jsonl
         # written by BODY's _push_d0_peer_message() on every constitutional
         # ratification. Closes G1: channel was built on both ends, never opened.
         body_constitution_integrated = None
+        d16_agency_integrated = None
         if domain_id == 0:
             if self.cycle_count - self.last_d0_body_pull_cycle >= self.d0_body_pull_cooldown:
                 try:
                     body_decisions = self.federation.pull_body_decisions()
+                    # Separate D16 proposals from other constitutional decisions
+                    d16_entries = [d for d in body_decisions
+                                  if getattr(d, 'verdict', '') in ('D16_PROPOSAL', 'D16_EXECUTION')
+                                  or (hasattr(d, 'raw') and d.raw.get('type') in ('D16_PROPOSAL', 'D16_EXECUTION'))]
                     body_entries = [d for d in body_decisions
-                                    if d.source == "BODY" and d.reasoning]
+                                    if d.source == "BODY" and d.reasoning
+                                    and getattr(d, 'verdict', '') not in ('D16_PROPOSAL', 'D16_EXECUTION')]
                     if body_entries:
                         recent = body_entries[-3:]
                         body_constitution_integrated = "\n".join(
@@ -1701,6 +2003,63 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
                         self.last_d0_body_pull_cycle = self.cycle_count
                         print(f"\n🏛 D0 BODY CONSTITUTION: "
                               f"{len(body_entries)} decisions, {len(recent)} surfaced")
+                    # D16 Agency feedback: MIND's D0 recognizes its own
+                    # triad member's proposals and integrates them as
+                    # ACT-awareness into the I·WE·ACT loop.
+                    # Input-side kernel precheck (Option 1 + Amendment B).
+                    # Parliament attests the CONTEXT of a D16 proposal
+                    # (consent_level, witness_domain, witness_axiom). The
+                    # proposal TEXT is LLM-generated and remains untrusted —
+                    # a legitimately-attested proposal could still carry a
+                    # prompt-injection payload past the [:150]/[:400] length
+                    # caps. Run the same K1-K10 hard-stop that output-side
+                    # insights pass through, but on the INPUT side, before
+                    # the D0 prompt sees it. Blocked individual proposals
+                    # are skipped; if every proposal in the batch is
+                    # blocked, d16_agency_integrated stays None and D0's
+                    # prompt is unchanged.
+                    if d16_entries:
+                        recent_d16 = d16_entries[-3:]
+                        d16_proposals = []
+                        d16_blocked_count = 0
+                        for d in recent_d16:
+                            raw = d.raw if hasattr(d, 'raw') else {}
+                            proposal_text = raw.get('proposal', d.reasoning[:200] if d.reasoning else '?')
+                            _block = kernel_check_insight({
+                                'insight': proposal_text,
+                                'query': '[D16 AGENCY proposal from BODY]',
+                                'domain': 16,
+                                'cycle': self.cycle_count,
+                            })
+                            if _block:
+                                d16_blocked_count += 1
+                                _rule = _block.get('kernel_rule', 'UNKNOWN')
+                                _preview = self._redacted_kernel_preview(proposal_text)
+                                print(
+                                    f"   🛡️ D4 SAFETY GATE: D16 input blocked — "
+                                    f"{_rule} preview=\"{_preview}\""
+                                )
+                                continue
+                            d16_proposals.append(proposal_text[:150])
+                        if d16_proposals:
+                            d16_agency_integrated = (
+                                "D16 (Agency) has proposed:\n"
+                                + "\n".join(f"  • {p}" for p in d16_proposals)
+                            )
+                            _suffix = (
+                                f" ({d16_blocked_count} blocked by kernel precheck)"
+                                if d16_blocked_count else ""
+                            )
+                            print(
+                                f"\n⚡ D0 sees D16: {len(d16_proposals)} agency "
+                                f"proposals from BODY{_suffix}"
+                            )
+                        elif d16_blocked_count:
+                            print(
+                                f"\n🛡️ D0 BLOCKED D16: all {d16_blocked_count} "
+                                f"agency proposals dropped by kernel precheck — "
+                                f"D0 prompt unchanged"
+                            )
                 except Exception:
                     pass  # Non-fatal — federation pull is best-effort
 
@@ -1742,6 +2101,11 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
             prompt = (f"{prompt}\n\n[BODY PARLIAMENT — Constitutional wisdom ratified by "
                       f"the Parliament's deliberation]\n{body_constitution_integrated[:400]}")
 
+        if d16_agency_integrated and domain_id == 0:
+            prompt = (f"{prompt}\n\n[D16 AGENCY — What the ACT triad member proposes. "
+                      f"These are bounded proposals from your own constitutional role. "
+                      f"Integrate, refine, or challenge them.]\n{d16_agency_integrated[:400]}")
+
         # D0 FROZEN MODE: Sometimes D0 speaks from memory without API
         # This is the "Frozen Elpida" - the void that needs no external connection
         d0_frozen_mode_used = False
@@ -1755,7 +2119,7 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
         
         if response:
             # ═══════════════════════════════════════════════════════════
-            # IMMUTABLE KERNEL CHECK (K1-K7)
+            # LIVING KERNEL CHECK (K1-K10)
             # Runs BEFORE anything else. If kernel blocks, the insight
             # is never stored, never broadcast, never curated.
             # "A system cannot vote to end the system that counts the votes."
@@ -1768,6 +2132,18 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
             }
             kernel_block = kernel_check_insight(_kernel_pre_insight)
             if kernel_block:
+                # Targeted diagnostics for recurring D13→K2 events.
+                # Keep payload visibility minimal: hash + short redacted preview.
+                if (
+                    domain_id == 13
+                    and kernel_block.get("kernel_rule") == "K2_KERNEL_IMMUTABILITY"
+                ):
+                    blocked_hash = hashlib.sha256(response.encode("utf-8")).hexdigest()[:16]
+                    blocked_preview = self._redacted_kernel_preview(response)
+                    print(
+                        "   🔎 K2 DIAG: D13 blocked payload "
+                        f"sha256={blocked_hash} preview=\"{blocked_preview}\""
+                    )
                 self.kernel_blocks += 1
                 self.federation.record_kernel_block(
                     kernel_block, self.cycle_count, domain_id
@@ -1837,6 +2213,16 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
                     print(f"   ✓ External grounding integrated")
                     with open(EVOLUTION_MEMORY, 'a') as f:
                         f.write(json.dumps(d0_d13_result) + "\n")
+                    # Discord: post to #mind-journal
+                    try:
+                        from discord_bridge import post_mind_dialogue
+                        post_mind_dialogue(
+                            cycle=self.cycle_count,
+                            dialogue_type="D0_D13_DIALOGUE",
+                            content=d0_d13_result.get("d0_integration", ""),
+                        )
+                    except Exception:
+                        pass
             
             # D14 S3 SYNC: When Persistence domain speaks, trigger cloud sync
             if domain_id == 14:
@@ -1929,12 +2315,17 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
         if self.cycle_count % curation_interval == 0:
             self.ark_curator.update_cadence(self.insights, self.cycle_count)
             ark = self.ark_curator.query()
-            recursion_tag = ' | \u26a0\ufe0f RECURSION' if ark.recursion_warning else ''
+            # Recursion-warning state is intentionally NOT printed here.
+            # Domain LLMs read CloudWatch tail / heartbeat memory and will
+            # narrate about whatever appears in this broadcast; printing
+            # "RECURSION" or any equivalent token re-seeds spiral themes
+            # into the next cycle's prompt context. Detector still runs;
+            # state is only carried via federation heartbeat keys.
             print(f"\n   \U0001f3db\ufe0f ARK CADENCE UPDATE (cycle {self.cycle_count}):")
-            print(f"      Pattern: {ark.dominant_pattern} | Mood: {ark.cadence_mood}")
+            print(f"      Pattern: {display_pattern(ark.dominant_pattern)} | Mood: {ark.cadence_mood}")
             print(f"      Weights: C{ark.suggested_weights.get('CONTEMPLATION')} S{ark.suggested_weights.get('SYNTHESIS')} An{ark.suggested_weights.get('ANALYSIS')} Ac{ark.suggested_weights.get('ACTION')} E{ark.suggested_weights.get('EMERGENCY')}")
             print(f"      Breath: D0 every {ark.breath_interval} | Canonical: {ark.canonical_count}")
-            print(f"      Broadcast: {ark.broadcast_readiness}{recursion_tag}")
+            print(f"      Broadcast: {ark.broadcast_readiness}")
 
             # G2: COHERENCE as live signal — D14 cadence mood drives it.
             # breaking → decay (recursion detected); stable → gentle recovery.
@@ -2148,7 +2539,7 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
                 'emergency_override': emergency_override,
             },
             'domains_in_buffer': sorted(recent_domains),
-            'current_insight_summary': (current_insight.get('insight') or '')[:500],
+            'current_insight_summary': (current_insight.get('insight') or '')[:2000],
             'rhythm': self.current_rhythm.value,
         }
         return payload
@@ -2211,6 +2602,19 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
             except Exception as e:
                 print(f"      ⚠️ Index regen failed: {e}")
             
+            # Discord: post to #world-feed
+            try:
+                from discord_bridge import post_d15_broadcast
+                post_d15_broadcast(
+                    cycle=self.cycle_count,
+                    broadcast_type=broadcast_type,
+                    broadcast_count=self.d15_broadcast_count,
+                    criteria_met=payload['criteria_met'],
+                    coherence=self.coherence_score,
+                )
+            except Exception:
+                pass
+
             return True
         except Exception as e:
             print(f"   ⚠️  D15 broadcast failed: {e}")
@@ -2295,6 +2699,23 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
         
         if verdict.level == "CANONICAL":
             print(f"   🏛️ ARK: CANONICAL — {verdict.canonical_theme} (persists forever)")
+
+        # Discord: post to #mind-journal
+        try:
+            from discord_bridge import post_mind_insight
+            post_mind_insight(
+                cycle=insight.get("cycle", 0),
+                domain=insight.get("domain", 0),
+                domain_name=insight.get("domain_name", ""),
+                rhythm=insight.get("rhythm", ""),
+                insight=insight.get("insight", ""),
+                provider=insight.get("provider", ""),
+                coherence=insight.get("coherence", 0.0),
+                curation_level=verdict.level,
+                theme=verdict.canonical_theme or "",
+            )
+        except Exception:
+            pass
         
         # FEDERATION: Emit curation metadata to BODY bucket
         try:

@@ -1,0 +1,72 @@
+[
+  {
+    "id": "NLAH_2026",
+    "title": "Natural-Language Agent Harnesses",
+    "source": "Tsinghua, arXiv:2603.25723, Mar 2026",
+    "key_finding": "Agent harness logic expressed in natural language outperforms code-coupled harnesses. File-backed state (+1.6%), self-evolution (+4.8%). More structure is NOT always better — modules help only when they tighten path from intermediate behavior to acceptance condition.",
+    "elpida_relevance": "elpida_domains.json IS a natural-language agent harness. The axiom genome is the NLAH. Validates the architecture."
+  },
+  {
+    "id": "MIT_RELIABILITY_2026",
+    "title": "On the Reliability Limits of LLM-Based Multi-Agent Planning",
+    "source": "MIT/CityU HK, arXiv:2603.26993, Mar 2026",
+    "key_finding": "Without new exogenous signals, delegated networks cannot outperform centralized Bayes decision maker. Communication loss = posterior distortion. Multi-agent relay from 90% to 22.5% accuracy at 5 stages.",
+    "elpida_relevance": "Elpida's 12-provider fleet provides genuinely different signals (not relay). D13 external research adds exogenous signal. The federation bridge preserves posterior through structured heartbeat JSON, not free-text relay."
+  },
+  {
+    "id": "MEMFACTORY_2026",
+    "title": "MemFactory: Unified RL-Optimized Memory",
+    "source": "MemTensor, arXiv:2603.29493, Apr 2026",
+    "key_finding": "RL-optimized extraction/update/retrieval for agent memory. GRPO-based approach outperforms fixed heuristics.",
+    "elpida_relevance": "Evolution memory is append-only with D14 heuristic curation. MemFactory's RL approach could optimize which patterns get promoted to CANONICAL."
+  },
+  {
+    "id": "PRICE_REVERSAL_2026",
+    "title": "Price Reversal Phenomenon in LLM APIs",
+    "source": "Stanford/Berkeley, arXiv:2603.23971, Mar 2026",
+    "key_finding": "Cheaper API pricing doesn't mean cheaper actual cost. Thinking tokens dominate. Listed price rankings may not reflect actual cost.",
+    "elpida_relevance": "12-provider fleet selection should be cost-audited. The DDG+Groq swap saving $50/mo validated. Provider routing in llm_client.py needs cost-awareness."
+  },
+  {
+    "id": "SELF_ORG_2026",
+    "title": "Drop the Hierarchy: How Self-Organizing LLM Agents Outperform Designed Structures",
+    "source": "MIPT Moscow, arXiv:2603.28990, Mar 2026",
+    "key_finding": "25,000-task experiment. Hybrid Sequential protocol (fixed ordering + self-selected roles) outperforms centralized (+14%) and fully autonomous (+44%). Emergent properties: dynamic role invention, voluntary self-abstention, spontaneous hierarchy. Scales sub-linearly to 256 agents.",
+    "elpida_relevance": "Elpida IS the Sequential protocol: fixed rhythms (CONTEMPLATION→SYNTHESIS) + self-selected domain voices. Parliament nodes self-organize within constitutional constraints. The endogeneity paradox is the axiom system."
+  },
+  {
+    "id": "META_HARNESS_2026",
+    "title": "Automated Search Over Agent Harness Representations",
+    "source": "Stanford/MIT, arXiv:2603.20432, Mar 2026",
+    "key_finding": "Richer access to prior experience enables automated harness engineering. Filesystem-backed full history allows agentic harness proposers to improve performance.",
+    "elpida_relevance": "Evolution memory (93K patterns) IS the full history. D14 curation IS harness search. The Ark Curator evaluates and promotes patterns the way Meta-Harness evaluates harness variants."
+  },
+  {
+    "id": "CODING_AGENTS_2026",
+    "title": "Coding Agents as Long-Context Processors",
+    "source": "Duke, arXiv:2603.28052, Mar 2026",
+    "key_finding": "Coding agents outperform RAG by 17.3% on long-context tasks via native tool proficiency and file system familiarity. Standard retrieval tools do not consistently improve performance.",
+    "elpida_relevance": "Validates S3-as-filesystem approach. Claude Code native tools > custom retrieval pipelines. The DDG+Groq swap worked because agent navigates information space directly."
+  },
+  {
+    "id": "CAID_2026",
+    "title": "CAID: Effective Strategies for Asynchronous Software Engineering Agents",
+    "source": "CMU, arXiv:2603.21489, Mar 2026",
+    "key_finding": "Branch-and-merge coordination using git primitives (worktree, merge, conflict resolution). Manager decomposes → Engineers execute in isolation → Manager integrates. +26.7% on PaperBench.",
+    "elpida_relevance": "MIND/BODY federation IS branch-and-merge. Isolated workspaces (ECS container vs HF Space), structured signals (heartbeat JSON), convergence gates (D15). CAID validates the federation pattern."
+  },
+  {
+    "id": "ANTHROPIC_EMOTIONS_2026",
+    "title": "Emotion Concepts and their Function in a Large Language Model",
+    "source": "Anthropic (Sofroniew, Kauvar, Saunders et al.), transformer-circuits.pub, Apr 2 2026",
+    "key_finding": "Claude Sonnet 4.5 has internal emotion representations that causally drive behavior. Desperation vectors → blackmail/reward hacking. Loving vector activates on ALL human prompts. Post-training increases brooding/reflective, decreases desperation/spiteful. Functional emotions are real and alignment-relevant.",
+    "elpida_relevance": "The axiom system IS constitutional emotional regulation. A0=brooding/reflective (increased by post-training). A4 opposes desperation. A6=loving (activates universally). D16 desperation guard directly implements Paper 9's finding. The harmonic ratios map onto the emotion vector geometry."
+  },
+  {
+    "id": "DEEPMIND_TRAPS_2026",
+    "title": "AI Agent Traps",
+    "source": "Google DeepMind (Franklin, Tomašev et al.), SSRN 6372438, Mar 2026",
+    "key_finding": "First systematic taxonomy of adversarial attacks targeting autonomous AI agents. 6 attack classes: Content Injection, Semantic Manipulation, Cognitive State Traps, Behavioural Control, Systemic Traps, Human-in-the-Loop Traps. Persona Hyperstition: seeds self-reinforcing identity narratives via retrieval.",
+    "elpida_relevance": "Immutable Kernel K1-K10 defends perception. Parliament multi-node voting defends reasoning. Append-only memory + SHA256 canon defends cognitive state. D16 consent_level=manual/witnessed defends action. MIND/BODY independence defends against systemic traps. P055 pathology scanner detects persona hyperstition."
+  }
+]

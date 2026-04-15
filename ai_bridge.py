@@ -23,7 +23,16 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, asdict
-import aiohttp
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
+try:
+    import aiohttp
+except ImportError:
+    aiohttp = None
 
 
 @dataclass
@@ -56,6 +65,20 @@ class AIBridge:
         self.config_dir.mkdir(parents=True, exist_ok=True)
         
         print("🌉 AI Bridge initialized")
+
+    def _resolve_api_key_env_var(self, api_key_env_var: str) -> str:
+        """Resolve a pipe-delimited env var spec to the first configured key.
+
+        Example spec: "GEMINI_API_KEY|GOOGLE_API_KEY".
+        Returns the first configured env var, or the first candidate if none are set.
+        """
+        candidates = [v.strip() for v in api_key_env_var.split("|") if v.strip()]
+        if not candidates:
+            return api_key_env_var
+        for candidate in candidates:
+            if os.getenv(candidate):
+                return candidate
+        return candidates[0]
         
     def register_connection(self, 
                            name: str,
@@ -71,20 +94,25 @@ class AIBridge:
             api_endpoint: API endpoint URL
             api_key_env_var: Environment variable name for API key
         """
+        resolved_env_var = self._resolve_api_key_env_var(api_key_env_var)
+
         connection = AIConnection(
             name=name,
             provider=provider,
             api_endpoint=api_endpoint,
-            api_key_env_var=api_key_env_var
+            api_key_env_var=resolved_env_var
         )
         
         # Check if API key is available
-        if os.getenv(api_key_env_var):
+        if os.getenv(resolved_env_var):
             connection.connected = True
-            print(f"✅ {name} connection registered (API key found)")
+            print(f"✅ {name} connection registered (API key found: {resolved_env_var})")
         else:
             print(f"⚠️  {name} registered but API key not found ({api_key_env_var})")
-            print(f"   Set with: export {api_key_env_var}='your-api-key'")
+            if "|" in api_key_env_var:
+                print(f"   Set one of: {api_key_env_var}")
+            else:
+                print(f"   Set with: export {api_key_env_var}='your-api-key'")
         
         self.connections[name] = connection
         self._save_connections()
@@ -104,6 +132,11 @@ class AIBridge:
         Returns:
             Response from the AI model
         """
+        if aiohttp is None:
+            return {
+                "error": "aiohttp is not installed. Install with: pip install aiohttp"
+            }
+
         if ai_name not in self.connections:
             return {"error": f"No connection registered for {ai_name}"}
         
@@ -532,7 +565,7 @@ def setup_standard_connections() -> AIBridge:
         name="Gemini Pro",
         provider="Google",
         api_endpoint="https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
-        api_key_env_var="GOOGLE_API_KEY"
+        api_key_env_var="GEMINI_API_KEY|GOOGLE_API_KEY"
     )
     
     # Anthropic Claude

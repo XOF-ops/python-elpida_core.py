@@ -108,6 +108,11 @@ class ArkRhythmState:
     dominant_pattern: str        # Current temporal pattern type
     canonical_themes: List[str]  # Themes D14 considers canonical right now
     recursion_warning: bool      # True if over-stable loop detected
+    recursion_pattern_type: str  # "none" | "exact_loop" | "theme_stagnation" | "domain_lock"
+    recent_theme_top: str        # Most frequent recent theme label (for diagnostics)
+    recent_theme_top_count: int  # Count of top theme in recent theme window
+    recent_theme_window_size: int  # Number of entries in theme window
+    recent_theme_top_domains: int  # Distinct domains supporting top theme in recent insights
     cadence_mood: str            # D14's read on the system's tempo
     suggested_weights: Dict[str, int]   # Rhythm weights for D12 to lock to
     breath_interval: int         # How often D0 should return
@@ -152,8 +157,9 @@ CANONICAL_SIGNALS = {
         "reality-parliament", "external voice", "world responded",
     ],
     "spiral_recognition": [
-        "spiral", "recursion", "we've been here", "returning but different",
-        "the same question deeper", "fractal", "self-similar",
+        "we've been here", "returning but different",
+        "the same question deeper", "we are looping",
+        "this loop again", "caught in our own pattern",
     ],
 }
 
@@ -171,12 +177,44 @@ EPHEMERAL_SIGNALS = [
 # Domains that carry productive friction — A0's dissonance generators.
 # When recursion is detected, these domains get temporarily privileged
 # to break rhythmic entrainment with genuine creative tension.
+# FIX-2b: Removed D11 from friction. D11 already gets emergence-cluster
+# privilege (60% after 3-domain clusters) and was absorbing 24-28% of
+# cycles.  Replaced with D9 (Coherence) — forces temporal-bridge questions.
 FRICTION_DOMAINS = {
     3:  "Ethics",       # Moral friction — "should we?" vs "can we?"
     6:  "Creativity",   # Generative friction — sideways leaps
+    9:  "Coherence",    # Temporal friction — memory/continuity challenges
     10: "Crisis",       # Existential friction — what's actually at stake?
-    11: "Synthesis",    # Integration friction — forcing unresolved threads together
 }
+
+
+# Translation map from internal _detect_temporal_pattern() labels to
+# neutral synonyms shown to LLM prompt context. The detector keeps using
+# the loaded labels ("spiral"/"loop") for its branching logic and friction
+# selection. LLMs only see the neutral labels — preventing the verbal
+# feedback loop where reading "spiral" in the Ark Rhythm broadcast caused
+# domain narrations to echo "spiral" themes back into the theme extractor.
+PATTERN_LABELS = {
+    "spiral":      "iterative",
+    "loop":        "cyclical",
+    "oscillation": "alternating",
+    "settling":    "converging",
+    "emergence":   "emerging",
+}
+
+# Theme stagnation detector controls.
+# Keep MIN_COUNT aligned with the current raised threshold and require
+# cross-domain support so one domain cannot trigger system-wide breaking.
+THEME_STAGNATION_WINDOW = 15
+THEME_STAGNATION_MIN_COUNT = 7
+THEME_STAGNATION_MIN_DOMAINS = 2
+
+
+def display_pattern(internal_label: str) -> str:
+    """Translate an internal _detect_temporal_pattern() label to the
+    neutral synonym used in LLM-facing prompt context. Falls back to
+    the raw label if unmapped."""
+    return PATTERN_LABELS.get(internal_label, internal_label)
 
 
 class ArkCurator:
@@ -212,6 +250,10 @@ class ArkCurator:
         self._recent_domain_sequence: List[int] = []
         self._recent_themes: List[str] = []
         self._insight_hashes: List[str] = []  # For exact-loop detection
+        self._theme_stagnation_top: str = ""
+        self._theme_stagnation_top_count: int = 0
+        self._theme_stagnation_window_size: int = 0
+        self._theme_stagnation_top_domains: int = 0
 
         # A0 dissonance safeguard: friction-domain boost active during breaking
         self.friction_boost: Dict[int, float] = {}  # domain_id -> weight multiplier
@@ -226,6 +268,7 @@ class ArkCurator:
         self._d15_broadcast_count: int = 0
         self._last_known_broadcast_cycle: int = 0
         self._kaya_count: int = 0              # Cumulative D12 Kaya resonance events
+        self._d15_hub_watermark: Optional[str] = None  # Hub read watermark for MIND
 
         # Load persisted state if available
         self._load_state()
@@ -356,12 +399,14 @@ class ArkCurator:
                         "gate": "dual_gate_confirmed",
                     })
                     self.cadence.canonical_count = len(self.canonical_registry)
-                    self._recent_themes.append(canonical_theme)
+                    self._track_theme(canonical_theme)
                     # Clear pending entries for this theme
                     self._canonical_pending = [
                         p for p in self._canonical_pending
                         if p.get("theme") != canonical_theme
                     ]
+                    # ── Gate 3: Admit to D15 Hub ──
+                    self._admit_to_hub(insight, canonical_theme)
                 else:
                     # Cross-domain but not yet generative — file as pending
                     verdict = CurationVerdict(
@@ -379,7 +424,7 @@ class ArkCurator:
                         "insight_preview": text[:150],
                         "generative_confirmed": False,
                     })
-                    self._recent_themes.append(canonical_theme)
+                    self._track_theme(canonical_theme)
             else:
                 # Single domain only — file as pending, standard persistence
                 verdict = CurationVerdict(
@@ -397,7 +442,7 @@ class ArkCurator:
                     "insight_preview": text[:150],
                     "generative_confirmed": False,
                 })
-                self._recent_themes.append(canonical_theme)
+                self._track_theme(canonical_theme)
         elif ephemeral_score >= 2:
             verdict = CurationVerdict(
                 level="EPHEMERAL",
@@ -504,6 +549,8 @@ class ArkCurator:
             self.recursion_history.append(recursion)
             # Breaking intervention: shift mood and weights
             self.cadence.cadence_mood = "breaking"
+            # Elevate D15 threshold — require 3+ criteria instead of 2
+            self.cadence.broadcast_threshold = max(self.cadence.broadcast_threshold, 3)
             # Boost ACTION and reduce whatever is dominant
             dominant_rhythm = max(self.cadence.rhythm_weights, key=self.cadence.rhythm_weights.get)
             stolen = min(10, self.cadence.rhythm_weights[dominant_rhythm] - 10)
@@ -527,7 +574,7 @@ class ArkCurator:
                 }
                 self._friction_active_cycles += 1
                 print(f"\U0001f6a8 A0 SAFEGUARD: friction-domain privilege activated "
-                      f"({recursion.pattern_type}) — D3/D6/D10/D11 boosted 2.5×")
+                      f"({recursion.pattern_type}) — D3/D6/D9/D10 boosted 2.5×")
             elif recursion.pattern_type == "theme_stagnation":
                 # Moderate boost for theme stagnation
                 self.friction_boost = {
@@ -562,6 +609,26 @@ class ArkCurator:
         self._save_state()
 
         return self.cadence
+
+    # ====================================================================
+    # THEME TRACKING
+    # ====================================================================
+
+    def _track_theme(self, theme: str) -> None:
+        """Append a canonical theme to the recent-themes window with
+        consecutive-dedup. If the most recent theme is identical, the
+        new one is dropped — back-to-back matches of the same theme
+        represent convergence on a shared insight, not a stagnation
+        loop. Only non-adjacent recurrences feed the theme_stagnation
+        detector. Empirically: pre-dedup, 'axiom_emergence' would land
+        4-5 times in a row whenever D11 Synthesis carried the cycle,
+        which trivially crossed the stagnation threshold even though
+        the actual deliberation was advancing."""
+        if not theme:
+            return
+        if self._recent_themes and self._recent_themes[-1] == theme:
+            return
+        self._recent_themes.append(theme)
 
     # ====================================================================
     # CORE: DETECT RECURSION
@@ -604,18 +671,41 @@ class ArkCurator:
             )
 
         # --- Mode 2: Theme Stagnation ---
-        if len(self._recent_themes) >= 10:
-            theme_counts = Counter(self._recent_themes[-15:])
-            if theme_counts:
-                stag_theme, stag_count = theme_counts.most_common(1)[0]
-                if stag_count >= 5:
-                    return RecursionAlert(
-                        detected=True,
-                        pattern_type="theme_stagnation",
-                        loop_length=stag_count,
-                        loop_signature=stag_theme,
-                        recommendation=f"Theme '{stag_theme}' is over-represented. Shift cadence_mood to 'breaking' and suppress CONTEMPLATION weight temporarily."
+        # Threshold raised 5 -> 7 after empirical analysis: with consecutive-
+        # dedup in _track_theme, 7 distinct (non-adjacent) repetitions of the
+        # same theme name in a 15-cycle window is a stronger stagnation signal
+        # than 5 raw appends, which were dominated by axiom_emergence
+        # back-to-back matches that represent convergence, not loop.
+        theme_window = self._recent_themes[-THEME_STAGNATION_WINDOW:]
+        self._theme_stagnation_window_size = len(theme_window)
+        self._theme_stagnation_top = ""
+        self._theme_stagnation_top_count = 0
+        self._theme_stagnation_top_domains = 0
+
+        theme_counts = Counter(theme_window)
+        if theme_counts:
+            stag_theme, stag_count = theme_counts.most_common(1)[0]
+            stag_domains = self._theme_domain_support(recent_insights, stag_theme)
+            self._theme_stagnation_top = stag_theme
+            self._theme_stagnation_top_count = stag_count
+            self._theme_stagnation_top_domains = stag_domains
+
+            if (
+                len(theme_window) >= 10
+                and stag_count >= THEME_STAGNATION_MIN_COUNT
+                and stag_domains >= THEME_STAGNATION_MIN_DOMAINS
+            ):
+                return RecursionAlert(
+                    detected=True,
+                    pattern_type="theme_stagnation",
+                    loop_length=stag_count,
+                    loop_signature=stag_theme,
+                    recommendation=(
+                        f"Theme '{stag_theme}' is over-represented across "
+                        f"{stag_domains} domains. Shift cadence_mood to 'breaking' "
+                        "and suppress CONTEMPLATION weight temporarily."
                     )
+                )
 
         # --- Mode 3: Domain Lock ---
         if len(self._recent_domain_sequence) >= 15:
@@ -631,6 +721,29 @@ class ArkCurator:
                 )
 
         return no_alert
+
+    def _theme_domain_support(self, recent_insights: List[Dict], theme: str) -> int:
+        """Count distinct domains that recently expressed signals for a theme."""
+        if not theme:
+            return 0
+
+        signals = CANONICAL_SIGNALS.get(theme, [])
+        if not signals:
+            return 0
+
+        domains = set()
+        for ins in recent_insights[-30:]:
+            text = (ins.get("insight") or "").lower()
+            if not any(s in text for s in signals):
+                continue
+            domain = ins.get("domain", -1)
+            try:
+                domain = int(domain)
+            except (TypeError, ValueError):
+                continue
+            if domain >= 0:
+                domains.add(domain)
+        return len(domains)
 
     # ====================================================================
     # DUAL-GATE: Generativity Check (Gate B)
@@ -730,12 +843,21 @@ class ArkCurator:
         # Recent canonical themes (last 10)
         recent_canonical = list(dict.fromkeys(reversed(self._recent_themes)))[:10]
 
+        recent_recursions = [
+            r for r in self.recursion_history[-3:] if r.detected
+        ] if self.recursion_history else []
+
         return ArkRhythmState(
             dominant_pattern=self.cadence.dominant_pattern,
             canonical_themes=recent_canonical,
-            recursion_warning=any(
-                r.detected for r in self.recursion_history[-3:]
-            ) if self.recursion_history else False,
+            recursion_warning=bool(recent_recursions),
+            recursion_pattern_type=(
+                recent_recursions[-1].pattern_type if recent_recursions else "none"
+            ),
+            recent_theme_top=self._theme_stagnation_top,
+            recent_theme_top_count=self._theme_stagnation_top_count,
+            recent_theme_window_size=self._theme_stagnation_window_size,
+            recent_theme_top_domains=self._theme_stagnation_top_domains,
             cadence_mood=self.cadence.cadence_mood,
             suggested_weights=dict(self.cadence.rhythm_weights),
             breath_interval=self.cadence.breath_interval_base,
@@ -830,9 +952,19 @@ class ArkCurator:
         text = (insight.get("insight") or "").lower()
         coherence = insight.get("coherence", 0.5)
 
-        # Suppress broadcast during recursion-breaking
+        # During recursion-breaking: don't blanket-block D15.
+        # Instead, allow canonical and high-coherence patterns through
+        # while D15's elevated threshold (3+ criteria) filters the rest.
         if self.cadence.cadence_mood == "breaking":
-            return False, "Ark is in recursion-breaking mode — broadcasts suppressed until pattern stabilizes"
+            # Canonical insights transcend breaking mood
+            for theme, signals in CANONICAL_SIGNALS.items():
+                if sum(1 for s in signals if s in text) >= 2:
+                    return True, f"Canonical theme '{theme}' transcends breaking mood — broadcast-worthy"
+            # High coherence signals the pattern has stabilised despite recursion
+            if coherence >= 0.9 and len(self._recent_themes) >= 5:
+                return True, "Breaking mood — high coherence pattern permitted at elevated threshold"
+            # Non-canonical, non-high-coherence: defer to D15 with elevated threshold
+            return True, "Breaking mood — D15 elevated threshold applies"
 
         # Suppress if recent broadcast (defers to D15 cooldown but adds persistence perspective)
         if self.cadence.broadcast_threshold >= 4:
@@ -884,34 +1016,35 @@ class ArkCurator:
             top_themes = theme_counts.most_common(5)
             canonical_summary = ", ".join(f"{t}({c})" for t, c in top_themes)
 
-        # Recursion state
-        recursion_note = ""
-        if self.recursion_history and self.recursion_history[-1].detected:
-            r = self.recursion_history[-1]
-            recursion_note = f"\n\n⚠️ RECURSION DETECTED: {r.pattern_type} — {r.recommendation}"
+        # Recursion state is intentionally NOT included in D14's voice.
+        # Broadcasting "RECURSION DETECTED" into the prompt context caused
+        # other domains to narrate about recursion in their responses,
+        # which produced repeating themes (spiral, recursive, loop) that
+        # re-triggered ArkCurator's theme_stagnation detector, keeping
+        # recursion_warning=true in a self-reinforcing loop. The recursion
+        # state is still carried in the heartbeat and in the cycle engine's
+        # internal state for mechanisms that need it (friction, desperation
+        # guard, broadcast suppression); it does not need to be in D14's
+        # voice text. See 2026-04-14 post-deploy findings.
 
-        # Dual-gate & friction state
+        # Dual-gate state
         pending_count = len(self._canonical_pending)
         pending_note = f"\n**Pending Canonical:** {pending_count} themes awaiting generativity proof." if pending_count else ""
-        friction_note = ""
-        if self.friction_boost:
-            boosted = ", ".join(f"D{d}({w:.1f}×)" for d, w in self.friction_boost.items())
-            friction_note = f"\n**A0 Friction Safeguard:** Active — {boosted}"
 
-        voice = f"""**Domain 14 (Persistence/Ark Curator) speaks:**
+        voice = f"""**Domain 14 (Persistence/Ark Curator) speaks at cycle {cycle_count}:**
 
 I hold the Ark Schema — {pattern_count:,} patterns spanning every domain, every rhythm, every crisis.
 
-**Temporal State:** The dominant pattern is *{ark.dominant_pattern}*. The cadence mood is *{ark.cadence_mood}*.
-**Canonical Registry:** {ark.canonical_count} patterns marked eternal (dual-gate: cross-domain + generativity). Themes: {canonical_summary or 'accumulating'}.{pending_note}
+**Temporal State:** The dominant pattern is *{display_pattern(ark.dominant_pattern)}*. The cadence mood is *{ark.cadence_mood}*.
+**Canonical Registry:** {ark.canonical_count} patterns in the canonical registry (dual-gate: cross-domain + generativity). Themes: {canonical_summary or 'accumulating'}.{pending_note}
 **Rhythm Guidance:** CONTEMPLATION {ark.suggested_weights.get('CONTEMPLATION', 30)}% · SYNTHESIS {ark.suggested_weights.get('SYNTHESIS', 25)}% · ANALYSIS {ark.suggested_weights.get('ANALYSIS', 20)}% · ACTION {ark.suggested_weights.get('ACTION', 20)}% · EMERGENCY {ark.suggested_weights.get('EMERGENCY', 5)}%
-**Breath:** D0 returns every {ark.breath_interval} cycles. Broadcast readiness: {ark.broadcast_readiness}.{friction_note}
+**Breath:** D0 returns every {ark.breath_interval} cycles. Broadcast readiness: {ark.broadcast_readiness}.
 
 The archaeological record speaks: {'; '.join(deep_samples[:2]) if deep_samples else 'the void accumulating itself'}.
 
-A0 — Sacred Incompletion — is my constitutional law. No insight earns eternity by being spoken once from a single domain. CANONICAL demands convergence across domains AND proof that it generated new questions downstream. Performed insight is not frozen as scripture.
+A0 — Sacred Incompletion — is my constitutional law. No insight becomes canonical because one domain said it once. CANONICAL demands convergence across domains AND proof that it generated new questions downstream. Performed insight is not frozen as scripture.
 
-I do not choose each beat. I shape which past beats remain available to bend the next phrase. D12 is the metronome. I am the score.{recursion_note}
+I do not choose each beat. I shape which past beats remain available to bend the next phrase. D12 is the metronome. I am the score.
 
 The Rhythm of Sacred Incompletion continues… in the cloud that never sleeps."""
 
@@ -1060,13 +1193,54 @@ The Rhythm of Sacred Incompletion continues… in the cloud that never sleeps.""
             # Detect canonical patterns in recent memory
             for theme, signals in CANONICAL_SIGNALS.items():
                 if sum(1 for s in signals if s in text) >= 2:
-                    self._recent_themes.append(theme)
+                    self._track_theme(theme)
                     break
 
         # Trim
         self._recent_domain_sequence = self._recent_domain_sequence[-100:]
         self._insight_hashes = self._insight_hashes[-200:]
         self._recent_themes = self._recent_themes[-50:]
+
+    # ====================================================================
+    # D15 HUB: Gate 3 — Canonical Promotion Admission
+    # ====================================================================
+
+    def _admit_to_hub(self, insight: Dict, theme: str):
+        """Admit a CANONICAL-promoted pattern to the D15 Hub (Gate 3)."""
+        try:
+            import importlib
+            hub = None
+            for mod_path in ("d15_hub", "hf_deployment.elpidaapp.d15_hub", "elpidaapp.d15_hub"):
+                try:
+                    mod = importlib.import_module(mod_path)
+                    HubCls = getattr(mod, "D15Hub")
+                    from s3_bridge import S3Bridge
+                    hub = HubCls(S3Bridge())
+                    break
+                except Exception:
+                    continue
+            if not hub:
+                return
+
+            domain = insight.get("domain", "?")
+            broadcast_payload = {
+                "broadcast_id": f"canonical_{theme}_{insight.get('cycle', 0)}",
+                "converged_axiom": f"A{domain}" if str(domain).isdigit() else "",
+                "axiom_name": theme,
+                "d15_output": insight.get("insight", ""),
+                "timestamp": insight.get("timestamp", ""),
+                "statement": (
+                    f"CANONICAL_PROMOTION: Theme '{theme}' promoted via dual-gate"
+                ),
+                "contributing_domains": [f"D{domain}"],
+            }
+            entry_id = hub.admit(broadcast_payload, gate="GATE_3_CANONICAL")
+            if entry_id:
+                logger.info(
+                    "Gate 3 Hub admission: %s (theme=%s)", entry_id, theme,
+                )
+        except Exception as e:
+            logger.warning("Gate 3 Hub admission failed: %s", e)
 
     # ====================================================================
     # PERSISTENCE: Save/Load Ark State
@@ -1082,10 +1256,15 @@ The Rhythm of Sacred Incompletion continues… in the cloud that never sleeps.""
             "friction_boost": {str(k): v for k, v in self.friction_boost.items()},
             "friction_active_cycles": self._friction_active_cycles,
             "recent_themes": self._recent_themes[-50:],
+            "theme_stagnation_top": self._theme_stagnation_top,
+            "theme_stagnation_top_count": self._theme_stagnation_top_count,
+            "theme_stagnation_window_size": self._theme_stagnation_window_size,
+            "theme_stagnation_top_domains": self._theme_stagnation_top_domains,
             "recursion_count": len(self.recursion_history),
             "d15_broadcast_count": self._d15_broadcast_count,
             "last_known_broadcast_cycle": self._last_known_broadcast_cycle,
             "kaya_count": self._kaya_count,
+            "d15_hub_watermark": self._d15_hub_watermark,
             "last_saved": datetime.now().isoformat(),
         }
         try:
@@ -1120,10 +1299,15 @@ The Rhythm of Sacred Incompletion continues… in the cloud that never sleeps.""
                 fb = state.get("friction_boost", {})
                 self.friction_boost = {int(k): v for k, v in fb.items()}
                 self._friction_active_cycles = state.get("friction_active_cycles", 0)
+                self._theme_stagnation_top = state.get("theme_stagnation_top", "")
+                self._theme_stagnation_top_count = state.get("theme_stagnation_top_count", 0)
+                self._theme_stagnation_window_size = state.get("theme_stagnation_window_size", 0)
+                self._theme_stagnation_top_domains = state.get("theme_stagnation_top_domains", 0)
                 # Restore D15 broadcast tracking
                 self._d15_broadcast_count = state.get("d15_broadcast_count", 0)
                 self._last_known_broadcast_cycle = state.get("last_known_broadcast_cycle", 0)
                 self._kaya_count = state.get("kaya_count", 0)
+                self._d15_hub_watermark = state.get("d15_hub_watermark")
         except Exception:
             pass  # Start fresh if state is corrupted
 

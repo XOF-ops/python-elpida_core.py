@@ -75,6 +75,11 @@ FORK_EVIDENCE_WINDOW = 100
 # Cool-down — minimum cycles between fork declarations for same axiom
 FORK_COOLDOWN_CYCLES = 200
 
+# Minimum evidence pieces to create a fork declaration.
+# Parliament consensus (9/14 domains): ≥3 establishes a stable pattern.
+# Prevents false positives on constitutionally rare axioms (A12-A14).
+FORK_MIN_EVIDENCE = 3
+
 # Maximum active fork declarations before requiring resolution
 MAX_ACTIVE_FORKS = 3
 
@@ -208,6 +213,8 @@ class ForkProtocol:
         self._active: List[ForkDeclaration] = []
         self._resolved: List[ForkDeclaration] = []
         self._last_declaration_cycle: Dict[str, int] = {}  # axiom → cycle
+        self._last_remediate_severity: Dict[str, float] = {}  # axiom → severity at last REMEDIATE
+        self._remediate_count: Dict[str, int] = {}  # axiom → consecutive REMEDIATE count
         self._load_history()
 
     # ── History ───────────────────────────────────────────────────
@@ -228,6 +235,16 @@ class ForkProtocol:
                     existing = self._last_declaration_cycle.get(axiom, 0)
                     if cycle > existing:
                         self._last_declaration_cycle[axiom] = cycle
+                    # Track last REMEDIATE severity per axiom for baseline comparison
+                    if rec.get("outcome") == "REMEDIATE":
+                        sev = rec.get("severity", 0)
+                        prev = self._last_remediate_severity.get(axiom, 0)
+                        if cycle >= existing:  # most recent takes precedence
+                            self._last_remediate_severity[axiom] = sev
+                        self._remediate_count[axiom] = self._remediate_count.get(axiom, 0) + 1
+                    elif rec.get("outcome") == "ACKNOWLEDGE":
+                        # ACKNOWLEDGE resets the remediation counter
+                        self._remediate_count[axiom] = 0
         except Exception as e:
             logger.warning("Fork history load failed: %s", e)
 
@@ -282,6 +299,9 @@ class ForkProtocol:
                         new_declarations.append(decl)
 
         # Source 2: P055 Cultural Drift → axiom meaning has shifted
+        # Distinguish DRIFT (axiom changed behavior) from
+        # UNDERREPRESENTATION (axiom is constitutionally rare).
+        # Only DRIFT triggers fork declarations — rarity is not violation.
         if pathology_report:
             drift = pathology_report.get("P055_cultural_drift", {})
             drift_kl = drift.get("kl_divergence", 0)
@@ -289,11 +309,24 @@ class ForkProtocol:
                 drifting = drift.get("drifting_axioms", [])
                 for da in drifting:
                     axiom = da.get("axiom", "")
-                    delta = abs(da.get("delta", 0))
+                    direction = da.get("direction", "")
+                    # Skip constitutionally rare axioms: if an axiom is
+                    # UNDER-REPRESENTED with near-zero lived weight, it
+                    # hasn't drifted — it was never dominant. Different
+                    # pathology, different response.
+                    if (direction == "UNDER-REPRESENTED"
+                            and da.get("lived_weight", 0) < 0.02):
+                        logger.debug(
+                            "Fork: %s skipped — constitutional rarity "
+                            "(lived=%.4f), not drift",
+                            axiom, da.get("lived_weight", 0),
+                        )
+                        continue
+                    per_axiom_drift = abs(da.get("drift", 0))
                     decl = self._try_declare(
                         axiom=axiom,
                         violation_type="DRIFT",
-                        severity=min(drift_kl + delta, 1.0),
+                        severity=min(drift_kl + per_axiom_drift, 1.0),
                         trigger_source="P055",
                         current_cycle=current_cycle,
                     )
@@ -354,6 +387,17 @@ class ForkProtocol:
             )
             return None
 
+        # Check severity baseline — after REMEDIATE, severity must exceed
+        # the REMEDIATE baseline by ≥0.10 to declare again (prevents loops
+        # where accumulated drift keeps re-triggering identical forks).
+        baseline = self._last_remediate_severity.get(axiom)
+        if baseline is not None and severity <= baseline + 0.10:
+            logger.info(
+                "Fork: %s severity %.3f ≤ baseline %.3f + 0.10 — suppressed",
+                axiom, severity, baseline,
+            )
+            return None
+
         # Check for existing active declaration on same axiom
         if any(d.axiom == axiom and not d.is_resolved for d in self._active):
             logger.debug("Fork: %s already has active declaration", axiom)
@@ -361,6 +405,16 @@ class ForkProtocol:
 
         # Collect evidence from recent cycles
         evidence = self._collect_evidence(axiom, current_cycle)
+
+        # Evidence gate: require ≥FORK_MIN_EVIDENCE pieces before
+        # creating a declaration. Prevents false positives on axioms
+        # that are constitutionally rare (A12-A14 with evidence=0).
+        if len(evidence) < FORK_MIN_EVIDENCE:
+            logger.info(
+                "Fork: %s evidence=%d < %d minimum — suppressed",
+                axiom, len(evidence), FORK_MIN_EVIDENCE,
+            )
+            return None
 
         decl = ForkDeclaration(
             axiom=axiom,
@@ -579,6 +633,16 @@ class ForkProtocol:
         self._active.remove(declaration)
         self._resolved.append(declaration)
 
+        # Store severity baseline on REMEDIATE so future declarations
+        # must show worsening (prevents mechanical re-triggering).
+        if outcome == "REMEDIATE":
+            self._last_remediate_severity[declaration.axiom] = declaration.severity
+            self._remediate_count[declaration.axiom] = self._remediate_count.get(declaration.axiom, 0) + 1
+        elif outcome == "ACKNOWLEDGE":
+            # Acknowledgement resolves the loop — reset counters
+            self._remediate_count[declaration.axiom] = 0
+            self._last_remediate_severity.pop(declaration.axiom, None)
+
         # Write to living_axioms.jsonl as crystallized fork knowledge
         axioms_path = Path(
             living_axioms_path
@@ -612,7 +676,23 @@ class ForkProtocol:
         REMEDIATE: the system can realistically re-align with the axiom
         ACKNOWLEDGE: the axiom's operational meaning has evolved — both
                      interpretations are recorded as valid
+
+        Escalation: if the same axiom has been REMEDIATEd 3+ times
+        without improvement, escalate to ACKNOWLEDGE — repeated
+        remediation that doesn't reduce severity is not remediation.
         """
+        # ── Circuit breaker: escalate after repeated failed remediations ──
+        prior_remediates = self._remediate_count.get(declaration.axiom, 0)
+        if prior_remediates >= 3:
+            logger.warning(
+                "Fork ESCALATION: %s (%s) — %d prior REMEDIATEs without "
+                "improvement, escalating to ACKNOWLEDGE",
+                declaration.axiom,
+                AXIOM_NAMES.get(declaration.axiom, "?"),
+                prior_remediates,
+            )
+            return "ACKNOWLEDGE"
+
         if declaration.violation_type == "ZOMBIE":
             # Zombie → the axiom is invoked but does nothing.
             # High severity zombie = the axiom has become meaningless.

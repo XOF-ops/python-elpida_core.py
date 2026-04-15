@@ -5,7 +5,7 @@
     {
       "name": "Config loaded",
       "pass": true,
-      "details": "11 axioms (expect 11), 15 domains (expect 15)",
+      "details": "15 axioms (expect 15), 16 domains (expect 16)",
       "source": "remote"
     },
     {

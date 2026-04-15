@@ -35,13 +35,13 @@ def verify():
     axioms = gov.get_axioms()
     domains = gov.get_domains()
     
-    axiom_ok = len(axioms) == 11  # A0-A10
-    domain_ok = len(domains) == 15  # D0-D14
+    axiom_ok = len(axioms) == 16  # A0-A14+A16
+    domain_ok = len(domains) == 16  # D0-D15
     
     test1 = {
         "name": "Config loaded",
         "pass": axiom_ok and domain_ok,
-        "details": f"{len(axioms)} axioms (expect 11), {len(domains)} domains (expect 15)",
+        "details": f"{len(axioms)} axioms (expect 16), {len(domains)} domains (expect 16)",
         "source": "local" if not gov.is_remote_available() else "remote",
     }
     results["tests"].append(test1)
@@ -179,7 +179,7 @@ def verify():
     if results["failed"] == 0:
         print("\n  ✓ GOVERNANCE IS OPERATIONAL")
         print("  The governance layer correctly:")
-        print("  - Loads 11 axioms and 15 domains from canonical config")
+        print("  - Loads 15 axioms and 16 domains from canonical config")
         print("  - Returns PROCEED for safe actions")
         print("  - Returns HALT/REVIEW for axiom-violating actions")
         print("  - Logs every governance decision (A1: Transparency)")
