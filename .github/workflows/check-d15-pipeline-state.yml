@@ -41,23 +41,28 @@ jobs:
           echo ""
 
           echo "=== WORLD D15 broadcasts (latest 5) ==="
-          aws s3 cp s3://elpida-external-interfaces/d15/broadcasts.jsonl - --region us-east-1 \
-            | tail -n 5 \
-            | python3 -c 'import json,sys
-for line in sys.stdin:
-    line=line.strip()
-    if not line:
-        continue
-    try:
-        obj=json.loads(line)
-    except Exception:
-        print(line)
-        continue
-    ts=obj.get("timestamp") or obj.get("created_at") or obj.get("broadcast_time")
-    ax=obj.get("convergence_axiom")
-    bid=obj.get("broadcast_id") or obj.get("id") or obj.get("content_hash")
-    gv=(obj.get("governance") or {}).get("verdict") if isinstance(obj.get("governance"),dict) else None
-    print(f"- ts={ts} axiom={ax} id={bid} verdict={gv}")'
+            aws s3 cp s3://elpida-external-interfaces/d15/broadcasts.jsonl - --region us-east-1 \
+            | tail -n 5 > /tmp/d15_world_tail.jsonl
+            python3 - <<'PY'
+      import json
+
+      with open('/tmp/d15_world_tail.jsonl', 'r', encoding='utf-8') as f:
+        for line in f:
+          line = line.strip()
+          if not line:
+            continue
+          try:
+            obj = json.loads(line)
+          except Exception:
+            print(line)
+            continue
+          ts = obj.get('timestamp') or obj.get('created_at') or obj.get('broadcast_time')
+          ax = obj.get('convergence_axiom')
+          bid = obj.get('broadcast_id') or obj.get('id') or obj.get('content_hash')
+          governance = obj.get('governance') if isinstance(obj.get('governance'), dict) else {}
+          gv = governance.get('verdict')
+          print(f"- ts={ts} axiom={ax} id={bid} verdict={gv}")
+      PY
           echo ""
 
           echo "=== BODY federation decisions tail (D15 pipeline markers) ==="
@@ -73,11 +78,26 @@ for line in sys.stdin:
           echo ""
 
           echo "=== MIND heartbeat quick fields ==="
-          aws s3 cp s3://elpida-body-evolution/federation/mind_heartbeat.json - --region eu-north-1 \
-            | python3 -c 'import json,sys
-obj=json.load(sys.stdin)
-for k in ["timestamp","mind_cycle","mind_epoch","coherence","ark_mood","recursion_warning","d15_broadcast","d15_broadcast_count"]:
-    print(f"{k}: {obj.get(k)}")'
+            aws s3 cp s3://elpida-body-evolution/federation/mind_heartbeat.json - --region eu-north-1 \
+            > /tmp/mind_heartbeat.json
+            python3 - <<'PY'
+      import json
+
+      with open('/tmp/mind_heartbeat.json', 'r', encoding='utf-8') as f:
+        obj = json.load(f)
+
+      for k in [
+        'timestamp',
+        'mind_cycle',
+        'mind_epoch',
+        'coherence',
+        'ark_mood',
+        'recursion_warning',
+        'd15_broadcast',
+        'd15_broadcast_count',
+      ]:
+        print(f"{k}: {obj.get(k)}")
+      PY
           echo ""
 
           echo "=== Derived note ==="
