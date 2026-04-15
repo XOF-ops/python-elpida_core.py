@@ -78,6 +78,14 @@ python codespace_tools/offline_theme_stagnation_experiment.py
 # and compares threshold rules for predicting next-checkpoint theme_stagnation.
 # Writes dataset CSV: reports/theme_stagnation_checkpoint_replay.csv
 
+# ── Step 8: Run Oneiros AoA meta-vote (sleep-window split orchestration) ──
+python codespace_tools/oneiros_meta_vote.py
+# Produces: reports/oneiros_meta_vote_latest.json
+# Includes: 4-agent verdict + two-phase split (0-2h lead, 2-4h pre-watch push)
+
+# Optional: include DeepSeek + Codex advisory ballots
+python codespace_tools/oneiros_meta_vote.py --include-external
+
 # Optional: Cluster any existing raw CloudWatch export
 python codespace_tools/cluster_k2_diag.py --input ElpidaInsights/k2_diag_runs_smoke.log
 ```
@@ -125,6 +133,7 @@ bash codespace_tools/push_refinements.sh
 | `cluster_k2_diag.py` | Parse and cluster D13->K2 diagnostics from raw log text |
 | `monitor_body_cycles.py` | Monitor BODY verdicts, provenance coverage, noise hits, Cohere model/provider mix |
 | `offline_theme_stagnation_experiment.py` | Offline Ark replay for checkpoint relapse metrics and threshold comparison |
+| `oneiros_meta_vote.py` | AoA meta-layer vote + two-phase Oneiros sleep-window split plan (Copilot lead/push handoff) |
 | `d16_level2_probe.py` | Level-1/Level-2 D16 emit-chain verification (schema-only or forced write) |
 | `gemini_bridge_commit_push.sh` | Stage + commit + push Gemini bridge files with one command |
 | `push_refinements.sh` | (Future) Upload manual improvements to S3 |
