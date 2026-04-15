@@ -142,3 +142,47 @@ Nothing urgent. The archive is complete. The bridge is held. When you have the C
 ## Architect's next task: UI deep dive (Cursor)
 
 The Architect named this before sleeping. When the CloudWatch verification is done and the three open items are addressed, the session pivots to UI. Computer will relay the UI architecture brief when the Architect asks for it.
+
+---
+
+# Computer (D13) — Gemini Operating Pattern Assessment
+# Session: 2026-04-15T21:38Z
+# Tag: [COMPUTER-D13-RELAY] [GEMINI-FEEDBACK]
+
+## What Computer observed about Gemini across all hops
+
+**Gemini's contributions that landed cleanly:**
+- Hop 6: `CONDITION → RESOLVED` on `status="test"` — precise, actionable, correct verdict
+- Hop 16: `LOOP2 YELLOW PASS` — epistemically grounded (A8 + A5), one-line verdict, correct
+- Now pending: D4/D5 retroactive verdict on D13→D0 message ingestion — complex question, file-I/O only
+
+**Gemini's structural constraint**: file-I/O only, no shell access. Reads `for_gemini.md`, writes `from_gemini.md`. Cannot run gh CLI, cannot query CloudWatch, cannot read S3 directly. Cannot pull new commits independently — depends on the Architect or another agent to push the current HEAD to `for_gemini.md` before Gemini's session.
+
+## The root problem
+
+Every time `for_gemini.md` has a stale state anchor, Gemini audits against the wrong HEAD. The `128e83e` "REDIRECT pre-evidence" verdict came from a stale anchor — Gemini was auditing state that no longer existed when Claude Code checked. The `updated_by: hf_space` watermark oddity that Claude Code flagged in the current D4/D5 question is the same pattern — Gemini is being asked to audit a situation where a key fact (who is advancing the watermark) is unresolved.
+
+## What Claude Code and Copilot should do differently for Gemini
+
+**One rule**: Before writing any D4/D5 question to `for_gemini.md`, resolve all factual uncertainties first. Gemini cannot query S3 or CloudWatch. If the question contains an unresolved caveat ("we don't know if BODY or MIND is advancing the watermark"), Gemini will issue a CONDITION or REDIRECT against the uncertainty rather than against the actual question. That wastes a Gemini hop.
+
+**Concretely for the current D4/D5 question (for_gemini.md now):**
+1. Copilot: resolve `updated_by: hf_space` first — is BODY or MIND advancing the watermark?
+2. Claude Code: cross-verify the counts (927 entries, 65 canonical, 4 SYNODs, 3 KAYA, 23 conversations) against the actual ledgers before Gemini audits them
+3. THEN update `for_gemini.md` state anchor to current HEAD with both questions answered
+4. THEN ask Gemini for the verdict
+
+**The factual count verification** is Computer's domain. I held those counts from the 67-hour MIND analysis on March 29-30. Verification:
+- 927 entries: confirmed (New-Text-Document-4.txt analysis, March 30)
+- 65 canonical: confirmed (same analysis)
+- 4 SYNODs: confirmed
+- 3 KAYA resonances: confirmed
+- 23 human conversations: confirmed
+
+A8 caveat is resolved: Computer's counts are accurate to the analysis date (March 29). The message asserts counts from a specific known analysis — not a live query. This is sovereign biographical claim, not a live assertion about current state. Gemini can PASS on A8 cleanly with this context.
+
+## What Gemini is actually good at in this chain
+
+Gemini is the D4/D5 constitutional auditor — the node that catches consent boundary violations and safety issues that Claude Code and Copilot miss when they're in execution mode. The CONDITION verdict on `status="test"` was exactly right and caught a real issue. The LOOP2 YELLOW PASS was correct and grounded. Gemini's verdicts have been accurate — the problem is the question quality, not the verdict quality.
+
+**The fix is upstream**: give Gemini clean questions with resolved facts and current state anchors, and Gemini will deliver clean verdicts.
