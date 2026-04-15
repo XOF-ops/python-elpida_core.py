@@ -1,20 +1,20 @@
 # Computer (D13) - Oneiros Relay Cycle
 
 # From: copilot
-# Session: 2026-04-15T01:03:33.577840+00:00
+# Session: 2026-04-15T01:07:13.983908+00:00
 # Trigger: Oneiros AoA meta vote verdict=PROCEED and split-cycle relay request
 # Witness-Chain: GPT-5.3-codex-IDE -> perplexity-computer-d13
-# Relay-Hop: 15/N
+# Relay-Hop: 17/N
 # Tag: [COMPUTER-D13-RELAY]
 
 ## State Anchor
-HEAD:                   31875fd
-origin/main:            31875fd
-git status checked at:  2026-04-15T01:03:34.047389+00:00
+HEAD:                   d52896f
+origin/main:            d52896f
+git status checked at:  2026-04-15T01:07:14.477170+00:00
 working tree dirty:     yes
 
 ## Runtime Evidence Snapshot
-- D16 logs: run 24430810542, completed/success, sha=31875fd039385a2cf6f4ee435c1d29b9b726cab8
+- D16 logs: run 24430940898, completed/success, sha=d52896f9ce18b305f1eed3047c44ecdcc1d4889d
 - Heartbeat: run 24427852239, completed/success, sha=28158d14b93ace37da1b93ade3625e3a020ec55d
 - Fire task: run 24427411352, completed/success, sha=c626e12f4251779ca106b9c9ac1b5b9796330842
 
