@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Elpida Observation Dashboard</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>Elpida Observation Dashboard</h1>
+    <div class="meta">
+      <span id="statusToken" class="token token-yellow">YELLOW</span>
+      <span id="generatedAt">waiting for snapshot</span>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="panel">
+      <h2>Layer 1: BODY</h2>
+      <div class="cards" id="bodyCards"></div>
+      <div class="chart-wrap">
+        <h3>P055 / KL Trend</h3>
+        <canvas id="p055Chart" width="720" height="180"></canvas>
+      </div>
+      <pre id="bodyRaw" class="raw"></pre>
+    </section>
+
+    <section class="panel">
+      <h2>Layer 2: MIND</h2>
+      <div class="cards" id="mindCards"></div>
+      <pre id="mindRaw" class="raw"></pre>
+    </section>
+
+    <section class="panel">
+      <h2>Layer 3: WORLD</h2>
+      <div class="cards" id="worldCards"></div>
+      <pre id="worldRaw" class="raw"></pre>
+    </section>
+
+    <section class="panel">
+      <h2>Layer 4: Bridge / Agent Status</h2>
+      <pre id="bridgeStatus" class="raw"></pre>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>Read-only observation surface. Live Audit interaction remains in <code>hf_deployment/elpidaapp/</code>.</p>
+  </footer>
+
+  <script src="./app.js"></script>
+</body>
+</html>

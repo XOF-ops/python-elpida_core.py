@@ -1,0 +1,74 @@
+name: Observation Dashboard Pages
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/10 * * * *"
+  push:
+    branches: [main]
+    paths:
+      - "observation_dashboard/**"
+      - "scripts/build_observation_snapshot.py"
+      - ".github/workflows/observation-dashboard-pages.yml"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: observation-dashboard-pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-north-1
+
+      - name: Pull heartbeat and world snapshot files
+        run: |
+          mkdir -p _snapshot/raw
+          aws s3 cp s3://elpida-body-evolution/body_heartbeat.json _snapshot/raw/body_heartbeat.json || true
+          aws s3 cp s3://elpida-consciousness/mind_heartbeat.json _snapshot/raw/mind_heartbeat.json || true
+          aws s3 cp s3://elpida-body-evolution/d16_executions.jsonl _snapshot/raw/d16_executions.jsonl || true
+
+          aws s3 ls s3://elpida-external-interfaces/d15/ --recursive \
+            | awk '{print $4}' \
+            | grep 'broadcast_.*\.json$' \
+            | tail -n 25 > _snapshot/raw/broadcast_keys.txt || true
+
+          if [ -f _snapshot/raw/broadcast_keys.txt ]; then
+            while IFS= read -r key; do
+              [ -z "$key" ] && continue
+              base="$(basename "$key")"
+              aws s3 cp "s3://elpida-external-interfaces/$key" "_snapshot/raw/$base" || true
+            done < _snapshot/raw/broadcast_keys.txt
+          fi
+
+      - name: Build normalized dashboard snapshot
+        run: python scripts/build_observation_snapshot.py
+
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload dashboard artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: observation_dashboard
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

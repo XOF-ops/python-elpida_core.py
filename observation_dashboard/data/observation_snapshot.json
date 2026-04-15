@@ -1,0 +1,36 @@
+{
+  "generated_at": "1970-01-01T00:00:00Z",
+  "status_token": "YELLOW",
+  "body": {
+    "cycle": "n/a",
+    "run_duration_seconds": "n/a",
+    "cycles_per_hour": "n/a",
+    "p055_kl_divergence": "n/a",
+    "p055_critical_threshold": 0.67,
+    "p055_history": [],
+    "hunger_level": "n/a",
+    "parliament_votes": {},
+    "top_axioms": [],
+    "circuit_breaker_status": "unknown",
+    "provider_breakdown": {}
+  },
+  "mind": {
+    "run_progress": "n/a",
+    "canonical_theme_distribution": {},
+    "d0_voice_frequency": "n/a",
+    "d9_voice_frequency": "n/a",
+    "synod_events": 0,
+    "kaya_events": 0,
+    "classification_breakdown": {}
+  },
+  "world": {
+    "d15_broadcast_count": 0,
+    "d16_pool_size": 0,
+    "discord_inbound_count": 0,
+    "rss_tension_count": 0
+  },
+  "bridge": {
+    "token": "YELLOW",
+    "note": "placeholder snapshot; run scheduled workflow for live data"
+  }
+}
