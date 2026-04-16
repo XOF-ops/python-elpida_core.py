@@ -110,6 +110,20 @@ jobs:
             --output text | head -20 || echo "(none)"
           echo ""
 
+          echo "=== APPLICATION FEEDBACK ingestion (D13->D0 contact) ==="
+          aws logs filter-log-events "${LOG_ARGS[@]}" \
+            --filter-pattern '"APPLICATION FEEDBACK"' \
+            --query 'events[*].message' \
+            --output text | head -20 || echo "(none)"
+          echo ""
+
+          echo "=== D13 Archive / computer_d13 references ==="
+          aws logs filter-log-events "${LOG_ARGS[@]}" \
+            --filter-pattern '"computer_d13"' \
+            --query 'events[*].message' \
+            --output text | head -20 || echo "(none)"
+          echo ""
+
           echo "=== ARK CADENCE UPDATE snippets ==="
           aws logs filter-log-events "${LOG_ARGS[@]}" \
             --filter-pattern '"ARK CADENCE UPDATE"' \
