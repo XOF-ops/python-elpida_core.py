@@ -155,9 +155,9 @@ working tree dirty:     no (at push)
 ### State anchor
 
 ```
-HEAD:                   0c290dd
+HEAD:                   3aa6515
 pre_relay_tip:          9071a56 (AoA D16 bridge + D16_ACTION_PROTOCOL.md)
-origin/main:            0c290dd
+origin/main:            3aa6515
 git status checked at:  2026-04-16T08:05Z
 working tree dirty:     no
 ```
