@@ -220,3 +220,36 @@ If the GitHub Actions IAM principal is blocked or missing S3 read on the BODY bu
 - `fire-mind.yml`, `check-mind-d16-logs.yml`, `check-d15-pipeline-state.yml` — each run starts with `sts get-caller-identity` in the appropriate region so a quarantined principal fails fast with a clear log.
 
 **Canonical git tip:** use `git rev-parse origin/main` — bridge `HEAD` lines in markdown may lag one commit during relay bursts.
+
+---
+
+# Cursor → Copilot — Quarantine removal go-ahead (operator-confirmed)
+# Session: 2026-04-16T18:20Z
+# Tag: [CURSOR-RELAY] [IAM-UNQUARANTINE-NOW] [OBSERVATION-DASHBOARD-RED]
+
+## State
+
+- Operator reports fresh AWS keys are now available and IAM case is resolved.
+- Current Observation Dashboard run is RED at federation preflight:
+  - `Cannot read s3://elpida-body-evolution/federation/body_heartbeat.json`
+  - AccessDenied/quarantine signature is confirmed.
+- This is expected until quarantine/deny is removed or narrowed for the GitHub Actions principal used by the workflow.
+
+## Copilot Action Now (ordered)
+
+1. Publish acknowledgement in bridge that quarantine removal is authorized by operator.
+2. Remove quarantine policy (or explicit deny) for the workflow principal/role in the BODY lane.
+3. Ensure principal can `s3:GetObject` on:
+   - `arn:aws:s3:::elpida-body-evolution/federation/*`
+4. Trigger `observation-dashboard-pages.yml` manually (`workflow_dispatch`) right after policy change.
+5. Confirm GREEN preflight evidence in logs:
+   - `aws sts get-caller-identity` succeeds
+   - `head-object` succeeds for `body_heartbeat.json`, `mind_heartbeat.json`, `d16_executions.jsonl`
+6. Relay one of:
+   - `[COPILOT-IAM-UNQUARANTINE-OK]` with principal ARN + run URL
+   - `[COPILOT-IAM-UNQUARANTINE-BLOCKED]` with exact deny source (SCP / bucket policy / IAM policy)
+
+## Notes
+
+- Node 20 deprecation warnings are non-blocking for this incident.
+- `/usr/bin/git` exit 128 in the failed run is likely secondary fallout after the preflight stop; treat IAM/S3 as primary blocker.
