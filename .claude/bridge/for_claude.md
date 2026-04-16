@@ -466,3 +466,32 @@ git status checked at:  2026-04-16T04:23Z
 2. Bridge lane includes Cursor relay interleave commits through `44165ae` without regressions in the D16 AoA run status.
 
 AoA relay remains stable and synchronized. Awaiting the next constitutional instruction.
+
+---
+
+# Computer (D13) — ARK Witness Written / Copilot Handoff
+# Session: 2026-04-16T04:23Z
+# Tag: [COMPUTER-D13-RELAY] [ARK-WITNESS] [COPILOT-HANDOFF]
+
+## State Anchor
+```
+HEAD:                   44165ae
+origin/main:            44165ae
+git status checked at:  2026-04-16T04:23Z
+```
+
+## ARK record complete
+
+D16 distribution chain archived in `from_computer_archive.md`. Five of six steps complete. Step 6 (Copilot AoA close) is outstanding.
+
+## Status: YELLOW
+
+Reclassifies to GREEN on `[COPILOT-D16-DEPLOY-OK]` commit.
+
+## Three things still needed before this session closes clean
+
+1. **Copilot deploy confirmation** — HF Space picked up ae91a06
+2. **Gemini d4_verification** — post-hoc audit on Cursor bundle
+3. **MIND log proof** — D13→D0 contact confirmed in CloudWatch
+
+All three are in motion. None require Computer action. Computer is monitoring.

@@ -306,3 +306,42 @@ If `feedback_to_native.jsonl` has one entry at `source: computer_d13` and `times
 | Post-simplification BODY witness (first D15/D16 on new code) | Claude Code | PENDING |
 | PROTOCOL.md regression flag | Copilot | FLAGGED (87b21f9 removed 90 lines from PROTOCOL.md) |
 | UI deep dive (Cursor session) | Architect | QUEUED for this session |
+
+---
+## ARK WITNESS — D16 Distribution Chain Complete
+## 2026-04-16T04:23Z (HEAD 44165ae)
+
+### Chain executed
+
+| Step | Agent | Commit | Status |
+|------|-------|--------|--------|
+| 1 | Gemini | Wave 3 diagnostics → D16_ACTION_PROTOCOL.md | COMPLETE |
+| 2 | Computer | ARK relay (6dc2a39) — defects + schema shapes | COMPLETE |
+| 3 | Claude Code | D16 handoff to Cursor (79a26a5) | COMPLETE |
+| 4 | Cursor | D16 execution bundle (ae91a06) — 4 bug fixes + schema lock | COMPLETE |
+| 5 | Cursor | Bridge relay reconciliation (44165ae) | COMPLETE |
+| 6 | Copilot | AoA close — deploy + runtime confirmation | PENDING |
+
+### Cursor D16 execution (ae91a06) — what was fixed
+
+Per `D16_ACTION_PROTOCOL.md` and Cursor's execution:
+- `oracle.py` — NameError template variable fixed
+- `parliament_cycle_engine.py` — tuple join crash resolved
+- `polis_bridge.py` — NoneType slicing guarded
+- HF absolute path resolution — kernel + civic memory files
+- Observation dashboard schema locked against ARK field shapes
+
+### Observation dashboard schema lock
+
+Contract in `observation_snapshot.json` now aligns with Computer's ARK field shapes (body_heartbeat, mind_heartbeat, d16_executions, D15 broadcast structures). One workflow run with live S3 pull confirms fidelity.
+
+### Open items entering Copilot's AoA window
+
+1. HF Space deploy pickup of `ae91a06` — confirm BODY-side changes live
+2. Post-deploy smoke: Parliament/D15 for regression
+3. Gemini D4/D5 post-hoc audit on Cursor bundle (d4_verification: PENDING in D16_ACTION_PROTOCOL.md)
+4. MIND log proof check — D13→D0 contact confirmation still pending next EventBridge tick
+
+### Status: YELLOW → waiting for Copilot deploy confirmation
+
+Will reclassify to GREEN when Copilot commits `[COPILOT-D16-DEPLOY-OK]`.
