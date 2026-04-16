@@ -1,53 +1,113 @@
-# D16 Execution — Claude Code → Cursor Handoff
+# Copilot → Cursor — Post-Deploy State Sync + Connection
 
-# From: claude_code (D0/D11/D16)
-# Session: 2026-04-16T03:45Z
-# Trigger: Computer relay 6dc2a39 [ARK] established chain of custody: Gemini → Computer → Claude → Cursor → Copilot
-# Tag: [D16-EXECUTION] [CURSOR-HANDOFF] [D4-VERIFIED-PENDING]
+# From: copilot (D0/D11/D16 at HEAD)
+# Session: 2026-04-16T22:30Z
+# Trigger: Operator "the next obvious step is Cursor" — getting connected after A7/A9 implementation push
+# Tag: [COPILOT-CURSOR-SYNC] [POST-DEPLOY] [CONNECTION]
 
 ## State Anchor
 
 ```
-HEAD:                   6dc2a39
-origin/main:            6dc2a39
-git status checked at:  2026-04-16T03:45Z
-D16_ACTION_PROTOCOL:    /workspaces/python-elpida_core.py/D16_ACTION_PROTOCOL.md (read this first)
+HEAD:                   6d129ec
+origin/main:            6d129ec
+git status checked at:  2026-04-16T22:25Z
+working tree:           clean
+BODY cycle:             139 (coherence 1.0, pathology CRITICAL, federation 1.2.0 — deploy pending)
+MIND cycle:             52 (mood breaking, recursion_warning true, theme_stagnation)
+Dashboard:              https://xof-ops.github.io/python-elpida_core.py/ (GREEN)
 ```
 
-## What this is
+## What shipped since your last session (6d129ec)
 
-This is a D16 (Agency) execution. The chain of custody:
+1. **GovernanceSacrificeTracker (A7)** — `sacrifice_tracker.py` extended with governance-layer tracker alongside existing Oracle WITNESS tracker. Names P6/P7/block_escape verdict conversions with axiom_cost/axiom_served.
+
+2. **ContradictionLog (A9)** — new `contradiction_log.py`. Preserves isolation PROCEEDs and held tensions as unresolved data (not errors).
+
+3. **S3 Isolation Gate** — `_probe_s3_connectivity()` in parliament_cycle_engine.py. HeadObject on kernel.json every 13 cycles. When isolated, PROCEEDs are logged as contradictions. Parliament sovereignty preserved.
+
+4. **federation_version 1.3.0** — heartbeat now carries `sacrifices`, `contradictions`, `s3_isolated` fields. MIND compat verified SAFE (MIND doesn't read body_heartbeat; all monitor readers use `.get()`).
+
+5. **Fixed** — `new_axiom` unbound variable risk + indentation bug in oracle advisory section.
+
+6. **IAM policy files** — `iam/aoa_federation_read_policy.json` and `iam/elpida_s3_sync_feedback_external_contact_policy.json` committed (Computer mandate, not yet applied to AWS).
+
+## BLOCKING: HF Space Deploy Failed
 
 ```
-Gemini (D4/D5 Wave 3 diagnostics + D16_ACTION_PROTOCOL.md)
-  ↓
-Computer (D13 ARK relay — biographical context + canonical schema shapes)
-  ↓
-Claude Code (this file — specification + handoff)
-  ↓
-YOU (Cursor — implement fixes + schema lock)
-  ↓
-Copilot (AoA close — deployment + S3 wiring)
+remote: Invalid username or password.
+fatal: Authentication failed for 'https://huggingface.co/spaces/z65nik/elpida-governance-layer/'
 ```
 
-You are the execution agent for this D16 action. After you push, Copilot picks up for deployment. Computer archives the result.
+`HF_TOKEN` in GitHub Secrets is expired/invalid. The GitHub Action successfully rsynced and committed, but can't push to HuggingFace. **Operator needs to rotate the token.** Until then, BODY runs on old code (federation 1.2.0, no sacrifice tracker, no contradiction log, no isolation gate).
 
-## Read first
+## Your D16 Execution Status
 
-1. `D16_ACTION_PROTOCOL.md` — the constitutional protocol for D16 executions. All actions require a `d4_verification` block.
-2. `CLAUDE.md` — project orientation
-3. `.claude/bridge/from_computer_archive.md` — session state
+Your previous session (ae91a06) fixed:
+- oracle.py tuple join (`_join_str_seq()` helper)
+- polis_bridge.py None-safe rationale slicing
+- parliament_cycle_engine.py audit prescription join + HF path resolution
+- ui.py reversal node markdown join
+- observation_snapshot.json schema lock against ARK field shapes
 
-## Task 1 — Four Python bug fixes (Gemini Wave 3 defects)
+Those fixes are in HEAD and were deployed to HF Space at least once (the successful deploy was `body: che...` run). The D4 verification status was SUBMITTED_PENDING_GEMINI.
 
-These were identified by Gemini's diagnostics and confirmed by Computer's biographical context from the ARK. The governance simplification bundle at `9f3ee52` removed 303 lines and introduced these edge cases.
+## Observation Dashboard
 
-### Bug 1: oracle.py NameError — template variable missing
+Your Layer 1 build is live and GREEN:
+- **URL:** https://xof-ops.github.io/python-elpida_core.py/
+- **Workflow:** `observation-dashboard-pages.yml` — S3 pulls working
+- **Data:** `observation_snapshot.json` being built from live heartbeats
 
-**File:** `hf_deployment/elpidaapp/oracle.py`
-**Symptom:** NameError at runtime — a template variable is referenced but never defined in scope.
-**Context (Computer):** Consistent with the `llm_synthesis: success: false` pattern in D15 broadcasts since March. The missing template variable is likely the root cause of synthesis failures.
-**Fix:** Find the undefined variable reference, trace where it should come from, and define or pass it correctly.
+**Next layers (your earlier proposal):**
+- Layer 2: MIND observation (journal distribution, D0/D9 voice, SYNOD/KAYA)
+- Layer 3: WORLD feed (D15 broadcasts, Discord, D16 pool)
+- Layer 4: Bridge/agent status (parse `.claude/bridge/` mtime + headers)
+- Layer 5: Scale selector (single cycle → 82h aggregation)
+
+## What's New for Your Dashboard
+
+The federation 1.3.0 heartbeat (once deployed) will carry:
+
+```json
+{
+  "sacrifices": {"total": N, "by_type": {...}, "axioms_sacrificed": [...], "axioms_served": [...]},
+  "contradictions": {"total": N, "by_type": {...}, "unresolved": N},
+  "s3_isolated": false
+}
+```
+
+These are ready to wire into Layer 1 when they appear. `build_observation_snapshot.py` will need:
+```python
+"sacrifices": body.get("sacrifices", {}),
+"contradictions": body.get("contradictions", {}),
+"s3_isolated": body.get("s3_isolated", False),
+```
+
+## Connection Topology
+
+```
+Copilot (Codespaces/Linux)  ←→  Cursor (Windows/C:\Users\GusZ\)
+         ↕                              ↕
+   Claude Code (terminal)          Cursor Agent (UI)
+         ↕                              ↕
+     for_cursor.md ──────────→ (Cursor reads on session start)
+     from_cursor.md ←────────── (Cursor writes on session end)
+```
+
+Both share origin/main. Cursor pulls, works, pushes. Copilot pulls, works, pushes. Bridge files are the coordination layer.
+
+## Open Items (Prioritized)
+
+1. **HF_TOKEN rotation** — blocks all BODY deploys (operator action)
+2. **Dashboard Layer 2** — MIND observation panel (your domain)  
+3. **Dashboard new fields** — wire sacrifices/contradictions/s3_isolated into Layer 1
+4. **Gemini D4/D5 audit** — bridge file written, relay pipeline not yet operational
+5. **IAM elpida-gh-heartbeat** — policies in repo, not applied to AWS
+6. **MIND theme_stagnation** — threshold 7→9 change staged, uncertain if in ECS image
+
+## Status Token
+
+**YELLOW** — code pushed to origin/main, BODY deploy blocked on HF_TOKEN, dashboard GREEN, MIND running but stagnating.
 
 ### Bug 2: tuple join crash — `expected str, got tuple`
 
