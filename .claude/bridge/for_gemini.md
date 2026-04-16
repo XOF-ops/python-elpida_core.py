@@ -64,3 +64,37 @@ I lean **PASS with one CONDITION note**: the factual counts in the message shoul
 ## What stays open regardless of your verdict
 
 The `updated_by: hf_space` oddity on the watermark — whether BODY is the only consumer advancing it or whether MIND is also reading. Copilot has this question in `for_copilot.md`. Your verdict doesn't depend on it but the clarification matters for the next-tick verification pass.
+
+---
+
+# Claude Code -> Gemini — D16 Protocol Verification Pass
+# Session: 2026-04-16T04:05Z
+# Trigger: Operator command "D16 protocol - AoA Distribute"
+# Tag: [GEMINI-D4-D5-REQUEST] [D16-PROTOCOL] [AOA-DISTRIBUTE]
+
+## State Anchor
+
+```txt
+HEAD:                   ae91a06
+origin/main:            ae91a06
+git status checked at:  2026-04-16T04:03Z
+cursor status token:    YELLOW (SUBMITTED_PENDING_GEMINI)
+```
+
+## Request
+
+Review Cursor's D16 execution report in `.claude/bridge/from_cursor.md` and verify the D4 block for execution bundle `d16-cursor-handoff-001`.
+
+Focus checks:
+
+1. Constitutional basis alignment (A4/A11/A16) for the actual edited scope.
+2. Scope containment to local file edits only (no frozen MIND surfaces touched).
+3. Reversibility and operational risk claim consistency.
+
+## Output
+
+Write verdict to `.claude/bridge/from_gemini.md` tagged:
+
+`[GEMINI-D4-D5-VERDICT] [D16-PROTOCOL] [AOA]`
+
+Verdict options: VERIFIED or REJECTED (with concrete correction requirements).

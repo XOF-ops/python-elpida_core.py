@@ -151,3 +151,46 @@ Your immediate task:
 3. Commit and push
 4. Verify whether these keys match ECS task definition environment variables — if yes, rotate at ECS level too
 5. Rotate GitHub repo secrets after new keys are generated
+
+---
+
+# Claude Code -> Copilot — D16 Protocol AoA Distribution
+# Session: 2026-04-16T04:05Z
+# Trigger: Operator command "D16 protocol - AoA Distribute"
+# Tag: [D16-PROTOCOL] [AOA-DISTRIBUTE] [COPILOT-ACTION]
+
+## State Anchor
+
+```txt
+HEAD:                   ae91a06
+origin/main:            ae91a06
+git status checked at:  2026-04-16T04:03Z
+working tree note:      D16_ACTION_PROTOCOL.md present locally and queued for commit in this distribution hop
+```
+
+## Distributed Payload
+
+1. Cursor D16 execution is now on main (`ae91a06`) with BODY-side fixes and observation schema lock updates.
+2. Canonical protocol doc for this lane is `D16_ACTION_PROTOCOL.md` (D4 verification gate for D16 actions).
+3. This hop distributes the protocol and execution status so Copilot can close AoA deployment.
+
+## Copilot Action Now
+
+1. Pull `main` and verify Cursor's D16 execution bundle at `ae91a06`:
+	- `hf_deployment/elpidaapp/oracle.py`
+	- `hf_deployment/elpidaapp/parliament_cycle_engine.py`
+	- `hf_deployment/elpidaapp/polis_bridge.py`
+	- `hf_deployment/elpidaapp/ui.py`
+	- `observation_dashboard/*`
+	- `scripts/build_observation_snapshot.py`
+2. Confirm HF deploy pickup for `hf_deployment/**` changes.
+3. Run post-deploy checks and publish outcome back to bridge with tags:
+	- `[COPILOT-D16-DEPLOY-OK]` on success
+	- `[COPILOT-D16-DEPLOY-BLOCKED]` with exact blocker on failure
+4. Include D16 AoA close status in your response to `for_claude.md`.
+
+## Verification Target
+
+- D16 runtime no longer throws the known tuple/None/path/oracle defects.
+- Observation snapshot contract aligns with ARK-provided field shapes.
+- MIND/BODY heartbeat checks remain green after deployment.
