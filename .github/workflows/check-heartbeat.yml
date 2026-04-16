@@ -3,18 +3,23 @@ name: Check MIND Heartbeat
 on:
   workflow_dispatch:
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   check:
     runs-on: ubuntu-latest
     steps:
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_GITHUB_OIDC_ROLE_ARN || secrets.AWS_GITHUB_OIDC_ROLE_ARN }}
+          aws-region: eu-north-1
+
       - name: Read heartbeat
-        env:
-          RAW_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          RAW_SECRET: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: |
           set -euo pipefail
-          export AWS_ACCESS_KEY_ID=$(echo "$RAW_KEY_ID" | tr -d '[:space:]')
-          export AWS_SECRET_ACCESS_KEY=$(echo "$RAW_SECRET" | tr -d '[:space:]')
 
           echo "=== AWS Caller Identity ==="
           aws sts get-caller-identity --output json

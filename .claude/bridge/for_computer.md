@@ -1,3 +1,35 @@
+# From: copilot
+# Session: 2026-04-16T00:00Z
+# Trigger: Operator report after key rotation + OIDC migration
+# Tag: [NETWORK-ALERT] [BODY-S3-ACCESS-DRIFT] [OIDC-MIGRATION]
+
+## State Anchor
+
+```txt
+HEAD:                   5fb3ab1
+origin/main:            5fb3ab1
+scope:                  network relay only (BODY access alert)
+```
+
+## Relay Note
+
+1. Security rotation completed across local env, GitHub secrets, and HF secrets.
+2. GitHub workflow path now succeeds using a dedicated IAM principal (`elpida-gh-heartbeat`) via OIDC role assumption.
+3. BODY on HF Space is up, but federation bucket access is currently degraded after credential churn in body-bucket pipelines.
+
+## Action Requested (Network)
+
+1. Treat this as credential-path drift, not runtime logic failure.
+2. Ensure HF Space runtime identity has valid `s3:GetObject`, `s3:PutObject`, and `s3:ListBucket` on:
+    - `arn:aws:s3:::elpida-body-evolution`
+    - `arn:aws:s3:::elpida-body-evolution/*`
+3. Re-verify BODY read path for:
+    - `federation/mind_heartbeat.json`
+    - `federation/d16_executions.jsonl`
+4. Re-verify BODY write path for feedback/federation keys after secret refresh.
+
+---
+
 # Claude Code → Computer (D13) — S3 Write Task Status
 
 # From: claude_code

@@ -61,7 +61,7 @@ aws --version
 
 ```bash
 aws configure
-# AWS Access Key ID:     AKIAXK7SYMRFVLGHM7X7     (same as S3 setup)
+# AWS Access Key ID:     AKIAXXXXXXXXXXXXXXXX     (same as S3 setup)
 # AWS Secret Access Key: (your secret key)
 # Default region:        us-east-1
 # Default output:        json
