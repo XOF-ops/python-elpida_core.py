@@ -341,10 +341,11 @@ Both need the `HF_TOKEN` GitHub secret.
    commands are:
    ```bash
    cd hf_deployment
-   ELPIDA_API_KEYS="pro_test123" uvicorn elpidaapp.api:app --port 8765
+    ELPIDA_TEST_KEY="pro_test123"
+    ELPIDA_API_KEYS="$ELPIDA_TEST_KEY" uvicorn elpidaapp.api:app --port 8765
    # In another terminal:
    curl -X POST http://localhost:8765/v1/audit \
-     -H "X-API-Key: pro_test123" -H "Content-Type: application/json" \
+       -H "X-API-Key: $ELPIDA_TEST_KEY" -H "Content-Type: application/json" \
      -d '{"action":"test action","depth":"quick"}'
    ```
 

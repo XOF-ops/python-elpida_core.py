@@ -216,8 +216,8 @@ def run_level2(args: argparse.Namespace) -> int:
     after_d16_rows = _read_jsonl_all(s3, BUCKET_BODY, FED_D16_EXECUTIONS_KEY)
     after_d16_count = len(after_d16_rows)
 
-    d16_tail = _tail_jsonl(s3, BUCKET_BODY, FED_D16_EXECUTIONS_KEY, tail_bytes=256 * 1024)
-    body_tail = _tail_jsonl(s3, BUCKET_BODY, FED_BODY_DECISIONS_KEY, tail_bytes=2 * 1024 * 1024)
+    d16_tail = _tail_jsonl(s3, BUCKET_BODY, FED_D16_EXECUTIONS_KEY, tail_bytes=262_144)
+    body_tail = _tail_jsonl(s3, BUCKET_BODY, FED_BODY_DECISIONS_KEY, tail_bytes=2_097_152)
 
     found_d16 = None
     for row in reversed(d16_tail):

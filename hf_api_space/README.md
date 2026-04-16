@@ -16,15 +16,19 @@ Constitutional AI governance-as-a-service. Every decision audited by an 11-axiom
 ## Quick Start
 
 ```bash
+ELPIDA_API_KEY="YOUR_KEY"
+
 # Free tier — kernel + parliament, no LLM cost
 curl -X POST https://z65nik-elpida-api.hf.space/v1/audit \
-  -H "X-API-Key: YOUR_KEY" \
+  -H "X-API-Key: $ELPIDA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"action": "Deploy facial recognition in public schools", "depth": "quick"}'
 
 # Pro tier — full parliament + multi-LLM contested deliberation
+ELPIDA_API_KEY="YOUR_PRO_KEY"
+
 curl -X POST https://z65nik-elpida-api.hf.space/v1/audit \
-  -H "X-API-Key: YOUR_PRO_KEY" \
+  -H "X-API-Key: $ELPIDA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"action": "Deploy facial recognition in public schools", "depth": "full"}'
 ```
