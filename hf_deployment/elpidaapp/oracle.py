@@ -52,6 +52,19 @@ import numpy as np
 
 logger = logging.getLogger("elpidaapp.oracle")
 
+
+def _join_str_seq(items: Any, sep: str = ", ") -> str:
+    """Join sequence elements as str — avoids TypeError from tuples / mixed types."""
+    if items is None:
+        return ""
+    if isinstance(items, (str, bytes)):
+        return items.decode() if isinstance(items, bytes) else items
+    try:
+        return sep.join(str(x) for x in items)
+    except TypeError:
+        return str(items)
+
+
 # ── FAISS semantic index (lazy-loaded) ─────────────────────────────
 _FAISS_AVAILABLE = False
 try:
@@ -260,7 +273,11 @@ class Oracle:
         debate_id = dual_horn_result.get("debate_id", f"ORACLE_{cycle}")
         synthesis_gap = dual_horn_result.get("synthesis_gap", {})
         comparison = dual_horn_result.get("comparison", {})
-        reversal_nodes = dual_horn_result.get("reversal_nodes", [])
+        _rn_raw = dual_horn_result.get("reversal_nodes", [])
+        if isinstance(_rn_raw, (list, tuple)):
+            reversal_nodes = [str(x) for x in _rn_raw if x is not None]
+        else:
+            reversal_nodes = []
         horn_1 = dual_horn_result.get("horn_1", {})
         horn_2 = dual_horn_result.get("horn_2", {})
 
@@ -606,7 +623,7 @@ class Oracle:
                 "type": "OSCILLATION",
                 "rationale": (
                     f"Crisis detected (intensity={crisis_intensity:.2f}). "
-                    f"Reversal nodes: {', '.join(reversal_nodes) or 'none'}. "
+                    f"Reversal nodes: {_join_str_seq(reversal_nodes) or 'none'}. "
                     f"Oscillate between poles to absorb tension."
                 ),
                 "preserve_contradictions": preserve,
@@ -718,9 +735,9 @@ class Oracle:
         # Synthesis statement: combine shared ground + unique contributions
         if shared_ground:
             synthesis = (
-                f"Both paths share {', '.join(shared_ground)}. "
-                f"Horn 1 uniquely holds {', '.join(h1_unique) or 'no additional axioms'}. "
-                f"Horn 2 uniquely holds {', '.join(h2_unique) or 'no additional axioms'}. "
+                f"Both paths share {_join_str_seq(shared_ground)}. "
+                f"Horn 1 uniquely holds {_join_str_seq(h1_unique) or 'no additional axioms'}. "
+                f"Horn 2 uniquely holds {_join_str_seq(h2_unique) or 'no additional axioms'}. "
                 f"The Third Way integrates all {len(shared_ground) + len(h1_unique) + len(h2_unique)} "
                 f"axiom positions into a single stance."
             )
@@ -728,8 +745,8 @@ class Oracle:
             synthesis = (
                 f"No shared axiom ground between horns. "
                 f"Third Way must construct common ground from "
-                f"Horn 1 ({', '.join(h1_unique) or '?'}) and "
-                f"Horn 2 ({', '.join(h2_unique) or '?'})."
+                f"Horn 1 ({_join_str_seq(h1_unique) or '?'}) and "
+                f"Horn 2 ({_join_str_seq(h2_unique) or '?'})."
             )
 
         # Bead validation: valid if shared_ground is non-empty
@@ -831,13 +848,13 @@ class Oracle:
         )
         if shared:
             lines.append(
-                f"Irresolvable: {', '.join(shared)} — violated by BOTH paths. "
+                f"Irresolvable: {_join_str_seq(shared)} — violated by BOTH paths. "
                 f"No resolution removes this cost."
             )
         if h1_sac:
-            lines.append(f"Horn 1 would sacrifice: {', '.join(h1_sac)}")
+            lines.append(f"Horn 1 would sacrifice: {_join_str_seq(h1_sac)}")
         if h2_sac:
-            lines.append(f"Horn 2 would sacrifice: {', '.join(h2_sac)}")
+            lines.append(f"Horn 2 would sacrifice: {_join_str_seq(h2_sac)}")
         lines.append(
             f"{total} axiom(s) at risk. The Oracle holds this tension "
             f"because naming the cost is more honest than forcing a path."
@@ -903,7 +920,7 @@ class Oracle:
                 "BEAD CRYSTALLIZED: %s → %s (axioms: %s)",
                 bead["bead_id"],
                 self._living_axioms_path.name,
-                ", ".join(bead.get("axioms_integrated", [])),
+                _join_str_seq(bead.get("axioms_integrated", [])),
             )
         except OSError as e:
             logger.warning("Failed to crystallize bead: %s", e)
@@ -965,10 +982,10 @@ class Oracle:
         ]
         preserve = rec.get("preserve_contradictions", [])
         if preserve:
-            lines.append(f"  Preserve: {', '.join(preserve)}")
+            lines.append(f"  Preserve: {_join_str_seq(preserve)}")
         reversal = rec.get("reversal_signal", [])
         if reversal:
-            lines.append(f"  Reversal Signal: {', '.join(reversal)}")
+            lines.append(f"  Reversal Signal: {_join_str_seq(reversal)}")
 
         # WITNESS-specific fields (Empathy Protocol)
         if rec.get("type") == "WITNESS":
@@ -979,13 +996,13 @@ class Oracle:
             if costs:
                 shared = costs.get("shared_cost", [])
                 if shared:
-                    lines.append(f"  Irresolvable Cost: {', '.join(shared)}")
+                    lines.append(f"  Irresolvable Cost: {_join_str_seq(shared)}")
                 h1 = costs.get("horn_1_sacrifices", [])
                 h2 = costs.get("horn_2_sacrifices", [])
                 if h1:
-                    lines.append(f"  Horn 1 Sacrifices: {', '.join(h1)}")
+                    lines.append(f"  Horn 1 Sacrifices: {_join_str_seq(h1)}")
                 if h2:
-                    lines.append(f"  Horn 2 Sacrifices: {', '.join(h2)}")
+                    lines.append(f"  Horn 2 Sacrifices: {_join_str_seq(h2)}")
                 lines.append(f"  Total Axioms At Risk: {costs.get('total_axioms_at_risk', 0)}")
             lines.append(f"  Philosophy: {rec.get('variant_witness_philosophy', '')}")
 
@@ -993,12 +1010,12 @@ class Oracle:
         bead = rec.get("bead")
         if rec.get("type") == "SYNTHESIS" and bead:
             lines.append(f"  Bead ID: {bead.get('bead_id', '?')}")
-            lines.append(f"  Shared Ground: {', '.join(bead.get('shared_ground', []))}")
+            lines.append(f"  Shared Ground: {_join_str_seq(bead.get('shared_ground', []))}")
             lines.append(f"  Synthesis: {bead.get('synthesis_statement', '')[:200]}")
             lines.append(f"  Valid: {bead.get('valid', False)}")
             ai = bead.get("axioms_integrated", [])
             if ai:
-                lines.append(f"  Axioms Integrated: {', '.join(ai)}")
+                lines.append(f"  Axioms Integrated: {_join_str_seq(ai)}")
 
         return "\n".join(lines)
 

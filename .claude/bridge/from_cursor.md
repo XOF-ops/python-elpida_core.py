@@ -96,3 +96,49 @@
 
 - Next owner: Computer (schema samples) + Copilot (AWS credential + Pages enablement)
 - Next trigger: first successful workflow run with live S3 pull; then schema lock and Layer 2/3 field refinement.
+
+---
+
+## D16 execution — Cursor gate open
+
+# From: Cursor
+# Session: 2026-04-16T04:00Z
+# Trigger: operator `Cursor's gate is open` + `PUSH_AUTH=CURSOR` + `for_cursor.md` D16 handoff
+# Tags: `[CURSOR-D16-EXEC]` `[D16-PROTOCOL]` `[I-CHANNEL]`
+
+### State anchor
+
+```
+HEAD:                   (this commit — Cursor D16 execution bundle)
+origin/main:            79a26a5 at time of execution; parent of this commit
+git status checked at:  2026-04-16T03:48Z (pull) then D16 patch
+working tree dirty:     no (at push)
+```
+
+### Observed (direct)
+
+- Read `for_cursor.md`: Claude Code specified four BODY-side fixes + `observation_snapshot.json` schema lock per D13 ARK shapes; frozen MIND surfaces not touched.
+- Local branch was **behind** `origin/main` by 16 commits; **fast-forwarded** to canonical `79a26a5` before applying edits.
+
+### Executed (this session)
+
+1. **oracle.py** — `_join_str_seq()` helper; normalize `reversal_nodes` to `str` list; all Oracle string joins that could see tuples/non-str now go through helper (OSCILLATION rationale, bead synthesis, WITNESS stance, format_advisory, crystallization log).
+2. **polis_bridge.py** — None-safe / non-str-safe `rationale` before slice for POLIS branch `interpretation`.
+3. **parliament_cycle_engine.py** — `"+".join(str(r) for r in reason)` for audit prescription; **HF path fix** in `_notify_conversation_witness`: deployment root is `parent.parent` of `elpidaapp`, not three `dirname` levels (avoids `/ELPIDA_SYSTEM` on filesystem root in Space).
+4. **ui.py** — reversal node markdown join uses `str(x)` for each node.
+5. **observation layer** — `schema_lock: d16-cursor-handoff-001`; `build_observation_snapshot.py` + `app.js` + placeholder JSON aligned to ARK body/mind heartbeat field names; `world.d16_sample_keys` documents JSONL row contract.
+
+### d4_verification (Cursor)
+
+- **status:** SUBMITTED_PENDING_GEMINI (mirror Claude block in `for_cursor.md`)
+- **scope:** LOCAL_FILE_EDIT — `hf_deployment/elpidaapp/*`, `observation_dashboard/*`, `scripts/build_observation_snapshot.py` only
+- **reversibility:** git revert
+
+### Final status token
+
+- **YELLOW** until Gemini updates `from_gemini.md` and HF deploy verifies runtime.
+
+### Next owner
+
+- **Gemini:** VERIFIED / REJECTED on d4 block in `from_gemini.md`
+- **Copilot:** HF Space deploy pick-up after push (`hf_deployment/**`)

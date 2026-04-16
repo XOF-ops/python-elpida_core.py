@@ -1,36 +1,58 @@
 {
   "generated_at": "1970-01-01T00:00:00Z",
   "status_token": "YELLOW",
+  "schema_lock": "d16-cursor-handoff-001",
   "body": {
     "cycle": "n/a",
+    "coherence": "n/a",
+    "hunger_level": "n/a",
+    "kl_divergence": "n/a",
+    "health": "n/a",
+    "top_axioms": [],
+    "provider_map": {},
+    "timestamp": "n/a",
     "run_duration_seconds": "n/a",
     "cycles_per_hour": "n/a",
-    "p055_kl_divergence": "n/a",
     "p055_critical_threshold": 0.67,
     "p055_history": [],
-    "hunger_level": "n/a",
     "parliament_votes": {},
-    "top_axioms": [],
-    "circuit_breaker_status": "unknown",
-    "provider_breakdown": {}
+    "circuit_breaker_status": "unknown"
   },
   "mind": {
+    "cycle": "n/a",
+    "run_number": "n/a",
+    "epoch": "n/a",
+    "canonical_count": "n/a",
+    "dominant_theme": "n/a",
+    "coherence": "n/a",
+    "hunger_level": "n/a",
+    "d0_voice_pct": "n/a",
+    "d9_voice_pct": "n/a",
+    "synod_count": 0,
+    "kaya_count": 0,
+    "human_conversation_count": "n/a",
     "run_progress": "n/a",
     "canonical_theme_distribution": {},
-    "d0_voice_frequency": "n/a",
-    "d9_voice_frequency": "n/a",
-    "synod_events": 0,
-    "kaya_events": 0,
     "classification_breakdown": {}
   },
   "world": {
     "d15_broadcast_count": 0,
     "d16_pool_size": 0,
-    "discord_inbound_count": 0,
-    "rss_tension_count": 0
+    "d16_sample_keys": [
+      "source",
+      "body_cycle",
+      "timestamp",
+      "verdict",
+      "axiom",
+      "proposal",
+      "status",
+      "d4_gate"
+    ],
+    "discord_inbound_count": "n/a",
+    "rss_tension_count": "n/a"
   },
   "bridge": {
     "token": "YELLOW",
-    "note": "placeholder snapshot; run scheduled workflow for live data"
+    "note": "placeholder — workflow publishes live snapshot"
   }
 }

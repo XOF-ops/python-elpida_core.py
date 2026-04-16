@@ -48,29 +48,65 @@ def build() -> dict[str, Any]:
     d16_count = read_jsonl_count(RAW_DIR / "d16_executions.jsonl")
     d15_files = glob.glob(str(RAW_DIR / "broadcast_*.json"))
 
+    # Canonical BODY heartbeat (D13 ARK lock) + legacy aliases
+    mind_cycle = mind.get("cycle")
+    run_progress = (
+        f"{mind_cycle}/55" if mind_cycle is not None else pick(
+            mind, ["run_progress", "cycle_progress"], "n/a"
+        )
+    )
+
     snapshot: dict[str, Any] = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "status_token": "YELLOW",
+        "schema_lock": "d16-cursor-handoff-001",
         "body": {
-            "cycle": pick(body, ["cycle", "cycle_number"]),
-            "run_duration_seconds": pick(body, ["run_duration_seconds", "run_duration_s"]),
-            "cycles_per_hour": pick(body, ["cycles_per_hour", "cycle_rate_h"]),
-            "p055_kl_divergence": pick(body, ["p055_kl_divergence", "kl_divergence"]),
+            "cycle": body.get("cycle", pick(body, ["cycle_number"], "n/a")),
+            "coherence": body.get("coherence", "n/a"),
+            "hunger_level": body.get("hunger_level", pick(body, ["hunger"], "n/a")),
+            "kl_divergence": body.get("kl_divergence", pick(
+                body, ["p055_kl_divergence"], "n/a"
+            )),
+            "health": body.get("health", pick(body, ["overall_health"], "n/a")),
+            "top_axioms": body.get("top_axioms", pick(body, ["axiom_dominance"], [])),
+            "provider_map": body.get("provider_map", pick(
+                body, ["provider_breakdown", "provider_usage"], {}
+            )),
+            "timestamp": body.get("timestamp", "n/a"),
+            "run_duration_seconds": pick(body, ["run_duration_seconds", "run_duration_s"], "n/a"),
+            "cycles_per_hour": pick(body, ["cycles_per_hour", "cycle_rate_h"], "n/a"),
             "p055_critical_threshold": pick(body, ["p055_critical_threshold"], 0.67),
             "p055_history": pick(body, ["p055_history", "kl_history"], []),
-            "hunger_level": pick(body, ["hunger_level", "hunger"]),
             "parliament_votes": pick(body, ["parliament_votes", "vote_breakdown"], {}),
-            "top_axioms": pick(body, ["top_axioms", "axiom_dominance"], []),
-            "circuit_breaker_status": pick(body, ["circuit_breaker_status", "breaker_status"], "unknown"),
-            "provider_breakdown": pick(body, ["provider_breakdown", "provider_usage"], {}),
+            "circuit_breaker_status": pick(
+                body, ["circuit_breaker_status", "breaker_status"], "unknown"
+            ),
         },
         "mind": {
-            "run_progress": pick(mind, ["run_progress", "cycle_progress"]),
-            "canonical_theme_distribution": pick(mind, ["canonical_theme_distribution", "themes"], {}),
-            "d0_voice_frequency": pick(mind, ["d0_voice_frequency", "d0_frequency"]),
-            "d9_voice_frequency": pick(mind, ["d9_voice_frequency", "d9_frequency"]),
-            "synod_events": pick(mind, ["synod_events", "synod_count"], 0),
-            "kaya_events": pick(mind, ["kaya_events", "kaya_count"], 0),
+            "cycle": mind.get("cycle", pick(mind, ["mind_cycle"], "n/a")),
+            "run_number": mind.get("run_number", "n/a"),
+            "epoch": mind.get("epoch", mind.get("mind_epoch", "n/a")),
+            "canonical_count": mind.get("canonical_count", "n/a"),
+            "dominant_theme": mind.get("dominant_theme", pick(
+                mind, ["canonical_theme"], "n/a"
+            )),
+            "coherence": mind.get("coherence", "n/a"),
+            "hunger_level": mind.get("hunger_level", "n/a"),
+            "d0_voice_pct": mind.get("d0_voice_pct", pick(
+                mind, ["d0_voice_frequency", "d0_frequency"], "n/a"
+            )),
+            "d9_voice_pct": mind.get("d9_voice_pct", pick(
+                mind, ["d9_voice_frequency", "d9_frequency"], "n/a"
+            )),
+            "synod_count": mind.get("synod_count", pick(mind, ["synod_events"], 0)),
+            "kaya_count": mind.get("kaya_count", pick(mind, ["kaya_events"], 0)),
+            "human_conversation_count": mind.get(
+                "human_conversation_count", pick(mind, ["human_conversations"], "n/a")
+            ),
+            "run_progress": run_progress,
+            "canonical_theme_distribution": pick(
+                mind, ["canonical_theme_distribution", "themes"], {}
+            ),
             "classification_breakdown": pick(
                 mind, ["classification_breakdown", "canonical_standard_pending"], {}
             ),
@@ -78,6 +114,10 @@ def build() -> dict[str, Any]:
         "world": {
             "d15_broadcast_count": len(d15_files),
             "d16_pool_size": d16_count,
+            "d16_sample_keys": [
+                "source", "body_cycle", "timestamp", "verdict", "axiom",
+                "proposal", "status", "d4_gate",
+            ],
             "discord_inbound_count": "n/a",
             "rss_tension_count": "n/a",
         },

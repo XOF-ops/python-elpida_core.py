@@ -304,13 +304,20 @@ class PolisBridge:
                 )
 
             rec_type = rec.get("type", "UNKNOWN") if isinstance(rec, dict) else "UNKNOWN"
-            rationale = rec.get("rationale", "") if isinstance(rec, dict) else str(rec)
+            if isinstance(rec, dict):
+                _raw_r = rec.get("rationale", "")
+                rationale = _raw_r if isinstance(_raw_r, str) else (
+                    "" if _raw_r is None else str(_raw_r)
+                )
+            else:
+                rationale = "" if rec is None else str(rec)
+            rationale_snip = (rationale or "")[:300]
 
             # Create POLIS branch
             branch = {
                 "branch_name": f"ELPIDA_{rec_type}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}",
                 "interpretation": (
-                    f"Elpida Oracle ({rec_type}): {rationale[:300]}"
+                    f"Elpida Oracle ({rec_type}): {rationale_snip}"
                 ),
                 "created_by": agent_id,
                 "timestamp": datetime.now(timezone.utc).isoformat(),

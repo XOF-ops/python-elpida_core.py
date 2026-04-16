@@ -1512,7 +1512,8 @@ with tab_gov:
         _reversals_fw = _result_fw.get("reversal_nodes", [])
         if _reversals_fw:
             st.markdown(
-                f"**⟲ Reversal nodes** (the collision axis): `{'`, `'.join(_reversals_fw)}`"
+                f"**⟲ Reversal nodes** (the collision axis): "
+                f"`{'`, `'.join(str(x) for x in _reversals_fw)}`"
             )
             st.caption(
                 "Reversal nodes voted opposite directions on the constitutional self vs the "

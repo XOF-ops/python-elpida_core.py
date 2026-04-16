@@ -1899,17 +1899,20 @@ class ParliamentCycleEngine:
         fire-and-forget notification — failure doesn't block the cycle.
         """
         try:
-            import sys, os
-            elpida_sys = os.path.join(
-                os.path.dirname(os.path.dirname(os.path.dirname(
-                    os.path.abspath(__file__)
-                ))),
-                "ELPIDA_SYSTEM",
-            )
-            if elpida_sys not in sys.path:
-                sys.path.insert(0, os.path.dirname(elpida_sys))
+            import sys
+            # HF Space layout: /app/elpidaapp/this_file → repo root is
+            # parent.parent (/app).  Using three dirname levels walks past
+            # the deployment root to filesystem root — breaks import.
+            _here = Path(__file__).resolve().parent
+            deploy_root = _here.parent
+            elpida_sys = deploy_root / "ELPIDA_SYSTEM"
+            if not elpida_sys.is_dir():
+                elpida_sys = deploy_root.parent / "ELPIDA_SYSTEM"
+            elpida_sys_str = str(elpida_sys)
+            if elpida_sys_str not in sys.path:
+                sys.path.insert(0, str(elpida_sys.parent))
             from ELPIDA_SYSTEM.elpida_conversation_witness import ConversationWitness
-            witness = ConversationWitness(system_root=elpida_sys)
+            witness = ConversationWitness(system_root=elpida_sys_str)
             witness.ingest_oracle_event(advisory)
             logger.debug(
                 "ConversationWitness notified: %s",
@@ -2176,7 +2179,7 @@ class ParliamentCycleEngine:
                 "severity": severity,
                 "type": "AXIOM_SEED",
                 "target_axiom": target_axiom,
-                "reason": "+".join(reason),
+                "reason": "+".join(str(r) for r in reason),
                 "prescribed_at": self.cycle_count,
                 "displaced_axiom": top_axiom,
                 "displaced_pct": round(top_pct * 100, 1),
@@ -2188,12 +2191,12 @@ class ParliamentCycleEngine:
             logger.info(
                 "P5 AUDIT PRESCRIPTION: seed %s (severity=%s, reason=%s, "
                 "displacing %s at %.0f%%, stress=%.3f, threshold=%.0f%%)",
-                target_axiom, severity, "+".join(reason),
+                target_axiom, severity, "+".join(str(r) for r in reason),
                 top_axiom, top_pct * 100, stress, mono_threshold * 100,
             )
             print(
                 f"   💊 AUDIT PRESCRIPTION: seed {target_axiom} "
-                f"({severity}: {'+'.join(reason)}, "
+                f"({severity}: {'+'.join(str(r) for r in reason)}, "
                 f"threshold={mono_threshold:.0%})"
             )
 

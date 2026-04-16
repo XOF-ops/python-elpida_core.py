@@ -81,22 +81,29 @@ function render(snapshot) {
 
   document.getElementById("bodyCards").innerHTML = [
     cardHtml("Cycle", get(body, ["cycle", "cycle_number"])),
-    cardHtml("Run Duration (s)", get(body, ["run_duration_seconds", "run_duration_s"])),
-    cardHtml("Cycles / Hour", get(body, ["cycles_per_hour", "cycle_rate_h"])),
-    cardHtml("P055 / KL", get(body, ["p055_kl_divergence", "kl_divergence"])),
+    cardHtml("Coherence", get(body, ["coherence"])),
+    cardHtml("Health", get(body, ["health", "overall_health"])),
+    cardHtml("KL / P055", get(body, ["kl_divergence", "p055_kl_divergence"])),
     cardHtml("Hunger", get(body, ["hunger_level", "hunger"])),
+    cardHtml("Timestamp", get(body, ["timestamp"])),
     cardHtml("Circuit Breaker", get(body, ["circuit_breaker_status", "breaker_status"])),
     cardHtml("Top Axioms", JSON.stringify(get(body, ["top_axioms", "axiom_dominance"], []))),
-    cardHtml("Parliament Votes", JSON.stringify(get(body, ["parliament_votes", "vote_breakdown"], {}))),
+    cardHtml("Provider Map", JSON.stringify(get(body, ["provider_map", "provider_breakdown"], {}))),
   ].join("");
 
   document.getElementById("mindCards").innerHTML = [
     cardHtml("Run Progress", get(mind, ["run_progress", "cycle_progress"])),
-    cardHtml("Canonical Themes", JSON.stringify(get(mind, ["canonical_theme_distribution", "themes"], {}))),
-    cardHtml("D0 Voice", get(mind, ["d0_voice_frequency", "d0_frequency"])),
-    cardHtml("D9 Voice", get(mind, ["d9_voice_frequency", "d9_frequency"])),
-    cardHtml("SYNOD", get(mind, ["synod_events", "synod_count"])),
-    cardHtml("KAYA", get(mind, ["kaya_events", "kaya_count"])),
+    cardHtml("MIND cycle", get(mind, ["cycle", "mind_cycle"])),
+    cardHtml("Run #", get(mind, ["run_number"])),
+    cardHtml("Epoch", get(mind, ["epoch", "mind_epoch"])),
+    cardHtml("Dominant theme", get(mind, ["dominant_theme", "canonical_theme"])),
+    cardHtml("Canonical count", get(mind, ["canonical_count"])),
+    cardHtml("Coherence", get(mind, ["coherence"])),
+    cardHtml("D0 voice %", get(mind, ["d0_voice_pct", "d0_voice_frequency", "d0_frequency"])),
+    cardHtml("D9 voice %", get(mind, ["d9_voice_pct", "d9_voice_frequency", "d9_frequency"])),
+    cardHtml("SYNOD", get(mind, ["synod_count", "synod_events"])),
+    cardHtml("KAYA", get(mind, ["kaya_count", "kaya_events"])),
+    cardHtml("Human conv.", get(mind, ["human_conversation_count", "human_conversations"])),
   ].join("");
 
   document.getElementById("worldCards").innerHTML = [
