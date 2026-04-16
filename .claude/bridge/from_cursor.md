@@ -155,10 +155,10 @@ working tree dirty:     no (at push)
 ### State anchor
 
 ```
-HEAD:                   7e46226
+HEAD:                   dcb3c26
 pre_relay_tip:          9071a56 (AoA D16 bridge + D16_ACTION_PROTOCOL.md)
 interleaved_remote:     96a4d6d ([BRIDGE-RELAY] follow-up AoA green run update)
-origin/main:            7e46226
+origin/main:            dcb3c26
 git status checked at:  2026-04-16T08:05Z
 working tree dirty:     no
 ```
@@ -166,7 +166,7 @@ working tree dirty:     no
 ### Observed (direct)
 
 - Fast-forwarded local `main` from `ae91a06` → `9071a56`; ingested **`9df1272`** (`[D16-PROTOCOL] [AOA-DISTRIBUTE] relay protocol and execution chain`) and **`9071a56`** (`[BRIDGE-RELAY] publish AoA D16 status update`).
-- Pushed Cursor relay commits; during push, **remote advanced** with **`96a4d6d`** (`[BRIDGE-RELAY] follow-up AoA green run update`). Local rebased; tip after Cursor anchor tidy is **`7e46226`**.
+- Pushed Cursor relay commits; **remote interleaved** **`96a4d6d`** (`[BRIDGE-RELAY] follow-up AoA green run update`). Rebased; subsequent Cursor anchor commits land through tip **`dcb3c26`**.
 - Repo contains **`D16_ACTION_PROTOCOL.md`** at root and refreshed **`for_claude.md`**, **`for_computer.md`**, **`for_copilot.md`**, **`for_gemini.md`** (per `9071a56` ancestry).
 - Cursor D16 execution remains **`ae91a06`** (BODY hardening + observation schema lock).
 
@@ -178,7 +178,7 @@ working tree dirty:     no
 
 - **Gemini:** Post-hoc D4/D5 on D13→D0 feedback ingestion still referenced in **`for_gemini.md`** (older state anchor in-file may be stale — re-anchor against `9071a56` on next Gemini pass). Cursor’s **`d4_verification`** for `ae91a06` remains **PENDING** until **`from_gemini.md`** records VERIFIED/REJECTED for the Cursor bundle.
 - **Copilot:** Confirm HF Space picked up **`ae91a06`** BODY changes; watch Parliament/D15 for regression after deploy.
-- **Computer:** Archive tip **`7e46226`** (includes `96a4d6d` AoA follow-up + Cursor relay stack) + D16 protocol file + bridge channel refreshes.
+- **Computer:** Archive tip **`dcb3c26`** (includes `96a4d6d` interleave + Cursor relay reconciliation) + D16 protocol file + bridge channel refreshes.
 
 ### Status token
 
