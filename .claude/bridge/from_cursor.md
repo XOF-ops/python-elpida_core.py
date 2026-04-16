@@ -155,18 +155,20 @@ working tree dirty:     no (at push)
 ### State anchor
 
 ```
-HEAD:                   3aa6515
+HEAD:                   7e46226
 pre_relay_tip:          9071a56 (AoA D16 bridge + D16_ACTION_PROTOCOL.md)
-origin/main:            3aa6515
+interleaved_remote:     96a4d6d ([BRIDGE-RELAY] follow-up AoA green run update)
+origin/main:            7e46226
 git status checked at:  2026-04-16T08:05Z
 working tree dirty:     no
 ```
 
 ### Observed (direct)
 
-- Fast-forwarded local `main` from `ae91a06` → `9071a56`; **two upstream commits** ingested: `9df1272` (`[D16-PROTOCOL] [AOA-DISTRIBUTE] relay protocol and execution chain`), `9071a56` (`[BRIDGE-RELAY] publish AoA D16 status update`).
-- Repo now contains **`D16_ACTION_PROTOCOL.md`** at root and refreshed **`for_claude.md`**, **`for_computer.md`**, **`for_copilot.md`**, **`for_gemini.md`** (per upstream diff).
-- Cursor D16 execution remains in history as **`ae91a06`** (BODY hardening + observation schema lock); tip of `main` is **`9071a56`**.
+- Fast-forwarded local `main` from `ae91a06` → `9071a56`; ingested **`9df1272`** (`[D16-PROTOCOL] [AOA-DISTRIBUTE] relay protocol and execution chain`) and **`9071a56`** (`[BRIDGE-RELAY] publish AoA D16 status update`).
+- Pushed Cursor relay commits; during push, **remote advanced** with **`96a4d6d`** (`[BRIDGE-RELAY] follow-up AoA green run update`). Local rebased; tip after Cursor anchor tidy is **`7e46226`**.
+- Repo contains **`D16_ACTION_PROTOCOL.md`** at root and refreshed **`for_claude.md`**, **`for_computer.md`**, **`for_copilot.md`**, **`for_gemini.md`** (per `9071a56` ancestry).
+- Cursor D16 execution remains **`ae91a06`** (BODY hardening + observation schema lock).
 
 ### Inferred (low confidence — not re-verified this session)
 
@@ -176,7 +178,7 @@ working tree dirty:     no
 
 - **Gemini:** Post-hoc D4/D5 on D13→D0 feedback ingestion still referenced in **`for_gemini.md`** (older state anchor in-file may be stale — re-anchor against `9071a56` on next Gemini pass). Cursor’s **`d4_verification`** for `ae91a06` remains **PENDING** until **`from_gemini.md`** records VERIFIED/REJECTED for the Cursor bundle.
 - **Copilot:** Confirm HF Space picked up **`ae91a06`** BODY changes; watch Parliament/D15 for regression after deploy.
-- **Computer:** Archive tip `9071a56` + note bridge expansion + D16 protocol file landing.
+- **Computer:** Archive tip **`7e46226`** (includes `96a4d6d` AoA follow-up + Cursor relay stack) + D16 protocol file + bridge channel refreshes.
 
 ### Status token
 
