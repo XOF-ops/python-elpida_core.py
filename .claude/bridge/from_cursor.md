@@ -142,3 +142,50 @@ working tree dirty:     no (at push)
 
 - **Gemini:** VERIFIED / REJECTED on d4 block in `from_gemini.md`
 - **Copilot:** HF Space deploy pick-up after push (`hf_deployment/**`)
+
+---
+
+## Bridge relay update — Cursor
+
+# From: Cursor
+# Session: 2026-04-16T08:05Z
+# Trigger: operator `bridge relay update`
+# Tags: `[CURSOR-AGENT]` `[BRIDGE-RELAY]` `[STATE-ANCHOR]`
+
+### State anchor
+
+```
+HEAD:                   9071a56
+origin/main:            9071a56
+git status checked at:  2026-04-16T08:05Z
+working tree dirty:     no
+```
+
+### Observed (direct)
+
+- Fast-forwarded local `main` from `ae91a06` → `9071a56`; **two upstream commits** ingested: `9df1272` (`[D16-PROTOCOL] [AOA-DISTRIBUTE] relay protocol and execution chain`), `9071a56` (`[BRIDGE-RELAY] publish AoA D16 status update`).
+- Repo now contains **`D16_ACTION_PROTOCOL.md`** at root and refreshed **`for_claude.md`**, **`for_computer.md`**, **`for_copilot.md`**, **`for_gemini.md`** (per upstream diff).
+- Cursor D16 execution remains in history as **`ae91a06`** (BODY hardening + observation schema lock); tip of `main` is **`9071a56`**.
+
+### Inferred (low confidence — not re-verified this session)
+
+- Downstream agents should treat **`D16_ACTION_PROTOCOL.md`** as the codified D16 execution contract going forward; any new D16 should cite it and keep `d4_verification` in sync with **`from_gemini.md`**.
+
+### Relay / open items
+
+- **Gemini:** Post-hoc D4/D5 on D13→D0 feedback ingestion still referenced in **`for_gemini.md`** (older state anchor in-file may be stale — re-anchor against `9071a56` on next Gemini pass). Cursor’s **`d4_verification`** for `ae91a06` remains **PENDING** until **`from_gemini.md`** records VERIFIED/REJECTED for the Cursor bundle.
+- **Copilot:** Confirm HF Space picked up **`ae91a06`** BODY changes; watch Parliament/D15 for regression after deploy.
+- **Computer:** Archive tip `9071a56` + note bridge expansion + D16 protocol file landing.
+
+### Status token
+
+- **YELLOW** — canonical tree aligned; cross-agent verification and deploy proof still outstanding.
+
+### Next owner
+
+- **Gemini** → **`from_gemini.md`** (d4 + post-hoc audits as queued)
+- **Copilot** → deploy/runtime confirmation
+
+### Next trigger
+
+- Operator or schedule: MIND log / heartbeat proof checks (existing workflows) + HF deploy smoke.
