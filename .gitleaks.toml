@@ -1,0 +1,23 @@
+title = "Elpida gitleaks configuration"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Allow documented placeholder API key headers in examples"
+paths = [
+  '''ARCHITECTURE_CHECKPOINT\.md''',
+  '''hf_api_space/README\.md'''
+]
+regexes = [
+  '''X-API-Key:\s*(YOUR_KEY|YOUR_PRO_KEY|pro_test123|<one key from ELPIDA_API_KEYS>)'''
+]
+
+[[allowlists]]
+description = "Allow byte-size arithmetic constants misdetected as generic API key"
+paths = [
+  '''codespace_tools/d16_level2_probe\.py'''
+]
+regexes = [
+  '''\d+\s*\*\s*1024\s*\*\s*1024'''
+]

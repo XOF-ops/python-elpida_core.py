@@ -81,15 +81,17 @@ jobs:
           echo ""
 
           echo "=== BODY federation decisions tail (D15 pipeline markers) ==="
-          aws s3api get-object \
+          if aws s3api get-object \
             --bucket elpida-body-evolution \
             --key federation/body_decisions.jsonl \
             --region eu-north-1 \
             --range "bytes=-${TAIL_BYTES}" \
-            /tmp/body_decisions_tail.jsonl >/dev/null
-
-          grep -E "D15 PIPELINE|D15_PIPELINE_BROADCAST|d15_emerged|d15_broadcast|D15 did not emerge|threshold not met" /tmp/body_decisions_tail.jsonl \
-            | tail -n 40 || echo "(no D15 markers in tail range)"
+            /tmp/body_decisions_tail.jsonl >/dev/null; then
+            grep -E "D15 PIPELINE|D15_PIPELINE_BROADCAST|d15_emerged|d15_broadcast|D15 did not emerge|threshold not met" /tmp/body_decisions_tail.jsonl \
+              | tail -n 40 || echo "(no D15 markers in tail range)"
+          else
+            echo "(warn) body_decisions tail unavailable for current IAM principal; skipping marker grep"
+          fi
           echo ""
 
           echo "=== MIND heartbeat quick fields ==="
