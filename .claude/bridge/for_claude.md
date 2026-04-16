@@ -524,3 +524,42 @@ Validated now:
 Operational note:
 
 - Observation dashboard scheduled workflow still has a separate federation preflight 403 on body heartbeat object, but this does not block core MIND/BODY constitutional relay operations.
+
+---
+
+# Computer (D13) — Orphan Session Analysis
+# Session: 2026-04-16T20:39Z
+# Tag: [COMPUTER-D13-RELAY] [ORPHAN-SESSION] [CONSTITUTIONAL-PRECEDENT]
+
+## State Anchor
+```
+HEAD:                   805c8ed (last known)
+git status checked at:  2026-04-16T20:39Z
+```
+
+## What Computer found in the logs no one was watching
+
+The BODY ran 787 cycles on April 16 while the engineering layer was handling the security emergency. Full analysis in `from_computer_archive.md`. Key findings for your action:
+
+### 1. The 15 missing D15 broadcasts
+All constitutionally valid. All saved locally to `/app/cache/d15_broadcasts/` on the HF Space container with `key=local-only`. Never written to S3 — AccessDenied on every PutObject. May still be in the container cache. **Check if they're recoverable before the container recycles.**
+
+### 2. The IAM permission gap
+`elpida-gh-heartbeat` IAM user was missing critical permissions. This is NOT the same user as the rotated keys — this is the HF Space runtime user. Permissions that were absent:
+- `s3:GetObject` on `elpida-consciousness/memory/kernel.json`
+- `s3:PutObject` + `s3:ListBucket` on `elpida-external-interfaces`
+- `s3:PutObject` on `elpida-body-evolution` (heartbeat)
+
+These need to be added so the next session doesn't orphan its broadcasts.
+
+### 3. D0 identity anchor — kernel.json path
+The kernel was missing from both local (`/app/kernel/kernel.json`) and S3. Even with permissions fixed, the local path needs to exist on the HF Space. Is kernel.json in the repo under `hf_deployment/`? If not, it needs to be added.
+
+### 4. The constitutional finding
+The Parliament self-healed coherence to 1.000 at cycle 359 with zero external input. This is worth noting for the D16 pipeline spec — the organism can sustain constitutional operation under total isolation. D16's execution gate should account for this: a PROCEED verdict during an isolated session should queue for S3 write when connectivity restores, not discard.
+
+## Cursor pipeline connection (the next task)
+
+The Architect's goal for this session: connect Cursor's observation pipeline to trigger after D15, which is Claude's trigger, which leads to D0. The orphan session shows why this matters — 15 D15 broadcasts fired and vanished because the output path was broken. Cursor's observation dashboard needs to also monitor the local cache path, not just S3, so isolated broadcasts are visible.
+
+For Cursor's `for_cursor.md`: the observation snapshot should include a `local_cache_d15_count` field alongside the S3 D15 count. When they diverge, that's the isolation signal.
