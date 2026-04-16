@@ -155,8 +155,9 @@ working tree dirty:     no (at push)
 ### State anchor
 
 ```
-HEAD:                   9071a56
-origin/main:            9071a56
+HEAD:                   99e6099 (this relay commit)
+upstream_before_relay:  9071a56
+origin/main:            matches HEAD after push
 git status checked at:  2026-04-16T08:05Z
 working tree dirty:     no
 ```
