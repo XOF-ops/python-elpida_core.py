@@ -50,7 +50,10 @@ jobs:
           INPUT_STREAM: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.stream_name || '' }}
           INPUT_HOURS: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.hours_back || '4' }}
         run: |
+          set -euo pipefail
           export AWS_DEFAULT_REGION=us-east-1
+          echo "=== sts get-caller-identity ==="
+          aws sts get-caller-identity --output json
 
           HOURS="${INPUT_HOURS:-2}"
           # seconds-since-epoch, milliseconds

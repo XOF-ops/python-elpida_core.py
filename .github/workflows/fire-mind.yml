@@ -31,6 +31,13 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
+      - name: AWS identity preflight (MIND lane)
+        run: |
+          set -euo pipefail
+          echo "=== sts get-caller-identity (us-east-1) ==="
+          aws sts get-caller-identity --output json
+          echo "If this fails, the IAM principal is quarantined or secrets/OIDC are not wired."
+
       - name: Fire ECS task
         run: |
           aws ecs run-task \

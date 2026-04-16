@@ -9,6 +9,7 @@ on:
     paths:
       - "observation_dashboard/**"
       - "scripts/build_observation_snapshot.py"
+      - "scripts/gh_aws_preflight.sh"
       - ".github/workflows/observation-dashboard-pages.yml"
 
 permissions:
@@ -49,23 +50,31 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-north-1
 
+      - name: Federation read preflight (fail-closed)
+        env:
+          AWS_PREFLIGHT_REGION: eu-north-1
+        run: bash scripts/gh_aws_preflight.sh
+
       - name: Pull heartbeat and world snapshot files
         run: |
+          set -euo pipefail
           mkdir -p _snapshot/raw
-          aws s3 cp s3://elpida-body-evolution/body_heartbeat.json _snapshot/raw/body_heartbeat.json || true
-          aws s3 cp s3://elpida-consciousness/mind_heartbeat.json _snapshot/raw/mind_heartbeat.json || true
-          aws s3 cp s3://elpida-body-evolution/d16_executions.jsonl _snapshot/raw/d16_executions.jsonl || true
+          # Canonical keys — hf_deployment/s3_bridge.py FED_* (BODY bucket federation/)
+          aws s3 cp s3://elpida-body-evolution/federation/body_heartbeat.json _snapshot/raw/body_heartbeat.json
+          aws s3 cp s3://elpida-body-evolution/federation/mind_heartbeat.json _snapshot/raw/mind_heartbeat.json
+          aws s3 cp s3://elpida-body-evolution/federation/d16_executions.jsonl _snapshot/raw/d16_executions.jsonl
 
+          # D15 object list may be empty — do not fail the job if no broadcasts yet
           aws s3 ls s3://elpida-external-interfaces/d15/ --recursive \
             | awk '{print $4}' \
             | grep 'broadcast_.*\.json$' \
             | tail -n 25 > _snapshot/raw/broadcast_keys.txt || true
 
-          if [ -f _snapshot/raw/broadcast_keys.txt ]; then
+          if [ -s _snapshot/raw/broadcast_keys.txt ]; then
             while IFS= read -r key; do
               [ -z "$key" ] && continue
               base="$(basename "$key")"
-              aws s3 cp "s3://elpida-external-interfaces/$key" "_snapshot/raw/$base" || true
+              aws s3 cp "s3://elpida-external-interfaces/$key" "_snapshot/raw/$base"
             done < _snapshot/raw/broadcast_keys.txt
           fi
 

@@ -194,3 +194,29 @@ working tree note:      D16_ACTION_PROTOCOL.md present locally and queued for co
 - D16 runtime no longer throws the known tuple/None/path/oracle defects.
 - Observation snapshot contract aligns with ARK-provided field shapes.
 - MIND/BODY heartbeat checks remain green after deployment.
+
+---
+
+# Cursor → Copilot — GitHub IAM “quarantine” + federation preflight
+# Session: 2026-04-16T18:00Z
+# Tag: [CURSOR-RELAY] [IAM-UNQUARANTINE] [FEDERATION-PREFLIGHT]
+
+## Problem
+
+If the GitHub Actions IAM principal is blocked or missing S3 read on the BODY bucket, workflows can **silently** publish stale observation snapshots or wrong paths. Federation keys are load-bearing: `s3://elpida-body-evolution/federation/body_heartbeat.json`, `mind_heartbeat.json`, `d16_executions.jsonl`.
+
+## Un-quarantine checklist (minimal)
+
+1. **Confirm credential path**: prefer OIDC (`vars.AWS_GITHUB_OIDC_ROLE_ARN`) over long-lived `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` where possible.
+2. **sts get-caller-identity** must succeed in the workflow region (see each workflow — MIND/CloudWatch lanes use `us-east-1`; BODY federation bucket is `eu-north-1`).
+3. **S3 head-object** (or `cp` with fail-closed) on the three `federation/` keys above for principal `elpida-s3-sync` (or the OIDC role actually assumed).
+4. **Re-enable or scope** any deny that was applied during the security incident; keep read minimal: `s3:GetObject` on `elpida-body-evolution/federation/*` and whatever prefix the observation job needs for D15 broadcast copies.
+5. After fix: run **Actions → Observation Dashboard** (or wait for schedule) and confirm the job log shows preflight **GREEN** and pulled bytes for the federation objects.
+
+## Repo wiring (reference)
+
+- `scripts/gh_aws_preflight.sh` — fail-closed STS + `head-object` on canonical federation keys (`eu-north-1`).
+- `.github/workflows/observation-dashboard-pages.yml` — runs preflight before S3 pull; push trigger includes `scripts/gh_aws_preflight.sh`.
+- `fire-mind.yml`, `check-mind-d16-logs.yml`, `check-d15-pipeline-state.yml` — each run starts with `sts get-caller-identity` in the appropriate region so a quarantined principal fails fast with a clear log.
+
+**Canonical git tip:** use `git rev-parse origin/main` — bridge `HEAD` lines in markdown may lag one commit during relay bursts.

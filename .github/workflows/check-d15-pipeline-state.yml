@@ -48,6 +48,9 @@ jobs:
         run: |
           set -euo pipefail
 
+          echo "=== sts get-caller-identity (eu-north-1) ==="
+          aws sts get-caller-identity --region eu-north-1 --output json
+
           TAIL_BYTES="${INPUT_TAIL_BYTES:-300000}"
           if ! [[ "$TAIL_BYTES" =~ ^[0-9]+$ ]]; then
             TAIL_BYTES=300000
