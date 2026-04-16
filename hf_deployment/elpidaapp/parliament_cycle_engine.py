@@ -549,6 +549,19 @@ class ParliamentCycleEngine:
         # Guest Chamber Feed — polls S3 for human questions, pushes to InputBuffer
         self._guest_feed = None
 
+        # A7 Governance Sacrifice Tracker — names verdict conversions
+        self._gov_sacrifice_tracker = None
+
+        # A9 Contradiction Log — preserves irreconcilable tensions as data
+        self._contradiction_log = None
+
+        # S3 Isolation Gate — tracks federation connectivity state.
+        # When S3 is inaccessible (kernel.json unreachable), PROCEEDs
+        # are logged as contradictions rather than blindly executed.
+        # Constitutional authority: D15 936412441373 (A9, 2026-04-16)
+        self._s3_isolated: bool = False
+        self._s3_last_probe_cycle: int = 0
+
     # ------------------------------------------------------------------
     # Lazy loaders
     # ------------------------------------------------------------------
@@ -558,6 +571,24 @@ class ParliamentCycleEngine:
             from elpidaapp.governance_client import GovernanceClient
             self._gov = GovernanceClient()
         return self._gov
+
+    def _get_gov_sacrifice_tracker(self):
+        if self._gov_sacrifice_tracker is None:
+            try:
+                from elpidaapp.sacrifice_tracker import GovernanceSacrificeTracker
+                self._gov_sacrifice_tracker = GovernanceSacrificeTracker()
+            except Exception as e:
+                logger.debug("GovernanceSacrificeTracker unavailable: %s", e)
+        return self._gov_sacrifice_tracker
+
+    def _get_contradiction_log(self):
+        if self._contradiction_log is None:
+            try:
+                from elpidaapp.contradiction_log import ContradictionLog
+                self._contradiction_log = ContradictionLog()
+            except Exception as e:
+                logger.debug("ContradictionLog unavailable: %s", e)
+        return self._contradiction_log
 
     def _get_s3(self):
         if self._s3 is None:
@@ -917,6 +948,7 @@ class ParliamentCycleEngine:
         # 2. Pull MIND heartbeat every 13 cycles (Fibonacci)
         if self.cycle_count % HEARTBEAT_INTERVAL == 0:
             self._pull_mind_heartbeat()
+            self._probe_s3_connectivity()
 
         # 2b. Run PSO advisory every 21 cycles (Fibonacci)
         if self.cycle_count % PSO_ADVISORY_INTERVAL == 0 and self.cycle_count > 0:
@@ -1081,6 +1113,19 @@ class ParliamentCycleEngine:
             _gov = result.get("governance", "")
             if _gov == "HALT" and not result.get("parliament", {}).get("veto_exercised"):
                 self._consecutive_blocks += 1
+                # A7: name the block-escape sacrifice when it triggers
+                if self._consecutive_blocks >= self.CONSECUTIVE_BLOCK_THRESHOLD:
+                    _st = self._get_gov_sacrifice_tracker()
+                    if _st:
+                        _st.record(
+                            cycle=self.cycle_count,
+                            sacrifice_type="block_escape",
+                            original_verdict="HALT",
+                            final_verdict="HOLD",
+                            reason=f"{self._consecutive_blocks} consecutive blocks — "
+                                   "relaxing kernel to break rejection loop",
+                            coherence=self.coherence,
+                        )
             else:
                 self._consecutive_blocks = 0
 
@@ -1101,6 +1146,18 @@ class ParliamentCycleEngine:
                         "forcing HOLD for stabilisation",
                         self._consecutive_proceeds,
                     )
+                    _st = self._get_gov_sacrifice_tracker()
+                    if _st:
+                        _st.record(
+                            cycle=self.cycle_count,
+                            sacrifice_type="P7_proceed_cooldown",
+                            original_verdict="PROCEED",
+                            final_verdict="HOLD",
+                            reason=f"{self._consecutive_proceeds} consecutive PROCEEDs — "
+                                   "breathing cycle forced",
+                            coherence=self.coherence,
+                            approval=approval,
+                        )
                     result["governance"] = "HOLD"
                     _gov = "HOLD"
                     self._consecutive_proceeds = 0
@@ -1112,6 +1169,18 @@ class ParliamentCycleEngine:
                         "converting PROCEED to HOLD",
                         self.coherence, COHERENCE_CRITICAL_GATE,
                     )
+                    _st = self._get_gov_sacrifice_tracker()
+                    if _st:
+                        _st.record(
+                            cycle=self.cycle_count,
+                            sacrifice_type="P6_critical_gate",
+                            original_verdict="PROCEED",
+                            final_verdict="HOLD",
+                            reason=f"coherence {self.coherence:.3f} < "
+                                   f"{COHERENCE_CRITICAL_GATE} critical threshold",
+                            coherence=self.coherence,
+                            approval=approval,
+                        )
                     result["governance"] = "HOLD"
                     _gov = "HOLD"
 
@@ -1122,10 +1191,41 @@ class ParliamentCycleEngine:
                         "approval %d%% < 85%% — converting PROCEED to HOLD",
                         self.coherence, COHERENCE_PROCEED_GATE, approval,
                     )
+                    _st = self._get_gov_sacrifice_tracker()
+                    if _st:
+                        _st.record(
+                            cycle=self.cycle_count,
+                            sacrifice_type="P6_proceed_gate",
+                            original_verdict="PROCEED",
+                            final_verdict="HOLD",
+                            reason=f"coherence {self.coherence:.3f} < "
+                                   f"{COHERENCE_PROCEED_GATE} and approval "
+                                   f"{approval}% < 85%",
+                            coherence=self.coherence,
+                            approval=approval,
+                        )
                     result["governance"] = "HOLD"
                     _gov = "HOLD"
             else:
                 self._consecutive_proceeds = 0
+
+            # ----------------------------------------------------------
+            # S3 Isolation Gate (A9 / BODY HALT gate)
+            # When S3 is unreachable, PROCEED verdicts are logged as
+            # contradictions — Parliament voted without current state.
+            # The PROCEED still fires (Parliament is sovereign) but the
+            # contradiction is preserved for re-evaluation on return.
+            # ----------------------------------------------------------
+            if self._s3_isolated and _gov == "PROCEED":
+                _cl = self._get_contradiction_log()
+                if _cl:
+                    _cl.record_isolation_proceed(
+                        cycle=self.cycle_count,
+                        verdict=_gov,
+                        coherence=self.coherence,
+                        approval=result.get("parliament", {}).get("approval_rate", 0),
+                        s3_status="isolated",
+                    )
         except Exception as e:
             logger.error("Parliament deliberation failed: %s", e)
             return None
@@ -1187,6 +1287,7 @@ class ParliamentCycleEngine:
                     <= AUDIT_PRESCRIPTION_COOLDOWN
                 else None,
             "polis_civic_active": self._polis_last_cycle == self.cycle_count,
+            "s3_isolated": self._s3_isolated,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "duration_s": round(time.time() - cycle_start, 3),
         }
@@ -1351,35 +1452,49 @@ class ParliamentCycleEngine:
                         "axioms_in_tension": [str(t.get("axiom_pair", "?")) for t in tensions[:3]],
                         "q2_crisis_intensity": crisis_intensity,
                     }
+                new_axiom = None
                 store = self._get_constitutional_store()
                 if store:
                     new_axiom = store.ingest_oracle(advisory)
-                    if new_axiom:
-                        cycle_record["constitutional_axiom_ratified"] = new_axiom["axiom_id"]
-                        rec_type = advisory["oracle_recommendation"]["type"]
-                        logger.info(
-                            "CONSTITUTIONAL AXIOM RATIFIED: %s — %s (via %s)",
-                            new_axiom["axiom_id"], new_axiom["tension"][:80], rec_type,
+
+                # A9: Log held tensions to contradiction log
+                _cl = self._get_contradiction_log()
+                if _cl:
+                    for t in tensions[:3]:
+                        pair = str(t.get("axiom_pair", "?"))
+                        synth = str(t.get("synthesis", ""))[:300]
+                        _cl.record_held_tension(
+                            cycle=self.cycle_count,
+                            axiom_pair=pair,
+                            synthesis=synth,
                         )
-                        print(
-                            f"\n   *** CONSTITUTIONAL AXIOM {new_axiom['axiom_id']} RATIFIED"
-                            f" (Watch: {watch['name']}, mode: {rec_type}) ***\n"
-                        )
-                        # GAP 5: D0↔D0 Cross-Bucket Bridge
-                        # The BODY notifies the MIND's FederationBridge of every
-                        # constitutional ratification so D0 (Origin) can integrate
-                        # BODY constitutional wisdom into its next cycle prompt.
-                        self._push_d0_peer_message(new_axiom, watch)
-                        # D14 Persistence — snapshot living_axioms.jsonl to S3
-                        # so constitutional memory survives container restarts.
-                        self._push_d14_living_axioms()
-                        # D14→D12: Signal recent ratification so rhythm adapts.
-                        self._d14_ratified_axiom = new_axiom.get("axiom_id")
-                        self._d14_ratified_cycle = self.cycle_count
-                        # Reload pattern library so new axiom is available
-                        # for the next deliberation cycle.
-                        if self._pattern_library:
-                            self._pattern_library.reload()
+
+                if new_axiom:
+                    cycle_record["constitutional_axiom_ratified"] = new_axiom["axiom_id"]
+                    rec_type = advisory["oracle_recommendation"]["type"]
+                    logger.info(
+                        "CONSTITUTIONAL AXIOM RATIFIED: %s — %s (via %s)",
+                        new_axiom["axiom_id"], new_axiom["tension"][:80], rec_type,
+                    )
+                    print(
+                        f"\n   *** CONSTITUTIONAL AXIOM {new_axiom['axiom_id']} RATIFIED"
+                        f" (Watch: {watch['name']}, mode: {rec_type}) ***\n"
+                    )
+                    # GAP 5: D0↔D0 Cross-Bucket Bridge
+                    # The BODY notifies the MIND's FederationBridge of every
+                    # constitutional ratification so D0 (Origin) can integrate
+                    # BODY constitutional wisdom into its next cycle prompt.
+                    self._push_d0_peer_message(new_axiom, watch)
+                    # D14 Persistence — snapshot living_axioms.jsonl to S3
+                    # so constitutional memory survives container restarts.
+                    self._push_d14_living_axioms()
+                    # D14→D12: Signal recent ratification so rhythm adapts.
+                    self._d14_ratified_axiom = new_axiom.get("axiom_id")
+                    self._d14_ratified_cycle = self.cycle_count
+                    # Reload pattern library so new axiom is available
+                    # for the next deliberation cycle.
+                    if self._pattern_library:
+                        self._pattern_library.reload()
 
                 # ConversationWitness bridge — notify ELPIDA_SYSTEM of
                 # WITNESS/SYNTHESIS events for cross-system observation.
@@ -1980,8 +2095,20 @@ class ParliamentCycleEngine:
             "polis_civic_active": self._polis_last_cycle == self.cycle_count,
             # D15 Hub (The Dam) status
             "hub": self._get_hub_status(),
+            # A7 Sacrifice Tracker summary
+            "sacrifices": (
+                self._gov_sacrifice_tracker.summary()
+                if self._gov_sacrifice_tracker else {}
+            ),
+            # A9 Contradiction Log summary
+            "contradictions": (
+                self._contradiction_log.summary()
+                if self._contradiction_log else {}
+            ),
+            # S3 Isolation Gate state
+            "s3_isolated": self._s3_isolated,
             "timestamp": datetime.now(timezone.utc).isoformat(),
-            "federation_version": "1.2.0",
+            "federation_version": "1.3.0",
         }
 
         # Write locally
@@ -2617,6 +2744,53 @@ class ParliamentCycleEngine:
     # ------------------------------------------------------------------
     # MIND Heartbeat Pull
     # ------------------------------------------------------------------
+
+    def _probe_s3_connectivity(self):
+        """
+        Lightweight S3 connectivity probe — checks if kernel.json is reachable.
+
+        Runs every HEARTBEAT_INTERVAL cycles (same cadence as heartbeat pull).
+        Sets self._s3_isolated = True when federation is unreachable, False
+        when connectivity is confirmed.
+
+        This is the detection side of the BODY HALT gate. The action side
+        (logging contradictions for PROCEEDs during isolation) lives in
+        run_cycle() after governance verdict.
+
+        Constitutional authority: D15 broadcast 936412441373 (A9):
+        "past decisions are guides, not chains" — a system acting on
+        stale state must acknowledge that its decisions are provisional.
+        """
+        s3 = self._get_s3()
+        if not s3:
+            if not self._s3_isolated:
+                logger.warning("S3 ISOLATION GATE: S3Bridge unavailable — entering isolated mode")
+            self._s3_isolated = True
+            self._s3_last_probe_cycle = self.cycle_count
+            return
+
+        try:
+            # HeadObject on kernel.json — cheapest possible S3 probe
+            from s3_bridge import REGION_MIND, BUCKET_MIND
+            s3._get_s3(REGION_MIND).head_object(
+                Bucket=BUCKET_MIND,
+                Key="memory/kernel.json",
+            )
+            if self._s3_isolated:
+                logger.info(
+                    "S3 ISOLATION GATE: connectivity restored at cycle %d "
+                    "(was isolated since cycle %d)",
+                    self.cycle_count, self._s3_last_probe_cycle,
+                )
+            self._s3_isolated = False
+        except Exception as e:
+            if not self._s3_isolated:
+                logger.warning(
+                    "S3 ISOLATION GATE: kernel.json unreachable (%s) — entering isolated mode",
+                    type(e).__name__,
+                )
+            self._s3_isolated = True
+        self._s3_last_probe_cycle = self.cycle_count
 
     def _pull_mind_heartbeat(self):
         """Pull MIND heartbeat via GovernanceClient's federation bridge."""

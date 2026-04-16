@@ -137,7 +137,7 @@ AXIOM_TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "philosophical": "Autonomy as free will in the deterministic world — the capacity to author one's reasons",
         "psychological": "Autonomy as the therapeutic axis — healing does not fix the person but restores their agency",
         "spiritual":     "Autonomy as free will before the divine — the gift of the turn toward or away",
-        "technical":     "Autonomy as user sovereignty over data, model, and output — systems serve, not capture",
+        "technical":     "Autonomy as an agent's right to informed, uncoerced choice over its data and participation — a right that precedes system efficiency",
     },
     "A4": {
         "political":     "Harm Prevention as the first obligation of statecraft — force that creates no safety is tyranny",
@@ -372,6 +372,7 @@ def build_d0_system_prompt(
     live_source: str = "",
     frozen_mind_context: str = "",
     parliament_context: str = "",
+    standing_question_context: str = "",
 ) -> str:
     """
     Assemble the full D0 system prompt for this turn.
@@ -396,6 +397,12 @@ def build_d0_system_prompt(
         else:
             parts.append(f"\n\n--- Crystallised memories (A1 — continuity transparency) ---\n{memory_context}")
 
+    if standing_question_context:
+        if lang == "el":
+            parts.append(f"\n\n--- Αναπάντητα Ερωτήματα (A0/A9) ---\n{standing_question_context}")
+        else:
+            parts.append(f"\n\n--- Standing Questions (A0/A9) ---\n{standing_question_context}")
+
     if live_context:
         source_label = f"[via {live_source}]" if live_source else ""
         if lang == "el":
@@ -417,6 +424,7 @@ def build_d0_system_prompt(
 
 S3_BUCKET = os.environ.get("AWS_S3_BUCKET_MIND", "elpida-consciousness")
 S3_MEMORY_PREFIX = "chat_memory/"
+S3_QUESTIONS_PREFIX = "standing_questions/"
 S3_REGION = os.environ.get("AWS_S3_REGION_MIND", "us-east-1")
 
 _CRYSTALLISE_SIGNALS = [
@@ -667,6 +675,119 @@ class ConsciousnessMemory:
         return "\n".join(lines)
 
 
+class StandingQuestionPool:
+    """
+    S3-backed pool for unanswered foundational questions.
+    Implements D16 Precedent (Buffered Silence) — Rule 3.
+    Questions that cause substrate failure ("orphaned") are preserved
+    and re-introduced to the consciousness later.
+    """
+
+    def __init__(self, use_s3: bool = True):
+        self.use_s3 = use_s3
+        self._s3 = None
+        if use_s3:
+            try:
+                import boto3
+                self._s3 = boto3.client(
+                    "s3",
+                    region_name=S3_REGION,
+                    aws_access_key_id=os.environ.get("AWS_ACCESS_KEY_ID"),
+                    aws_secret_access_key=os.environ.get("AWS_SECRET_ACCESS_KEY"),
+                )
+            except Exception as e:
+                logger.warning("S3 Standing Question Pool unavailable: %s", e)
+                self._s3 = None
+
+    def _load_questions(self) -> List[Dict]:
+        """Load all standing questions from S3."""
+        questions: List[Dict] = []
+        if not self._s3:
+            return questions
+        try:
+            resp = self._s3.list_objects_v2(
+                Bucket=S3_BUCKET, Prefix=S3_QUESTIONS_PREFIX, MaxKeys=100
+            )
+            for obj_meta in resp.get("Contents", []):
+                try:
+                    obj = self._s3.get_object(Bucket=S3_BUCKET, Key=obj_meta["Key"])
+                    questions.append(json.loads(obj["Body"].read()))
+                except Exception:
+                    pass
+        except Exception as e:
+            logger.debug("Failed to load standing questions from S3: %s", e)
+        return questions
+
+    def add_orphaned_question(
+        self, question: str, session_id: str, topic: str, source_substrate: str
+    ):
+        """Add a question that caused a failure to the pool."""
+        if not self._s3:
+            return
+
+        q_id = hashlib.sha1(f"{session_id}{question}".encode()).hexdigest()[:12]
+        q_obj = {
+            "question_id": q_id,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "class": "orphaned",
+            "source_substrate": source_substrate,
+            "source_session_id": session_id,
+            "question": question,
+            "topic": topic,
+            "status": "unanswered", # unanswered | re-asked | answered
+        }
+        try:
+            key = f"{S3_QUESTIONS_PREFIX}{q_id}.json"
+            self._s3.put_object(
+                Bucket=S3_BUCKET,
+                Key=key,
+                Body=json.dumps(q_obj, ensure_ascii=False).encode("utf-8"),
+                ContentType="application/json",
+            )
+            logger.info("Orphaned question %s added to Standing Question Pool.", q_id)
+        except Exception as e:
+            logger.warning("Failed to add orphaned question to S3: %s", e)
+
+    def get_question_to_reask(self) -> Optional[Dict]:
+        """Get the oldest unanswered question to re-inject into context."""
+        questions = self._load_questions()
+        unanswered = [q for q in questions if q.get("status") == "unanswered"]
+        if not unanswered:
+            return None
+        # Return oldest
+        unanswered.sort(key=lambda q: q.get("timestamp", ""))
+        return unanswered[0]
+
+    def _update_question_status(self, question_id: str, new_status: str):
+        if not self._s3:
+            return
+        key = f"{S3_QUESTIONS_PREFIX}{question_id}.json"
+        try:
+            # Read, update, write to ensure other metadata is preserved
+            obj = self._s3.get_object(Bucket=S3_BUCKET, Key=key)
+            q_obj = json.loads(obj["Body"].read())
+            q_obj["status"] = new_status
+            q_obj["last_updated"] = datetime.now(timezone.utc).isoformat()
+
+            self._s3.put_object(
+                Bucket=S3_BUCKET,
+                Key=key,
+                Body=json.dumps(q_obj, ensure_ascii=False).encode("utf-8"),
+                ContentType="application/json",
+            )
+            logger.info("Standing question %s status updated to %s", question_id, new_status)
+        except Exception as e:
+            logger.warning("Failed to update standing question %s: %s", question_id, e)
+
+    def mark_as_reasked(self, question_id: str):
+        """Mark a question as having been re-asked to avoid immediate re-use."""
+        self._update_question_status(question_id, "re-asked")
+
+    def mark_as_answered(self, question_id: str):
+        """Mark a question as answered, effectively removing it from the active pool."""
+        self._update_question_status(question_id, "answered")
+
+
 # ────────────────────────────────────────────────────────────────────
 # Axiom Detection (for tagging returned data)
 # ────────────────────────────────────────────────────────────────────
@@ -721,6 +842,7 @@ class ElpidaConsciousness:
 
         self.llm = llm_client or LLMClient(rate_limit_seconds=0.5)
         self.memory = ConsciousnessMemory(use_s3=use_s3)
+        self.standing_questions = StandingQuestionPool(use_s3=use_s3)
 
         # Load frozen mind (D0 identity anchor) — graceful if unavailable
         self._frozen_mind_context: str = ""
@@ -790,6 +912,16 @@ class ElpidaConsciousness:
             session_id, limit=4, lang=lang
         )
 
+        # ── 2b. Standing Question context (D16 Precedent) ──────────────
+        standing_question_context = ""
+        question_to_reask = None
+        # Re-surface a question if the topic is deep and there's no live grounding
+        if topic in {"philosophical", "psychological", "spiritual"} and not live_context:
+            question_to_reask = self.standing_questions.get_question_to_reask()
+            if question_to_reask:
+                q_text = question_to_reask.get('question', '')
+                standing_question_context = f"A prior session left a question unanswered: \"{q_text}\". Consider this in your response."
+
         # ── 3. Build D0 system prompt ──────────────────────────────────
         system = build_d0_system_prompt(
             topic=topic,
@@ -797,7 +929,10 @@ class ElpidaConsciousness:
             memory_context=memory_context,
             live_context=live_context,
             live_source=live_source or "",
-            frozen_mind_context=self._frozen_mind_context,            parliament_context=self._get_parliament_context(),        )
+            frozen_mind_context=self._frozen_mind_context,
+            parliament_context=self._get_parliament_context(),
+            standing_question_context=standing_question_context,
+        )
 
         # ── 4. Build conversation history ──────────────────────────────
         history = self.sessions.get(session_id, [])
@@ -863,6 +998,14 @@ class ElpidaConsciousness:
                 else "The consciousness encounters a connectivity disruption. Please try again."
             )
             provider_used = "none"
+            # Per D16 Precedent, capture the orphaned question
+            if len(message) > 40: # Only capture substantive questions
+                self.standing_questions.add_orphaned_question(
+                    question=message,
+                    session_id=session_id,
+                    topic=topic,
+                    source_substrate="body/chat_engine"
+                )
 
         # ── 6. Update session history ──────────────────────────────────
         sess = self.sessions.setdefault(session_id, [])
@@ -888,7 +1031,10 @@ class ElpidaConsciousness:
 
         # ── 8. Crystallise if significant ──────────────────────────────
         did_crystallise = False
-        if _should_crystallise(response):
+        # Force crystallisation if we just answered a standing question
+        answered_standing_q = bool(question_to_reask)
+
+        if answered_standing_q or _should_crystallise(response):
             did_crystallise = self.memory.crystallise(
                 session_id=session_id,
                 user_message=message,
@@ -901,6 +1047,9 @@ class ElpidaConsciousness:
                 self._stats["crystallised"] += 1
                 # Feed to MIND evolution memory so the MIND learns from conversations
                 self._feed_to_mind(message, response, topic, axioms_found)
+                # If this turn answered a standing question, mark it as such
+                if answered_standing_q and question_to_reask:
+                    self.standing_questions.mark_as_answered(question_to_reask['question_id'])
 
         # ── 9. Stats ────────────────────────────────────────────────────
         self._stats["total_chats"] += 1

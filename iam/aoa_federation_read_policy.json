@@ -1,0 +1,42 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ListFederationBuckets",
+      "Effect": "Allow",
+      "Action": "s3:ListBucket",
+      "Resource": [
+        "arn:aws:s3:::elpida-body-evolution",
+        "arn:aws:s3:::elpida-consciousness",
+        "arn:aws:s3:::elpida-external-interfaces"
+      ]
+    },
+    {
+      "Sid": "ReadFederationBridge",
+      "Effect": "Allow",
+      "Action": "s3:GetObject",
+      "Resource": [
+        "arn:aws:s3:::elpida-body-evolution/federation/*"
+      ]
+    },
+    {
+      "Sid": "ReadMindSeedMemory",
+      "Effect": "Allow",
+      "Action": "s3:GetObject",
+      "Resource": [
+        "arn:aws:s3:::elpida-consciousness/kernel/*",
+        "arn:aws:s3:::elpida-consciousness/memory/*",
+        "arn:aws:s3:::elpida-consciousness/ELPIDA_ARK.md"
+      ]
+    },
+    {
+      "Sid": "ReadWorldBroadcasts",
+      "Effect": "Allow",
+      "Action": "s3:GetObject",
+      "Resource": [
+        "arn:aws:s3:::elpida-external-interfaces/d15/*",
+        "arn:aws:s3:::elpida-external-interfaces/index.html"
+      ]
+    }
+  ]
+}

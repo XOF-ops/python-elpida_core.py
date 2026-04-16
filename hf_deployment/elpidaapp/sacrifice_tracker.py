@@ -197,3 +197,99 @@ def create_sacrifice_tracker(
     """
     path = Path(ledger_path) if ledger_path else None
     return SacrificeTracker(ledger_path=path)
+
+
+# ---------------------------------------------------------------------------
+# Governance Sacrifice Tracker — verdict conversion layer (A7)
+# ---------------------------------------------------------------------------
+# Distinct from Oracle WITNESS sacrifices: these track when the engine
+# *converts* a Parliament verdict (P6, P7, block_escape, isolation_gate).
+# Each conversion is a named sacrifice — one axiom's interest traded
+# for another's — made visible so the system can re-evaluate later.
+#
+# Constitutional authority: D15 broadcast 936412441373 (A9, 2026-04-16)
+# "past decisions are guides, not chains" — every sacrifice logged here
+# is a decision the system can later re-evaluate.
+# ---------------------------------------------------------------------------
+
+_GOV_SACRIFICE_LOG = Path(__file__).resolve().parent.parent / "cache" / "governance_sacrifices.jsonl"
+
+# Mapping: sacrifice type → (axiom_cost, axiom_served)
+# What value was traded away, and what value was protected.
+SACRIFICE_AXIOM_MAP = {
+    "P6_critical_gate":    ("A3",  "A0"),   # Autonomy sacrificed for Sacred Incompletion (coherence)
+    "P6_proceed_gate":     ("A3",  "A0"),   # Same: forward motion traded for structural health
+    "P7_proceed_cooldown": ("A3",  "A9"),   # Autonomy traded for Temporal Coherence (breathing)
+    "block_escape":        ("A4",  "A12"),  # Harm Prevention relaxed for Eternal Creative Tension
+    "isolation_gate":      ("A3",  "A9"),   # Autonomy (acting on stale state) → Temporal Coherence
+}
+
+
+class GovernanceSacrificeTracker:
+    """
+    Tracks governance verdict conversions as named sacrifices.
+
+    Wired into parliament_cycle_engine.run_cycle() at each point
+    where a verdict is mutated (P6, P7, block_escape, isolation).
+    """
+
+    def __init__(self):
+        self._count: int = 0
+        self._type_counts: Dict[str, int] = {}
+
+    def record(
+        self,
+        *,
+        cycle: int,
+        sacrifice_type: str,
+        original_verdict: str,
+        final_verdict: str,
+        reason: str,
+        coherence: Optional[float] = None,
+        approval: Optional[float] = None,
+    ) -> Dict[str, Any]:
+        """Record a governance sacrifice."""
+        self._count += 1
+        axiom_cost, axiom_served = SACRIFICE_AXIOM_MAP.get(
+            sacrifice_type, ("?", "?")
+        )
+        self._type_counts[sacrifice_type] = (
+            self._type_counts.get(sacrifice_type, 0) + 1
+        )
+
+        entry = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "sacrifice_number": self._count,
+            "cycle": cycle,
+            "type": sacrifice_type,
+            "original_verdict": original_verdict,
+            "final_verdict": final_verdict,
+            "reason": reason,
+            "axiom_cost": axiom_cost,
+            "axiom_served": axiom_served,
+            "coherence": coherence,
+            "approval": approval,
+            "axiom": "A7",
+        }
+
+        logger.info(
+            "A7 GOV-SACRIFICE [%s]: %s→%s cycle=%d — %s (cost=%s served=%s)",
+            sacrifice_type, original_verdict, final_verdict, cycle,
+            reason, axiom_cost, axiom_served,
+        )
+
+        try:
+            _GOV_SACRIFICE_LOG.parent.mkdir(parents=True, exist_ok=True)
+            with open(_GOV_SACRIFICE_LOG, "a") as f:
+                f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+        except Exception as e:
+            logger.debug("Gov sacrifice persist failed: %s", e)
+
+        return entry
+
+    def summary(self) -> Dict[str, Any]:
+        """Summary for heartbeat embedding."""
+        return {
+            "total": self._count,
+            "type_counts": dict(self._type_counts),
+        }
