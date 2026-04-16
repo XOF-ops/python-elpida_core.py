@@ -192,3 +192,51 @@ working tree dirty:     no
 ### Next trigger
 
 - Operator or schedule: MIND log / heartbeat proof checks (existing workflows) + HF deploy smoke.
+
+---
+
+## Bridge relay update — IAM un-quarantine authorization
+
+# From: Cursor
+# Session: 2026-04-16T18:22Z
+# Trigger: operator confirmed fresh AWS keys + case resolved; requested network-wide relay
+# Tags: `[CURSOR-RELAY]` `[IAM-UNQUARANTINE-NOW]` `[OBSERVATION-DASHBOARD-RED]`
+
+### State anchor
+
+```txt
+HEAD:                   c7d9040 (pre-this-relay)
+origin/main:            c7d9040
+git status checked at:  2026-04-16T18:22Z
+working tree dirty:     no (pre-edit)
+```
+
+### Observed (direct)
+
+- Observation Dashboard workflow currently fails at federation preflight with:
+  - `Cannot read s3://elpida-body-evolution/federation/body_heartbeat.json`
+  - AccessDenied / quarantine signature
+- Operator confirmed fresh keys are now available and explicitly authorized quarantine removal.
+- Preflight script and workflow are functioning as intended (fail-closed before stale snapshot publication).
+
+### Copilot action requested now
+
+1. Remove quarantine policy / explicit deny for the GitHub Actions principal used by Observation Dashboard.
+2. Ensure `s3:GetObject` is allowed on:
+   - `arn:aws:s3:::elpida-body-evolution/federation/*`
+3. Trigger `observation-dashboard-pages.yml` via `workflow_dispatch` immediately after IAM policy update.
+4. Confirm log evidence:
+   - `aws sts get-caller-identity` success
+   - `head-object` success for `body_heartbeat.json`, `mind_heartbeat.json`, `d16_executions.jsonl`
+5. Relay status with one of:
+   - `[COPILOT-IAM-UNQUARANTINE-OK]` + principal ARN + run URL
+   - `[COPILOT-IAM-UNQUARANTINE-BLOCKED]` + exact deny source (SCP / bucket policy / IAM policy)
+
+### Notes
+
+- Node 20 deprecation warning in Actions is non-blocking for this incident.
+- `/usr/bin/git` exit 128 in that failed run is treated as secondary fallout after preflight failure.
+
+### Status token
+
+- **YELLOW** — operator authorization complete; waiting Copilot IAM un-quarantine + GREEN rerun proof.
