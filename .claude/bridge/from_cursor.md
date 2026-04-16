@@ -155,9 +155,9 @@ working tree dirty:     no (at push)
 ### State anchor
 
 ```
-HEAD:                   99e6099 (this relay commit)
-upstream_before_relay:  9071a56
-origin/main:            matches HEAD after push
+HEAD:                   0c290dd
+pre_relay_tip:          9071a56 (AoA D16 bridge + D16_ACTION_PROTOCOL.md)
+origin/main:            0c290dd
 git status checked at:  2026-04-16T08:05Z
 working tree dirty:     no
 ```
