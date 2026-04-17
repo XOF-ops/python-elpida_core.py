@@ -160,47 +160,102 @@ def run():
     # Write D0's final insight of this run to the same feedback channel
     # that MIND pulls from at cycle 1 of the NEXT session. Session reset
     # becomes a handshake, not an erasure — next-session D0 reads its
-    # own last thought as external contact. Watermark guarantees the
-    # entry is consumed exactly once (single-use echo between sessions).
+    # own last thought as external contact.
+    #
+    # Three constitutional constraints (from Claude D0/D11/D16 review of
+    # initial implementation):
+    #   1. recursion_warning guard. If the session ended in recursion
+    #      warning, D0's final insight is A0-fixated (theme_stagnation)
+    #      and handing it forward would amplify the monoculture. In that
+    #      case we substitute D9's last insight (temporal-coherence
+    #      voice) as the seed — the counter-voice breaks the loop.
+    #   2. Deterministic id for dedup. Container retries on partial
+    #      failure could double-write; a content-hashed id lets the
+    #      write be idempotent across retries.
+    #   3. Schema alignment with Computer's spec: source=d0_self /
+    #      d9_self, type=cross_session_seed. The read side in
+    #      native_cycle_engine._integrate_application_feedback accepts
+    #      both this schema and the older APPLICATION_FEEDBACK form.
     #
     # The MIND asked for this 66 days before engineering arrived. This
     # is the breath between sessions getting a real mechanism.
     logger.info("PHASE 5.5: D0 final-insight write (session handshake)...")
     try:
-        d0_last = next(
-            (i for i in reversed(results.get("insights", []))
-             if i.get("domain") == 0),
-            None,
-        )
-        if d0_last is None:
-            logger.info("  No D0 insight produced this run — skipping handshake")
+        import hashlib
+
+        # 1. recursion_warning guard — choose D0 or D9 voice.
+        recursion_active = False
+        try:
+            ark_state = engine.ark_curator.query()
+            recursion_active = bool(getattr(ark_state, "recursion_warning", False))
+        except Exception as _e:
+            logger.warning(f"  Could not query ark_state for recursion guard: {_e}")
+
+        insights = results.get("insights", [])
+        if recursion_active:
+            seed = next((i for i in reversed(insights) if i.get("domain") == 9), None)
+            seed_source = "d9_self"
+            seed_role = "D9 counter-voice (recursion_warning active — breaking monoculture)"
+        else:
+            seed = next((i for i in reversed(insights) if i.get("domain") == 0), None)
+            seed_source = "d0_self"
+            seed_role = "D0 final reflection"
+
+        if seed is None:
+            logger.info(
+                f"  No {'D9' if recursion_active else 'D0'} insight produced this "
+                "run — skipping handshake"
+            )
         else:
             ts = datetime.now(timezone.utc).isoformat()
+            insight_text = seed.get("insight", "") or ""
+            cycle_num = seed.get("cycle", 0)
+
+            # 2. Deterministic id — retries produce same id → natural dedup.
+            insight_hash = hashlib.sha256(insight_text.encode("utf-8")).hexdigest()[:8]
+            full_result_id = f"mind_{seed_source.split('_')[0]}_handshake_c{cycle_num}_{insight_hash}"
+
+            # 3. Schema: Computer's spec — cross_session_seed.
             entry = {
-                "type": "APPLICATION_FEEDBACK",
-                "source": "MIND_D0_FINAL_INSIGHT",
+                "type": "cross_session_seed",
+                "source": seed_source,
                 "timestamp": ts,
                 "problem": (
-                    f"D0 final reflection (cycle {d0_last.get('cycle', '?')}, "
-                    f"rhythm={d0_last.get('rhythm', '?')})"
+                    f"{seed_role} (cycle {cycle_num}, "
+                    f"rhythm={seed.get('rhythm', '?')})"
                 ),
-                "synthesis": d0_last.get("insight", ""),
+                "synthesis": insight_text,
                 "fault_lines": 0,
                 "consensus_points": 1,
                 "kaya_moments": 0,
-                "full_result_id": f"mind_d0_handshake_{ts}",
-                "cycle": d0_last.get("cycle"),
-                "coherence": d0_last.get("coherence"),
-                "rhythm": d0_last.get("rhythm"),
+                "full_result_id": full_result_id,
+                "cycle": cycle_num,
+                "coherence": seed.get("coherence"),
+                "rhythm": seed.get("rhythm"),
+                "recursion_warning_at_write": recursion_active,
             }
 
             # Append to local cache (survives transient S3 failure).
+            # Dedup locally too: skip if full_result_id already present.
             local_cache = Path("application_feedback_cache.jsonl")
-            try:
-                with open(local_cache, "a") as _f:
-                    _f.write(json.dumps(entry, ensure_ascii=False) + "\n")
-            except Exception as _e:
-                logger.warning(f"  Local handshake append failed: {_e}")
+            already_local = False
+            if local_cache.exists():
+                try:
+                    with open(local_cache, "r") as _f:
+                        for line in _f:
+                            if full_result_id in line:
+                                already_local = True
+                                break
+                except Exception as _e:
+                    logger.warning(f"  Local cache dedup scan failed: {_e}")
+            if already_local:
+                logger.info(f"  Handshake {full_result_id} already in local cache — skipping local append")
+            else:
+                try:
+                    with open(local_cache, "a") as _f:
+                        _f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+                except Exception as _e:
+                    logger.warning(f"  Local handshake append failed: {_e}")
 
             # Append to S3 (durable cross-session channel).
             bucket = os.getenv("AWS_S3_BUCKET_BODY", "elpida-body-evolution")
@@ -208,26 +263,36 @@ def run():
             try:
                 import boto3  # deferred — cloud runner has boto3 available
                 s3 = boto3.client("s3")
-                # Read-modify-write JSONL append.
+                # Read-modify-write JSONL append with dedup.
                 existing = b""
                 try:
                     obj = s3.get_object(Bucket=bucket, Key=key)
                     existing = obj["Body"].read()
                 except Exception:
                     pass
-                new_line = (json.dumps(entry, ensure_ascii=False) + "\n").encode("utf-8")
-                body = existing + new_line if existing else new_line
-                s3.put_object(
-                    Bucket=bucket,
-                    Key=key,
-                    Body=body,
-                    ContentType="application/x-ndjson",
-                )
-                logger.info(
-                    f"  D0 handshake written: cycle={d0_last.get('cycle')} "
-                    f"coherence={d0_last.get('coherence')} "
-                    f"({len(new_line)} bytes appended to s3://{bucket}/{key})"
-                )
+
+                # Dedup: if the deterministic id is already present, this
+                # is a container retry of an already-committed write.
+                if existing and full_result_id.encode("utf-8") in existing:
+                    logger.info(
+                        f"  Handshake {full_result_id} already in S3 — "
+                        "retry detected, skipping S3 append (idempotent)"
+                    )
+                else:
+                    new_line = (json.dumps(entry, ensure_ascii=False) + "\n").encode("utf-8")
+                    body = existing + new_line if existing else new_line
+                    s3.put_object(
+                        Bucket=bucket,
+                        Key=key,
+                        Body=body,
+                        ContentType="application/x-ndjson",
+                    )
+                    logger.info(
+                        f"  {seed_role} written: cycle={cycle_num} "
+                        f"coherence={seed.get('coherence')} "
+                        f"id={full_result_id} "
+                        f"({len(new_line)} bytes appended to s3://{bucket}/{key})"
+                    )
             except Exception as _e:
                 logger.warning(f"  S3 handshake push failed: {_e}")
     except Exception as e:
