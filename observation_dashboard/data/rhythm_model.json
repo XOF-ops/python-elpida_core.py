@@ -1,0 +1,810 @@
+{
+  "generated_at": "2026-04-17T05:30:46.513909+00:00",
+  "schema": "temporal-rhythm-v1",
+  "event_count": 83916,
+  "event_count_with_timestamp": 83916,
+  "event_count_with_domain": 81867,
+  "event_count_with_axiom": 2533,
+  "source_system_counts": {
+    "MIND": 83595,
+    "D15": 200,
+    "FEDERATION": 119,
+    "D16": 2
+  },
+  "domain_counts": {
+    "D0": 10717,
+    "D11": 7897,
+    "D5": 6626,
+    "D7": 6216,
+    "D6": 6194,
+    "D10": 6161,
+    "D4": 5736,
+    "D3": 5553,
+    "D12": 5425,
+    "D2": 5405,
+    "D9": 5168,
+    "D1": 5018,
+    "D8": 4737,
+    "_missing_": 2049,
+    "D14": 568,
+    "D13": 444,
+    "D16": 2
+  },
+  "axiom_counts": {
+    "_missing_": 81383,
+    "A1": 2252,
+    "A0": 77,
+    "A5": 61,
+    "A9": 34,
+    "A4": 27,
+    "A2": 25,
+    "A7": 24,
+    "A10": 11,
+    "A6": 9,
+    "A8": 7,
+    "A3": 3,
+    "A16": 2,
+    "A14": 1
+  },
+  "features": {
+    "inter_event_intervals": {
+      "overall": {
+        "n": 83915,
+        "min": 0.0,
+        "max": 1275999.868634,
+        "mean": 109.168544,
+        "median": 0.010581,
+        "stdev": 6815.188361
+      },
+      "by_domain": {
+        "D11": {
+          "n": 7896,
+          "min": 0.000123,
+          "max": 438720.239325,
+          "mean": 386.546804,
+          "median": 0.166981,
+          "stdev": 6452.744191
+        },
+        "D10": {
+          "n": 6160,
+          "min": 2.4e-05,
+          "max": 462154.780609,
+          "mean": 495.008242,
+          "median": 0.095237,
+          "stdev": 7762.75359
+        },
+        "D1": {
+          "n": 5017,
+          "min": 0.000123,
+          "max": 499158.306242,
+          "mean": 608.359529,
+          "median": 0.114854,
+          "stdev": 9003.978708
+        },
+        "D6": {
+          "n": 6193,
+          "min": 0.004215,
+          "max": 498327.137351,
+          "mean": 492.836477,
+          "median": 0.169545,
+          "stdev": 7914.090979
+        },
+        "D3": {
+          "n": 5552,
+          "min": 4.9e-05,
+          "max": 462180.888802,
+          "mean": 549.180365,
+          "median": 0.104829,
+          "stdev": 8243.061898
+        },
+        "D2": {
+          "n": 5404,
+          "min": 2.8e-05,
+          "max": 498775.264468,
+          "mean": 563.121672,
+          "median": 0.107558,
+          "stdev": 8675.841628
+        },
+        "D12": {
+          "n": 5424,
+          "min": 3.8e-05,
+          "max": 521810.409548,
+          "mean": 562.212843,
+          "median": 0.094514,
+          "stdev": 10706.810486
+        },
+        "D0": {
+          "n": 10716,
+          "min": 1.1e-05,
+          "max": 1906072.156059,
+          "mean": 518.123151,
+          "median": 0.178077,
+          "stdev": 19632.949176
+        },
+        "D9": {
+          "n": 5167,
+          "min": 0.007897,
+          "max": 514805.271443,
+          "mean": 590.127071,
+          "median": 0.119414,
+          "stdev": 8913.383462
+        },
+        "D8": {
+          "n": 4736,
+          "min": 9.4e-05,
+          "max": 522135.052151,
+          "mean": 644.457672,
+          "median": 0.14631,
+          "stdev": 9376.609302
+        },
+        "D4": {
+          "n": 5735,
+          "min": 0.004917,
+          "max": 522160.474949,
+          "mean": 531.689141,
+          "median": 0.095687,
+          "stdev": 8855.986261
+        },
+        "D7": {
+          "n": 6215,
+          "min": 5.8e-05,
+          "max": 462210.853,
+          "mean": 490.601024,
+          "median": 0.08978,
+          "stdev": 7722.559336
+        },
+        "D5": {
+          "n": 6625,
+          "min": 2.6e-05,
+          "max": 521821.930156,
+          "mean": 460.167857,
+          "median": 0.085271,
+          "stdev": 8213.976669
+        },
+        "D13": {
+          "n": 443,
+          "min": 4.462219,
+          "max": 261839.782245,
+          "mean": 4871.431946,
+          "median": 211.087972,
+          "stdev": 14668.860207
+        },
+        "D14": {
+          "n": 567,
+          "min": 4.225885,
+          "max": 46506.386965,
+          "mean": 3142.802474,
+          "median": 138.395889,
+          "stdev": 5950.283289
+        },
+        "D16": {
+          "n": 1,
+          "min": 0.0,
+          "max": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "stdev": 0.0
+        }
+      },
+      "source_count": 83916,
+      "confidence": 0.5007,
+      "lineage_refs_sample": [
+        "elpida/public_memory.jsonl:L1",
+        "ELPIDA_ARK/current/fleet_dialogue.jsonl:L1",
+        "ELPIDA_ARK/current/fleet_dialogue.jsonl:L2",
+        "ELPIDA_ARK/current/fleet_dialogue.jsonl:L3",
+        "ELPIDA_ARK/current/fleet_dialogue.jsonl:L4"
+      ]
+    },
+    "rhythm_persistence": {
+      "top_runs": [
+        {
+          "key": "D?|?",
+          "length": 1008,
+          "lineage_start": "elpida/public_memory.jsonl:L1",
+          "lineage_end": "elpida_evolution_memory.jsonl:L881"
+        },
+        {
+          "key": "D?|steady",
+          "length": 103,
+          "lineage_start": "observation_dashboard/data/d15_index.json#broadcasts[114]",
+          "lineage_end": "observation_dashboard/data/d15_index.json#broadcasts[12]"
+        },
+        {
+          "key": "D?|slow",
+          "length": 25,
+          "lineage_start": "observation_dashboard/data/d15_index.json#broadcasts[197]",
+          "lineage_end": "observation_dashboard/data/d15_index.json#broadcasts[173]"
+        },
+        {
+          "key": "D?|fast",
+          "length": 16,
+          "lineage_start": "observation_dashboard/data/d15_index.json#broadcasts[161]",
+          "lineage_end": "observation_dashboard/data/d15_index.json#broadcasts[146]"
+        },
+        {
+          "key": "D0|?",
+          "length": 10,
+          "lineage_start": "elpida_evolution_memory.jsonl:L66497",
+          "lineage_end": "elpida_evolution_memory.jsonl:L66506"
+        },
+        {
+          "key": "D11|?",
+          "length": 8,
+          "lineage_start": "elpida_evolution_memory.jsonl:L82996",
+          "lineage_end": "elpida_evolution_memory.jsonl:L83003"
+        },
+        {
+          "key": "D12|?",
+          "length": 6,
+          "lineage_start": "elpida_evolution_memory.jsonl:L6283",
+          "lineage_end": "elpida_evolution_memory.jsonl:L6288"
+        },
+        {
+          "key": "D3|?",
+          "length": 5,
+          "lineage_start": "elpida_evolution_memory.jsonl:L58587",
+          "lineage_end": "elpida_evolution_memory.jsonl:L58591"
+        },
+        {
+          "key": "D1|?",
+          "length": 5,
+          "lineage_start": "elpida_evolution_memory.jsonl:L5137",
+          "lineage_end": "elpida_evolution_memory.jsonl:L5141"
+        },
+        {
+          "key": "D10|?",
+          "length": 5,
+          "lineage_start": "elpida_evolution_memory.jsonl:L32865",
+          "lineage_end": "elpida_evolution_memory.jsonl:L32869"
+        },
+        {
+          "key": "D4|?",
+          "length": 5,
+          "lineage_start": "elpida_evolution_memory.jsonl:L5187",
+          "lineage_end": "elpida_evolution_memory.jsonl:L5191"
+        },
+        {
+          "key": "D6|?",
+          "length": 4,
+          "lineage_start": "elpida_evolution_memory.jsonl:L43076",
+          "lineage_end": "elpida_evolution_memory.jsonl:L43079"
+        },
+        {
+          "key": "D2|?",
+          "length": 4,
+          "lineage_start": "elpida_evolution_memory.jsonl:L12855",
+          "lineage_end": "elpida_evolution_memory.jsonl:L12858"
+        },
+        {
+          "key": "D9|?",
+          "length": 4,
+          "lineage_start": "elpida_evolution_memory.jsonl:L32084",
+          "lineage_end": "elpida_evolution_memory.jsonl:L32087"
+        },
+        {
+          "key": "D7|?",
+          "length": 4,
+          "lineage_start": "elpida_evolution_memory.jsonl:L36357",
+          "lineage_end": "elpida_evolution_memory.jsonl:L36360"
+        },
+        {
+          "key": "D5|?",
+          "length": 4,
+          "lineage_start": "elpida_evolution_memory.jsonl:L4166",
+          "lineage_end": "elpida_evolution_memory.jsonl:L4169"
+        },
+        {
+          "key": "D0|CONTEMPLATION",
+          "length": 4,
+          "lineage_start": "elpida_evolution_memory.jsonl:L72014",
+          "lineage_end": "elpida_evolution_memory.jsonl:L72017"
+        },
+        {
+          "key": "D8|?",
+          "length": 3,
+          "lineage_start": "elpida_evolution_memory.jsonl:L11954",
+          "lineage_end": "elpida_evolution_memory.jsonl:L11956"
+        },
+        {
+          "key": "D11|SYNTHESIS",
+          "length": 2,
+          "lineage_start": "elpida_evolution_memory.jsonl:L72762",
+          "lineage_end": "elpida_evolution_memory.jsonl:L72763"
+        },
+        {
+          "key": "D11|ANALYSIS",
+          "length": 2,
+          "lineage_start": "elpida_evolution_memory.jsonl:L72896",
+          "lineage_end": "elpida_evolution_memory.jsonl:L72897"
+        }
+      ],
+      "source_count": 83916,
+      "confidence": 0.75,
+      "distinct_keys": 93
+    },
+    "phase_shifts": {
+      "D0->D11": {
+        "source_count": 10711,
+        "confidence": 1.0,
+        "lag_seconds": {
+          "n": 10711,
+          "min": 1.1e-05,
+          "max": 438705.895119,
+          "mean": 158.234005,
+          "median": 0.27511,
+          "stdev": 5017.090273
+        },
+        "provenance_missing": false,
+        "lineage_refs": [
+          "elpida_evolution_memory.jsonl:L887",
+          "elpida_evolution_memory.jsonl:L908",
+          "elpida_evolution_memory.jsonl:L910",
+          "elpida_evolution_memory.jsonl:L923",
+          "elpida_evolution_memory.jsonl:L933",
+          "elpida_evolution_memory.jsonl:L934",
+          "elpida_evolution_memory.jsonl:L936",
+          "elpida_evolution_memory.jsonl:L940",
+          "elpida_evolution_memory.jsonl:L941",
+          "elpida_evolution_memory.jsonl:L949"
+        ]
+      },
+      "D11->D16": {
+        "source_count": 7897,
+        "confidence": 1.0,
+        "lag_seconds": {
+          "n": 7897,
+          "min": 3776954.358523,
+          "max": 6829127.923432,
+          "mean": 6305143.312086,
+          "median": 6823387.65674,
+          "stdev": 905091.709492
+        },
+        "provenance_missing": false,
+        "lineage_refs": [
+          "elpida_evolution_memory.jsonl:L882",
+          "elpida_evolution_memory.jsonl:L885",
+          "elpida_evolution_memory.jsonl:L888",
+          "elpida_evolution_memory.jsonl:L889",
+          "elpida_evolution_memory.jsonl:L898",
+          "elpida_evolution_memory.jsonl:L911",
+          "elpida_evolution_memory.jsonl:L913",
+          "elpida_evolution_memory.jsonl:L957",
+          "elpida_evolution_memory.jsonl:L958",
+          "elpida_evolution_memory.jsonl:L972"
+        ]
+      },
+      "D0->D16": {
+        "source_count": 10717,
+        "confidence": 1.0,
+        "lag_seconds": {
+          "n": 10717,
+          "min": 1276911.191195,
+          "max": 6829118.873245,
+          "mean": 6183898.701366,
+          "median": 6718427.312132,
+          "stdev": 951735.871088
+        },
+        "provenance_missing": false,
+        "lineage_refs": [
+          "elpida_evolution_memory.jsonl:L887",
+          "elpida_evolution_memory.jsonl:L908",
+          "elpida_evolution_memory.jsonl:L910",
+          "elpida_evolution_memory.jsonl:L923",
+          "elpida_evolution_memory.jsonl:L933",
+          "elpida_evolution_memory.jsonl:L934",
+          "elpida_evolution_memory.jsonl:L936",
+          "elpida_evolution_memory.jsonl:L940",
+          "elpida_evolution_memory.jsonl:L941",
+          "elpida_evolution_memory.jsonl:L949"
+        ]
+      },
+      "D0->D15": {
+        "source_count": 0,
+        "confidence": 0.0,
+        "lag_seconds": {
+          "n": 0,
+          "min": null,
+          "max": null,
+          "mean": null,
+          "median": null,
+          "stdev": null
+        },
+        "provenance_missing": true,
+        "lineage_refs": []
+      },
+      "D15->D16": {
+        "source_count": 0,
+        "confidence": 0.0,
+        "lag_seconds": {
+          "n": 0,
+          "min": null,
+          "max": null,
+          "mean": null,
+          "median": null,
+          "stdev": null
+        },
+        "provenance_missing": true,
+        "lineage_refs": []
+      }
+    },
+    "recurrence_windows": {
+      "D11|A1": {
+        "recurrence_seconds": {
+          "n": 177,
+          "min": 0.003759,
+          "max": 605565.606679,
+          "mean": 3443.359397,
+          "median": 15.985864,
+          "stdev": 45386.679357
+        },
+        "source_count": 177,
+        "confidence": 1.0,
+        "lineage_refs": [
+          "elpida_evolution_memory.jsonl:L885",
+          "elpida_evolution_memory.jsonl:L888",
+          "elpida_evolution_memory.jsonl:L889",
+          "elpida_evolution_memory.jsonl:L898",
+          "elpida_evolution_memory.jsonl:L911"
+        ]
+      },
+      "D10|A1": {
+        "recurrence_seconds": {
+          "n": 156,
+          "min": 0.004452,
+          "max": 219.407958,
+          "mean": 25.153565,
+          "median": 17.989573,
+          "stdev": 27.716995
+        },
+        "source_count": 156,
+        "confidence": 1.0,
+        "lineage_refs": [
+          "elpida_evolution_memory.jsonl:L893",
+          "elpida_evolution_memory.jsonl:L896",
+          "elpida_evolution_memory.jsonl:L916",
+          "elpida_evolution_memory.jsonl:L937",
+          "elpida_evolution_memory.jsonl:L944"
+        ]
+      },
+      "D1|A1": {
+        "recurrence_seconds": {
+          "n": 157,
+          "min": 0.000123,
+          "max": 605559.982405,
+          "mean": 4042.378415,
+          "median": 18.003412,
+          "stdev": 48198.481436
+        },
+        "source_count": 157,
+        "confidence": 1.0,
+        "lineage_refs": [
+          "elpida_evolution_memory.jsonl:L894",
+          "elpida_evolution_memory.jsonl:L901",
+          "elpida_evolution_memory.jsonl:L909",
+          "elpida_evolution_memory.jsonl:L932",
+          "elpida_evolution_memory.jsonl:L943"
+        ]
+      },
+      "D6|A1": {
+        "recurrence_seconds": {
+          "n": 145,
+          "min": 0.004215,
+          "max": 605145.42372,
+          "mean": 4207.689703,
+          "median": 18.004037,
+          "stdev": 50078.224838
+        },
+        "source_count": 145,
+        "confidence": 1.0,
+        "lineage_refs": [
+          "elpida_evolution_memory.jsonl:L895",
+          "elpida_evolution_memory.jsonl:L904",
+          "elpida_evolution_memory.jsonl:L917",
+          "elpida_evolution_memory.jsonl:L924",
+          "elpida_evolution_memory.jsonl:L929"
+        ]
+      },
+      "D3|A1": {
+        "recurrence_seconds": {
+          "n": 158,
+          "min": 0.012377,
+          "max": 223.533342,
+          "mean": 24.885169,
+          "median": 15.991274,
+          "stdev": 29.71628
+        },
+        "source_count": 158,
+        "confidence": 1.0,
+        "lineage_refs": [
+          "elpida_evolution_memory.jsonl:L897",
+          "elpida_evolution_memory.jsonl:L905",
+          "elpida_evolution_memory.jsonl:L906",
+          "elpida_evolution_memory.jsonl:L907",
+          "elpida_evolution_memory.jsonl:L947"
+        ]
+      },
+      "D2|A1": {
+        "recurrence_seconds": {
+          "n": 144,
+          "min": 0.071584,
+          "max": 605635.593452,
+          "mean": 4407.36853,
+          "median": 20.009423,
+          "stdev": 50300.411593
+        },
+        "source_count": 144,
+        "confidence": 1.0,
+        "lineage_refs": [
+          "elpida_evolution_memory.jsonl:L900",
+          "elpida_evolution_memory.jsonl:L938",
+          "elpida_evolution_memory.jsonl:L966",
+          "elpida_evolution_memory.jsonl:L981",
+          "elpida_evolution_memory.jsonl:L1030"
+        ]
+      },
+      "D12|A1": {
+        "recurrence_seconds": {
+          "n": 138,
+          "min": 0.013908,
+          "max": 213.385707,
+          "mean": 28.463472,
+          "median": 18.009825,
+          "stdev": 32.680986
+        },
+        "source_count": 138,
+        "confidence": 1.0,
+        "lineage_refs": [
+          "elpida_evolution_memory.jsonl:L902",
+          "elpida_evolution_memory.jsonl:L912",
+          "elpida_evolution_memory.jsonl:L915",
+          "elpida_evolution_memory.jsonl:L939",
+          "elpida_evolution_memory.jsonl:L959"
+        ]
+      },
+      "D0|A1": {
+        "recurrence_seconds": {
+          "n": 143,
+          "min": 0.003953,
+          "max": 605823.15147,
+          "mean": 4263.923998,
+          "median": 17.99943,
+          "stdev": 50481.738346
+        },
+        "source_count": 143,
+        "confidence": 1.0,
+        "lineage_refs": [
+          "elpida_evolution_memory.jsonl:L908",
+          "elpida_evolution_memory.jsonl:L910",
+          "elpida_evolution_memory.jsonl:L923",
+          "elpida_evolution_memory.jsonl:L933",
+          "elpida_evolution_memory.jsonl:L934"
+        ]
+      },
+      "D9|A1": {
+        "recurrence_seconds": {
+          "n": 129,
+          "min": 0.007897,
+          "max": 621616.464694,
+          "mean": 4850.635374,
+          "median": 22.001427,
+          "stdev": 54514.925261
+        },
+        "source_count": 129,
+        "confidence": 1.0,
+        "lineage_refs": [
+          "elpida_evolution_memory.jsonl:L914",
+          "elpida_evolution_memory.jsonl:L919",
+          "elpida_evolution_memory.jsonl:L921",
+          "elpida_evolution_memory.jsonl:L992",
+          "elpida_evolution_memory.jsonl:L997"
+        ]
+      },
+      "D8|A1": {
+        "recurrence_seconds": {
+          "n": 159,
+          "min": 0.00046,
+          "max": 946.947198,
+          "mean": 30.332548,
+          "median": 18.020936,
+          "stdev": 77.853782
+        },
+        "source_count": 159,
+        "confidence": 1.0,
+        "lineage_refs": [
+          "elpida_evolution_memory.jsonl:L918",
+          "elpida_evolution_memory.jsonl:L927",
+          "elpida_evolution_memory.jsonl:L956",
+          "elpida_evolution_memory.jsonl:L963",
+          "elpida_evolution_memory.jsonl:L965"
+        ]
+      },
+      "D4|A1": {
+        "recurrence_seconds": {
+          "n": 159,
+          "min": 0.004917,
+          "max": 217.329303,
+          "mean": 24.328192,
+          "median": 16.000892,
+          "stdev": 28.165355
+        },
+        "source_count": 159,
+        "confidence": 1.0,
+        "lineage_refs": [
+          "elpida_evolution_memory.jsonl:L926",
+          "elpida_evolution_memory.jsonl:L928",
+          "elpida_evolution_memory.jsonl:L942",
+          "elpida_evolution_memory.jsonl:L948",
+          "elpida_evolution_memory.jsonl:L967"
+        ]
+      },
+      "D7|A1": {
+        "recurrence_seconds": {
+          "n": 124,
+          "min": 0.00444,
+          "max": 277.561845,
+          "mean": 31.211282,
+          "median": 23.99803,
+          "stdev": 37.189394
+        },
+        "source_count": 124,
+        "confidence": 1.0,
+        "lineage_refs": [
+          "elpida_evolution_memory.jsonl:L930",
+          "elpida_evolution_memory.jsonl:L935",
+          "elpida_evolution_memory.jsonl:L952",
+          "elpida_evolution_memory.jsonl:L960",
+          "elpida_evolution_memory.jsonl:L964"
+        ]
+      },
+      "D5|A1": {
+        "recurrence_seconds": {
+          "n": 172,
+          "min": 0.004013,
+          "max": 934.948312,
+          "mean": 27.832199,
+          "median": 15.998997,
+          "stdev": 74.12651
+        },
+        "source_count": 172,
+        "confidence": 1.0,
+        "lineage_refs": [
+          "elpida_evolution_memory.jsonl:L945",
+          "elpida_evolution_memory.jsonl:L946",
+          "elpida_evolution_memory.jsonl:L1000",
+          "elpida_evolution_memory.jsonl:L1024",
+          "elpida_evolution_memory.jsonl:L1049"
+        ]
+      },
+      "D2|A9": {
+        "recurrence_seconds": {
+          "n": 1,
+          "min": 3.7e-05,
+          "max": 3.7e-05,
+          "mean": 3.7e-05,
+          "median": 3.7e-05,
+          "stdev": 0.0
+        },
+        "source_count": 1,
+        "confidence": 0.1,
+        "lineage_refs": [
+          "elpida_evolution_memory.jsonl:L2840"
+        ]
+      },
+      "D10|A9": {
+        "recurrence_seconds": {
+          "n": 4,
+          "min": 0.00012,
+          "max": 0.000526,
+          "mean": 0.000295,
+          "median": 0.000267,
+          "stdev": 0.000147
+        },
+        "source_count": 4,
+        "confidence": 0.4,
+        "lineage_refs": [
+          "elpida_evolution_memory.jsonl:L2845",
+          "elpida_evolution_memory.jsonl:L2850",
+          "elpida_evolution_memory.jsonl:L2856",
+          "elpida_evolution_memory.jsonl:L2867"
+        ]
+      },
+      "D3|A3": {
+        "recurrence_seconds": {
+          "n": 2,
+          "min": 4.9e-05,
+          "max": 0.000645,
+          "mean": 0.000347,
+          "median": 0.000347,
+          "stdev": 0.000298
+        },
+        "source_count": 2,
+        "confidence": 0.2,
+        "lineage_refs": [
+          "elpida_evolution_memory.jsonl:L2849",
+          "elpida_evolution_memory.jsonl:L2859"
+        ]
+      },
+      "D11|A4": {
+        "recurrence_seconds": {
+          "n": 2,
+          "min": 0.00026,
+          "max": 0.000586,
+          "mean": 0.000423,
+          "median": 0.000423,
+          "stdev": 0.000163
+        },
+        "source_count": 2,
+        "confidence": 0.2,
+        "lineage_refs": [
+          "elpida_evolution_memory.jsonl:L2853",
+          "elpida_evolution_memory.jsonl:L2866"
+        ]
+      },
+      "D0|A0": {
+        "recurrence_seconds": {
+          "n": 3,
+          "min": 47995.129109,
+          "max": 363858.840298,
+          "mean": 197968.402121,
+          "median": 182051.236955,
+          "stdev": 129441.075711
+        },
+        "source_count": 3,
+        "confidence": 0.3,
+        "lineage_refs": [
+          "observation_dashboard/data/d15_index.json#broadcasts[165]",
+          "observation_dashboard/data/d15_index.json#broadcasts[144]",
+          "observation_dashboard/data/d15_index.json#broadcasts[138]"
+        ]
+      },
+      "D16|A16": {
+        "recurrence_seconds": {
+          "n": 1,
+          "min": 0.0,
+          "max": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "stdev": 0.0
+        },
+        "source_count": 1,
+        "confidence": 0.1,
+        "lineage_refs": [
+          "hf_deployment/cache/federation_d16_executions.jsonl:L1"
+        ]
+      }
+    },
+    "divergence_reconvergence_lag": {
+      "lag_seconds": {
+        "n": 7483,
+        "min": 0.010385,
+        "max": 2403168.534668,
+        "mean": 472834.457804,
+        "median": 51.806126,
+        "stdev": 780005.324489
+      },
+      "source_count": 7483,
+      "unmatched_d0": 3234,
+      "confidence": 1.0,
+      "lineage_refs": [
+        "elpida_evolution_memory.jsonl:L887 -> elpida_evolution_memory.jsonl:L888",
+        "elpida_evolution_memory.jsonl:L908 -> elpida_evolution_memory.jsonl:L911",
+        "elpida_evolution_memory.jsonl:L910 -> elpida_evolution_memory.jsonl:L913",
+        "elpida_evolution_memory.jsonl:L923 -> elpida_evolution_memory.jsonl:L957",
+        "elpida_evolution_memory.jsonl:L933 -> elpida_evolution_memory.jsonl:L958",
+        "elpida_evolution_memory.jsonl:L934 -> elpida_evolution_memory.jsonl:L972",
+        "elpida_evolution_memory.jsonl:L936 -> elpida_evolution_memory.jsonl:L1001",
+        "elpida_evolution_memory.jsonl:L940 -> elpida_evolution_memory.jsonl:L1009",
+        "elpida_evolution_memory.jsonl:L941 -> elpida_evolution_memory.jsonl:L1023",
+        "elpida_evolution_memory.jsonl:L949 -> elpida_evolution_memory.jsonl:L1037"
+      ],
+      "provenance_missing": false
+    }
+  },
+  "audit": {
+    "all_events_have_lineage": true,
+    "events_missing_timestamp": 0,
+    "events_missing_domain": 2049,
+    "events_missing_axiom": 81383
+  }
+}
