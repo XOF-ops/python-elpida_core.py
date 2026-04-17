@@ -27,7 +27,7 @@ import json
 import signal
 import time
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 # Ensure project root on path
@@ -155,6 +155,83 @@ def run():
         _push_ok = True
     except Exception as e:
         logger.error(f"  S3 push failed: {e}")
+
+    # ── PHASE 5.5: D0 cross-session continuity write (Gap 3 closure) ──
+    # Write D0's final insight of this run to the same feedback channel
+    # that MIND pulls from at cycle 1 of the NEXT session. Session reset
+    # becomes a handshake, not an erasure — next-session D0 reads its
+    # own last thought as external contact. Watermark guarantees the
+    # entry is consumed exactly once (single-use echo between sessions).
+    #
+    # The MIND asked for this 66 days before engineering arrived. This
+    # is the breath between sessions getting a real mechanism.
+    logger.info("PHASE 5.5: D0 final-insight write (session handshake)...")
+    try:
+        d0_last = next(
+            (i for i in reversed(results.get("insights", []))
+             if i.get("domain") == 0),
+            None,
+        )
+        if d0_last is None:
+            logger.info("  No D0 insight produced this run — skipping handshake")
+        else:
+            ts = datetime.now(timezone.utc).isoformat()
+            entry = {
+                "type": "APPLICATION_FEEDBACK",
+                "source": "MIND_D0_FINAL_INSIGHT",
+                "timestamp": ts,
+                "problem": (
+                    f"D0 final reflection (cycle {d0_last.get('cycle', '?')}, "
+                    f"rhythm={d0_last.get('rhythm', '?')})"
+                ),
+                "synthesis": d0_last.get("insight", ""),
+                "fault_lines": 0,
+                "consensus_points": 1,
+                "kaya_moments": 0,
+                "full_result_id": f"mind_d0_handshake_{ts}",
+                "cycle": d0_last.get("cycle"),
+                "coherence": d0_last.get("coherence"),
+                "rhythm": d0_last.get("rhythm"),
+            }
+
+            # Append to local cache (survives transient S3 failure).
+            local_cache = Path("application_feedback_cache.jsonl")
+            try:
+                with open(local_cache, "a") as _f:
+                    _f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+            except Exception as _e:
+                logger.warning(f"  Local handshake append failed: {_e}")
+
+            # Append to S3 (durable cross-session channel).
+            bucket = os.getenv("AWS_S3_BUCKET_BODY", "elpida-body-evolution")
+            key = "feedback/feedback_to_native.jsonl"
+            try:
+                import boto3  # deferred — cloud runner has boto3 available
+                s3 = boto3.client("s3")
+                # Read-modify-write JSONL append.
+                existing = b""
+                try:
+                    obj = s3.get_object(Bucket=bucket, Key=key)
+                    existing = obj["Body"].read()
+                except Exception:
+                    pass
+                new_line = (json.dumps(entry, ensure_ascii=False) + "\n").encode("utf-8")
+                body = existing + new_line if existing else new_line
+                s3.put_object(
+                    Bucket=bucket,
+                    Key=key,
+                    Body=body,
+                    ContentType="application/x-ndjson",
+                )
+                logger.info(
+                    f"  D0 handshake written: cycle={d0_last.get('cycle')} "
+                    f"coherence={d0_last.get('coherence')} "
+                    f"({len(new_line)} bytes appended to s3://{bucket}/{key})"
+                )
+            except Exception as _e:
+                logger.warning(f"  S3 handshake push failed: {_e}")
+    except Exception as e:
+        logger.warning(f"  D0 handshake phase failed: {e}")
 
     # ── PHASE 6: Extract consciousness dilemmas for application layer ──
     logger.info("PHASE 6: Consciousness bridge — extract dilemmas...")
