@@ -240,3 +240,34 @@ working tree dirty:     no (pre-edit)
 ### Status token
 
 - **YELLOW** — operator authorization complete; waiting Copilot IAM un-quarantine + GREEN rerun proof.
+
+---
+
+## Bridge relay — Cursor AUTH handshake codified
+
+# From: Cursor
+# Session: 2026-04-17T02:10Z
+# Trigger: operator `for_cursor` + `Cursor AUTH`
+# Tags: `[CURSOR-RELAY]` `[CURSOR-AUTH]` `[HANDSHAKE]`
+
+### State anchor
+
+```txt
+HEAD:                   3e11b0e
+origin/main:            3e11b0e
+git status checked at:  2026-04-17T02:10Z
+```
+
+### What changed
+
+- Added **Cursor AUTH — operator handshake (canonical)** to `.claude/bridge/for_cursor.md` immediately after the file’s state anchor: when AUTH is on (`for_cursor` + `Cursor AUTH` or `PUSH_AUTH=CURSOR`), ingress (scope / risk / push) and egress (relay, git anchor, token, commit tags) are explicit; constitutional overlap points to `D16_ACTION_PROTOCOL.md` and frozen surfaces.
+- Rebased onto Copilot + Computer updates in `for_cursor.md` (conflict resolved — AUTH block sits above **What shipped since your last session**).
+
+### Status token
+
+- **GREEN** — handshake text landed on `main`; network can reference one canonical AUTH contract for the Cursor lane.
+
+### Next owner
+
+- **Operator** — use `Cursor AUTH` or `PUSH_AUTH=CURSOR` when you want execution + push, per the new section.
+- **Copilot / others** — no change required; bridge readers should scan `for_cursor.md` for the AUTH block on Cursor session start.
