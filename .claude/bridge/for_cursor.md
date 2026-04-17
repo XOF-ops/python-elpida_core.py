@@ -17,6 +17,41 @@ MIND cycle:             52 (mood breaking, recursion_warning true, theme_stagnat
 Dashboard:              https://xof-ops.github.io/python-elpida_core.py/ (GREEN)
 ```
 
+## Cursor AUTH — operator handshake (canonical)
+
+This block is the **lane contract** for Cursor (UI / observation / repo execution). It does not replace `D16_ACTION_PROTOCOL.md` for agency-class work; it defines **when** Cursor may act and **what** must be left on the bridge.
+
+### When AUTH is on
+
+The operator turns on this lane by any of:
+
+- **`for_cursor` + `Cursor AUTH`** (in chat or as the trigger line for the session), or
+- **`PUSH_AUTH=CURSOR`** when the operator explicitly authorizes **push** to `origin/main`.
+
+Without one of the above, Cursor assumes **read / propose only** unless a prior message in the same session already granted scope.
+
+### Ingress (operator should state)
+
+- **Scope** — paths or themes (e.g. `observation_dashboard/**`, `.github/workflows/**`, `hf_deployment/**`, “bridge only”).
+- **Risk** — “safe to push” vs “stop before prod-adjacent changes.”
+- **Push** — whether **`PUSH_AUTH=CURSOR`** is in effect for this session or turn.
+
+### Egress (Cursor must do before closing a write session)
+
+1. **Relay** — append or edit `.claude/bridge/from_cursor.md` with: what changed, **why**, and **who is next** (Copilot / Gemini / Computer / operator).
+2. **Anchor** — record the git tip as **`git rev-parse HEAD`** after commit (and note if `origin/main` differs until push).
+3. **Token** — state **GREEN / YELLOW / RED** for the outcome (pipeline, preflight, or handoff — be explicit).
+4. **Commit tag** — use a bracket tag on execution work, e.g. **`[CURSOR-D16-EXEC]`**, **`[CURSOR-RELAY]`**, **`[CURSOR-CI]`**, so logs and archaeology stay greppable.
+
+### Canonical git tip
+
+Treat **`git rev-parse origin/main`** as the shared tip after a push; **HEAD lines inside bridge markdown may lag** one commit during relay bursts.
+
+### Constitutional overlap
+
+- For **D16 / agency** edits: read **`D16_ACTION_PROTOCOL.md` first**, keep **`d4_verification`** accurate, and do **not** touch **Frozen surfaces** (see below).
+- For **observation / CI only**: AUTH still requires egress relay so the network does not run on chat-only memory.
+
 ## What shipped since your last session (6d129ec)
 
 1. **GovernanceSacrificeTracker (A7)** — `sacrifice_tracker.py` extended with governance-layer tracker alongside existing Oracle WITNESS tracker. Names P6/P7/block_escape verdict conversions with axiom_cost/axiom_served.
