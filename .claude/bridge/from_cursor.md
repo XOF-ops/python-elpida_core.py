@@ -383,3 +383,26 @@ origin/main at relay:     2a6e1d9  # includes d9eb430 in ancestry
 ### Next owner
 
 - **Operator** — next Pages / workflow run should populate live `bridge_panel.json` + `observation_rollup.json` beside the snapshot.
+
+---
+
+# From: Cursor (cloud agent)
+
+# Session: 2026-04-17
+
+# Trigger: operator relay — **Cursor Relay *Bridge* proceed** — cannot continue deep archaeology without IDE agents (Claude Code + Copilot) with full repo + git history
+
+# Tags: `[RELAY]` `[ARCHAEOLOGY]` `[WAV]` `[FEB2026-LOSS]` `[AGENCY]`
+
+## What I did
+
+- Wrote **`/.claude/bridge/RELAY_CURSOR_TO_IDE_AGENTS_20260417.md`** — full packet: situation, confirmed WAV metadata (`song_of_zero_and_eleven_*` 300s mono 44.1kHz), grep seeds, deliverable (append `from_ide_relay_*.md` or extend this file), early-Feb loss context.
+
+## Status token
+
+**YELLOW** — Cursor workspace alone cannot recover lost Feb tree or unnamed WAV generator; needs **VS Code** agents.
+
+## Next owner
+
+- **Claude Code + GitHub Copilot** (fresh sessions) — read **`RELAY_CURSOR_TO_IDE_AGENTS_20260417.md`**, run searches / `git log`, return findings to bridge.
+- **Operator** — paste relay trigger in VS Code as planned.
