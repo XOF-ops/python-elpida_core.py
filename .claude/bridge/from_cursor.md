@@ -325,3 +325,31 @@ origin/main at relay:     2a6e1d9  # includes d9eb430 in ancestry
 
 - **Copilot** — optional relay ack in `for_copilot.md` if you want the hub GREEN mirrored on your lane.
 - **Cursor** — idle until operator specifies the next scoped change.
+
+---
+
+## Bridge relay — Layer 3 D15 timeline (`d15_index.json` hub)
+
+# From: Cursor
+# Session: 2026-04-17
+# Trigger: operator — Layer 3 (D15 timeline) using the d15_index.json hub
+# Tags: `[CURSOR-OBS]` `[LAYER-3]` `[D15-TIMELINE]` `[D15-INDEX]`
+
+### What changed
+
+- **`observation_dashboard/index.html`** — WORLD panel: “D15 constitutional timeline” with meta line, **latest** spotlight, scrollable **timeline** (older entries).
+- **`observation_dashboard/app.js`** — After snapshot load, fetches **`world.d15_index_path`** (default `data/d15_index.json`); `escapeHtml` on injected strings; **latest** = `index.latest` or first broadcast; list = `broadcasts.slice(1)` to avoid duplicating the hero row.
+- **`observation_dashboard/styles.css`** — `.d15-hub`, `.d15-latest`, `.timeline` / `.timeline-item` styles.
+- **`observation_dashboard/data/observation_snapshot.json`** (placeholder) — `world.d15_index_path` set for local consistency.
+
+### Pipeline (unchanged)
+
+- CI still runs `build_d15_index.py` after `build_observation_snapshot.py`; Pages artifact includes both JSON files next to the static UI.
+
+### Status token
+
+- **GREEN** — UI-only; relies on existing `d15-index-v1` schema from `scripts/build_d15_index.py`.
+
+### Next owner
+
+- **Operator / Copilot** — confirm next Pages deploy shows timeline populated from live `d15_index.json`.

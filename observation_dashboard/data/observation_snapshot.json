@@ -40,6 +40,7 @@
   },
   "world": {
     "d15_broadcast_count": 0,
+    "d15_index_path": "data/d15_index.json",
     "d16_pool_size": 0,
     "d16_sample_keys": [
       "source",

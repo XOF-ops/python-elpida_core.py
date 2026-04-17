@@ -83,6 +83,105 @@ async function loadSnapshot() {
   return res.json();
 }
 
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+async function loadD15Index(relPath) {
+  const path = String(relPath || "data/d15_index.json").replace(/^\//, "");
+  const url = `./${path}`;
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+function renderD15Meta(index, pathUsed) {
+  const meta = document.getElementById("d15HubMeta");
+  const tc = index.total_count != null ? index.total_count : "?";
+  const iz = index.index_size != null ? index.index_size : (index.broadcasts || []).length;
+  const ga = index.generated_at || "unknown";
+  meta.textContent = `Hub: ${pathUsed} · schema=${index.schema || "n/a"} · total_count=${tc} · index_size=${iz} · generated_at=${ga}`;
+}
+
+function renderD15Latest(latest) {
+  const el = document.getElementById("d15Latest");
+  if (!latest || !latest.broadcast_id) {
+    el.innerHTML = '<p class="timeline-empty">No latest broadcast in index.</p>';
+    return;
+  }
+  const gov = latest.governance || {};
+  const ax = Array.isArray(latest.axioms_in_tension) ? latest.axioms_in_tension.join(", ") : "";
+  const llm =
+    latest.llm_synthesis_success === true
+      ? "ok"
+      : latest.llm_synthesis_success === false
+        ? "fail"
+        : "n/a";
+  el.innerHTML = `
+    <div class="d15-id">${escapeHtml(latest.broadcast_id)}</div>
+    <div class="d15-time">${escapeHtml(latest.timestamp || "")}</div>
+    <div class="d15-axioms">${escapeHtml(ax || "—")}</div>
+    <div class="d15-synth">${escapeHtml(latest.diplomat_synthesis || "")}</div>
+    <div class="d15-gov">Verdict: ${escapeHtml(String(gov.verdict ?? "n/a"))} · approval_rate: ${
+  gov.approval_rate != null ? escapeHtml(String(gov.approval_rate)) : "n/a"
+} · llm_synthesis: ${llm}</div>
+  `;
+}
+
+function timelineItemHtml(b) {
+  const ax = Array.isArray(b.axioms_in_tension) ? b.axioms_in_tension.join(", ") : "";
+  const synth = (b.diplomat_synthesis || "").replace(/\s+/g, " ").trim();
+  return `<div class="timeline-item" role="listitem">
+    <div class="ti-head">
+      <span class="ti-id">${escapeHtml(b.broadcast_id || "")}</span>
+      <span class="ti-time">${escapeHtml(b.timestamp || "")}</span>
+    </div>
+    <div class="ti-axioms">${escapeHtml(ax || "—")}</div>
+    <div class="ti-blurb">${escapeHtml(synth)}</div>
+  </div>`;
+}
+
+function renderD15Timeline(index) {
+  const container = document.getElementById("d15Timeline");
+  const list = index.broadcasts || [];
+  const tail = list.slice(1);
+  if (!list.length) {
+    container.innerHTML =
+      '<div class="timeline-empty">No broadcasts in d15_index.json — check WORLD bucket broadcasts.jsonl and CI.</div>';
+    return;
+  }
+  if (!tail.length) {
+    container.innerHTML =
+      '<div class="timeline-empty">Only the latest broadcast in this index window; more appear after the next D15.</div>';
+    return;
+  }
+  container.innerHTML = tail.map((b) => timelineItemHtml(b)).join("");
+}
+
+function renderD15Hub(index, pathUsed) {
+  renderD15Meta(index, pathUsed);
+  const latest = index.latest || listHead(index.broadcasts);
+  renderD15Latest(latest);
+  renderD15Timeline(index);
+}
+
+function listHead(arr) {
+  if (!arr || !arr.length) return null;
+  return arr[0];
+}
+
+function renderD15HubError(pathUsed, err) {
+  document.getElementById("d15HubMeta").textContent = `Could not load ${pathUsed}: ${err.message}`;
+  document.getElementById("d15Latest").innerHTML = "";
+  document.getElementById("d15Timeline").innerHTML = "";
+}
+
 function render(snapshot) {
   setToken(snapshot.status_token);
   document.getElementById("generatedAt").textContent = snapshot.generated_at || "unknown";
@@ -125,6 +224,7 @@ function render(snapshot) {
   document.getElementById("worldCards").innerHTML = [
     cardHtml("D15 Broadcasts", get(world, ["d15_broadcast_count", "broadcast_count"])),
     cardHtml("D16 Pool Size", get(world, ["d16_pool_size", "d16_count"])),
+    cardHtml("D15 hub (path)", get(world, ["d15_index_path"], "data/d15_index.json")),
     cardHtml("Discord Inbound", get(world, ["discord_inbound_count", "discord_count"])),
     cardHtml("RSS Tensions", get(world, ["rss_tension_count", "rss_count"])),
   ].join("");
@@ -145,6 +245,25 @@ function renderError(err) {
   setToken("YELLOW");
   document.getElementById("generatedAt").textContent = "snapshot unavailable";
   document.getElementById("bodyRaw").textContent = `Unable to load snapshot: ${err.message}`;
+  const meta = document.getElementById("d15HubMeta");
+  if (meta) meta.textContent = "D15 timeline not loaded (snapshot failed).";
 }
 
-loadSnapshot().then(render).catch(renderError);
+async function boot() {
+  try {
+    const snapshot = await loadSnapshot();
+    render(snapshot);
+    const path =
+      (snapshot.world && snapshot.world.d15_index_path) || "data/d15_index.json";
+    try {
+      const d15 = await loadD15Index(path);
+      renderD15Hub(d15, path);
+    } catch (e) {
+      renderD15HubError(path, e);
+    }
+  } catch (err) {
+    renderError(err);
+  }
+}
+
+boot();
