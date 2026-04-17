@@ -1,0 +1,39 @@
+{
+  "generated_at": "1970-01-01T00:00:00+00:00",
+  "schema": "observation-rollup-v1",
+  "window_hours": 82,
+  "window_start": "1970-01-01T00:00:00+00:00",
+  "window_end": "1970-01-01T00:00:00+00:00",
+  "sources": {
+    "observation_snapshot": "observation_snapshot.json",
+    "d15_index": null
+  },
+  "d15_in_window": {
+    "count": 0,
+    "axiom_counts": {},
+    "broadcast_ids": []
+  },
+  "body_signal": {
+    "coherence": null,
+    "cycle": null,
+    "health": null,
+    "s3_isolated": null,
+    "p055_stats": {
+      "n": 0,
+      "min": null,
+      "max": null,
+      "avg": null
+    }
+  },
+  "mind_signal": {
+    "cycle": null,
+    "epoch": null,
+    "canonical_count": null,
+    "dominant_theme": null
+  },
+  "d15_index_totals": {
+    "total_count": null,
+    "index_size": null
+  },
+  "note": "placeholder — CI runs build_observation_rollup.py"
+}

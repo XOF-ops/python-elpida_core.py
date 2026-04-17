@@ -1,7 +1,7 @@
 {
   "generated_at": "1970-01-01T00:00:00Z",
   "status_token": "YELLOW",
-  "schema_lock": "d16-cursor-handoff-002",
+  "schema_lock": "d16-cursor-handoff-003",
   "body": {
     "cycle": "n/a",
     "coherence": "n/a",
@@ -41,6 +41,8 @@
   "world": {
     "d15_broadcast_count": 0,
     "d15_index_path": "data/d15_index.json",
+    "bridge_panel_path": "data/bridge_panel.json",
+    "rollup_path": "data/observation_rollup.json",
     "d16_pool_size": 0,
     "d16_sample_keys": [
       "source",

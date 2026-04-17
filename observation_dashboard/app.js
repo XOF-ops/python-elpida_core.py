@@ -91,14 +91,18 @@ function escapeHtml(str) {
     .replace(/"/g, "&quot;");
 }
 
-async function loadD15Index(relPath) {
-  const path = String(relPath || "data/d15_index.json").replace(/^\//, "");
+async function loadJsonFile(relPath) {
+  const path = String(relPath || "").replace(/^\//, "");
   const url = `./${path}`;
   const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) {
     throw new Error(`HTTP ${res.status}`);
   }
   return res.json();
+}
+
+async function loadD15Index(relPath) {
+  return loadJsonFile(relPath || "data/d15_index.json");
 }
 
 function renderD15Meta(index, pathUsed) {
@@ -182,6 +186,71 @@ function renderD15HubError(pathUsed, err) {
   document.getElementById("d15Timeline").innerHTML = "";
 }
 
+function renderBridgePanel(panel, pathUsed) {
+  const meta = document.getElementById("bridgePanelMeta");
+  const box = document.getElementById("bridgeLanes");
+  const lanes = (panel && panel.lanes) || [];
+  meta.textContent = `Hub: ${pathUsed} · schema=${panel.schema || "n/a"} · lanes=${lanes.length} · generated_at=${panel.generated_at || "n/a"}`;
+  if (!lanes.length) {
+    box.innerHTML =
+      '<p class="timeline-empty">No bridge lanes found — run CI or add .claude/bridge/for_* / from_*.md</p>';
+    return;
+  }
+  box.innerHTML = lanes.map((L) => bridgeLaneHtml(L)).join("");
+}
+
+function bridgeLaneHtml(L) {
+  const prev = L.head_preview ? escapeHtml(L.head_preview) : "—";
+  const err = L.error ? `<div class="bl-row">${escapeHtml(L.error)}</div>` : "";
+  return `<article class="bridge-lane">
+    <div class="bl-name">${escapeHtml(L.name || L.path || "?")}</div>
+    ${err}
+    <div class="bl-row"><strong>From:</strong> ${escapeHtml(L.from || "n/a")}</div>
+    <div class="bl-row"><strong>Session:</strong> ${escapeHtml(L.session || "n/a")}</div>
+    <div class="bl-row"><strong>Tags:</strong> ${escapeHtml(L.tags || "n/a")}</div>
+    <div class="bl-row"><strong>git_last_commit:</strong> ${escapeHtml(L.git_last_commit || "n/a")}</div>
+    <div class="bl-preview">${prev}</div>
+  </article>`;
+}
+
+function renderBridgePanelError(pathUsed, err) {
+  document.getElementById("bridgePanelMeta").textContent = `Could not load ${pathUsed}: ${err.message}`;
+  document.getElementById("bridgeLanes").innerHTML = "";
+}
+
+function renderRollup(rollup, pathUsed) {
+  const meta = document.getElementById("rollupMeta");
+  const wh = rollup.window_hours != null ? rollup.window_hours : "?";
+  meta.textContent = `Hub: ${pathUsed} · schema=${rollup.schema || "n/a"} · window=${wh}h · ${rollup.window_start || ""} → ${rollup.window_end || ""}`;
+
+  const d15 = rollup.d15_in_window || {};
+  const bsig = rollup.body_signal || {};
+  const msig = rollup.mind_signal || {};
+  const p = bsig.p055_stats || {};
+  const totals = rollup.d15_index_totals || {};
+
+  document.getElementById("rollupCards").innerHTML = [
+    cardHtml("D15 events (window)", d15.count != null ? d15.count : "n/a"),
+    cardHtml("D15 index total_count", totals.total_count != null ? totals.total_count : "n/a"),
+    cardHtml("BODY coherence (point)", bsig.coherence != null ? bsig.coherence : "n/a"),
+    cardHtml("BODY cycle (point)", bsig.cycle != null ? bsig.cycle : "n/a"),
+    cardHtml("S3 isolated (point)", formatS3Isolated(bsig.s3_isolated)),
+    cardHtml("P055 samples (n)", p.n != null ? p.n : "n/a"),
+    cardHtml("P055 min / max", p.n ? `${p.min} / ${p.max}` : "n/a"),
+    cardHtml("P055 avg", p.avg != null ? p.avg : "n/a"),
+    cardHtml("MIND cycle (point)", msig.cycle != null ? msig.cycle : "n/a"),
+    cardHtml("Dominant theme", msig.dominant_theme != null ? msig.dominant_theme : "n/a"),
+  ].join("");
+
+  document.getElementById("rollupRaw").textContent = JSON.stringify(rollup, null, 2);
+}
+
+function renderRollupError(pathUsed, err) {
+  document.getElementById("rollupMeta").textContent = `Could not load ${pathUsed}: ${err.message}`;
+  document.getElementById("rollupCards").innerHTML = "";
+  document.getElementById("rollupRaw").textContent = "";
+}
+
 function render(snapshot) {
   setToken(snapshot.status_token);
   document.getElementById("generatedAt").textContent = snapshot.generated_at || "unknown";
@@ -225,6 +294,8 @@ function render(snapshot) {
     cardHtml("D15 Broadcasts", get(world, ["d15_broadcast_count", "broadcast_count"])),
     cardHtml("D16 Pool Size", get(world, ["d16_pool_size", "d16_count"])),
     cardHtml("D15 hub (path)", get(world, ["d15_index_path"], "data/d15_index.json")),
+    cardHtml("Bridge panel (path)", get(world, ["bridge_panel_path"], "data/bridge_panel.json")),
+    cardHtml("Rollup (path)", get(world, ["rollup_path"], "data/observation_rollup.json")),
     cardHtml("Discord Inbound", get(world, ["discord_inbound_count", "discord_count"])),
     cardHtml("RSS Tensions", get(world, ["rss_tension_count", "rss_count"])),
   ].join("");
@@ -253,13 +324,33 @@ async function boot() {
   try {
     const snapshot = await loadSnapshot();
     render(snapshot);
-    const path =
+    const d15Path =
       (snapshot.world && snapshot.world.d15_index_path) || "data/d15_index.json";
     try {
-      const d15 = await loadD15Index(path);
-      renderD15Hub(d15, path);
+      const d15 = await loadD15Index(d15Path);
+      renderD15Hub(d15, d15Path);
     } catch (e) {
-      renderD15HubError(path, e);
+      renderD15HubError(d15Path, e);
+    }
+
+    const bridgePath =
+      (snapshot.world && snapshot.world.bridge_panel_path) ||
+      "data/bridge_panel.json";
+    try {
+      const panel = await loadJsonFile(bridgePath);
+      renderBridgePanel(panel, bridgePath);
+    } catch (e) {
+      renderBridgePanelError(bridgePath, e);
+    }
+
+    const rollupPath =
+      (snapshot.world && snapshot.world.rollup_path) ||
+      "data/observation_rollup.json";
+    try {
+      const rollup = await loadJsonFile(rollupPath);
+      renderRollup(rollup, rollupPath);
+    } catch (e) {
+      renderRollupError(rollupPath, e);
     }
   } catch (err) {
     renderError(err);

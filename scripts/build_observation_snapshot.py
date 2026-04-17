@@ -59,7 +59,7 @@ def build() -> dict[str, Any]:
     snapshot: dict[str, Any] = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "status_token": "YELLOW",
-        "schema_lock": "d16-cursor-handoff-002",
+        "schema_lock": "d16-cursor-handoff-003",
         "body": {
             "cycle": body.get("cycle", pick(body, ["cycle_number"], "n/a")),
             "coherence": body.get("coherence", "n/a"),
@@ -118,6 +118,8 @@ def build() -> dict[str, Any]:
         "world": {
             "d15_broadcast_count": len(d15_files),
             "d15_index_path": "data/d15_index.json",
+            "bridge_panel_path": "data/bridge_panel.json",
+            "rollup_path": "data/observation_rollup.json",
             "d16_pool_size": d16_count,
             "d16_sample_keys": [
                 "source", "body_cycle", "timestamp", "verdict", "axiom",

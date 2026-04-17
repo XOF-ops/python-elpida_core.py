@@ -353,3 +353,33 @@ origin/main at relay:     2a6e1d9  # includes d9eb430 in ancestry
 ### Next owner
 
 - **Operator / Copilot** — confirm next Pages deploy shows timeline populated from live `d15_index.json`.
+
+---
+
+## Bridge relay — Layer 4 bridge panel + Layer 5 rollup (Cursor AUTH)
+
+# From: Cursor
+# Session: 2026-04-17
+# Trigger: operator — BODY federation 1.3.0 healthy; chain closed; Copilot clear; **Layer 4 + Layer 5** + `Cursor AUTH`
+# Tags: `[CURSOR-OBS]` `[LAYER-4]` `[LAYER-5]` `[BRIDGE-PANEL]` `[ROLLUP-82H]`
+
+### Operator state (pasted)
+
+- BODY: federation **1.3.0**, coherence **0.97**, `s3_isolated=false`, **6** tensions held (A9 as designed), no pathology.
+- Federation → hub → Layer 1 + Layer 3 dashboard path confirmed; workflows **GREEN**; Copilot lane clear.
+
+### What changed
+
+- **`scripts/build_bridge_panel.py`** — scans `.claude/bridge/for_*.md` + `from_*.md`; parses `# From` / `# Session` / `# Tags`; `git log -1` mtime; short **head_preview** (skips markdown table rows); writes **`observation_dashboard/data/bridge_panel.json`**.
+- **`scripts/build_observation_rollup.py`** — reads snapshot + `d15_index.json`; **82h** UTC window (`OBS_ROLLUP_WINDOW_H`, default 82); D15 counts + axiom histogram in window, P055 stats, BODY/MIND point signals; writes **`observation_dashboard/data/observation_rollup.json`**.
+- **`scripts/build_observation_snapshot.py`** — `world.bridge_panel_path`, `world.rollup_path`; **`schema_lock`:** `d16-cursor-handoff-003`.
+- **`.github/workflows/observation-dashboard-pages.yml`** — runs both builders after `build_d15_index.py`; push paths include new scripts + `.claude/bridge/**`.
+- **Dashboard** — Layer 4: lane cards + existing snapshot `bridge` JSON; Layer 5: rollup cards + raw JSON; **`loadJsonFile`** shared fetch; placeholders under **`observation_dashboard/data/`**.
+
+### Status token
+
+- **GREEN** — observation/CI only; no frozen MIND / BODY Python runtime edits.
+
+### Next owner
+
+- **Operator** — next Pages / workflow run should populate live `bridge_panel.json` + `observation_rollup.json` beside the snapshot.

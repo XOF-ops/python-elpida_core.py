@@ -10,7 +10,10 @@ on:
       - "observation_dashboard/**"
       - "scripts/build_observation_snapshot.py"
       - "scripts/build_d15_index.py"
+      - "scripts/build_bridge_panel.py"
+      - "scripts/build_observation_rollup.py"
       - "scripts/gh_aws_preflight.sh"
+      - ".claude/bridge/**"
       - ".github/workflows/observation-dashboard-pages.yml"
 
 permissions:
@@ -90,6 +93,14 @@ jobs:
 
       - name: Build D15 constitutional timeline index
         run: python scripts/build_d15_index.py
+
+      - name: Build bridge panel (Layer 4)
+        run: python scripts/build_bridge_panel.py
+
+      - name: Build observation rollup (Layer 5)
+        env:
+          OBS_ROLLUP_WINDOW_H: "82"
+        run: python scripts/build_observation_rollup.py
 
       - name: Setup GitHub Pages
         uses: actions/configure-pages@v5

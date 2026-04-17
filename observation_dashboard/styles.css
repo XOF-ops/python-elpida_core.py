@@ -28,6 +28,45 @@ h1 { font-size: 20px; }
 h2 { font-size: 17px; margin-bottom: 12px; }
 h3 { font-size: 14px; margin-bottom: 8px; color: #b5bed2; }
 
+.panel-meta {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: #9eabc7;
+}
+
+.bridge-lanes {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.bridge-lane {
+  border: 1px solid #2f3650;
+  border-radius: 8px;
+  background: #1a1f33;
+  padding: 10px 12px;
+}
+
+.bridge-lane .bl-name {
+  font-family: ui-monospace, monospace;
+  font-size: 13px;
+  color: #7fb3ff;
+  margin-bottom: 6px;
+}
+
+.bridge-lane .bl-row {
+  font-size: 12px;
+  color: #b5bed2;
+  margin-bottom: 4px;
+}
+
+.bridge-lane .bl-preview {
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #d8deef;
+}
+
 .meta {
   display: flex;
   gap: 10px;
