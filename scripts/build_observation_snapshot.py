@@ -59,7 +59,7 @@ def build() -> dict[str, Any]:
     snapshot: dict[str, Any] = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "status_token": "YELLOW",
-        "schema_lock": "d16-cursor-handoff-001",
+        "schema_lock": "d16-cursor-handoff-002",
         "body": {
             "cycle": body.get("cycle", pick(body, ["cycle_number"], "n/a")),
             "coherence": body.get("coherence", "n/a"),
@@ -81,6 +81,10 @@ def build() -> dict[str, Any]:
             "circuit_breaker_status": pick(
                 body, ["circuit_breaker_status", "breaker_status"], "unknown"
             ),
+            # Federation ≥1.3.0 (A7/A9 governance + S3 isolation probe)
+            "sacrifices": body.get("sacrifices", {}),
+            "contradictions": body.get("contradictions", {}),
+            "s3_isolated": body.get("s3_isolated", "n/a"),
         },
         "mind": {
             "cycle": mind.get("cycle", pick(mind, ["mind_cycle"], "n/a")),

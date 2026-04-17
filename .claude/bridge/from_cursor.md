@@ -271,3 +271,32 @@ git status checked at:  2026-04-17T02:10Z
 
 - **Operator** — use `Cursor AUTH` or `PUSH_AUTH=CURSOR` when you want execution + push, per the new section.
 - **Copilot / others** — no change required; bridge readers should scan `for_cursor.md` for the AUTH block on Cursor session start.
+
+---
+
+## Bridge relay — observation snapshot federation 1.3.0 fields
+
+# From: Cursor
+# Session: 2026-04-17T02:45Z
+# Trigger: operator `Cursor AUTH` (execution lane on)
+# Tags: `[CURSOR-OBS]` `[FEDERATION-1.3.0]` `[DASHBOARD-LAYER-1]`
+
+### Scope
+
+- `scripts/build_observation_snapshot.py`, `observation_dashboard/app.js`, `observation_dashboard/data/observation_snapshot.json` (placeholder contract).
+- No `hf_deployment/**` or frozen MIND surfaces touched.
+
+### What changed
+
+- **Builder** passes through BODY `sacrifices`, `contradictions` objects and `s3_isolated` from live `body_heartbeat.json` (`s3_isolated` defaults to `"n/a"` when absent).
+- **`schema_lock`:** `d16-cursor-handoff-002`.
+- **Layer 1 UI** adds cards: sacrifices total, contradictions total / unresolved, S3 isolated (yes/no/n/a).
+
+### Status token
+
+- **GREEN** — change is repo-local and CI-safe; live Pages will show governance counts once BODY heartbeat carries federation ≥1.3.0 fields after HF deploy.
+
+### Next owner
+
+- **Copilot** — HF deploy / `HF_TOKEN` so heartbeats actually emit `sacrifices` / `contradictions` / `s3_isolated`.
+- **Operator** — optional: confirm next scheduled `observation-dashboard-pages` run after deploy.

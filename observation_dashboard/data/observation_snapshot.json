@@ -1,7 +1,7 @@
 {
   "generated_at": "1970-01-01T00:00:00Z",
   "status_token": "YELLOW",
-  "schema_lock": "d16-cursor-handoff-001",
+  "schema_lock": "d16-cursor-handoff-002",
   "body": {
     "cycle": "n/a",
     "coherence": "n/a",
@@ -16,7 +16,10 @@
     "p055_critical_threshold": 0.67,
     "p055_history": [],
     "parliament_votes": {},
-    "circuit_breaker_status": "unknown"
+    "circuit_breaker_status": "unknown",
+    "sacrifices": {},
+    "contradictions": {},
+    "s3_isolated": "n/a"
   },
   "mind": {
     "cycle": "n/a",

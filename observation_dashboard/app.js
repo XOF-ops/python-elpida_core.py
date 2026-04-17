@@ -11,6 +11,18 @@ function cardHtml(label, value) {
   return `<div class="card"><div class="label">${label}</div><div class="value">${value}</div></div>`;
 }
 
+function nestedCount(obj, key) {
+  if (!obj || typeof obj !== "object") return "n/a";
+  const v = obj[key];
+  return v !== null && v !== undefined ? v : "n/a";
+}
+
+function formatS3Isolated(v) {
+  if (v === true) return "yes";
+  if (v === false) return "no";
+  return "n/a";
+}
+
 function setToken(token) {
   const node = document.getElementById("statusToken");
   const upper = String(token || "YELLOW").toUpperCase();
@@ -87,6 +99,10 @@ function render(snapshot) {
     cardHtml("Hunger", get(body, ["hunger_level", "hunger"])),
     cardHtml("Timestamp", get(body, ["timestamp"])),
     cardHtml("Circuit Breaker", get(body, ["circuit_breaker_status", "breaker_status"])),
+    cardHtml("Sacrifices (total)", nestedCount(body.sacrifices, "total")),
+    cardHtml("Contradictions (total)", nestedCount(body.contradictions, "total")),
+    cardHtml("Contradictions (unresolved)", nestedCount(body.contradictions, "unresolved")),
+    cardHtml("S3 isolated", formatS3Isolated(body.s3_isolated)),
     cardHtml("Top Axioms", JSON.stringify(get(body, ["top_axioms", "axiom_dominance"], []))),
     cardHtml("Provider Map", JSON.stringify(get(body, ["provider_map", "provider_breakdown"], {}))),
   ].join("");
