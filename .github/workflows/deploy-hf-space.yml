@@ -21,6 +21,29 @@ jobs:
           git config --global user.email "elpida-deploy@github-actions"
           git config --global user.name "Elpida Deploy Bot"
 
+      - name: Set up Python (for D4/D5 audit gate)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # ──────────────────────────────────────────────────────────────────
+      # Gemini D4/D5 audit gate.
+      # Authority: Gemini mandate in .claude/bridge/for_copilot.md
+      # (2026-04-17), ratified by operator ("gemini green").
+      #
+      # Behavior:
+      #   - No bundles in .claude/d16_pending/  →  pass through.
+      #   - Bundles present + GEMINI_API_KEY set  →  audit each.
+      #     Exit 0 only if ALL bundles VERIFIED.
+      #   - Bundles present + no GEMINI_API_KEY  →  HOLD (block).
+      #
+      # Silence is not consent. Inability to audit is HOLD, not PASS.
+      # ──────────────────────────────────────────────────────────────────
+      - name: Gemini D4/D5 audit gate
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python scripts/gemini_audit_relay.py
+
       - name: Push hf_deployment/ to HF Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
