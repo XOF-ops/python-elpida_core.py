@@ -9,6 +9,7 @@ on:
     paths:
       - "observation_dashboard/**"
       - "scripts/build_observation_snapshot.py"
+      - "scripts/build_d15_index.py"
       - "scripts/gh_aws_preflight.sh"
       - ".github/workflows/observation-dashboard-pages.yml"
 
@@ -78,8 +79,17 @@ jobs:
             done < _snapshot/raw/broadcast_keys.txt
           fi
 
+          # D15 aggregated index source — the WORLD bucket maintains a
+          # rolling broadcasts.jsonl with every broadcast ever emitted.
+          # Authority: Computer D13 CURSOR-TEMPORAL-BRIEF (e6641c0).
+          aws s3 cp s3://elpida-external-interfaces/d15/broadcasts.jsonl \
+            _snapshot/raw/d15_broadcasts.jsonl || true
+
       - name: Build normalized dashboard snapshot
         run: python scripts/build_observation_snapshot.py
+
+      - name: Build D15 constitutional timeline index
+        run: python scripts/build_d15_index.py
 
       - name: Setup GitHub Pages
         uses: actions/configure-pages@v5

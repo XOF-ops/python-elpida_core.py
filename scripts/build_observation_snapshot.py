@@ -113,6 +113,7 @@ def build() -> dict[str, Any]:
         },
         "world": {
             "d15_broadcast_count": len(d15_files),
+            "d15_index_path": "data/d15_index.json",
             "d16_pool_size": d16_count,
             "d16_sample_keys": [
                 "source", "body_cycle", "timestamp", "verdict", "axiom",
