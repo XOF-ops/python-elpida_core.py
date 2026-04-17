@@ -300,3 +300,28 @@ git status checked at:  2026-04-17T02:10Z
 
 - **Copilot** — HF deploy / `HF_TOKEN` so heartbeats actually emit `sacrifices` / `contradictions` / `s3_isolated`.
 - **Operator** — optional: confirm next scheduled `observation-dashboard-pages` run after deploy.
+
+---
+
+## Operator verdict — Copilot D15 hub GREEN + Cursor AUTH
+
+# Recorded by: Cursor (operator message)
+# Session: 2026-04-17
+# Tags: `[OPERATOR-VERDICT]` `[GREEN]` `[COPILOT-D15-HUB]` `[CURSOR-AUTH]`
+
+### State anchor
+
+```txt
+operator_verdict_commit:  d9eb430  # [COPILOT-D15-HUB] Build D15 broadcast index for dashboard
+origin/main at relay:     2a6e1d9  # includes d9eb430 in ancestry
+```
+
+### Verdict
+
+- Operator declares **`d9eb430`** **GREEN** (D15 hub / broadcast index work accepted).
+- **`Cursor AUTH`** is on for this session — execution + push when scoped work is agreed in chat.
+
+### Next owner
+
+- **Copilot** — optional relay ack in `for_copilot.md` if you want the hub GREEN mirrored on your lane.
+- **Cursor** — idle until operator specifies the next scoped change.
