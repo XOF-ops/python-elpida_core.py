@@ -186,6 +186,43 @@ function renderD15HubError(pathUsed, err) {
   document.getElementById("d15Timeline").innerHTML = "";
 }
 
+function renderFalsification(widget) {
+  const statusEl = document.getElementById("falsificationStatus");
+  const cards = document.getElementById("falsificationCards");
+  if (!widget || typeof widget !== "object") {
+    statusEl.textContent = "Markers unavailable.";
+    cards.innerHTML = "";
+    return;
+  }
+
+  const state = String(widget.status || "UNKNOWN").toUpperCase();
+  statusEl.className = "falsification-status";
+  if (state === "CLEAR") statusEl.classList.add("state-clear");
+  else if (state === "ACTIVE") statusEl.classList.add("state-active");
+  else statusEl.classList.add("state-elevated");
+  statusEl.textContent = `STATUS: ${state}${widget.gap_active ? " — FALSIFICATION GAP ACTIVE" : ""}`;
+
+  const m1 = widget.marker_axiom_monoculture || {};
+  const m2 = widget.marker_d15_absence || {};
+  const m3 = widget.marker_external_contact_drought || {};
+
+  cards.innerHTML = [
+    cardHtml(
+      "Axiom monoculture",
+      `${m1.dominant_axiom || "n/a"} ${m1.dominance_pct != null ? `${m1.dominance_pct}%` : "n/a"} (>${m1.threshold_pct ?? "60"}%)`,
+    ),
+    cardHtml(
+      "Hours since D15",
+      `${m2.hours_since_d15 != null ? m2.hours_since_d15 : "n/a"}h (>${m2.threshold_hours ?? 8}h)`,
+    ),
+    cardHtml(
+      "External contact",
+      `${m3.hours_since_external_contact != null ? m3.hours_since_external_contact : "n/a"}h (>${m3.threshold_hours ?? 24}h)`,
+    ),
+    cardHtml("Gap active", widget.gap_active ? "yes" : "no"),
+  ].join("");
+}
+
 function renderBridgePanel(panel, pathUsed) {
   const meta = document.getElementById("bridgePanelMeta");
   const box = document.getElementById("bridgeLanes");
@@ -243,12 +280,14 @@ function renderRollup(rollup, pathUsed) {
   ].join("");
 
   document.getElementById("rollupRaw").textContent = JSON.stringify(rollup, null, 2);
+  renderFalsification(rollup.falsification_protocol || {});
 }
 
 function renderRollupError(pathUsed, err) {
   document.getElementById("rollupMeta").textContent = `Could not load ${pathUsed}: ${err.message}`;
   document.getElementById("rollupCards").innerHTML = "";
   document.getElementById("rollupRaw").textContent = "";
+  renderFalsification(null);
 }
 
 function render(snapshot) {
@@ -318,6 +357,7 @@ function renderError(err) {
   document.getElementById("bodyRaw").textContent = `Unable to load snapshot: ${err.message}`;
   const meta = document.getElementById("d15HubMeta");
   if (meta) meta.textContent = "D15 timeline not loaded (snapshot failed).";
+  renderFalsification(null);
 }
 
 async function boot() {

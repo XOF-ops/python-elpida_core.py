@@ -1,23 +1,53 @@
 {
-  "generated_at": "1970-01-01T00:00:00+00:00",
-  "schema": "observation-rollup-v1",
+  "generated_at": "2026-04-17T07:06:28.989178+00:00",
+  "schema": "observation-rollup-v2",
   "window_hours": 82,
-  "window_start": "1970-01-01T00:00:00+00:00",
-  "window_end": "1970-01-01T00:00:00+00:00",
+  "window_start": "2026-04-13T21:06:28.981877+00:00",
+  "window_end": "2026-04-17T07:06:28.981877+00:00",
   "sources": {
     "observation_snapshot": "observation_snapshot.json",
-    "d15_index": null
+    "d15_index": "d15_index.json",
+    "d16_executions": null,
+    "feedback_watermark": null
   },
   "d15_in_window": {
-    "count": 0,
-    "axiom_counts": {},
-    "broadcast_ids": []
+    "count": 19,
+    "axiom_counts": {
+      "A0": 10,
+      "A10": 2,
+      "A4": 2,
+      "A5": 2,
+      "A9": 1,
+      "A1": 1,
+      "A8": 1
+    },
+    "broadcast_ids": [
+      "9205aaf6b027",
+      "936412441373",
+      "a40ce9a83e84",
+      "4bbb1cd51411",
+      "7b6335eb46c9",
+      "267e563f52e2",
+      "4e01467251bf",
+      "2b84f6257cab",
+      "220889083c91",
+      "49475dbe7c79",
+      "5986f9b7203d",
+      "01e58f866b5e",
+      "c74ccdc1ca2d",
+      "22b7282baf54",
+      "3adff06aefbd",
+      "5fe81f053cd5",
+      "00f01d03c8b5",
+      "1e905b926222",
+      "9a20fd7c3832"
+    ]
   },
   "body_signal": {
-    "coherence": null,
-    "cycle": null,
-    "health": null,
-    "s3_isolated": null,
+    "coherence": "n/a",
+    "cycle": "n/a",
+    "health": "n/a",
+    "s3_isolated": "n/a",
     "p055_stats": {
       "n": 0,
       "min": null,
@@ -26,14 +56,38 @@
     }
   },
   "mind_signal": {
-    "cycle": null,
-    "epoch": null,
-    "canonical_count": null,
-    "dominant_theme": null
+    "cycle": "n/a",
+    "epoch": "n/a",
+    "canonical_count": "n/a",
+    "dominant_theme": "n/a"
   },
   "d15_index_totals": {
-    "total_count": null,
-    "index_size": null
+    "total_count": 482,
+    "index_size": 200
   },
-  "note": "placeholder — CI runs build_observation_rollup.py"
+  "falsification_protocol": {
+    "status": "CLEAR",
+    "gap_active": false,
+    "marker_axiom_monoculture": {
+      "active": false,
+      "dominant_axiom": null,
+      "dominance_pct": 0.0,
+      "sample_size": 0,
+      "threshold_pct": 60.0
+    },
+    "marker_d15_absence": {
+      "active": false,
+      "hours_since_d15": 6.42,
+      "threshold_hours": 8.0
+    },
+    "marker_external_contact_drought": {
+      "active": false,
+      "hours_since_external_contact": null,
+      "threshold_hours": 24.0,
+      "watermark_timestamp": null
+    },
+    "quote": "lest the network ignite only in echo",
+    "quote_source": "Domain 14 (Persistence), 2026-02-09T21:34:29Z",
+    "action_hint": "When ACTIVE, introduce external friction (guest chamber/RSS/D0 seed)."
+  }
 }

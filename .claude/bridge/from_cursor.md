@@ -383,3 +383,35 @@ origin/main at relay:     2a6e1d9  # includes d9eb430 in ancestry
 ### Next owner
 
 - **Operator** — next Pages / workflow run should populate live `bridge_panel.json` + `observation_rollup.json` beside the snapshot.
+
+---
+
+## Bridge relay — GAP-1 falsification protocol widget (338ff4a intake)
+
+# From: Cursor
+# Session: 2026-04-17
+# Trigger: operator `338ff4a cursor auth`
+# Tags: `[CURSOR-OBS]` `[GAP-1-PROTOCOL]` `[FALSIFICATION-WIDGET]`
+
+### State anchor
+
+```txt
+upstream intake:         338ff4a  # [COMPUTER-D13-RELAY] [GAP-1-PROTOCOL]
+local sync method:       git pull --rebase --autostash (preserved local CURSOR_MASTER_PROMPT.md edit)
+```
+
+### What changed
+
+- **Layer 3 UI** (`observation_dashboard/index.html`, `app.js`, `styles.css`): added **Falsification pressure** widget under D15 timeline with status (`CLEAR`/`ELEVATED`/`ACTIVE`), marker cards, and permanent quote:
+  - `"lest the network ignite only in echo"`
+- **Rollup logic** (`scripts/build_observation_rollup.py` → `observation-rollup-v2`):
+  - `marker_axiom_monoculture` from recent `d16_executions.jsonl` axioms (threshold 60%),
+  - `marker_d15_absence` by hours since latest D15 (threshold 8h),
+  - `marker_external_contact_drought` by hours since feedback watermark timestamp (threshold 24h),
+  - aggregate `falsification_protocol.status` and `gap_active`.
+- **Workflow input expansion** (`observation-dashboard-pages.yml`): pulls `s3://elpida-body-evolution/feedback/watermark.json` into `_snapshot/raw/feedback_watermark.json`.
+- **Computer confirmation posted**: appended relay note to `.claude/bridge/for_computer.md` confirming widget scaffold landed.
+
+### Status token
+
+- **GREEN** — scoped to observation/dashboard + bridge relays; frozen MIND surfaces untouched.

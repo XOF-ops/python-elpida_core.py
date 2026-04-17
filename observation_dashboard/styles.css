@@ -267,3 +267,34 @@ h3 { font-size: 14px; margin-bottom: 8px; color: #b5bed2; }
   color: #9eabc7;
   font-size: 13px;
 }
+
+.falsification {
+  margin-top: 14px;
+  border: 1px solid #3a3044;
+  border-radius: 8px;
+  background: #171126;
+  padding: 12px;
+}
+
+.falsification-status {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: #d2b6ff;
+}
+
+.falsification-status.state-clear { color: #7ef0a6; }
+.falsification-status.state-elevated { color: #ffd86b; }
+.falsification-status.state-active { color: #ff8f8f; font-weight: 700; }
+
+.falsification-quote {
+  margin: 8px 0 2px;
+  color: #d8deef;
+  font-style: italic;
+  font-size: 13px;
+}
+
+.falsification-source {
+  margin: 0;
+  color: #9eabc7;
+  font-size: 12px;
+}

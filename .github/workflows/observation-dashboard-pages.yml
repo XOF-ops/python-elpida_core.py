@@ -88,6 +88,10 @@ jobs:
           aws s3 cp s3://elpida-external-interfaces/d15/broadcasts.jsonl \
             _snapshot/raw/d15_broadcasts.jsonl || true
 
+          # Feedback watermark for GAP-1 external-contact drought marker.
+          aws s3 cp s3://elpida-body-evolution/feedback/watermark.json \
+            _snapshot/raw/feedback_watermark.json || true
+
       - name: Build normalized dashboard snapshot
         run: python scripts/build_observation_snapshot.py
 
