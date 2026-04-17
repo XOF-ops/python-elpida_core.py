@@ -62,6 +62,11 @@ DEFAULT_SOURCES: list[tuple[Path, str]] = [
     (ROOT / "ELPIDA_ARK" / "current" / "fork_lineages.jsonl", "FEDERATION"),
     (ROOT / "ELPIDA_ARK" / "current" / "fork_vitality.jsonl", "FEDERATION"),
     (ROOT / "observation_dashboard" / "data" / "d15_index.json", "D15"),
+    # D16 (Agency / ACT) — dedicated execution attestation streams.
+    # Local Parliament cache and mirrored federation copy.  Entries here
+    # are tagged domain=D16 unconditionally (see _normalize).
+    (ROOT / "hf_deployment" / "cache" / "d16_executions.jsonl", "D16"),
+    (ROOT / "hf_deployment" / "cache" / "federation_d16_executions.jsonl", "D16"),
 ]
 
 # Any cycle_XXXX.json file under elpida_system/orchestration is treated
@@ -110,6 +115,8 @@ def _first_ts(obj: dict[str, Any]) -> datetime | None:
         "timestamp",
         "ts",
         "time",
+        "created",
+        "last_vitality",
         "generated_at",
         "created_at",
         "created",
@@ -121,7 +128,45 @@ def _first_ts(obj: dict[str, Any]) -> datetime | None:
             dt = _parse_ts(v)
             if dt is not None:
                 return dt
-    return None
+
+    # Federation records often keep authoritative timestamps under nested
+    # event/fork payloads rather than as top-level fields.
+    nested_candidates = (
+        ("forks", "timestamp"),
+        ("events", "timestamp"),
+        ("recognitions", "timestamp"),
+    )
+    for container_key, ts_key in nested_candidates:
+        container = obj.get(container_key)
+        if not isinstance(container, list):
+            continue
+        for item in container:
+            if not isinstance(item, dict):
+                continue
+            dt = _parse_ts(item.get(ts_key))
+            if dt is not None:
+                return dt
+
+    # Last fallback: recursively scan nested dict/list for common
+    # timestamp-like keys.
+    def _scan(value: Any) -> datetime | None:
+        if isinstance(value, dict):
+            for k, v in value.items():
+                if isinstance(k, str) and "time" in k.lower():
+                    dt_inner = _parse_ts(v)
+                    if dt_inner is not None:
+                        return dt_inner
+                dt_inner = _scan(v)
+                if dt_inner is not None:
+                    return dt_inner
+        elif isinstance(value, list):
+            for child in value:
+                dt_inner = _scan(child)
+                if dt_inner is not None:
+                    return dt_inner
+        return None
+
+    return _scan(obj)
 
 
 def _extract_axiom(obj: dict[str, Any]) -> str | None:
@@ -268,11 +313,20 @@ def _normalize(
     lineage_id: str,
 ) -> dict[str, Any]:
     ts = _first_ts(obj)
+    domain = _extract_domain(obj)
+    # D16 source files attest agency executions.  Some legacy entries
+    # (e.g. early test probes) omit an explicit `domain` field; we tag
+    # them as D16 unconditionally so the I·WE·ACT triad chain can close.
+    if domain is None and source_system == "D16":
+        domain = "D16"
+    axiom = _extract_axiom(obj)
+    if axiom is None and source_system == "D16":
+        axiom = "A16"
     return {
         "timestamp_utc": ts.isoformat() if ts else None,
         "cycle_id": _extract_cycle(obj),
-        "domain": _extract_domain(obj),
-        "axiom": _extract_axiom(obj),
+        "domain": domain,
+        "axiom": axiom,
         "rhythm": _extract_rhythm(obj),
         "source_system": source_system,
         "confidence": _extract_confidence(obj),
@@ -545,9 +599,30 @@ def triad_analysis(events: list[dict[str, Any]]) -> dict[str, Any]:
             if ts:
                 by_domain[d].append((ts, ev["lineage_id"]))
 
+    # Constitutional match window — drops cross-phase contamination
+    # (e.g. a single D16 probe matching every D11 back to genesis).
+    # Seven days is generous enough to capture genuine A0 (Sacred
+    # Incompletion) held synthesis while bounding the pairing space.
+    MATCH_WINDOW_S = 7 * 24 * 3600
+
+    # Constitutional bucket boundaries for triad lags:
+    #   fast:         < 60s    — closed within one MIND cycle tick
+    #   deliberative: 60s – 4h — deliberation that crossed a breath
+    #                             but not an ECS run
+    #   held:         > 4h     — A0 (Sacred Incompletion) firing;
+    #                             D11 refusing premature closure
+    FAST_MAX_S = 60.0
+    DELIB_MAX_S = 4 * 3600.0
+
     def _chain_lags(
-        a: list[tuple[datetime, str]], b: list[tuple[datetime, str]]
+        a: list[tuple[datetime, str]],
+        b: list[tuple[datetime, str]],
+        window_s: float = MATCH_WINDOW_S,
     ) -> tuple[list[float], list[str]]:
+        """Pair each event in a with the first b-event occurring after
+        it *within window_s seconds*.  Pairs exceeding the window are
+        dropped (counted as unmatched) rather than silently smeared
+        across log-scale."""
         lags: list[float] = []
         lin: list[str] = []
         j = 0
@@ -556,7 +631,12 @@ def triad_analysis(events: list[dict[str, Any]]) -> dict[str, Any]:
                 j += 1
             if j >= len(b):
                 break
-            lags.append((b[j][0] - ts_a).total_seconds())
+            delta = (b[j][0] - ts_a).total_seconds()
+            if delta > window_s:
+                # Match-window violation: b-event is too far ahead to
+                # be causally linked; skip this a-event entirely.
+                continue
+            lags.append(delta)
             lin.append(f"{lin_a} -> {b[j][1]}")
         return lags, lin
 
@@ -564,7 +644,7 @@ def triad_analysis(events: list[dict[str, Any]]) -> dict[str, Any]:
     d11_d16_lags, d11_d16_lin = _chain_lags(by_domain["D11"], by_domain["D16"])
 
     # Full triad chain: for each D0 event, walk forward to find D11, then
-    # D16, and record end-to-end lag.
+    # D16, and record end-to-end lag.  Both legs are match-window gated.
     full_chain: list[float] = []
     full_lin: list[str] = []
     i11 = 0
@@ -575,12 +655,16 @@ def triad_analysis(events: list[dict[str, Any]]) -> dict[str, Any]:
         if i11 >= len(by_domain["D11"]):
             break
         ts11, lin11 = by_domain["D11"][i11]
+        if (ts11 - ts0).total_seconds() > MATCH_WINDOW_S:
+            continue
         j16 = i16
         while j16 < len(by_domain["D16"]) and by_domain["D16"][j16][0] < ts11:
             j16 += 1
         if j16 >= len(by_domain["D16"]):
             continue
         ts16, lin16 = by_domain["D16"][j16]
+        if (ts16 - ts11).total_seconds() > MATCH_WINDOW_S:
+            continue
         full_chain.append((ts16 - ts0).total_seconds())
         full_lin.append(f"{lin0} -> {lin11} -> {lin16}")
 
@@ -594,6 +678,39 @@ def triad_analysis(events: list[dict[str, Any]]) -> dict[str, Any]:
         cv = statistics.pstdev(lags) / mean
         return round(max(0.0, min(1.0, 1.0 / (1.0 + cv))), 4)
 
+    def _bucket(
+        lags: list[float], lineages: list[str]
+    ) -> dict[str, dict[str, Any]]:
+        """Split lags into fast / deliberative / held with independent
+        source_count and confidence per bucket.  Each bucket earns its
+        own epistemic standing — the dashboard never shows a combined
+        median that would smear A0 (held) into A7 (fast) silently."""
+        buckets = {
+            "fast": {"lags": [], "lin": []},
+            "deliberative": {"lags": [], "lin": []},
+            "held": {"lags": [], "lin": []},
+        }
+        for delta, lin in zip(lags, lineages):
+            if delta < FAST_MAX_S:
+                k = "fast"
+            elif delta < DELIB_MAX_S:
+                k = "deliberative"
+            else:
+                k = "held"
+            buckets[k]["lags"].append(delta)
+            buckets[k]["lin"].append(lin)
+        out: dict[str, dict[str, Any]] = {}
+        for name, data in buckets.items():
+            n = len(data["lags"])
+            out[name] = {
+                "lag_seconds": _desc(data["lags"]),
+                "source_count": n,
+                "confidence": round(min(1.0, n / 10.0), 4),
+                "stability_score": _stability(data["lags"]),
+                "lineage_refs": data["lin"][:5],
+            }
+        return out
+
     counts = {k: len(v) for k, v in by_domain.items()}
     stable = (
         counts["D0"] >= 3
@@ -605,6 +722,11 @@ def triad_analysis(events: list[dict[str, Any]]) -> dict[str, Any]:
 
     return {
         "domain_counts": counts,
+        "match_window_seconds": MATCH_WINDOW_S,
+        "bucket_boundaries_seconds": {
+            "fast_max": FAST_MAX_S,
+            "deliberative_max": DELIB_MAX_S,
+        },
         "d0_leading_indicator": {
             "count": counts["D0"],
             "share_of_all_events": round(
@@ -618,12 +740,14 @@ def triad_analysis(events: list[dict[str, Any]]) -> dict[str, Any]:
             "source_count": len(d0_d11_lags),
             "confidence": round(min(1.0, len(d0_d11_lags) / 10.0), 4),
             "lineage_refs": d0_d11_lin[:5],
+            "buckets": _bucket(d0_d11_lags, d0_d11_lin),
         },
         "d16_action_lag_after_d11": {
             "lag_seconds": _desc(d11_d16_lags),
             "source_count": len(d11_d16_lags),
             "confidence": round(min(1.0, len(d11_d16_lags) / 10.0), 4),
             "lineage_refs": d11_d16_lin[:5],
+            "buckets": _bucket(d11_d16_lags, d11_d16_lin),
         },
         "full_triad_chain_lag": {
             "lag_seconds": _desc(full_chain),
@@ -631,6 +755,7 @@ def triad_analysis(events: list[dict[str, Any]]) -> dict[str, Any]:
             "stability_score": _stability(full_chain),
             "confidence": round(min(1.0, len(full_chain) / 10.0), 4),
             "lineage_refs": full_lin[:5],
+            "buckets": _bucket(full_chain, full_lin),
         },
         "stable_attractor": bool(stable),
         "attractor_reason": (

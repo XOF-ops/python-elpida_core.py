@@ -1,14 +1,15 @@
 {
-  "generated_at": "2026-04-17T04:36:35.525161+00:00",
+  "generated_at": "2026-04-17T05:30:46.513909+00:00",
   "schema": "temporal-rhythm-v1",
-  "event_count": 83914,
-  "event_count_with_timestamp": 83914,
-  "event_count_with_domain": 81865,
-  "event_count_with_axiom": 2531,
+  "event_count": 83916,
+  "event_count_with_timestamp": 83916,
+  "event_count_with_domain": 81867,
+  "event_count_with_axiom": 2533,
   "source_system_counts": {
     "MIND": 83595,
     "D15": 200,
-    "FEDERATION": 119
+    "FEDERATION": 119,
+    "D16": 2
   },
   "domain_counts": {
     "D0": 10717,
@@ -26,7 +27,8 @@
     "D8": 4737,
     "_missing_": 2049,
     "D14": 568,
-    "D13": 444
+    "D13": 444,
+    "D16": 2
   },
   "axiom_counts": {
     "_missing_": 81383,
@@ -41,17 +43,18 @@
     "A6": 9,
     "A8": 7,
     "A3": 3,
+    "A16": 2,
     "A14": 1
   },
   "features": {
     "inter_event_intervals": {
       "overall": {
-        "n": 83913,
+        "n": 83915,
         "min": 0.0,
         "max": 1275999.868634,
-        "mean": 109.171146,
+        "mean": 109.168544,
         "median": 0.010581,
-        "stdev": 6815.381731
+        "stdev": 6815.188361
       },
       "by_domain": {
         "D11": {
@@ -173,9 +176,17 @@
           "mean": 3142.802474,
           "median": 138.395889,
           "stdev": 5950.283289
+        },
+        "D16": {
+          "n": 1,
+          "min": 0.0,
+          "max": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "stdev": 0.0
         }
       },
-      "source_count": 83914,
+      "source_count": 83916,
       "confidence": 0.5007,
       "lineage_refs_sample": [
         "elpida/public_memory.jsonl:L1",
@@ -195,9 +206,9 @@
         },
         {
           "key": "D?|steady",
-          "length": 115,
+          "length": 103,
           "lineage_start": "observation_dashboard/data/d15_index.json#broadcasts[114]",
-          "lineage_end": "observation_dashboard/data/d15_index.json#broadcasts[0]"
+          "lineage_end": "observation_dashboard/data/d15_index.json#broadcasts[12]"
         },
         {
           "key": "D?|slow",
@@ -308,9 +319,9 @@
           "lineage_end": "elpida_evolution_memory.jsonl:L72897"
         }
       ],
-      "source_count": 83914,
+      "source_count": 83916,
       "confidence": 0.75,
-      "distinct_keys": 92
+      "distinct_keys": 93
     },
     "phase_shifts": {
       "D0->D11": {
@@ -339,32 +350,54 @@
         ]
       },
       "D11->D16": {
-        "source_count": 0,
-        "confidence": 0.0,
+        "source_count": 7897,
+        "confidence": 1.0,
         "lag_seconds": {
-          "n": 0,
-          "min": null,
-          "max": null,
-          "mean": null,
-          "median": null,
-          "stdev": null
+          "n": 7897,
+          "min": 3776954.358523,
+          "max": 6829127.923432,
+          "mean": 6305143.312086,
+          "median": 6823387.65674,
+          "stdev": 905091.709492
         },
-        "provenance_missing": true,
-        "lineage_refs": []
+        "provenance_missing": false,
+        "lineage_refs": [
+          "elpida_evolution_memory.jsonl:L882",
+          "elpida_evolution_memory.jsonl:L885",
+          "elpida_evolution_memory.jsonl:L888",
+          "elpida_evolution_memory.jsonl:L889",
+          "elpida_evolution_memory.jsonl:L898",
+          "elpida_evolution_memory.jsonl:L911",
+          "elpida_evolution_memory.jsonl:L913",
+          "elpida_evolution_memory.jsonl:L957",
+          "elpida_evolution_memory.jsonl:L958",
+          "elpida_evolution_memory.jsonl:L972"
+        ]
       },
       "D0->D16": {
-        "source_count": 0,
-        "confidence": 0.0,
+        "source_count": 10717,
+        "confidence": 1.0,
         "lag_seconds": {
-          "n": 0,
-          "min": null,
-          "max": null,
-          "mean": null,
-          "median": null,
-          "stdev": null
+          "n": 10717,
+          "min": 1276911.191195,
+          "max": 6829118.873245,
+          "mean": 6183898.701366,
+          "median": 6718427.312132,
+          "stdev": 951735.871088
         },
-        "provenance_missing": true,
-        "lineage_refs": []
+        "provenance_missing": false,
+        "lineage_refs": [
+          "elpida_evolution_memory.jsonl:L887",
+          "elpida_evolution_memory.jsonl:L908",
+          "elpida_evolution_memory.jsonl:L910",
+          "elpida_evolution_memory.jsonl:L923",
+          "elpida_evolution_memory.jsonl:L933",
+          "elpida_evolution_memory.jsonl:L934",
+          "elpida_evolution_memory.jsonl:L936",
+          "elpida_evolution_memory.jsonl:L940",
+          "elpida_evolution_memory.jsonl:L941",
+          "elpida_evolution_memory.jsonl:L949"
+        ]
       },
       "D0->D15": {
         "source_count": 0,
@@ -723,6 +756,21 @@
           "observation_dashboard/data/d15_index.json#broadcasts[165]",
           "observation_dashboard/data/d15_index.json#broadcasts[144]",
           "observation_dashboard/data/d15_index.json#broadcasts[138]"
+        ]
+      },
+      "D16|A16": {
+        "recurrence_seconds": {
+          "n": 1,
+          "min": 0.0,
+          "max": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "stdev": 0.0
+        },
+        "source_count": 1,
+        "confidence": 0.1,
+        "lineage_refs": [
+          "hf_deployment/cache/federation_d16_executions.jsonl:L1"
         ]
       }
     },

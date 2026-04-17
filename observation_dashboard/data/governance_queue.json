@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-17T04:36:36.088886+00:00",
+  "generated_at": "2026-04-17T05:30:47.224023+00:00",
   "schema": "temporal-rhythm-v1",
   "label_counts": {
     "Green": 0,
@@ -16,7 +16,7 @@
         "domain_counts": {
           "D0": 10717,
           "D11": 7897,
-          "D16": 0
+          "D16": 2
         },
         "notes": "insufficient samples or high dispersion"
       },
@@ -37,7 +37,51 @@
         },
         "source_count": 0,
         "confidence": 0.0,
-        "lineage_refs": []
+        "lineage_refs": [],
+        "buckets": {
+          "fast": {
+            "lag_seconds": {
+              "n": 0,
+              "min": null,
+              "max": null,
+              "mean": null,
+              "median": null,
+              "stdev": null
+            },
+            "source_count": 0,
+            "confidence": 0.0,
+            "stability_score": 0.0,
+            "lineage_refs": []
+          },
+          "deliberative": {
+            "lag_seconds": {
+              "n": 0,
+              "min": null,
+              "max": null,
+              "mean": null,
+              "median": null,
+              "stdev": null
+            },
+            "source_count": 0,
+            "confidence": 0.0,
+            "stability_score": 0.0,
+            "lineage_refs": []
+          },
+          "held": {
+            "lag_seconds": {
+              "n": 0,
+              "min": null,
+              "max": null,
+              "mean": null,
+              "median": null,
+              "stdev": null
+            },
+            "source_count": 0,
+            "confidence": 0.0,
+            "stability_score": 0.0,
+            "lineage_refs": []
+          }
+        }
       },
       "urgency": 0.85,
       "confidence": 0.0
