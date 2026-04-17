@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-04-17T04:20:44.436145+00:00",
+  "generated_at": "2026-04-17T04:36:35.525161+00:00",
   "schema": "temporal-rhythm-v1",
   "event_count": 83914,
-  "event_count_with_timestamp": 83907,
+  "event_count_with_timestamp": 83914,
   "event_count_with_domain": 81865,
   "event_count_with_axiom": 2531,
   "source_system_counts": {
@@ -46,12 +46,12 @@
   "features": {
     "inter_event_intervals": {
       "overall": {
-        "n": 83906,
+        "n": 83913,
         "min": 0.0,
         "max": 1275999.868634,
-        "mean": 109.180254,
+        "mean": 109.171146,
         "median": 0.010581,
-        "stdev": 6815.666374
+        "stdev": 6815.381731
       },
       "by_domain": {
         "D11": {
@@ -175,7 +175,7 @@
           "stdev": 5950.283289
         }
       },
-      "source_count": 83907,
+      "source_count": 83914,
       "confidence": 0.5007,
       "lineage_refs_sample": [
         "elpida/public_memory.jsonl:L1",
@@ -189,7 +189,7 @@
       "top_runs": [
         {
           "key": "D?|?",
-          "length": 1001,
+          "length": 1008,
           "lineage_start": "elpida/public_memory.jsonl:L1",
           "lineage_end": "elpida_evolution_memory.jsonl:L881"
         },
@@ -308,7 +308,7 @@
           "lineage_end": "elpida_evolution_memory.jsonl:L72897"
         }
       ],
-      "source_count": 83907,
+      "source_count": 83914,
       "confidence": 0.75,
       "distinct_keys": 92
     },
@@ -755,7 +755,7 @@
   },
   "audit": {
     "all_events_have_lineage": true,
-    "events_missing_timestamp": 7,
+    "events_missing_timestamp": 0,
     "events_missing_domain": 2049,
     "events_missing_axiom": 81383
   }

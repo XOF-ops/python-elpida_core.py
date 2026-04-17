@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-04-17T04:20:45.015362+00:00",
+  "generated_at": "2026-04-17T04:36:36.088886+00:00",
   "schema": "temporal-rhythm-v1",
   "label_counts": {
     "Green": 0,
-    "Yellow": 7,
+    "Yellow": 0,
     "Low": 2
   },
-  "item_count": 9,
+  "item_count": 2,
   "items": [
     {
       "label": "Low",
@@ -41,76 +41,6 @@
       },
       "urgency": 0.85,
       "confidence": 0.0
-    },
-    {
-      "label": "Yellow",
-      "reason": "missing_provenance",
-      "details": [
-        "no_timestamp"
-      ],
-      "lineage_id": "ELPIDA_ARK/current/fork_lineages.jsonl:L1",
-      "source_system": "FEDERATION",
-      "urgency": 0.5
-    },
-    {
-      "label": "Yellow",
-      "reason": "missing_provenance",
-      "details": [
-        "no_timestamp"
-      ],
-      "lineage_id": "ELPIDA_ARK/current/fork_lineages.jsonl:L2",
-      "source_system": "FEDERATION",
-      "urgency": 0.5
-    },
-    {
-      "label": "Yellow",
-      "reason": "missing_provenance",
-      "details": [
-        "no_timestamp"
-      ],
-      "lineage_id": "ELPIDA_ARK/current/fork_lineages.jsonl:L3",
-      "source_system": "FEDERATION",
-      "urgency": 0.5
-    },
-    {
-      "label": "Yellow",
-      "reason": "missing_provenance",
-      "details": [
-        "no_timestamp"
-      ],
-      "lineage_id": "ELPIDA_ARK/current/fork_lineages.jsonl:L4",
-      "source_system": "FEDERATION",
-      "urgency": 0.5
-    },
-    {
-      "label": "Yellow",
-      "reason": "missing_provenance",
-      "details": [
-        "no_timestamp"
-      ],
-      "lineage_id": "ELPIDA_ARK/current/fork_vitality.jsonl:L1",
-      "source_system": "FEDERATION",
-      "urgency": 0.5
-    },
-    {
-      "label": "Yellow",
-      "reason": "missing_provenance",
-      "details": [
-        "no_timestamp"
-      ],
-      "lineage_id": "ELPIDA_ARK/current/fork_vitality.jsonl:L2",
-      "source_system": "FEDERATION",
-      "urgency": 0.5
-    },
-    {
-      "label": "Yellow",
-      "reason": "missing_provenance",
-      "details": [
-        "no_timestamp"
-      ],
-      "lineage_id": "ELPIDA_ARK/current/fork_vitality.jsonl:L3",
-      "source_system": "FEDERATION",
-      "urgency": 0.5
     }
   ],
   "audit": {

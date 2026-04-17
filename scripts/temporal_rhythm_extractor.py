@@ -112,7 +112,9 @@ def _first_ts(obj: dict[str, Any]) -> datetime | None:
         "time",
         "generated_at",
         "created_at",
+        "created",
         "promoted_at",
+        "last_vitality",
     ):
         v = obj.get(key)
         if v is not None:
