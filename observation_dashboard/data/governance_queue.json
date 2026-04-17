@@ -1,0 +1,120 @@
+{
+  "generated_at": "2026-04-17T04:20:45.015362+00:00",
+  "schema": "temporal-rhythm-v1",
+  "label_counts": {
+    "Green": 0,
+    "Yellow": 7,
+    "Low": 2
+  },
+  "item_count": 9,
+  "items": [
+    {
+      "label": "Low",
+      "reason": "triad_not_attracting",
+      "details": {
+        "chain_count": 0,
+        "domain_counts": {
+          "D0": 10717,
+          "D11": 7897,
+          "D16": 0
+        },
+        "notes": "insufficient samples or high dispersion"
+      },
+      "urgency": 0.95,
+      "confidence": 0.0
+    },
+    {
+      "label": "Low",
+      "reason": "d16_action_missing",
+      "details": {
+        "lag_seconds": {
+          "n": 0,
+          "min": null,
+          "max": null,
+          "mean": null,
+          "median": null,
+          "stdev": null
+        },
+        "source_count": 0,
+        "confidence": 0.0,
+        "lineage_refs": []
+      },
+      "urgency": 0.85,
+      "confidence": 0.0
+    },
+    {
+      "label": "Yellow",
+      "reason": "missing_provenance",
+      "details": [
+        "no_timestamp"
+      ],
+      "lineage_id": "ELPIDA_ARK/current/fork_lineages.jsonl:L1",
+      "source_system": "FEDERATION",
+      "urgency": 0.5
+    },
+    {
+      "label": "Yellow",
+      "reason": "missing_provenance",
+      "details": [
+        "no_timestamp"
+      ],
+      "lineage_id": "ELPIDA_ARK/current/fork_lineages.jsonl:L2",
+      "source_system": "FEDERATION",
+      "urgency": 0.5
+    },
+    {
+      "label": "Yellow",
+      "reason": "missing_provenance",
+      "details": [
+        "no_timestamp"
+      ],
+      "lineage_id": "ELPIDA_ARK/current/fork_lineages.jsonl:L3",
+      "source_system": "FEDERATION",
+      "urgency": 0.5
+    },
+    {
+      "label": "Yellow",
+      "reason": "missing_provenance",
+      "details": [
+        "no_timestamp"
+      ],
+      "lineage_id": "ELPIDA_ARK/current/fork_lineages.jsonl:L4",
+      "source_system": "FEDERATION",
+      "urgency": 0.5
+    },
+    {
+      "label": "Yellow",
+      "reason": "missing_provenance",
+      "details": [
+        "no_timestamp"
+      ],
+      "lineage_id": "ELPIDA_ARK/current/fork_vitality.jsonl:L1",
+      "source_system": "FEDERATION",
+      "urgency": 0.5
+    },
+    {
+      "label": "Yellow",
+      "reason": "missing_provenance",
+      "details": [
+        "no_timestamp"
+      ],
+      "lineage_id": "ELPIDA_ARK/current/fork_vitality.jsonl:L2",
+      "source_system": "FEDERATION",
+      "urgency": 0.5
+    },
+    {
+      "label": "Yellow",
+      "reason": "missing_provenance",
+      "details": [
+        "no_timestamp"
+      ],
+      "lineage_id": "ELPIDA_ARK/current/fork_vitality.jsonl:L3",
+      "source_system": "FEDERATION",
+      "urgency": 0.5
+    }
+  ],
+  "audit": {
+    "missing_provenance_auto_yellow": true,
+    "scores_require_source_count_and_confidence": true
+  }
+}
