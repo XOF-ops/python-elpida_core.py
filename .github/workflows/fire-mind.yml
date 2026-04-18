@@ -23,6 +23,11 @@ on:
         description: "Skip launch if last STOPPED task is newer than this many minutes"
         required: false
         default: "45"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/fire-mind.yml"
 
 permissions:
   id-token: write
@@ -62,7 +67,14 @@ jobs:
           aws sts get-caller-identity --output json
           echo "If this fails, the IAM principal is quarantined or secrets/OIDC are not wired."
 
+      - name: Push event safety no-op
+        if: ${{ github.event_name == 'push' }}
+        run: |
+          set -euo pipefail
+          echo "Push validation run only — ECS launch is disabled for push events."
+
       - name: Fire ECS task
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         env:
           INPUT_TASK_DEFINITION: ${{ github.event.inputs.task_definition || 'elpida-consciousness' }}
           INPUT_SUBNET: ${{ github.event.inputs.subnet_id || 'subnet-0937937aecb992e24' }}
