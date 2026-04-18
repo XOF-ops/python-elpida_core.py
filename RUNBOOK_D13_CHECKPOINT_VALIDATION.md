@@ -182,6 +182,12 @@ scripts/d13_checkpoint_audit.sh
 
 # Optional: selected layers only
 scripts/d13_checkpoint_audit.sh mind world
+
+# JSON output (report ingestion)
+scripts/d13_checkpoint_audit.sh --format json
+
+# CSV output (spreadsheet/report pipelines)
+scripts/d13_checkpoint_audit.sh --format csv
 ```
 
 Output fields per layer:
