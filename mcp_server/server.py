@@ -1,0 +1,116 @@
+from __future__ import annotations
+
+import json
+import sys
+from dataclasses import asdict
+from typing import Any, Dict, List
+
+from elpida_sdk import CheckpointAuditor, ElpidaConfig, KernelGuard
+
+
+class ElpidaMCPServer:
+    """Minimal stdio JSON-RPC-like server for phase-1 tool exposure.
+
+    Input format (one JSON object per line):
+    {"method": "list_tools"}
+    {"method": "call_tool", "params": {"name": "list_domains", "arguments": {}}}
+
+    Output format (one JSON object per line):
+    {"ok": true, "result": ...}
+    {"ok": false, "error": "..."}
+    """
+
+    def __init__(self) -> None:
+        self.config = ElpidaConfig()
+        self.checkpoints = CheckpointAuditor()
+        self.tools = {
+            "list_domains": self.list_domains,
+            "list_axioms": self.list_axioms,
+            "list_rhythms": self.list_rhythms,
+            "kernel_check_text": self.kernel_check_text,
+            "list_checkpoints": self.list_checkpoints,
+        }
+
+    def list_tools(self) -> List[Dict[str, Any]]:
+        return [
+            {
+                "name": "list_domains",
+                "description": "Return canonical domain definitions from elpida_domains.json",
+            },
+            {
+                "name": "list_axioms",
+                "description": "Return canonical axiom definitions from elpida_domains.json",
+            },
+            {
+                "name": "list_rhythms",
+                "description": "Return rhythm configuration from elpida_domains.json",
+            },
+            {
+                "name": "kernel_check_text",
+                "description": "Run immutable kernel check against text",
+            },
+            {
+                "name": "list_checkpoints",
+                "description": "Return D13 checkpoint rows via scripts/d13_checkpoint_audit.sh",
+            },
+        ]
+
+    def list_domains(self, arguments: Dict[str, Any]) -> List[Dict[str, Any]]:
+        _ = arguments
+        return [asdict(d) for d in self.config.list_domains()]
+
+    def list_axioms(self, arguments: Dict[str, Any]) -> List[Dict[str, Any]]:
+        _ = arguments
+        return [asdict(a) for a in self.config.list_axioms()]
+
+    def list_rhythms(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        _ = arguments
+        return self.config.list_rhythms()
+
+    def kernel_check_text(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        text = str(arguments.get("text", ""))
+        return KernelGuard.check_text(text).to_dict()
+
+    def list_checkpoints(self, arguments: Dict[str, Any]) -> List[Dict[str, Any]]:
+        layers = arguments.get("layers") or ["mind", "body", "world", "full"]
+        latest_n = int(arguments.get("latest_n", 20))
+        since_hours = int(arguments.get("since_hours", 24))
+        rows = self.checkpoints.list_rows(layers=layers, latest_n=latest_n, since_hours=since_hours)
+        return [asdict(r) for r in rows]
+
+    def dispatch(self, msg: Dict[str, Any]) -> Dict[str, Any]:
+        method = msg.get("method")
+        if method == "list_tools":
+            return {"ok": True, "result": self.list_tools()}
+        if method == "call_tool":
+            params = msg.get("params", {})
+            name = params.get("name")
+            arguments = params.get("arguments", {})
+            if name not in self.tools:
+                return {"ok": False, "error": f"unknown tool: {name}"}
+            try:
+                result = self.tools[name](arguments)
+                return {"ok": True, "result": result}
+            except Exception as e:  # pragma: no cover
+                return {"ok": False, "error": str(e)}
+        return {"ok": False, "error": f"unknown method: {method}"}
+
+
+def main() -> int:
+    server = ElpidaMCPServer()
+    for line in sys.stdin:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            msg = json.loads(line)
+        except Exception as e:
+            print(json.dumps({"ok": False, "error": f"invalid json: {e}"}), flush=True)
+            continue
+        resp = server.dispatch(msg)
+        print(json.dumps(resp, ensure_ascii=False), flush=True)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
