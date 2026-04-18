@@ -1,0 +1,157 @@
+name: D13 Checkpoint Integrity Audit
+
+on:
+  workflow_dispatch:
+    inputs:
+      since_hours:
+        description: "Time window in hours for audit filter"
+        required: false
+        default: "24"
+      latest_n:
+        description: "Max checkpoints per layer"
+        required: false
+        default: "20"
+  schedule:
+    - cron: "25 */4 * * *"
+
+permissions:
+  id-token: write
+  contents: read
+  issues: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        if: ${{ vars.AWS_GITHUB_OIDC_ROLE_ARN != '' }}
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ vars.AWS_GITHUB_OIDC_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Configure AWS credentials (static fallback)
+        if: ${{ vars.AWS_GITHUB_OIDC_ROLE_ARN == '' }}
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: AWS identity preflight
+        run: |
+          set -euo pipefail
+          aws sts get-caller-identity --output json
+
+      - name: Run D13 audit (summary + strict gate)
+        id: audit
+        continue-on-error: true
+        env:
+          INPUT_SINCE_HOURS: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.since_hours || '24' }}
+          INPUT_LATEST_N: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.latest_n || '20' }}
+        run: |
+          set -euo pipefail
+
+          if ! [[ "$INPUT_SINCE_HOURS" =~ ^[0-9]+$ ]] || [[ "$INPUT_SINCE_HOURS" -lt 1 ]]; then
+            INPUT_SINCE_HOURS=24
+          fi
+
+          if ! [[ "$INPUT_LATEST_N" =~ ^[0-9]+$ ]] || [[ "$INPUT_LATEST_N" -lt 1 ]]; then
+            INPUT_LATEST_N=20
+          fi
+
+          mkdir -p artifacts
+
+          scripts/d13_checkpoint_audit.sh \
+            --since-hours "$INPUT_SINCE_HOURS" \
+            --latest-n "$INPUT_LATEST_N" \
+            --summary \
+            --format json \
+            > artifacts/d13_summary.json
+
+          scripts/d13_checkpoint_audit.sh \
+            --since-hours "$INPUT_SINCE_HOURS" \
+            --latest-n "$INPUT_LATEST_N" \
+            --format json \
+            > artifacts/d13_rows.json
+
+          # Hard gate: fail if any world seed lacks matching federation anchor.
+          scripts/d13_checkpoint_audit.sh \
+            --since-hours "$INPUT_SINCE_HOURS" \
+            --latest-n "$INPUT_LATEST_N" \
+            --fail-on-missing-anchor \
+            --format text \
+            > artifacts/d13_strict_output.txt 2>&1
+
+      - name: Upload audit artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: d13-checkpoint-audit
+          path: artifacts/
+
+      - name: Open issue on integrity failure
+        if: ${{ steps.audit.outcome == 'failure' }}
+        uses: actions/github-script@v7
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        with:
+          script: |
+            const fs = require('fs');
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const title = 'D13 integrity audit failure';
+
+            let strictOutput = 'No strict output captured.';
+            try {
+              strictOutput = fs.readFileSync('artifacts/d13_strict_output.txt', 'utf8').slice(0, 7000);
+            } catch (e) {
+              strictOutput = `Failed to read strict output: ${e.message}`;
+            }
+
+            const body = [
+              'Automated D13 checkpoint integrity audit failed.',
+              '',
+              `- Workflow run: ${process.env.RUN_URL}`,
+              `- Trigger: ${context.eventName}`,
+              `- SHA: ${context.sha}`,
+              '',
+              'Strict gate output:',
+              '```text',
+              strictOutput,
+              '```',
+              '',
+              'Action requested: investigate missing seed/anchor consistency and restore invariants.'
+            ].join('\n');
+
+            const existing = await github.paginate(github.rest.issues.listForRepo, {
+              owner,
+              repo,
+              state: 'open',
+              per_page: 100,
+            });
+
+            const match = existing.find((i) => i.title === title);
+            if (match) {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: match.number,
+                body,
+              });
+              core.info(`Commented on existing issue #${match.number}`);
+            } else {
+              const created = await github.rest.issues.create({
+                owner,
+                repo,
+                title,
+                body,
+              });
+              core.info(`Created issue #${created.data.number}`);
+            }

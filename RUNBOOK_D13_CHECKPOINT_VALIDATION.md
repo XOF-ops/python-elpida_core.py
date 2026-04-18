@@ -219,6 +219,26 @@ Output fields per layer:
 - anchor_head (size + timestamp)
 - anchor_meta (source_event, source_component, git_commit, created_at)
 
+## Quick Mode D (Automated GitHub Audit)
+Scheduled integrity monitoring is available via:
+- `.github/workflows/d13-checkpoint-integrity-audit.yml`
+
+Behavior:
+- Runs every 4 hours (`cron: 25 */4 * * *`) and supports manual dispatch.
+- Generates two artifacts (`d13_summary.json`, `d13_rows.json`) plus strict gate output.
+- Enforces strict anchor integrity with `--fail-on-missing-anchor`.
+- On failure, auto-opens or updates the GitHub issue `D13 integrity audit failure`.
+
+Required repository configuration:
+- Preferred: repository variable `AWS_GITHUB_OIDC_ROLE_ARN` (OIDC role)
+- Fallback secrets:
+  - `AWS_ACCESS_KEY_ID`
+  - `AWS_SECRET_ACCESS_KEY`
+
+Manual run inputs:
+- `since_hours` (default `24`)
+- `latest_n` (default `20`)
+
 ## 1) Confirm Active Runtime Artifact
 ### Check ECS task definition image
 - aws ecs describe-task-definition --task-definition elpida-consciousness --region us-east-1 --query 'taskDefinition.{revision:revision,image:containerDefinitions[0].image,registeredAt:registeredAt}' --output table
