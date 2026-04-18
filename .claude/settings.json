@@ -37,7 +37,16 @@
       "Bash(git fetch *)",
       "Bash(git pull *)",
       "Bash(git status)",
-      "Bash(git rev-parse *)"
+      "Bash(git rev-parse *)",
+      "Bash(git add .claude/bridge/from_claude.md)",
+      "Bash(git add ELPIDA_ARK/seeds/*)",
+      "Bash(git add ELPIDA_ARK/seeds/**)",
+      "Bash(git commit -m :*)",
+      "Bash(git push origin main)",
+      "Bash(python3 ark_archivist.py:*)",
+      "Bash(bash scripts/d13_checkpoint_audit.sh:*)",
+      "Bash(date)",
+      "Bash(date *)"
     ]
   }
 }
