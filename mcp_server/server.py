@@ -261,6 +261,7 @@ class ElpidaMCPServer:
             alerts.append(alert)
 
         d15_limit = int(arguments.get("d15_limit", 3))
+        alerts_only = bool(arguments.get("alerts_only", False))
         status = self.get_system_status({"d15_limit": d15_limit})
 
         profile_name = str(arguments.get("profile", "default")).strip().lower()
@@ -415,7 +416,7 @@ class ElpidaMCPServer:
         elif any(a.get("level") == "WARNING" for a in alerts):
             level = "WARNING"
 
-        return {
+        full_result = {
             "level": level,
             "profile": profile_name,
             "alerts": alerts,
@@ -440,6 +441,20 @@ class ElpidaMCPServer:
             },
             "evaluated_at": now.isoformat(),
         }
+
+        if alerts_only:
+            primary = alerts[0] if alerts else None
+            return {
+                "level": level,
+                "profile": profile_name,
+                "alert_count": len(alerts),
+                "primary_alert_code": (primary or {}).get("code"),
+                "primary_alert_message": (primary or {}).get("message"),
+                "alerts": alerts,
+                "evaluated_at": full_result["evaluated_at"],
+            }
+
+        return full_result
 
     def dispatch(self, msg: Dict[str, Any]) -> Dict[str, Any]:
         method = msg.get("method")
