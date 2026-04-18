@@ -206,6 +206,9 @@ scripts/d13_checkpoint_audit.sh --summary --format json
 
 # Summary for selected layers only
 scripts/d13_checkpoint_audit.sh --summary --format csv mind world
+
+# CI guardrail: fail if any world seed lacks matching federation anchor
+scripts/d13_checkpoint_audit.sh --fail-on-missing-anchor --latest-n 10 --format json
 ```
 
 Output fields per layer:

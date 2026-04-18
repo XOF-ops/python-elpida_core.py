@@ -10,6 +10,7 @@ set -euo pipefail
 #   scripts/d13_checkpoint_audit.sh --latest-n 3 --format json
 #   scripts/d13_checkpoint_audit.sh --since-hours 24 --format csv
 #   scripts/d13_checkpoint_audit.sh --summary --format json
+#   scripts/d13_checkpoint_audit.sh --fail-on-missing-anchor --latest-n 5
 #   scripts/d13_checkpoint_audit.sh --format csv mind world
 #   scripts/d13_checkpoint_audit.sh mind world
 
@@ -21,6 +22,7 @@ FORMAT="text"
 LATEST_N=1
 SINCE_HOURS=""
 SUMMARY="false"
+FAIL_ON_MISSING_ANCHOR="false"
 LAYERS=()
 
 have_python3() {
@@ -53,7 +55,7 @@ require_tools() {
 print_usage() {
   cat <<'USAGE'
 Usage:
-  scripts/d13_checkpoint_audit.sh [--format text|json|csv] [--latest-n N] [--since-hours H] [--summary] [mind] [body] [world] [full]
+  scripts/d13_checkpoint_audit.sh [--format text|json|csv] [--latest-n N] [--since-hours H] [--summary] [--fail-on-missing-anchor] [mind] [body] [world] [full]
 
 Examples:
   scripts/d13_checkpoint_audit.sh
@@ -61,6 +63,7 @@ Examples:
   scripts/d13_checkpoint_audit.sh --latest-n 3 --format json
   scripts/d13_checkpoint_audit.sh --since-hours 24 --format csv
   scripts/d13_checkpoint_audit.sh --summary --format json
+  scripts/d13_checkpoint_audit.sh --fail-on-missing-anchor --latest-n 5
   scripts/d13_checkpoint_audit.sh --format csv mind world
 USAGE
 }
@@ -106,6 +109,10 @@ parse_args() {
         ;;
       --summary)
         SUMMARY="true"
+        shift
+        ;;
+      --fail-on-missing-anchor)
+        FAIL_ON_MISSING_ANCHOR="true"
         shift
         ;;
       -h|--help)
@@ -485,6 +492,27 @@ else:
 PY
 }
 
+enforce_missing_anchor_gate() {
+  local violations=0
+  local row
+
+  for row in "${ROWS[@]}"; do
+    IFS=$'\t' read -r layer checkpoint_id seed_key anchor_key world_size world_last_modified anchor_size anchor_last_modified source_event source_component git_commit created_at <<< "$row"
+
+    if [[ -n "$seed_key" && "$seed_key" != "None" ]]; then
+      if [[ -z "$anchor_size" || -z "$anchor_last_modified" ]]; then
+        echo "INTEGRITY VIOLATION: missing anchor for layer=${layer} checkpoint_id=${checkpoint_id} world_key=${seed_key} expected_anchor_key=${anchor_key}" >&2
+        violations=$((violations + 1))
+      fi
+    fi
+  done
+
+  if [[ "$violations" -gt 0 ]]; then
+    echo "FAIL: ${violations} row(s) had world seed without anchor evidence" >&2
+    exit 2
+  fi
+}
+
 require_tools
 parse_args "$@"
 
@@ -508,6 +536,10 @@ for layer in "${LAYERS[@]}"; do
       ;;
   esac
 done
+
+if [[ "$FAIL_ON_MISSING_ANCHOR" == "true" ]]; then
+  enforce_missing_anchor_gate
+fi
 
 case "$FORMAT" in
   text)
