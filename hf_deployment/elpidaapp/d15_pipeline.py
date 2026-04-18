@@ -42,11 +42,28 @@ from typing import Dict, Any, Optional, List, Tuple
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+_ROOT_DIR = Path(__file__).resolve().parents[2]
+if str(_ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(_ROOT_DIR))
 
 from llm_client import LLMClient
 from elpida_config import DOMAINS, AXIOMS
+from d13_seed_bridge import push_seed_and_anchor
 
 logger = logging.getLogger("elpidaapp.d15")
+
+try:
+    from ark_archivist import (
+        create_seed,
+        ConstitutionalEvent,
+        SaveClass,
+        Layer,
+        VoidMarker,
+    )
+    _ARCHIVIST_AVAILABLE = True
+except Exception as _archivist_exc:
+    _ARCHIVIST_AVAILABLE = False
+    _ARCHIVIST_IMPORT_ERROR = str(_archivist_exc)
 
 # ────────────────────────────────────────────────────────────────────
 # D15 Emergence Threshold
@@ -799,6 +816,12 @@ Reference the axioms in tension. Name what is sacrificed and what is preserved."
             }
 
             s3_key = s3b.write_d15_broadcast(broadcast_content, governance_result)
+            if s3_key:
+                self._emit_d13_world_seed(
+                    result=result,
+                    governance_result=governance_result,
+                    broadcast_key=s3_key,
+                )
             return s3_key
 
         except Exception as e:
@@ -811,6 +834,71 @@ Reference the axioms in tension. Name what is sacrificed and what is preserved."
                 json.dump(result, f, indent=2, ensure_ascii=False)
             print(f"  ⚠ D15 saved locally: {local_path}")
             return None
+
+    def _emit_d13_world_seed(
+        self,
+        result: Dict[str, Any],
+        governance_result: Dict[str, Any],
+        broadcast_key: str,
+    ) -> None:
+        """D13 hook: emit WORLD checkpoint seed after successful D15 broadcast."""
+        if not _ARCHIVIST_AVAILABLE:
+            logger.debug(
+                "[D13] D15_EMISSION seed skipped — ark_archivist unavailable: %s",
+                globals().get("_ARCHIVIST_IMPORT_ERROR", "import error"),
+            )
+            return
+
+        try:
+            emergence = result.get("emergence", {})
+            axioms = [str(a) for a in emergence.get("axioms_in_tension", [])][:3] or ["A11"]
+
+            vm = VoidMarker(
+                presence="WORLD emission acknowledged by Parliament and written to external interface",
+                dominant_axioms=axioms,
+                harmonic_signature="",
+            )
+
+            payload = {
+                "world": {
+                    "broadcast_key": broadcast_key,
+                    "timestamp": result.get("timestamp"),
+                    "d15_output": emergence.get("d15_output", ""),
+                    "axioms_in_tension": emergence.get("axioms_in_tension", []),
+                    "contributing_domains": emergence.get("successful_domains", []),
+                    "governance": governance_result.get("governance", ""),
+                    "pipeline_duration_s": result.get("duration_s", 0),
+                }
+            }
+
+            out_dir = _ROOT_DIR / "ELPIDA_ARK" / "seeds" / "world"
+            seed_path = create_seed(
+                save_class=SaveClass.QUICK,
+                layer=Layer.WORLD,
+                source_event=ConstitutionalEvent.D15_EMISSION,
+                source_component="d15_pipeline._broadcast_d15",
+                payload=payload,
+                void_marker=vm,
+                out_dir=out_dir,
+                git_commit=os.environ.get("GIT_COMMIT", ""),
+                branch=os.environ.get("GIT_BRANCH", ""),
+                runtime_identity="hf-d15-pipeline",
+                bucket_targets=["elpida-external-interfaces/seeds/world/"],
+            )
+            push_result = push_seed_and_anchor(
+                seed_path=seed_path,
+                layer="world",
+                logger=logger,
+                default_source_event="d15_emission",
+            )
+            logger.info(
+                "[D13] D15_EMISSION checkpoint_id=%s world_key=%s anchor_key=%s",
+                push_result.get("checkpoint_id", "unknown"),
+                push_result.get("world_key", ""),
+                push_result.get("anchor_key", ""),
+            )
+        except Exception as e:
+            logger.warning("[D13] D15_EMISSION seed failed (non-fatal): %s", e)
 
     def _save_for_review(self, result: Dict[str, Any]):
         """Save D15 emergence that needs human review (governance REVIEW)."""

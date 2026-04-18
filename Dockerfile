@@ -26,6 +26,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy engine code and all local dependencies
 COPY native_cycle_engine.py /app/native_cycle_engine.py
 COPY ark_curator.py /app/ark_curator.py
+COPY ark_archivist.py /app/ark_archivist.py
 COPY crystallization_hub.py /app/crystallization_hub.py
 COPY diplomatic_handshake.py /app/diplomatic_handshake.py
 COPY immutable_kernel.py /app/immutable_kernel.py
@@ -37,6 +38,7 @@ COPY elpida_domains.json /app/elpida_domains.json
 COPY ElpidaS3Cloud/ /app/ElpidaS3Cloud/
 COPY cloud_deploy/cloud_runner.py /app/cloud_deploy/cloud_runner.py
 COPY consciousness_bridge.py /app/consciousness_bridge.py
+COPY d13_seed_bridge.py /app/d13_seed_bridge.py
 COPY hf_deployment/elpidaapp/d15_hub.py /app/d15_hub.py
 COPY regenerate_d15_index.py /app/regenerate_d15_index.py
 COPY ELPIDA_ARK.md /app/ELPIDA_ARK.md

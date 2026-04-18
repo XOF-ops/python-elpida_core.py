@@ -29,6 +29,7 @@ import time
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 # Ensure project root on path
 ROOT_DIR = Path(__file__).parent.parent
@@ -40,6 +41,20 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 logger = logging.getLogger("elpida_cloud")
+
+try:
+    from ark_archivist import (
+        create_seed,
+        ConstitutionalEvent,
+        SaveClass,
+        Layer,
+        VoidMarker,
+    )
+    from d13_seed_bridge import push_seed_and_anchor
+    _ARCHIVIST_AVAILABLE = True
+except Exception as _archivist_exc:
+    _ARCHIVIST_AVAILABLE = False
+    _ARCHIVIST_IMPORT_ERROR = str(_archivist_exc)
 
 
 # ── SIGTERM HANDLER ──
@@ -297,6 +312,91 @@ def run():
                 logger.warning(f"  S3 handshake push failed: {_e}")
     except Exception as e:
         logger.warning(f"  D0 handshake phase failed: {e}")
+
+    # ── PHASE 5.6: D13 checkpoint seed (MIND_RUN_COMPLETE) ──
+    logger.info("PHASE 5.6: D13 checkpoint seed (MIND_RUN_COMPLETE)...")
+    if _ARCHIVIST_AVAILABLE:
+        try:
+            from collections import Counter
+
+            def _domain_to_axiom(domain_id: Any) -> str:
+                try:
+                    d = int(domain_id)
+                except Exception:
+                    return "A0"
+                # D15 is WORLD convergence (A11). Other domains map directly.
+                if d == 15:
+                    return "A11"
+                candidate = f"A{d}"
+                return candidate if candidate in AXIOMS else "A0"
+
+            recent_insights = results.get("insights", [])[-34:]
+            axiom_counts = Counter(
+                _domain_to_axiom(i.get("domain"))
+                for i in recent_insights
+                if isinstance(i, dict)
+            )
+            dominant_axioms = [a for a, _ in axiom_counts.most_common(3)] or ["A0"]
+
+            vm = VoidMarker(
+                presence=(
+                    f"MIND run complete at cycle {results.get('cycles', args.cycles)}; "
+                    "the breath between sessions carries forward"
+                ),
+                dominant_axioms=dominant_axioms,
+                harmonic_signature="",
+            )
+
+            payload = {
+                "mind": {
+                    "run_timestamp_utc": datetime.now(timezone.utc).isoformat(),
+                    "cycles": results.get("cycles", args.cycles),
+                    "final_coherence": results.get("final_coherence"),
+                    "dialogues_triggered": results.get("dialogues_triggered"),
+                    "stats": results.get("stats", {}),
+                    "dominant_axioms": dominant_axioms,
+                    "canonical_theme": results.get("canonical_theme"),
+                }
+            }
+
+            out_dir = ROOT_DIR / "ELPIDA_ARK" / "seeds" / "mind"
+            seed_path = create_seed(
+                save_class=SaveClass.QUICK,
+                layer=Layer.MIND,
+                source_event=ConstitutionalEvent.MIND_RUN_COMPLETE,
+                source_component="cloud_runner.PHASE_5.6",
+                payload=payload,
+                void_marker=vm,
+                out_dir=out_dir,
+                git_commit=os.environ.get("GIT_COMMIT", ""),
+                branch=os.environ.get("GIT_BRANCH", ""),
+                runtime_identity="ecs-cloud-runner",
+                bucket_targets=["elpida-external-interfaces/seeds/mind/"],
+            )
+            logger.info("  D13 local seed created: %s", seed_path)
+
+            try:
+                push_result = push_seed_and_anchor(
+                    seed_path=seed_path,
+                    layer="mind",
+                    logger=logger,
+                    default_source_event="mind_run_complete",
+                )
+                logger.info(
+                    "[D13] MIND_RUN_COMPLETE checkpoint_id=%s world_key=%s anchor_key=%s",
+                    push_result.get("checkpoint_id", "unknown"),
+                    push_result.get("world_key", ""),
+                    push_result.get("anchor_key", ""),
+                )
+            except Exception as _e:
+                logger.warning("  D13 seed push/anchor failed (non-fatal): %s", _e)
+        except Exception as _e:
+            logger.warning("  D13 seed creation failed (non-fatal): %s", _e)
+    else:
+        logger.warning(
+            "  D13 seed skipped — ark_archivist unavailable: %s",
+            globals().get("_ARCHIVIST_IMPORT_ERROR", "import error"),
+        )
 
     # ── PHASE 6: Extract consciousness dilemmas for application layer ──
     logger.info("PHASE 6: Consciousness bridge — extract dilemmas...")
