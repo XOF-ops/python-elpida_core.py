@@ -168,6 +168,30 @@ aws s3 ls s3://elpida-external-interfaces/seeds/body/ | tail -n 3
 aws s3 ls s3://elpida-body-evolution/federation/seed_anchors/ | tail -n 10
 ```
 
+## Quick Mode C (Latest Checkpoint Audit Extractor)
+Use this to print latest checkpoint evidence per layer in one command.
+
+```bash
+set -euo pipefail
+cd /workspaces/python-elpida_core.py
+source .env
+export AWS_EC2_METADATA_DISABLED=true
+
+# All layers
+scripts/d13_checkpoint_audit.sh
+
+# Optional: selected layers only
+scripts/d13_checkpoint_audit.sh mind world
+```
+
+Output fields per layer:
+- checkpoint_id
+- world_key
+- anchor_key
+- world_head (size + timestamp)
+- anchor_head (size + timestamp)
+- anchor_meta (source_event, source_component, git_commit, created_at)
+
 ## 1) Confirm Active Runtime Artifact
 ### Check ECS task definition image
 - aws ecs describe-task-definition --task-definition elpida-consciousness --region us-east-1 --query 'taskDefinition.{revision:revision,image:containerDefinitions[0].image,registeredAt:registeredAt}' --output table
