@@ -225,9 +225,11 @@ Scheduled integrity monitoring is available via:
 
 Behavior:
 - Runs every 4 hours (`cron: 25 */4 * * *`) and supports manual dispatch.
+- Manual dispatch can target specific layers using `layers` input (space-separated): `mind body world full`.
 - Generates two artifacts (`d13_summary.json`, `d13_rows.json`) plus strict gate output.
 - Enforces strict anchor integrity with `--fail-on-missing-anchor`.
 - On failure, auto-opens or updates the GitHub issue `D13 integrity audit failure`.
+- On pass, auto-closes that issue (with a closure comment) if it is currently open.
 
 Required repository configuration:
 - Preferred: repository variable `AWS_GITHUB_OIDC_ROLE_ARN` (OIDC role)
@@ -238,6 +240,7 @@ Required repository configuration:
 Manual run inputs:
 - `since_hours` (default `24`)
 - `latest_n` (default `20`)
+- `layers` (optional; space-separated subset of `mind body world full`)
 
 ## 1) Confirm Active Runtime Artifact
 ### Check ECS task definition image

@@ -11,6 +11,10 @@ on:
         description: "Max checkpoints per layer"
         required: false
         default: "20"
+      layers:
+        description: "Optional space-separated layers (mind body world full)"
+        required: false
+        default: ""
   schedule:
     - cron: "25 */4 * * *"
 
@@ -55,6 +59,7 @@ jobs:
         env:
           INPUT_SINCE_HOURS: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.since_hours || '24' }}
           INPUT_LATEST_N: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.latest_n || '20' }}
+          INPUT_LAYERS: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.layers || '' }}
         run: |
           set -euo pipefail
 
@@ -66,6 +71,20 @@ jobs:
             INPUT_LATEST_N=20
           fi
 
+          LAYER_ARGS=()
+          if [[ -n "${INPUT_LAYERS:-}" ]]; then
+            for layer in $INPUT_LAYERS; do
+              case "$layer" in
+                mind|body|world|full)
+                  LAYER_ARGS+=("$layer")
+                  ;;
+                *)
+                  echo "Ignoring unsupported layer input: $layer"
+                  ;;
+              esac
+            done
+          fi
+
           mkdir -p artifacts
 
           scripts/d13_checkpoint_audit.sh \
@@ -73,12 +92,14 @@ jobs:
             --latest-n "$INPUT_LATEST_N" \
             --summary \
             --format json \
+            "${LAYER_ARGS[@]}" \
             > artifacts/d13_summary.json
 
           scripts/d13_checkpoint_audit.sh \
             --since-hours "$INPUT_SINCE_HOURS" \
             --latest-n "$INPUT_LATEST_N" \
             --format json \
+            "${LAYER_ARGS[@]}" \
             > artifacts/d13_rows.json
 
           # Hard gate: fail if any world seed lacks matching federation anchor.
@@ -87,6 +108,7 @@ jobs:
             --latest-n "$INPUT_LATEST_N" \
             --fail-on-missing-anchor \
             --format text \
+            "${LAYER_ARGS[@]}" \
             > artifacts/d13_strict_output.txt 2>&1
 
       - name: Upload audit artifacts
@@ -155,3 +177,53 @@ jobs:
               });
               core.info(`Created issue #${created.data.number}`);
             }
+
+      - name: Auto-close integrity issue on pass
+        if: ${{ steps.audit.outcome == 'success' }}
+        uses: actions/github-script@v7
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const title = 'D13 integrity audit failure';
+
+            const existing = await github.paginate(github.rest.issues.listForRepo, {
+              owner,
+              repo,
+              state: 'open',
+              per_page: 100,
+            });
+
+            const match = existing.find((i) => i.title === title);
+            if (!match) {
+              core.info('No open integrity issue to close.');
+              return;
+            }
+
+            const body = [
+              'Automated D13 checkpoint integrity audit passed.',
+              '',
+              `- Workflow run: ${process.env.RUN_URL}`,
+              `- Trigger: ${context.eventName}`,
+              `- SHA: ${context.sha}`,
+              '',
+              'Closing this incident issue because strict integrity checks now pass.'
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: match.number,
+              body,
+            });
+
+            await github.rest.issues.update({
+              owner,
+              repo,
+              issue_number: match.number,
+              state: 'closed',
+            });
+
+            core.info(`Closed issue #${match.number}`);
