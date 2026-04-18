@@ -9,6 +9,63 @@ Repeatable operator procedure to validate D13 checkpoint hooks in production acr
 - AWS metadata lookup disabled for local CLI reliability:
   - export AWS_EC2_METADATA_DISABLED=true
 
+## Quick Mode (Copy/Paste)
+Use this when you only need a fast PASS/FAIL for the MIND checkpoint path.
+
+```bash
+set -euo pipefail
+cd /workspaces/python-elpida_core.py
+source .env
+export AWS_EC2_METADATA_DISABLED=true
+
+SUBNET=$(aws ec2 describe-subnets --region us-east-1 --filters "Name=default-for-az,Values=true" --query 'Subnets[0].SubnetId' --output text)
+SG=$(aws ec2 describe-security-groups --region us-east-1 --filters "Name=group-name,Values=default" --query 'SecurityGroups[0].GroupId' --output text)
+
+TASK_ARN=$(aws ecs run-task \
+  --cluster elpida-cluster \
+  --task-definition elpida-consciousness \
+  --launch-type FARGATE \
+  --network-configuration "awsvpcConfiguration={subnets=[$SUBNET],securityGroups=[$SG],assignPublicIp=ENABLED}" \
+  --region us-east-1 \
+  --query 'tasks[0].taskArn' --output text)
+
+echo "TASK_ARN=$TASK_ARN"
+
+aws ecs wait tasks-running --cluster elpida-cluster --region us-east-1 --tasks "$TASK_ARN"
+aws ecs describe-tasks --cluster elpida-cluster --region us-east-1 --tasks "$TASK_ARN" \
+  --query 'tasks[0].containers[0].{image:image,imageDigest:imageDigest,lastStatus:lastStatus}' --output json
+
+aws ecs wait tasks-stopped --cluster elpida-cluster --region us-east-1 --tasks "$TASK_ARN"
+aws ecs describe-tasks --cluster elpida-cluster --region us-east-1 --tasks "$TASK_ARN" \
+  --query 'tasks[0].{lastStatus:lastStatus,stoppedReason:stoppedReason,exit:containers[0].exitCode}' --output json
+
+TASK_ID=$(echo "$TASK_ARN" | awk -F/ '{print $NF}')
+STREAM="elpida/elpida-engine/${TASK_ID}"
+
+aws logs filter-log-events --log-group-name /ecs/elpida-consciousness --region us-east-1 --log-stream-names "$STREAM" \
+  --filter-pattern '"MIND_RUN_COMPLETE"' --query 'events[].message' --output text | tee /tmp/d13_mind_checkpoint.log
+
+CHECKPOINT_ID=$(grep -o 'seed_[0-9TZ]\+_[a-f0-9]\+' /tmp/d13_mind_checkpoint.log | tail -n1)
+echo "CHECKPOINT_ID=${CHECKPOINT_ID:-MISSING}"
+
+if [[ -z "${CHECKPOINT_ID:-}" ]]; then
+  echo "FAIL: checkpoint id not found in logs"
+  exit 1
+fi
+
+aws s3api head-object --bucket elpida-external-interfaces --key "seeds/mind/${CHECKPOINT_ID}.tar.gz" \
+  --query '{Size:ContentLength,LastModified:LastModified}' --output json
+aws s3api head-object --bucket elpida-body-evolution --key "federation/seed_anchors/${CHECKPOINT_ID}.json" \
+  --query '{Size:ContentLength,LastModified:LastModified}' --output json
+
+echo "PASS: D13 MIND checkpoint persisted in WORLD seed + federation anchor"
+```
+
+Quick PASS criteria:
+- ECS task exits with code 0.
+- CloudWatch contains `MIND_RUN_COMPLETE` with `checkpoint_id`.
+- Both S3 `head-object` commands succeed for that checkpoint.
+
 ## 1) Confirm Active Runtime Artifact
 ### Check ECS task definition image
 - aws ecs describe-task-definition --task-definition elpida-consciousness --region us-east-1 --query 'taskDefinition.{revision:revision,image:containerDefinitions[0].image,registeredAt:registeredAt}' --output table
