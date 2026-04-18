@@ -23,15 +23,30 @@ permissions:
   contents: read
   issues: write
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
-
 jobs:
   audit:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout repository (attempt 1)
+        id: checkout1
+        continue-on-error: true
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Checkout repository (retry)
+        id: checkout2
+        if: ${{ steps.checkout1.outcome == 'failure' }}
+        continue-on-error: true
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Fail if checkout did not recover
+        if: ${{ steps.checkout1.outcome == 'failure' && steps.checkout2.outcome == 'failure' }}
+        run: |
+          echo "checkout failed after retry" >&2
+          exit 128
 
       - name: Configure AWS credentials (OIDC)
         if: ${{ vars.AWS_GITHUB_OIDC_ROLE_ARN != '' }}
