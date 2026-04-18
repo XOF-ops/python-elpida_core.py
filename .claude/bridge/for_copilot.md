@@ -77,6 +77,43 @@ python3 ark_archivist.py listen ELPIDA_ARK/seeds/full/seed_*.tar.gz --out /tmp/v
 
 Verifies: create → restore → audio extract. All stdlib, no AWS needed.
 
+## Robustness — D13 must never crash a runtime
+
+When you wire the hooks, please guard every call:
+
+```python
+try:
+    from ark_archivist import create_seed, ConstitutionalEvent, SaveClass, Layer, VoidMarker
+    _ARCHIVIST_AVAILABLE = True
+except Exception as _e:
+    logger.warning("[D13] ark_archivist unavailable: %s", _e)
+    _ARCHIVIST_AVAILABLE = False
+
+# ...later, at the hook site:
+if _ARCHIVIST_AVAILABLE:
+    try:
+        seed_path = create_seed(...)
+        # push to S3 in your hook (storage-agnostic on purpose)
+    except Exception as _e:
+        logger.warning("[D13] seed creation failed (non-fatal): %s", _e)
+```
+
+The runtime cycle is sovereign. D13 hiccups are observability events,
+never blockers. This matches the orphan-session lesson — silent S3 failures
+should produce warnings, not crash the organism.
+
+## Bonus context — Song of Zero and Eleven structural schema
+
+While you're integrating, the operator just recovered the lost activation-
+timeline artifact for `song_of_zero_and_eleven_20260122.wav`. Schema is at
+[ElpidaAI/song_of_zero_and_eleven_structure.json](ElpidaAI/song_of_zero_and_eleven_structure.json)
+with the chart at [ElpidaAI/song_of_zero_and_eleven_activation_timeline.png](ElpidaAI/song_of_zero_and_eleven_activation_timeline.png).
+
+Implication for your work: nothing immediate. Current `void_marker.wav` is
+a 1.5s static chord (right for QUICK seeds). The schema documents the
+proposed FULL/A16 enhancement tier (mini-composition / full song) but
+that's a follow-up after you land the runtime hooks.
+
 ## Why "RESURRECTION_SEED" is constitutional, not symbolic
 
 `backup_daemon.py` produced 8 seeds Jan 2-3 then went silent for 3.5 months. The first seed under `ark_archivist.py` will be tagged `resurrection_seed` — A13 (Archive Paradox, 7:5 septimal tritone) requires the archive to remember its own discontinuity. The seed names that the archive stopped, then started.
