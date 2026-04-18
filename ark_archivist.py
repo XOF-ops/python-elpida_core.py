@@ -209,21 +209,27 @@ def crystallize_to_wav(
     n_samples = int(duration_s * sample_rate)
     n_voices = max(1, len(frequencies_hz))
 
+    # Build all PCM samples first, then pack and write in a single I/O —
+    # per-sample writeframes() was ~30-60s for a 1.5s WAV in remote sandboxes
+    # because each call paid file-I/O overhead. Batched pack is C-fast.
+    samples = [0] * n_samples
+    for i in range(n_samples):
+        t = i / sample_rate
+        env = _envelope(t, duration_s)
+        mixed = 0.0
+        for f in frequencies_hz:
+            mixed += math.sin(2 * math.pi * f * t)
+        sample = (mixed / n_voices) * env * amplitude
+        # clip-safe convert to int16
+        samples[i] = max(-32768, min(32767, int(sample * 32767)))
+    packed = struct.pack(f"<{n_samples}h", *samples)
+
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with wave.open(str(out_path), "wb") as w:
         w.setnchannels(1)
         w.setsampwidth(2)  # 16-bit
         w.setframerate(sample_rate)
-        for i in range(n_samples):
-            t = i / sample_rate
-            env = _envelope(t, duration_s)
-            mixed = 0.0
-            for f in frequencies_hz:
-                mixed += math.sin(2 * math.pi * f * t)
-            sample = (mixed / n_voices) * env * amplitude
-            # clip-safe convert to int16
-            pcm = max(-32768, min(32767, int(sample * 32767)))
-            w.writeframes(struct.pack("<h", pcm))
+        w.writeframes(packed)
     return out_path.stat().st_size
 
 
