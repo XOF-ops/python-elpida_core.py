@@ -7,6 +7,7 @@ set -euo pipefail
 #   export AWS_EC2_METADATA_DISABLED=true
 #   scripts/d13_checkpoint_audit.sh
 #   scripts/d13_checkpoint_audit.sh --format json
+#   scripts/d13_checkpoint_audit.sh --latest-n 3 --format json
 #   scripts/d13_checkpoint_audit.sh --format csv mind world
 #   scripts/d13_checkpoint_audit.sh mind world
 
@@ -15,6 +16,7 @@ FEDERATION_BUCKET="elpida-body-evolution"
 ANCHOR_PREFIX="federation/seed_anchors"
 
 FORMAT="text"
+LATEST_N=1
 LAYERS=()
 
 have_python3() {
@@ -47,11 +49,12 @@ require_tools() {
 print_usage() {
   cat <<'USAGE'
 Usage:
-  scripts/d13_checkpoint_audit.sh [--format text|json|csv] [mind] [body] [world] [full]
+  scripts/d13_checkpoint_audit.sh [--format text|json|csv] [--latest-n N] [mind] [body] [world] [full]
 
 Examples:
   scripts/d13_checkpoint_audit.sh
   scripts/d13_checkpoint_audit.sh --format json
+  scripts/d13_checkpoint_audit.sh --latest-n 3 --format json
   scripts/d13_checkpoint_audit.sh --format csv mind world
 USAGE
 }
@@ -69,6 +72,18 @@ parse_args() {
         ;;
       --format=*)
         FORMAT="${1#*=}"
+        shift
+        ;;
+      --latest-n)
+        if [[ $# -lt 2 ]]; then
+          echo "ERROR: --latest-n requires a value" >&2
+          exit 1
+        fi
+        LATEST_N="$2"
+        shift 2
+        ;;
+      --latest-n=*)
+        LATEST_N="${1#*=}"
         shift
         ;;
       -h|--help)
@@ -95,18 +110,31 @@ parse_args() {
       ;;
   esac
 
+  if ! [[ "$LATEST_N" =~ ^[0-9]+$ ]] || [[ "$LATEST_N" -lt 1 ]]; then
+    echo "ERROR: --latest-n must be an integer >= 1" >&2
+    exit 1
+  fi
+
   if [[ ${#LAYERS[@]} -eq 0 ]]; then
     LAYERS=(mind body world full)
   fi
 }
 
-latest_seed_key_for_layer() {
+latest_seed_keys_for_layer() {
   local layer="$1"
-  aws s3api list-objects-v2 \
+  local out
+  out="$(aws s3api list-objects-v2 \
     --bucket "$EXTERNAL_BUCKET" \
     --prefix "seeds/${layer}/" \
-    --query 'reverse(sort_by(Contents,&LastModified))[0].Key' \
-    --output text
+    --query "reverse(sort_by(Contents,&LastModified))[:${LATEST_N}].Key" \
+    --output text)"
+
+  if [[ -z "$out" || "$out" == "None" ]]; then
+    return
+  fi
+
+  # aws --output text may return keys tab-delimited; normalize to one key per line.
+  tr '\t' '\n' <<< "$out" | sed '/^$/d'
 }
 
 head_object_json() {
@@ -119,11 +147,9 @@ head_object_json() {
     --output json
 }
 
-collect_layer_row() {
+collect_row_for_seed_key() {
   local layer="$1"
-
-  local seed_key
-  seed_key="$(latest_seed_key_for_layer "$layer")"
+  local seed_key="$2"
 
   local checkpoint_id=""
   local anchor_key=""
@@ -272,7 +298,14 @@ ROWS=()
 for layer in "${LAYERS[@]}"; do
   case "$layer" in
     mind|body|world|full)
-      ROWS+=("$(collect_layer_row "$layer")")
+      mapfile -t SEED_KEYS < <(latest_seed_keys_for_layer "$layer")
+      if [[ ${#SEED_KEYS[@]} -eq 0 ]]; then
+        ROWS+=("$(collect_row_for_seed_key "$layer" "None")")
+      else
+        for seed_key in "${SEED_KEYS[@]}"; do
+          ROWS+=("$(collect_row_for_seed_key "$layer" "$seed_key")")
+        done
+      fi
       ;;
     *)
       echo "ERROR: unsupported layer '$layer' (allowed: mind body world full)" >&2

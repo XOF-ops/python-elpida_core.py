@@ -188,6 +188,12 @@ scripts/d13_checkpoint_audit.sh --format json
 
 # CSV output (spreadsheet/report pipelines)
 scripts/d13_checkpoint_audit.sh --format csv
+
+# Last 3 checkpoints per layer (JSON)
+scripts/d13_checkpoint_audit.sh --latest-n 3 --format json
+
+# Last 5 checkpoints for selected layers only
+scripts/d13_checkpoint_audit.sh --latest-n 5 --format csv mind world
 ```
 
 Output fields per layer:
