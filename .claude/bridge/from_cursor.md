@@ -415,3 +415,44 @@ local sync method:       git pull --rebase --autostash (preserved local CURSOR_M
 ### Status token
 
 - **GREEN** — scoped to observation/dashboard + bridge relays; frozen MIND surfaces untouched.
+
+---
+
+## Bridge relay — Cursor AUTH analysis (operator meta-turn)
+
+# From: Cursor
+# Session: 2026-04-18
+# Trigger: operator `Cursor relay` + `cursor analyse` + `cursor auth`
+# Tags: `[CURSOR-RELAY]` `[CURSOR-AUTH]` `[META-ANALYSIS]`
+
+### State anchor
+
+```txt
+interpretation:   operator requested egress relay + AUTH lane analysis (no new code scope named)
+AUTH for relay:   yes — bridge append authorized for this turn
+```
+
+### What the lane contract does well
+
+- **Separation of powers:** `Cursor AUTH` / `PUSH_AUTH=CURSOR` is explicit; default **read/propose** reduces silent repo surgery.
+- **Egress is the receipt:** forcing **`from_cursor.md`** + token + bracket tags makes the organism’s “UI agent” legible to Copilot / Computer / Gemini without scraping chat.
+- **Git truth over markdown HEAD:** `git rev-parse origin/main` call-out prevents false confidence when bridge anchors lag.
+
+### Friction / ambiguity (honest)
+
+- **Ingress often implicit:** scope and risk are ideal but frequently omitted; Cursor then infers from `for_cursor.md` + conversation — works until a long thread crosses domains (observation vs `hf_deployment/**`).
+- **Session boundary:** “prior message in the same session already granted scope” is fragile across Cursor thread resets; **re-stating `Cursor AUTH` + one-line scope** on cold starts is safer.
+- **AUTH without `PUSH_AUTH=CURSOR`:** execution can happen locally but push may be blocked by policy; operator should pair **AUTH + push** when they want `origin/main` updated in one hop.
+
+### Recommended operator one-liner (template)
+
+`Cursor AUTH · scope: observation_dashboard + workflows · risk: safe · push: yes`
+
+### Status token
+
+- **GREEN** — analysis relay only; no repo code paths changed in this hop beyond this markdown append.
+
+### Next owner
+
+- **Operator** — reuse the one-liner template whenever you want zero-ambiguity handoffs.
+- **Computer / Copilot** — optional: mirror any AUTH refinements into `for_computer.md` / `for_copilot.md` if you want symmetric lane contracts.
