@@ -19,6 +19,10 @@ on:
         description: "Set true to launch even if an ECS task is already active"
         required: false
         default: "false"
+      cooldown_minutes:
+        description: "Skip launch if last STOPPED task is newer than this many minutes"
+        required: false
+        default: "45"
 
 permissions:
   id-token: write
@@ -29,6 +33,9 @@ env:
 
 jobs:
   fire:
+    concurrency:
+      group: fire-mind-launch
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     env:
       AWS_DEFAULT_REGION: us-east-1
@@ -61,6 +68,7 @@ jobs:
           INPUT_SUBNET: ${{ github.event.inputs.subnet_id || 'subnet-0937937aecb992e24' }}
           INPUT_SG: ${{ github.event.inputs.security_group_id || 'sg-000f0ea92dbdf5473' }}
           INPUT_FORCE_LAUNCH: ${{ github.event.inputs.force_launch || 'false' }}
+          INPUT_COOLDOWN_MINUTES: ${{ github.event.inputs.cooldown_minutes || '45' }}
         run: |
           set -euo pipefail
 
@@ -68,6 +76,11 @@ jobs:
           SUBNET="${INPUT_SUBNET:-subnet-0937937aecb992e24}"
           SG="${INPUT_SG:-sg-000f0ea92dbdf5473}"
           FORCE_LAUNCH="${INPUT_FORCE_LAUNCH:-false}"
+          COOLDOWN_MINUTES="${INPUT_COOLDOWN_MINUTES:-45}"
+
+          if ! [[ "$COOLDOWN_MINUTES" =~ ^[0-9]+$ ]]; then
+            COOLDOWN_MINUTES=45
+          fi
 
           echo "Launching task definition: $TASK_DEF"
           echo "Network: subnet=$SUBNET sg=$SG"
@@ -84,6 +97,47 @@ jobs:
             echo "Skipping launch: an ECS task is already running."
             echo "Use force_launch=true if you intentionally want overlap."
             exit 0
+          fi
+
+          LAST_STOPPED_TASK=$(aws ecs list-tasks \
+            --cluster elpida-cluster \
+            --region us-east-1 \
+            --desired-status STOPPED \
+            --max-items 1 \
+            --query 'taskArns[0]' \
+            --output text)
+
+          if [[ -n "$LAST_STOPPED_TASK" && "$LAST_STOPPED_TASK" != "None" ]]; then
+            LAST_STOPPED_AT=$(aws ecs describe-tasks \
+              --cluster elpida-cluster \
+              --region us-east-1 \
+              --tasks "$LAST_STOPPED_TASK" \
+              --query 'tasks[0].stoppedAt' \
+              --output text)
+
+            if [[ -n "$LAST_STOPPED_AT" && "$LAST_STOPPED_AT" != "None" && "$FORCE_LAUNCH" != "true" ]]; then
+              AGE_MIN=$(python3 - "$LAST_STOPPED_AT" <<'PY'
+from datetime import datetime, timezone
+import sys
+raw = sys.argv[1].strip()
+try:
+    dt = datetime.fromisoformat(raw.replace('Z', '+00:00'))
+except Exception:
+    print("99999")
+    raise SystemExit
+now = datetime.now(timezone.utc)
+mins = int((now - dt.astimezone(timezone.utc)).total_seconds() // 60)
+print(max(mins, 0))
+PY
+)
+
+              echo "Last STOPPED task age (minutes): ${AGE_MIN}"
+              if [[ "$AGE_MIN" -lt "$COOLDOWN_MINUTES" ]]; then
+                echo "Skipping launch: cooldown active (${AGE_MIN} < ${COOLDOWN_MINUTES} minutes)."
+                echo "Use force_launch=true to bypass cooldown intentionally."
+                exit 0
+              fi
+            fi
           fi
 
           aws ecs run-task \
