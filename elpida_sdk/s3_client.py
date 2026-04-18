@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
 from typing import Any, Dict, List
 
 
@@ -29,3 +30,27 @@ class S3Client:
 
     def head_object(self, bucket: str, key: str) -> Dict[str, Any]:
         return self._s3.head_object(Bucket=bucket, Key=key)
+
+    def read_text(self, bucket: str, key: str) -> str:
+        resp = self._s3.get_object(Bucket=bucket, Key=key)
+        body = resp["Body"].read()
+        return body.decode("utf-8")
+
+    def read_json(self, bucket: str, key: str) -> Dict[str, Any]:
+        text = self.read_text(bucket=bucket, key=key)
+        data = json.loads(text)
+        if not isinstance(data, dict):
+            raise ValueError(f"expected JSON object at s3://{bucket}/{key}")
+        return data
+
+    def read_jsonl(self, bucket: str, key: str, limit: int = 20) -> List[Dict[str, Any]]:
+        if limit <= 0:
+            return []
+        text = self.read_text(bucket=bucket, key=key)
+        lines = [ln for ln in text.splitlines() if ln.strip()]
+        out: List[Dict[str, Any]] = []
+        for ln in lines[-limit:]:
+            item = json.loads(ln)
+            if isinstance(item, dict):
+                out.append(item)
+        return out

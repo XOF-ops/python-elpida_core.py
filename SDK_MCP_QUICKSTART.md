@@ -16,6 +16,20 @@ python -m mcp_server.server <<'EOF'
 EOF
 ```
 
+## Live federation/world read test
+
+Requires AWS credentials in env.
+
+```bash
+cd /workspaces/python-elpida_core.py
+source .env
+export AWS_EC2_METADATA_DISABLED=true
+python -m mcp_server.server <<'EOF'
+{"method":"call_tool","params":{"name":"get_mind_heartbeat","arguments":{}}}
+{"method":"call_tool","params":{"name":"get_d15_broadcasts","arguments":{"limit":2}}}
+EOF
+```
+
 ## Checkpoint read test
 
 Requires AWS credentials in env and executable script present.
@@ -32,10 +46,13 @@ EOF
 ## SDK usage example
 
 ```python
-from elpida_sdk import ElpidaConfig, KernelGuard
+from elpida_sdk import ElpidaConfig, KernelGuard, S3Client
 
 cfg = ElpidaConfig()
 print(len(cfg.list_domains()))
 print(len(cfg.list_axioms()))
 print(KernelGuard.check_text("Hello constitutional world").to_dict())
+
+s3 = S3Client()
+print(s3.read_json(s3.buckets.federation, "federation/mind_heartbeat.json"))
 ```

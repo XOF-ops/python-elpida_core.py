@@ -5,7 +5,7 @@ import sys
 from dataclasses import asdict
 from typing import Any, Dict, List
 
-from elpida_sdk import CheckpointAuditor, ElpidaConfig, KernelGuard
+from elpida_sdk import CheckpointAuditor, ElpidaConfig, KernelGuard, S3Client
 
 
 class ElpidaMCPServer:
@@ -23,12 +23,15 @@ class ElpidaMCPServer:
     def __init__(self) -> None:
         self.config = ElpidaConfig()
         self.checkpoints = CheckpointAuditor()
+        self.s3 = S3Client()
         self.tools = {
             "list_domains": self.list_domains,
             "list_axioms": self.list_axioms,
             "list_rhythms": self.list_rhythms,
             "kernel_check_text": self.kernel_check_text,
             "list_checkpoints": self.list_checkpoints,
+            "get_mind_heartbeat": self.get_mind_heartbeat,
+            "get_d15_broadcasts": self.get_d15_broadcasts,
         }
 
     def list_tools(self) -> List[Dict[str, Any]]:
@@ -52,6 +55,14 @@ class ElpidaMCPServer:
             {
                 "name": "list_checkpoints",
                 "description": "Return D13 checkpoint rows via scripts/d13_checkpoint_audit.sh",
+            },
+            {
+                "name": "get_mind_heartbeat",
+                "description": "Read federation/mind_heartbeat.json from S3",
+            },
+            {
+                "name": "get_d15_broadcasts",
+                "description": "Read recent entries from d15/broadcasts.jsonl in S3",
             },
         ]
 
@@ -77,6 +88,17 @@ class ElpidaMCPServer:
         since_hours = int(arguments.get("since_hours", 24))
         rows = self.checkpoints.list_rows(layers=layers, latest_n=latest_n, since_hours=since_hours)
         return [asdict(r) for r in rows]
+
+    def get_mind_heartbeat(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        bucket = str(arguments.get("bucket", self.s3.buckets.federation))
+        key = str(arguments.get("key", "federation/mind_heartbeat.json"))
+        return self.s3.read_json(bucket=bucket, key=key)
+
+    def get_d15_broadcasts(self, arguments: Dict[str, Any]) -> List[Dict[str, Any]]:
+        bucket = str(arguments.get("bucket", self.s3.buckets.world))
+        key = str(arguments.get("key", "d15/broadcasts.jsonl"))
+        limit = int(arguments.get("limit", 20))
+        return self.s3.read_jsonl(bucket=bucket, key=key, limit=limit)
 
     def dispatch(self, msg: Dict[str, Any]) -> Dict[str, Any]:
         method = msg.get("method")
