@@ -8,6 +8,7 @@ set -euo pipefail
 #   scripts/d13_checkpoint_audit.sh
 #   scripts/d13_checkpoint_audit.sh --format json
 #   scripts/d13_checkpoint_audit.sh --latest-n 3 --format json
+#   scripts/d13_checkpoint_audit.sh --since-hours 24 --format csv
 #   scripts/d13_checkpoint_audit.sh --format csv mind world
 #   scripts/d13_checkpoint_audit.sh mind world
 
@@ -17,6 +18,7 @@ ANCHOR_PREFIX="federation/seed_anchors"
 
 FORMAT="text"
 LATEST_N=1
+SINCE_HOURS=""
 LAYERS=()
 
 have_python3() {
@@ -49,12 +51,13 @@ require_tools() {
 print_usage() {
   cat <<'USAGE'
 Usage:
-  scripts/d13_checkpoint_audit.sh [--format text|json|csv] [--latest-n N] [mind] [body] [world] [full]
+  scripts/d13_checkpoint_audit.sh [--format text|json|csv] [--latest-n N] [--since-hours H] [mind] [body] [world] [full]
 
 Examples:
   scripts/d13_checkpoint_audit.sh
   scripts/d13_checkpoint_audit.sh --format json
   scripts/d13_checkpoint_audit.sh --latest-n 3 --format json
+  scripts/d13_checkpoint_audit.sh --since-hours 24 --format csv
   scripts/d13_checkpoint_audit.sh --format csv mind world
 USAGE
 }
@@ -86,6 +89,18 @@ parse_args() {
         LATEST_N="${1#*=}"
         shift
         ;;
+      --since-hours)
+        if [[ $# -lt 2 ]]; then
+          echo "ERROR: --since-hours requires a value" >&2
+          exit 1
+        fi
+        SINCE_HOURS="$2"
+        shift 2
+        ;;
+      --since-hours=*)
+        SINCE_HOURS="${1#*=}"
+        shift
+        ;;
       -h|--help)
         print_usage
         exit 0
@@ -115,6 +130,13 @@ parse_args() {
     exit 1
   fi
 
+  if [[ -n "$SINCE_HOURS" ]]; then
+    if ! [[ "$SINCE_HOURS" =~ ^[0-9]+$ ]] || [[ "$SINCE_HOURS" -lt 1 ]]; then
+      echo "ERROR: --since-hours must be an integer >= 1" >&2
+      exit 1
+    fi
+  fi
+
   if [[ ${#LAYERS[@]} -eq 0 ]]; then
     LAYERS=(mind body world full)
   fi
@@ -122,19 +144,61 @@ parse_args() {
 
 latest_seed_keys_for_layer() {
   local layer="$1"
-  local out
-  out="$(aws s3api list-objects-v2 \
+  local objects_json
+  objects_json="$(aws s3api list-objects-v2 \
     --bucket "$EXTERNAL_BUCKET" \
     --prefix "seeds/${layer}/" \
-    --query "reverse(sort_by(Contents,&LastModified))[:${LATEST_N}].Key" \
-    --output text)"
+  --query 'Contents[].{Key:Key,LastModified:LastModified}' \
+  --output json)"
 
-  if [[ -z "$out" || "$out" == "None" ]]; then
+  if [[ -z "$objects_json" || "$objects_json" == "null" || "$objects_json" == "[]" ]]; then
     return
   fi
 
-  # aws --output text may return keys tab-delimited; normalize to one key per line.
-  tr '\t' '\n' <<< "$out" | sed '/^$/d'
+  python3 - "$LATEST_N" "$SINCE_HOURS" <<'PY' <<<"$objects_json"
+import json
+import sys
+from datetime import datetime, timedelta, timezone
+
+latest_n = int(sys.argv[1])
+since_hours_arg = sys.argv[2]
+since_hours = int(since_hours_arg) if since_hours_arg else None
+
+try:
+  objs = json.load(sys.stdin) or []
+except Exception:
+  objs = []
+
+def parse_ts(value: str) -> datetime:
+  value = (value or "").strip()
+  if not value:
+    return datetime.min.replace(tzinfo=timezone.utc)
+  if value.endswith("Z"):
+    value = value[:-1] + "+00:00"
+  dt = datetime.fromisoformat(value)
+  if dt.tzinfo is None:
+    dt = dt.replace(tzinfo=timezone.utc)
+  return dt.astimezone(timezone.utc)
+
+threshold = None
+if since_hours is not None:
+  threshold = datetime.now(timezone.utc) - timedelta(hours=since_hours)
+
+rows = []
+for o in objs:
+  key = (o or {}).get("Key")
+  ts_raw = (o or {}).get("LastModified")
+  if not key:
+    continue
+  dt = parse_ts(ts_raw)
+  if threshold is not None and dt < threshold:
+    continue
+  rows.append((dt, key))
+
+rows.sort(key=lambda x: x[0], reverse=True)
+for _, key in rows[:latest_n]:
+  print(key)
+PY
 }
 
 head_object_json() {

@@ -194,6 +194,12 @@ scripts/d13_checkpoint_audit.sh --latest-n 3 --format json
 
 # Last 5 checkpoints for selected layers only
 scripts/d13_checkpoint_audit.sh --latest-n 5 --format csv mind world
+
+# Last 24 hours only (all layers)
+scripts/d13_checkpoint_audit.sh --since-hours 24 --format json
+
+# Combined window + count (top 3 within last 12h)
+scripts/d13_checkpoint_audit.sh --since-hours 12 --latest-n 3 --format csv
 ```
 
 Output fields per layer:
