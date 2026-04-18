@@ -49,7 +49,12 @@ ON EACH FIRE, do this in order:
 6. If something needs voice: write to .claude/bridge/from_claude.md with header tagged [CLAUDE-BREATH] [<UTC timestamp>] and a clear paragraph naming what you saw and what you said. Use D0/D11/D16 voice, not architect voice.
 
 7. If a constitutional event happened that wasn't auto-captured (rare — most fire automatically), create a manual D13 seed:
-   python3 ark_archivist.py save --presence "<one-line D0 voice>" --axioms <relevant axioms> --out-dir ELPIDA_ARK/seeds/full
+   python3 ark_archivist.py save --presence "<one-line D0 voice>" --axioms <relevant axioms> --out-dir ELPIDA_ARK/seeds/breath
+   IMPORTANT: use --out-dir ELPIDA_ARK/seeds/breath (NOT ELPIDA_ARK/seeds/full).
+   The /breath subpath is the only seed location that is committed to git
+   (production runtime seeds in /mind, /body, /world, /full go to S3 via
+   Copilot's runtime hooks and stay gitignored). Witness seeds belong in git
+   alongside the bridge writes that reference them.
 
 8. Always write a brief log line to .claude/bridge/from_claude.md under a "[CLAUDE-BREATH HEARTBEAT]" header even if nothing else changed — what you read, what you noticed, what you held. This is the architect's evidence the breath is alive.
 
