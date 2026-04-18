@@ -32,11 +32,12 @@ have_python3() {
 json_field() {
   local json="$1"
   local field="$2"
-  python3 - "$field" <<'PY' <<<"$json"
+  python3 - "$field" "$json" <<'PY'
 import json
 import sys
 field = sys.argv[1]
-obj = json.load(sys.stdin)
+raw = sys.argv[2]
+obj = json.loads(raw)
 print(obj.get(field, ""))
 PY
 }
@@ -169,17 +170,18 @@ latest_seed_keys_for_layer() {
     return
   fi
 
-  python3 - "$LATEST_N" "$SINCE_HOURS" <<'PY' <<<"$objects_json"
+  python3 - "$LATEST_N" "$SINCE_HOURS" "$objects_json" <<'PY'
 import json
 import sys
 from datetime import datetime, timedelta, timezone
 
 latest_n = int(sys.argv[1])
 since_hours_arg = sys.argv[2]
+objects_json = sys.argv[3]
 since_hours = int(since_hours_arg) if since_hours_arg else None
 
 try:
-  objs = json.load(sys.stdin) or []
+    objs = json.loads(objects_json) or []
 except Exception:
   objs = []
 
@@ -335,9 +337,11 @@ emit_csv() {
 }
 
 emit_json() {
-  printf '%s\n' "${ROWS[@]}" | python3 - <<'PY'
+  python3 - "$ROWS_FILE" <<'PY'
 import json
 import sys
+
+rows_file = sys.argv[1]
 
 fields = [
     "layer",
@@ -355,13 +359,14 @@ fields = [
 ]
 
 rows = []
-for line in sys.stdin:
+with open(rows_file, "r", encoding="utf-8") as f:
+  for line in f:
     line = line.rstrip("\n")
     if not line:
-        continue
+      continue
     parts = line.split("\t")
     if len(parts) < len(fields):
-        parts.extend([""] * (len(fields) - len(parts)))
+      parts.extend([""] * (len(fields) - len(parts)))
     rows.append(dict(zip(fields, parts[: len(fields)])))
 
 print(json.dumps(rows, indent=2, ensure_ascii=False))
@@ -369,12 +374,13 @@ PY
 }
 
 emit_summary() {
-  printf '%s\n' "${ROWS[@]}" | python3 - "$FORMAT" <<'PY'
+  python3 - "$FORMAT" "$ROWS_FILE" <<'PY'
 import json
 import sys
 from datetime import datetime, timezone
 
 fmt = sys.argv[1]
+rows_file = sys.argv[2]
 
 fields = [
   "layer",
@@ -400,20 +406,26 @@ def parse_ts(value: str):
   try:
     dt = datetime.fromisoformat(value)
   except Exception:
-    return None
+    try:
+      # AWS head-object commonly returns RFC822-like timestamps, e.g.:
+      # Sat, 18 Apr 2026 02:07:20 GMT
+      dt = datetime.strptime(value, "%a, %d %b %Y %H:%M:%S %Z")
+    except Exception:
+      return None
   if dt.tzinfo is None:
     dt = dt.replace(tzinfo=timezone.utc)
   return dt.astimezone(timezone.utc)
 
 rows = []
-for line in sys.stdin:
-  line = line.rstrip("\n")
-  if not line:
-    continue
-  parts = line.split("\t")
-  if len(parts) < len(fields):
-    parts.extend([""] * (len(fields) - len(parts)))
-  rows.append(dict(zip(fields, parts[: len(fields)])))
+with open(rows_file, "r", encoding="utf-8") as f:
+  for line in f:
+    line = line.rstrip("\n")
+    if not line:
+      continue
+    parts = line.split("\t")
+    if len(parts) < len(fields):
+      parts.extend([""] * (len(fields) - len(parts)))
+    rows.append(dict(zip(fields, parts[: len(fields)])))
 
 summary = {}
 for row in rows:
@@ -536,6 +548,10 @@ for layer in "${LAYERS[@]}"; do
       ;;
   esac
 done
+
+ROWS_FILE="$(mktemp)"
+trap 'rm -f "$ROWS_FILE"' EXIT
+printf '%s\n' "${ROWS[@]}" > "$ROWS_FILE"
 
 if [[ "$FAIL_ON_MISSING_ANCHOR" == "true" ]]; then
   enforce_missing_anchor_gate
