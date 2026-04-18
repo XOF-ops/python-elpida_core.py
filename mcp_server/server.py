@@ -4,6 +4,7 @@ import json
 import sys
 from dataclasses import asdict
 from datetime import datetime, timezone
+import hashlib
 from typing import Any, Dict, List
 
 from elpida_sdk import CheckpointAuditor, ElpidaConfig, KernelGuard, S3Client
@@ -464,8 +465,24 @@ class ElpidaMCPServer:
             "evaluated_at": now.isoformat(),
         }
 
+        primary_alert = filtered_alerts[0] if filtered_alerts else None
+        dedupe_source = "|".join(
+            [
+                profile_name,
+                min_level,
+                str((primary_alert or {}).get("code") or "OK"),
+                str(mind.get("mind_cycle")),
+                str(body.get("cycle")),
+                str(latest_verdict),
+            ]
+        )
+        dedupe_key = hashlib.sha256(dedupe_source.encode("utf-8")).hexdigest()[:24]
+        routing_key = str(arguments.get("routing_key", f"elpida.mcp.health.{level.lower()}"))
+
+        full_result["dedupe_key"] = dedupe_key
+        full_result["routing_key"] = routing_key
+
         if alerts_only:
-            primary = filtered_alerts[0] if filtered_alerts else None
             return {
                 "level": level,
                 "profile": profile_name,
@@ -473,8 +490,10 @@ class ElpidaMCPServer:
                 "max_alerts": max_alerts,
                 "alert_count_total": total_alerts,
                 "alert_count_returned": len(filtered_alerts),
-                "primary_alert_code": (primary or {}).get("code"),
-                "primary_alert_message": (primary or {}).get("message"),
+                "primary_alert_code": (primary_alert or {}).get("code"),
+                "primary_alert_message": (primary_alert or {}).get("message"),
+                "dedupe_key": dedupe_key,
+                "routing_key": routing_key,
                 "alerts": filtered_alerts,
                 "evaluated_at": full_result["evaluated_at"],
             }
