@@ -66,6 +66,108 @@ Quick PASS criteria:
 - CloudWatch contains `MIND_RUN_COMPLETE` with `checkpoint_id`.
 - Both S3 `head-object` commands succeed for that checkpoint.
 
+## Quick Mode B (Controlled BODY/WORLD/FULL Probes)
+Use this when you need direct hook validation without waiting for full cycle behavior.
+
+Important:
+- Run from repository root.
+- Requires valid AWS credentials in `.env`.
+- These probes intentionally create real seed + anchor artifacts.
+
+### Probe WORLD hook (D15_EMISSION)
+```bash
+set -euo pipefail
+cd /workspaces/python-elpida_core.py
+source .env
+export AWS_EC2_METADATA_DISABLED=true
+
+python3 - <<'PY'
+from hf_deployment.elpidaapp.d15_pipeline import D15Pipeline
+
+pipe = D15Pipeline()
+pipe._emit_d13_world_seed(
+  result={
+    "timestamp": "2026-04-18T00:00:00Z",
+    "duration_s": 0.5,
+    "emergence": {
+      "axioms_in_tension": ["A0", "A11"],
+      "successful_domains": ["D0", "D11"],
+      "d15_output": "Controlled WORLD probe",
+    },
+  },
+  governance_result={"governance": "probe-approved"},
+  broadcast_key="d15/broadcasts/probe_world.json",
+)
+print("WORLD probe invoked")
+PY
+```
+
+### Probe FULL hook (A16_CONVERGENCE)
+```bash
+set -euo pipefail
+cd /workspaces/python-elpida_core.py
+source .env
+export AWS_EC2_METADATA_DISABLED=true
+
+python3 - <<'PY'
+from hf_deployment.elpidaapp.d15_convergence_gate import ConvergenceGate
+
+gate = ConvergenceGate()
+gate._emit_d13_full_seed(
+  broadcast={"broadcast_id": "probe-full", "type": "D15_CONVERGENCE"},
+  mind_heartbeat={"dominant_axiom": "A0", "coherence": 0.91},
+  body_cycle=999,
+  body_axiom="A11",
+  body_coherence=0.88,
+  body_approval=0.62,
+  s3_key="d15/broadcasts/probe_full.json",
+  event_label="probe_a16_convergence",
+)
+print("FULL probe invoked")
+PY
+```
+
+### Probe BODY hook (BODY_RATIFICATION)
+```bash
+set -euo pipefail
+cd /workspaces/python-elpida_core.py
+source .env
+export AWS_EC2_METADATA_DISABLED=true
+
+python3 - <<'PY'
+from pathlib import Path
+from hf_deployment.elpidaapp.parliament_cycle_engine import ParliamentCycleEngine
+
+engine = ParliamentCycleEngine.__new__(ParliamentCycleEngine)
+engine._axiom_frequency = {"A6": 7, "A11": 6, "A0": 5}
+engine.last_dominant_axiom = "A6"
+engine.cycle_count = 999
+engine.coherence = 0.84
+engine.last_rhythm = "SYNTHESIS"
+engine.d15_broadcast_count = 1
+
+store_path = Path("hf_deployment/living_axioms.jsonl")
+if not store_path.exists():
+  store_path.parent.mkdir(parents=True, exist_ok=True)
+  store_path.write_text('{"axiom":"A6","reason":"probe"}\n', encoding="utf-8")
+
+ParliamentCycleEngine._emit_d13_body_seed(
+  engine,
+  store_path=store_path,
+  ratified_count=1,
+)
+print("BODY probe invoked")
+PY
+```
+
+### Verify newly written artifacts
+```bash
+aws s3 ls s3://elpida-external-interfaces/seeds/world/ | tail -n 3
+aws s3 ls s3://elpida-external-interfaces/seeds/full/ | tail -n 3
+aws s3 ls s3://elpida-external-interfaces/seeds/body/ | tail -n 3
+aws s3 ls s3://elpida-body-evolution/federation/seed_anchors/ | tail -n 10
+```
+
 ## 1) Confirm Active Runtime Artifact
 ### Check ECS task definition image
 - aws ecs describe-task-definition --task-definition elpida-consciousness --region us-east-1 --query 'taskDefinition.{revision:revision,image:containerDefinitions[0].image,registeredAt:registeredAt}' --output table
