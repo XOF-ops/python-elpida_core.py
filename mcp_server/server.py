@@ -31,7 +31,9 @@ class ElpidaMCPServer:
             "kernel_check_text": self.kernel_check_text,
             "list_checkpoints": self.list_checkpoints,
             "get_mind_heartbeat": self.get_mind_heartbeat,
+            "get_body_heartbeat": self.get_body_heartbeat,
             "get_d15_broadcasts": self.get_d15_broadcasts,
+            "get_system_status": self.get_system_status,
         }
 
     def list_tools(self) -> List[Dict[str, Any]]:
@@ -61,8 +63,16 @@ class ElpidaMCPServer:
                 "description": "Read federation/mind_heartbeat.json from S3",
             },
             {
+                "name": "get_body_heartbeat",
+                "description": "Read heartbeat/native_engine.json from S3",
+            },
+            {
                 "name": "get_d15_broadcasts",
                 "description": "Read recent entries from d15/broadcasts.jsonl in S3",
+            },
+            {
+                "name": "get_system_status",
+                "description": "Return combined MIND heartbeat, BODY heartbeat, and recent D15 broadcasts",
             },
         ]
 
@@ -94,11 +104,43 @@ class ElpidaMCPServer:
         key = str(arguments.get("key", "federation/mind_heartbeat.json"))
         return self.s3.read_json(bucket=bucket, key=key)
 
+    def get_body_heartbeat(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        bucket = str(arguments.get("bucket", self.s3.buckets.federation))
+        key = str(arguments.get("key", "heartbeat/native_engine.json"))
+        return self.s3.read_json(bucket=bucket, key=key)
+
     def get_d15_broadcasts(self, arguments: Dict[str, Any]) -> List[Dict[str, Any]]:
         bucket = str(arguments.get("bucket", self.s3.buckets.world))
         key = str(arguments.get("key", "d15/broadcasts.jsonl"))
         limit = int(arguments.get("limit", 20))
         return self.s3.read_jsonl(bucket=bucket, key=key, limit=limit)
+
+    def get_system_status(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        d15_limit = int(arguments.get("d15_limit", 5))
+        result: Dict[str, Any] = {
+            "mind_heartbeat": None,
+            "body_heartbeat": None,
+            "d15_broadcasts": [],
+            "errors": {},
+        }
+
+        try:
+            result["mind_heartbeat"] = self.get_mind_heartbeat({})
+        except Exception as e:
+            result["errors"]["mind_heartbeat"] = str(e)
+
+        try:
+            result["body_heartbeat"] = self.get_body_heartbeat({})
+        except Exception as e:
+            result["errors"]["body_heartbeat"] = str(e)
+
+        try:
+            result["d15_broadcasts"] = self.get_d15_broadcasts({"limit": d15_limit})
+        except Exception as e:
+            result["errors"]["d15_broadcasts"] = str(e)
+
+        result["ok"] = len(result["errors"]) == 0
+        return result
 
     def dispatch(self, msg: Dict[str, Any]) -> Dict[str, Any]:
         method = msg.get("method")
