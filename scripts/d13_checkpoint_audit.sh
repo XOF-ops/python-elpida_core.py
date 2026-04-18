@@ -9,6 +9,7 @@ set -euo pipefail
 #   scripts/d13_checkpoint_audit.sh --format json
 #   scripts/d13_checkpoint_audit.sh --latest-n 3 --format json
 #   scripts/d13_checkpoint_audit.sh --since-hours 24 --format csv
+#   scripts/d13_checkpoint_audit.sh --summary --format json
 #   scripts/d13_checkpoint_audit.sh --format csv mind world
 #   scripts/d13_checkpoint_audit.sh mind world
 
@@ -19,6 +20,7 @@ ANCHOR_PREFIX="federation/seed_anchors"
 FORMAT="text"
 LATEST_N=1
 SINCE_HOURS=""
+SUMMARY="false"
 LAYERS=()
 
 have_python3() {
@@ -51,13 +53,14 @@ require_tools() {
 print_usage() {
   cat <<'USAGE'
 Usage:
-  scripts/d13_checkpoint_audit.sh [--format text|json|csv] [--latest-n N] [--since-hours H] [mind] [body] [world] [full]
+  scripts/d13_checkpoint_audit.sh [--format text|json|csv] [--latest-n N] [--since-hours H] [--summary] [mind] [body] [world] [full]
 
 Examples:
   scripts/d13_checkpoint_audit.sh
   scripts/d13_checkpoint_audit.sh --format json
   scripts/d13_checkpoint_audit.sh --latest-n 3 --format json
   scripts/d13_checkpoint_audit.sh --since-hours 24 --format csv
+  scripts/d13_checkpoint_audit.sh --summary --format json
   scripts/d13_checkpoint_audit.sh --format csv mind world
 USAGE
 }
@@ -99,6 +102,10 @@ parse_args() {
         ;;
       --since-hours=*)
         SINCE_HOURS="${1#*=}"
+        shift
+        ;;
+      --summary)
+        SUMMARY="true"
         shift
         ;;
       -h|--help)
@@ -354,6 +361,130 @@ print(json.dumps(rows, indent=2, ensure_ascii=False))
 PY
 }
 
+emit_summary() {
+  printf '%s\n' "${ROWS[@]}" | python3 - "$FORMAT" <<'PY'
+import json
+import sys
+from datetime import datetime, timezone
+
+fmt = sys.argv[1]
+
+fields = [
+  "layer",
+  "checkpoint_id",
+  "world_key",
+  "anchor_key",
+  "world_size",
+  "world_last_modified",
+  "anchor_size",
+  "anchor_last_modified",
+  "source_event",
+  "source_component",
+  "git_commit",
+  "created_at",
+]
+
+def parse_ts(value: str):
+  value = (value or "").strip()
+  if not value:
+    return None
+  if value.endswith("Z"):
+    value = value[:-1] + "+00:00"
+  try:
+    dt = datetime.fromisoformat(value)
+  except Exception:
+    return None
+  if dt.tzinfo is None:
+    dt = dt.replace(tzinfo=timezone.utc)
+  return dt.astimezone(timezone.utc)
+
+rows = []
+for line in sys.stdin:
+  line = line.rstrip("\n")
+  if not line:
+    continue
+  parts = line.split("\t")
+  if len(parts) < len(fields):
+    parts.extend([""] * (len(fields) - len(parts)))
+  rows.append(dict(zip(fields, parts[: len(fields)])))
+
+summary = {}
+for row in rows:
+  layer = row.get("layer", "")
+  if not layer:
+    continue
+  entry = summary.setdefault(
+    layer,
+    {
+      "layer": layer,
+      "count": 0,
+      "missing_rows": 0,
+      "newest_checkpoint_id": "",
+      "newest_timestamp": "",
+      "oldest_checkpoint_id": "",
+      "oldest_timestamp": "",
+      "_newest_dt": None,
+      "_oldest_dt": None,
+    },
+  )
+
+  world_key = row.get("world_key", "")
+  if not world_key or world_key == "None":
+    entry["missing_rows"] += 1
+    continue
+
+  entry["count"] += 1
+  ts_raw = row.get("world_last_modified", "")
+  dt = parse_ts(ts_raw)
+  if dt is None:
+    continue
+
+  if entry["_newest_dt"] is None or dt > entry["_newest_dt"]:
+    entry["_newest_dt"] = dt
+    entry["newest_timestamp"] = ts_raw
+    entry["newest_checkpoint_id"] = row.get("checkpoint_id", "")
+
+  if entry["_oldest_dt"] is None or dt < entry["_oldest_dt"]:
+    entry["_oldest_dt"] = dt
+    entry["oldest_timestamp"] = ts_raw
+    entry["oldest_checkpoint_id"] = row.get("checkpoint_id", "")
+
+ordered = []
+for layer in summary:
+  item = summary[layer]
+  item.pop("_newest_dt", None)
+  item.pop("_oldest_dt", None)
+  ordered.append(item)
+
+if fmt == "json":
+  print(json.dumps(ordered, indent=2, ensure_ascii=False))
+elif fmt == "csv":
+  print("layer,count,missing_rows,newest_checkpoint_id,newest_timestamp,oldest_checkpoint_id,oldest_timestamp")
+  for item in ordered:
+    vals = [
+      item["layer"],
+      str(item["count"]),
+      str(item["missing_rows"]),
+      item["newest_checkpoint_id"],
+      item["newest_timestamp"],
+      item["oldest_checkpoint_id"],
+      item["oldest_timestamp"],
+    ]
+    escaped = ['"' + v.replace('"', '""') + '"' for v in vals]
+    print(",".join(escaped))
+else:
+  for item in ordered:
+    print(f"=== LAYER: {item['layer']} ===")
+    print(f"count: {item['count']}")
+    print(f"missing_rows: {item['missing_rows']}")
+    print(f"newest_checkpoint_id: {item['newest_checkpoint_id']}")
+    print(f"newest_timestamp: {item['newest_timestamp']}")
+    print(f"oldest_checkpoint_id: {item['oldest_checkpoint_id']}")
+    print(f"oldest_timestamp: {item['oldest_timestamp']}")
+    print()
+PY
+}
+
 require_tools
 parse_args "$@"
 
@@ -380,12 +511,24 @@ done
 
 case "$FORMAT" in
   text)
-    emit_text
+    if [[ "$SUMMARY" == "true" ]]; then
+      emit_summary
+    else
+      emit_text
+    fi
     ;;
   csv)
-    emit_csv
+    if [[ "$SUMMARY" == "true" ]]; then
+      emit_summary
+    else
+      emit_csv
+    fi
     ;;
   json)
-    emit_json
+    if [[ "$SUMMARY" == "true" ]]; then
+      emit_summary
+    else
+      emit_json
+    fi
     ;;
 esac
