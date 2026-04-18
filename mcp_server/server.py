@@ -200,6 +200,42 @@ class ElpidaMCPServer:
         return summary
 
     def summarize_system_health_alerts(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        alert_profiles: Dict[str, Dict[str, Any]] = {
+            "strict": {
+                "warn_mind_coherence": 0.90,
+                "crit_mind_coherence": 0.80,
+                "warn_body_coherence": 0.90,
+                "crit_body_coherence": 0.80,
+                "warn_mind_age_min": 15,
+                "crit_mind_age_min": 45,
+                "warn_body_age_min": 15,
+                "crit_body_age_min": 45,
+                "max_kernel_blocks_warn": 0,
+            },
+            "default": {
+                "warn_mind_coherence": 0.85,
+                "crit_mind_coherence": 0.70,
+                "warn_body_coherence": 0.85,
+                "crit_body_coherence": 0.70,
+                "warn_mind_age_min": 30,
+                "crit_mind_age_min": 90,
+                "warn_body_age_min": 30,
+                "crit_body_age_min": 90,
+                "max_kernel_blocks_warn": 0,
+            },
+            "lenient": {
+                "warn_mind_coherence": 0.75,
+                "crit_mind_coherence": 0.60,
+                "warn_body_coherence": 0.75,
+                "crit_body_coherence": 0.60,
+                "warn_mind_age_min": 60,
+                "crit_mind_age_min": 180,
+                "warn_body_age_min": 60,
+                "crit_body_age_min": 180,
+                "max_kernel_blocks_warn": 3,
+            },
+        }
+
         def _parse_ts(ts: Any) -> datetime | None:
             if not isinstance(ts, str) or not ts.strip():
                 return None
@@ -227,15 +263,20 @@ class ElpidaMCPServer:
         d15_limit = int(arguments.get("d15_limit", 3))
         status = self.get_system_status({"d15_limit": d15_limit})
 
-        warn_mind_coherence = float(arguments.get("warn_mind_coherence", 0.85))
-        crit_mind_coherence = float(arguments.get("crit_mind_coherence", 0.70))
-        warn_body_coherence = float(arguments.get("warn_body_coherence", 0.85))
-        crit_body_coherence = float(arguments.get("crit_body_coherence", 0.70))
-        warn_mind_age_min = float(arguments.get("warn_mind_age_min", 30))
-        crit_mind_age_min = float(arguments.get("crit_mind_age_min", 90))
-        warn_body_age_min = float(arguments.get("warn_body_age_min", 30))
-        crit_body_age_min = float(arguments.get("crit_body_age_min", 90))
-        max_kernel_blocks_warn = int(arguments.get("max_kernel_blocks_warn", 0))
+        profile_name = str(arguments.get("profile", "default")).strip().lower()
+        profile = alert_profiles.get(profile_name, alert_profiles["default"])
+        if profile_name not in alert_profiles:
+            profile_name = "default"
+
+        warn_mind_coherence = float(arguments.get("warn_mind_coherence", profile["warn_mind_coherence"]))
+        crit_mind_coherence = float(arguments.get("crit_mind_coherence", profile["crit_mind_coherence"]))
+        warn_body_coherence = float(arguments.get("warn_body_coherence", profile["warn_body_coherence"]))
+        crit_body_coherence = float(arguments.get("crit_body_coherence", profile["crit_body_coherence"]))
+        warn_mind_age_min = float(arguments.get("warn_mind_age_min", profile["warn_mind_age_min"]))
+        crit_mind_age_min = float(arguments.get("crit_mind_age_min", profile["crit_mind_age_min"]))
+        warn_body_age_min = float(arguments.get("warn_body_age_min", profile["warn_body_age_min"]))
+        crit_body_age_min = float(arguments.get("crit_body_age_min", profile["crit_body_age_min"]))
+        max_kernel_blocks_warn = int(arguments.get("max_kernel_blocks_warn", profile["max_kernel_blocks_warn"]))
 
         mind = status.get("mind_heartbeat") or {}
         body = status.get("body_heartbeat") or {}
@@ -376,6 +417,7 @@ class ElpidaMCPServer:
 
         return {
             "level": level,
+            "profile": profile_name,
             "alerts": alerts,
             "metrics": {
                 "mind_cycle": mind.get("mind_cycle"),
@@ -384,6 +426,17 @@ class ElpidaMCPServer:
                 "body_coherence": body.get("coherence"),
                 "d15_count": len(d15),
                 "latest_d15_verdict": latest_verdict,
+            },
+            "thresholds": {
+                "warn_mind_coherence": warn_mind_coherence,
+                "crit_mind_coherence": crit_mind_coherence,
+                "warn_body_coherence": warn_body_coherence,
+                "crit_body_coherence": crit_body_coherence,
+                "warn_mind_age_min": warn_mind_age_min,
+                "crit_mind_age_min": crit_mind_age_min,
+                "warn_body_age_min": warn_body_age_min,
+                "crit_body_age_min": crit_body_age_min,
+                "max_kernel_blocks_warn": max_kernel_blocks_warn,
             },
             "evaluated_at": now.isoformat(),
         }
