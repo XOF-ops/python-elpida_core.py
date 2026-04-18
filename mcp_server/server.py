@@ -34,6 +34,7 @@ class ElpidaMCPServer:
             "get_body_heartbeat": self.get_body_heartbeat,
             "get_d15_broadcasts": self.get_d15_broadcasts,
             "get_system_status": self.get_system_status,
+            "summarize_system_status": self.summarize_system_status,
         }
 
     def list_tools(self) -> List[Dict[str, Any]]:
@@ -73,6 +74,10 @@ class ElpidaMCPServer:
             {
                 "name": "get_system_status",
                 "description": "Return combined MIND heartbeat, BODY heartbeat, and recent D15 broadcasts",
+            },
+            {
+                "name": "summarize_system_status",
+                "description": "Return compact telemetry summary for dashboards/alerts",
             },
         ]
 
@@ -141,6 +146,52 @@ class ElpidaMCPServer:
 
         result["ok"] = len(result["errors"]) == 0
         return result
+
+    def summarize_system_status(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        d15_limit = int(arguments.get("d15_limit", 3))
+        status = self.get_system_status({"d15_limit": d15_limit})
+
+        mind = status.get("mind_heartbeat") or {}
+        body = status.get("body_heartbeat") or {}
+        d15 = status.get("d15_broadcasts") or []
+        errors = status.get("errors") or {}
+
+        latest_d15 = d15[-1] if d15 else {}
+
+        summary: Dict[str, Any] = {
+            "ok": bool(status.get("ok", False)),
+            "errors": errors,
+            "mind": {
+                "cycle": mind.get("mind_cycle"),
+                "timestamp": mind.get("timestamp"),
+                "coherence": mind.get("coherence"),
+                "rhythm": mind.get("current_rhythm"),
+                "domain": mind.get("current_domain"),
+                "dominant_axiom": mind.get("dominant_axiom"),
+                "recursion_warning": bool(mind.get("recursion_warning", False)),
+                "kernel_blocks_total": mind.get("kernel_blocks_total"),
+            },
+            "body": {
+                "cycle": body.get("cycle"),
+                "timestamp": body.get("timestamp"),
+                "coherence": body.get("coherence"),
+                "rhythm": body.get("rhythm"),
+                "alive": bool(body.get("alive", False)),
+            },
+            "d15": {
+                "count": len(d15),
+                "latest_timestamp": latest_d15.get("timestamp"),
+                "latest_broadcast_id": latest_d15.get("broadcast_id"),
+                "latest_axioms_in_tension": latest_d15.get("axioms_in_tension", []),
+                "latest_verdict": (latest_d15.get("governance") or {}).get("verdict"),
+            },
+            "health": {
+                "mind_alive": mind.get("mind_cycle") is not None,
+                "body_alive": bool(body.get("alive", False)),
+                "has_recent_d15": len(d15) > 0,
+            },
+        }
+        return summary
 
     def dispatch(self, msg: Dict[str, Any]) -> Dict[str, Any]:
         method = msg.get("method")
