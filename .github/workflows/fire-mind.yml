@@ -2,6 +2,19 @@ name: Fire MIND Task
 
 on:
   workflow_dispatch:
+    inputs:
+      task_definition:
+        description: "Task definition to run (family or family:revision)"
+        required: false
+        default: "elpida-consciousness"
+      subnet_id:
+        description: "Subnet ID for awsvpcConfiguration"
+        required: false
+        default: "subnet-0937937aecb992e24"
+      security_group_id:
+        description: "Security group ID for awsvpcConfiguration"
+        required: false
+        default: "sg-000f0ea92dbdf5473"
 
 permissions:
   id-token: write
@@ -39,12 +52,25 @@ jobs:
           echo "If this fails, the IAM principal is quarantined or secrets/OIDC are not wired."
 
       - name: Fire ECS task
+        env:
+          INPUT_TASK_DEFINITION: ${{ github.event.inputs.task_definition || 'elpida-consciousness' }}
+          INPUT_SUBNET: ${{ github.event.inputs.subnet_id || 'subnet-0937937aecb992e24' }}
+          INPUT_SG: ${{ github.event.inputs.security_group_id || 'sg-000f0ea92dbdf5473' }}
         run: |
+          set -euo pipefail
+
+          TASK_DEF="${INPUT_TASK_DEFINITION:-elpida-consciousness}"
+          SUBNET="${INPUT_SUBNET:-subnet-0937937aecb992e24}"
+          SG="${INPUT_SG:-sg-000f0ea92dbdf5473}"
+
+          echo "Launching task definition: $TASK_DEF"
+          echo "Network: subnet=$SUBNET sg=$SG"
+
           aws ecs run-task \
             --cluster elpida-cluster \
-            --task-definition elpida-consciousness:21 \
+            --task-definition "$TASK_DEF" \
             --launch-type FARGATE \
-            --network-configuration 'awsvpcConfiguration={subnets=[subnet-0937937aecb992e24],securityGroups=[sg-000f0ea92dbdf5473],assignPublicIp=ENABLED}' \
+            --network-configuration "awsvpcConfiguration={subnets=[$SUBNET],securityGroups=[$SG],assignPublicIp=ENABLED}" \
             --region us-east-1 \
             --query 'tasks[0].{taskArn:taskArn,lastStatus:lastStatus}' \
             --output json
