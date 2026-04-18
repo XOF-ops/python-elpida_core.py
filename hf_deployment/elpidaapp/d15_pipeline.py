@@ -48,7 +48,10 @@ if str(_ROOT_DIR) not in sys.path:
 
 from llm_client import LLMClient
 from elpida_config import DOMAINS, AXIOMS
-from d13_seed_bridge import push_seed_and_anchor
+try:
+    from elpidaapp.d13_seed_bridge import push_seed_and_anchor
+except Exception:
+    from d13_seed_bridge import push_seed_and_anchor
 
 logger = logging.getLogger("elpidaapp.d15")
 

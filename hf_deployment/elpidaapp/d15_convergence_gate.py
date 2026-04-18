@@ -65,7 +65,10 @@ try:
         Layer,
         VoidMarker,
     )
-    from d13_seed_bridge import push_seed_and_anchor
+    try:
+        from elpidaapp.d13_seed_bridge import push_seed_and_anchor
+    except Exception:
+        from d13_seed_bridge import push_seed_and_anchor
     _ARCHIVIST_AVAILABLE = True
 except Exception as _archivist_exc:
     _ARCHIVIST_AVAILABLE = False
