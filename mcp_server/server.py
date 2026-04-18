@@ -235,6 +235,7 @@ class ElpidaMCPServer:
                 "max_kernel_blocks_warn": 3,
             },
         }
+        level_rank = {"OK": 0, "WARNING": 1, "CRITICAL": 2}
 
         def _parse_ts(ts: Any) -> datetime | None:
             if not isinstance(ts, str) or not ts.strip():
@@ -263,6 +264,10 @@ class ElpidaMCPServer:
         d15_limit = int(arguments.get("d15_limit", 3))
         alerts_only = bool(arguments.get("alerts_only", False))
         status = self.get_system_status({"d15_limit": d15_limit})
+        min_level = str(arguments.get("min_level", "WARNING")).strip().upper()
+        if min_level not in level_rank:
+            min_level = "WARNING"
+        max_alerts = int(arguments.get("max_alerts", 0))
 
         profile_name = str(arguments.get("profile", "default")).strip().lower()
         profile = alert_profiles.get(profile_name, alert_profiles["default"])
@@ -416,10 +421,27 @@ class ElpidaMCPServer:
         elif any(a.get("level") == "WARNING" for a in alerts):
             level = "WARNING"
 
+        filtered_alerts = [
+            a for a in alerts if level_rank.get(str(a.get("level", "")).upper(), 0) >= level_rank[min_level]
+        ]
+        total_alerts = len(filtered_alerts)
+        if max_alerts > 0:
+            filtered_alerts = filtered_alerts[:max_alerts]
+
+        level = "OK"
+        if any(a.get("level") == "CRITICAL" for a in filtered_alerts):
+            level = "CRITICAL"
+        elif any(a.get("level") == "WARNING" for a in filtered_alerts):
+            level = "WARNING"
+
         full_result = {
             "level": level,
             "profile": profile_name,
-            "alerts": alerts,
+            "min_level": min_level,
+            "max_alerts": max_alerts,
+            "alert_count_total": total_alerts,
+            "alert_count_returned": len(filtered_alerts),
+            "alerts": filtered_alerts,
             "metrics": {
                 "mind_cycle": mind.get("mind_cycle"),
                 "mind_coherence": mind.get("coherence"),
@@ -443,14 +465,17 @@ class ElpidaMCPServer:
         }
 
         if alerts_only:
-            primary = alerts[0] if alerts else None
+            primary = filtered_alerts[0] if filtered_alerts else None
             return {
                 "level": level,
                 "profile": profile_name,
-                "alert_count": len(alerts),
+                "min_level": min_level,
+                "max_alerts": max_alerts,
+                "alert_count_total": total_alerts,
+                "alert_count_returned": len(filtered_alerts),
                 "primary_alert_code": (primary or {}).get("code"),
                 "primary_alert_message": (primary or {}).get("message"),
-                "alerts": alerts,
+                "alerts": filtered_alerts,
                 "evaluated_at": full_result["evaluated_at"],
             }
 

@@ -33,12 +33,14 @@ python -m mcp_server.server <<'EOF'
 {"method":"call_tool","params":{"name":"summarize_system_health_alerts","arguments":{"d15_limit":2}}}
 {"method":"call_tool","params":{"name":"summarize_system_health_alerts","arguments":{"profile":"lenient","d15_limit":2}}}
 {"method":"call_tool","params":{"name":"summarize_system_health_alerts","arguments":{"profile":"default","d15_limit":2,"alerts_only":true}}}
+{"method":"call_tool","params":{"name":"summarize_system_health_alerts","arguments":{"profile":"default","alerts_only":true,"min_level":"CRITICAL","max_alerts":1}}}
 EOF
 ```
 
 `summarize_system_health_alerts` supports profiles: `strict`, `default`, `lenient`.
 Any explicit threshold argument still overrides the selected profile.
 Set `alerts_only=true` for a compact webhook/paging payload.
+Use `min_level` (`WARNING` or `CRITICAL`) and `max_alerts` to bound payload size.
 
 ## Checkpoint read test
 
