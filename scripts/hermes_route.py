@@ -151,6 +151,57 @@ def discord_get(path: str, token: str) -> list | dict:
         return json.loads(r.read().decode("utf-8"))
 
 
+def discord_diagnose_channel(channel_id: str, token: str) -> None:
+    """One-shot diagnostic: try GET /channels/{id} (channel info) and print
+    the full response body so we can distinguish 'channel doesn't exist',
+    'bot has no access', 'bot not in server', etc. — Discord lumps several
+    failure modes into HTTP 404 but the JSON body distinguishes them.
+    """
+    from urllib.error import HTTPError
+    url = f"https://discord.com/api/v10/channels/{channel_id}"
+    req = Request(url, headers={
+        "Authorization": f"Bot {token}",
+        "User-Agent": "HermesPhase3/1.0",
+    })
+    try:
+        with urlopen(req, timeout=15) as r:
+            body = r.read().decode("utf-8")
+            obj = json.loads(body)
+            print(f"[hermes-route] channel diagnostic OK ({r.status}): "
+                  f"name=#{obj.get('name','?')} type={obj.get('type','?')} "
+                  f"guild_id={obj.get('guild_id','?')}")
+    except HTTPError as e:
+        try:
+            body = e.read().decode("utf-8")
+        except Exception:
+            body = "(no body)"
+        print(f"[hermes-route] channel diagnostic FAILED: HTTP {e.code} on {url}")
+        print(f"[hermes-route] response body: {body[:500]}")
+        # Discord error codes (the "code" field in the response JSON):
+        #   10003 = Unknown Channel (ID truly doesn't exist)
+        #   50001 = Missing Access (bot not in server / not in channel)
+        #   50013 = Missing Permissions (bot in channel but lacks perms)
+        try:
+            obj = json.loads(body)
+            err_code = obj.get("code")
+            if err_code == 10003:
+                print("[hermes-route] DIAGNOSIS: Discord says channel ID does not exist. "
+                      "Re-copy the ID — must be a TEXT CHANNEL ID, not a server ID, "
+                      "category ID, or thread ID.")
+            elif err_code == 50001:
+                print("[hermes-route] DIAGNOSIS: Bot has no access. The bot is either "
+                      "not in the server, OR the channel has permission overrides "
+                      "excluding the bot. Check channel permissions in Discord.")
+            elif err_code == 50013:
+                print("[hermes-route] DIAGNOSIS: Bot is in the channel but lacks "
+                      "permissions. Grant at minimum: View Channel, Read Message "
+                      "History, Add Reactions.")
+        except Exception:
+            pass
+    except Exception as e:
+        print(f"[hermes-route] channel diagnostic UNEXPECTED: {type(e).__name__}: {e}")
+
+
 def discord_react(channel_id: str, message_id: str, token: str, emoji: str) -> bool:
     """Add a reaction to a message. Mirrors the guest-chamber Parliament-emoji
     pattern so the architect sees within ~seconds that HERMES picked up the
@@ -320,7 +371,11 @@ def main() -> int:
     msgs = fetch_new_messages(channel_id, bot_token, after_id)
 
     if not msgs:
-        print("[hermes-route] no new messages")
+        # Distinguish "no new messages" (genuine empty) from "discord fetch
+        # failed" (silent failure logged earlier). Run channel diagnostic so
+        # the next log explicitly says what's wrong.
+        print("[hermes-route] no messages returned — running channel diagnostic")
+        discord_diagnose_channel(channel_id, bot_token)
         save_watermark(after_id)  # bump check time
         return 0
 
