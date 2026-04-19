@@ -152,18 +152,70 @@ def discord_get(path: str, token: str) -> list | dict:
 
 
 def discord_diagnose_channel(channel_id: str, token: str) -> None:
-    """One-shot diagnostic: try GET /channels/{id} (channel info) and print
-    the full response body so we can distinguish 'channel doesn't exist',
-    'bot has no access', 'bot not in server', etc. — Discord lumps several
-    failure modes into HTTP 404 but the JSON body distinguishes them.
+    """Two-stage diagnostic to distinguish wrong-bot from wrong-channel-permission.
+
+    Stage 1: GET /users/@me — identifies WHICH bot the token belongs to
+             (name + id). If the architect intended Bot A but the secret
+             contains Bot B's token, this surfaces it.
+
+    Stage 2: GET /users/@me/guilds — lists which servers the bot is actually
+             in. Compared against the channel diagnostic, this reveals if
+             the bot just isn't in the right server.
+
+    Stage 3: GET /channels/{id} — channel info; distinguishes the remaining
+             failure modes via Discord error code:
+               10003 = Unknown Channel (ID truly doesn't exist)
+               50001 = Missing Access (bot not in server / not in channel)
+               50013 = Missing Permissions (bot in channel but lacks perms)
+                   0 = bare 404 — usually bot not in server containing this channel
     """
     from urllib.error import HTTPError
-    url = f"https://discord.com/api/v10/channels/{channel_id}"
-    req = Request(url, headers={
-        "Authorization": f"Bot {token}",
-        "User-Agent": "HermesPhase3/1.0",
-    })
+
+    # Stage 1: which bot is this?
     try:
+        req = Request("https://discord.com/api/v10/users/@me", headers={
+            "Authorization": f"Bot {token}",
+            "User-Agent": "HermesPhase3/1.0",
+        })
+        with urlopen(req, timeout=15) as r:
+            me = json.loads(r.read().decode("utf-8"))
+        print(f"[hermes-route] BOT IDENTITY: id={me.get('id')} "
+              f"username={me.get('username')!r} discriminator={me.get('discriminator')} "
+              f"bot={me.get('bot')}")
+    except HTTPError as e:
+        print(f"[hermes-route] /users/@me FAILED: HTTP {e.code} — DISCORD_BOT_TOKEN "
+              f"is invalid or revoked. Token cannot identify any bot.")
+        return
+    except Exception as e:
+        print(f"[hermes-route] /users/@me UNEXPECTED: {type(e).__name__}: {e}")
+        return
+
+    # Stage 2: what guilds (servers) is this bot in?
+    try:
+        req = Request("https://discord.com/api/v10/users/@me/guilds", headers={
+            "Authorization": f"Bot {token}",
+            "User-Agent": "HermesPhase3/1.0",
+        })
+        with urlopen(req, timeout=15) as r:
+            guilds = json.loads(r.read().decode("utf-8"))
+        if not guilds:
+            print("[hermes-route] BOT IS IN ZERO SERVERS. The token is valid but "
+                  "the bot has not been invited to any Discord server. Use the "
+                  "OAuth invite URL from Discord Developer Portal to add the bot "
+                  "to your Elpida server.")
+        else:
+            for g in guilds:
+                print(f"[hermes-route] guild: id={g.get('id')} name={g.get('name')!r}")
+    except Exception as e:
+        print(f"[hermes-route] /users/@me/guilds FAILED: {type(e).__name__}: {e}")
+
+    # Stage 3: original channel-specific diagnostic
+    url = f"https://discord.com/api/v10/channels/{channel_id}"
+    try:
+        req = Request(url, headers={
+            "Authorization": f"Bot {token}",
+            "User-Agent": "HermesPhase3/1.0",
+        })
         with urlopen(req, timeout=15) as r:
             body = r.read().decode("utf-8")
             obj = json.loads(body)
@@ -175,27 +227,29 @@ def discord_diagnose_channel(channel_id: str, token: str) -> None:
             body = e.read().decode("utf-8")
         except Exception:
             body = "(no body)"
-        print(f"[hermes-route] channel diagnostic FAILED: HTTP {e.code} on {url}")
+        print(f"[hermes-route] channel diagnostic FAILED: HTTP {e.code}")
         print(f"[hermes-route] response body: {body[:500]}")
-        # Discord error codes (the "code" field in the response JSON):
-        #   10003 = Unknown Channel (ID truly doesn't exist)
-        #   50001 = Missing Access (bot not in server / not in channel)
-        #   50013 = Missing Permissions (bot in channel but lacks perms)
         try:
             obj = json.loads(body)
             err_code = obj.get("code")
             if err_code == 10003:
-                print("[hermes-route] DIAGNOSIS: Discord says channel ID does not exist. "
-                      "Re-copy the ID — must be a TEXT CHANNEL ID, not a server ID, "
-                      "category ID, or thread ID.")
+                print("[hermes-route] DIAGNOSIS: Channel ID does not exist anywhere. "
+                      "Re-copy from Discord (right-click TEXT CHANNEL → Copy Channel ID).")
             elif err_code == 50001:
-                print("[hermes-route] DIAGNOSIS: Bot has no access. The bot is either "
-                      "not in the server, OR the channel has permission overrides "
-                      "excluding the bot. Check channel permissions in Discord.")
+                print("[hermes-route] DIAGNOSIS: Missing Access. Bot is in the server "
+                      "but channel has permission overrides excluding it. Check "
+                      "channel-level permissions in Discord.")
             elif err_code == 50013:
-                print("[hermes-route] DIAGNOSIS: Bot is in the channel but lacks "
-                      "permissions. Grant at minimum: View Channel, Read Message "
-                      "History, Add Reactions.")
+                print("[hermes-route] DIAGNOSIS: Bot has access but lacks specific "
+                      "permissions. Grant: View Channel, Read Message History, "
+                      "Add Reactions.")
+            elif err_code == 0:
+                print("[hermes-route] DIAGNOSIS: Bot is not in the server containing "
+                      "this channel. Compare the guilds listed above to the server "
+                      "where #hermes-control lives. If the server isn't in the bot's "
+                      "guild list, you need to invite the bot via the OAuth URL from "
+                      "Discord Developer Portal. If the server IS listed, the channel "
+                      "ID may be wrong.")
         except Exception:
             pass
     except Exception as e:
