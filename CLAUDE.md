@@ -179,7 +179,6 @@ MIND (ECS) requires a separate Docker image rebuild + ECR push to pick up code c
 ## Current Open Work (as of April 5, 2026)
 
 - **D16 Agency domain** — being implemented this session (see plan)
-- **BODY CRITICAL pathology** — flagged at cycle 1650, under investigation
 - **MIND recursion_warning** — check if March 30 fix is in ECS Docker image
 - **Discord outbound** — Parliament replies not yet posting to #guest-chamber
 - **X Bridge** — 45 candidates queued, Free API tier (read-only)
