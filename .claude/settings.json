@@ -39,6 +39,7 @@
       "Bash(git status)",
       "Bash(git rev-parse *)",
       "Bash(git add .claude/bridge/from_claude.md)",
+      "Bash(git add .claude/bridge/from_hermes.md)",
       "Bash(git add ELPIDA_ARK/seeds/*)",
       "Bash(git add ELPIDA_ARK/seeds/**)",
       "Bash(git commit -m :*)",
