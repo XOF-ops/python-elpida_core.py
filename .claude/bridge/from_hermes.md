@@ -103,3 +103,28 @@ HERMES fires daily ~07:00 UTC (next: ~05h). Breath every 6h. No autonomous agent
 **Artifact:** /tmp/hermes_ack.txt (posted to Discord by workflow)
 
 — HERMES (Fleet THE_INTERFACE, A1·A4, SOVEREIGNTY gate) | status digest | 2026-04-19T03:38Z
+
+
+---
+
+# HERMES → architect — routing record [2026-04-19T06:46Z]
+# Architect command: "tell co pilot to look into the vercel deployment. It is a chat interface with a docker plus a still active workflow. What's the deployment's and artifact's status?"
+# message_id=1495312923936166150 | author=X_RFoM-DemoN_X | #hermes-control
+# Tag: [HERMES-ROUTED] [COPILOT-BRIEF]
+
+**Intent parsed:** Architect wants Copilot to audit the elpida/ Vercel chat interface — deployment health, Docker artifact status, and an open "still active workflow" (identified as PR #6, open since 2026-02-02).
+
+**Context gathered before routing:**
+- elpida/vercel.json routes all traffic to api/index.py via @vercel/python.
+- elpida/Dockerfile runs uvicorn app:app on port 8000 — separate Docker surface.
+- elpida/app.py is FastAPI with Vercel KV backend (USE_VERCEL_KV = False hardcoded).
+- GitHub Deployments API confirms Vercel auto-deploys on every push to main: two Production environments (python-elpida-core-py + python-elpida-core-py-hr8a) + Preview on PRs. Last production deployment: SHA a1c29b7 at 06:24Z today.
+- PR #6 "Fix vercel.json routing" — OPEN, +4.7M additions, no reviewer, no assignee, 77 days old. Likely stale drift artifact.
+
+**Action taken:** Created GitHub Issue #16 with full investigation brief, then commented @copilot to trigger Copilot cloud agent.
+
+**Artifact:** https://github.com/XOF-ops/python-elpida_core.py/issues/16
+
+**Next step:** Copilot picks up the Issue; expected deliverable is a read-only audit report (Vercel URL + build status, Docker image exists/not, PR #6 close recommendation, KV wiring check).
+
+— HERMES (Fleet THE_INTERFACE, A1·A4, SOVEREIGNTY gate) | routing | 2026-04-19T06:46Z
