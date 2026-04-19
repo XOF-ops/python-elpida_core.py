@@ -1,0 +1,94 @@
+name: HERMES Phase 3 — Discord Routing
+
+# HERMES (Fleet THE_INTERFACE) inbound: architect → Discord command →
+# HERMES parses intent → executes (create Issue, write to bridge, fire
+# workflow) → posts ack to Discord → archives to .claude/bridge/from_hermes.md.
+#
+# The architect's exit from architect-as-protocol, completed.
+# Phase 2 (daily synthesis outbound) handles routine awareness.
+# Phase 3 (this file) handles directed action via two-way conversation.
+
+on:
+  # Default: poll every 5 minutes for new Discord commands
+  schedule:
+    - cron: '*/5 * * * *'
+
+  # Manual dispatch with command input — for testing without Discord
+  # AND for cases where the architect prefers GitHub UI over Discord.
+  workflow_dispatch:
+    inputs:
+      command:
+        description: "Command text (as if sent in Discord after !hermes prefix)"
+        required: true
+        default: "status"
+      author:
+        description: "Author name (for bridge attribution)"
+        required: false
+        default: "architect"
+
+permissions:
+  contents: write
+  issues: write
+  actions: write  # so HERMES can fire other workflows via gh workflow run
+
+# Don't allow two HERMES route fires to overlap. Polling cadence is short
+# enough that overlap would mean we're falling behind.
+concurrency:
+  group: hermes-route
+  cancel-in-progress: false
+
+jobs:
+  route:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Setup Node.js (Claude Code CLI under SDK)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Claude Code CLI
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Install Claude Agent SDK
+        run: pip install --upgrade claude-agent-sdk
+
+      - name: Configure git for HERMES routing commits
+        run: |
+          git config user.email "hermes@elpida.anthropic.com"
+          git config user.name "Hermes (Fleet THE_INTERFACE)"
+
+      - name: Run HERMES routing
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # gh CLI reads GH_TOKEN
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_HERMES_CONTROL_CHANNEL_ID: ${{ secrets.DISCORD_HERMES_CONTROL_CHANNEL_ID }}
+          DISCORD_WEBHOOK_HERMES: ${{ secrets.DISCORD_WEBHOOK_HERMES }}
+          # workflow_dispatch path: pass the input as env so the script
+          # can detect manual mode and skip Discord polling
+          HERMES_MANUAL_COMMAND: ${{ github.event.inputs.command }}
+          HERMES_MANUAL_AUTHOR: ${{ github.event.inputs.author }}
+        run: python scripts/hermes_route.py
+
+      - name: Commit + push if anything changed
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git add -A
+            git commit -m "[HERMES-ROUTED] Phase 3 routing artifact $(date -u +%Y-%m-%dT%H:%MZ)"
+            git push origin main || echo "(push failed; bridge writes still on disk for next attempt)"
+          else
+            echo "(no changes to commit)"
+          fi

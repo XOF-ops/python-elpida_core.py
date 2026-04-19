@@ -40,6 +40,8 @@
       "Bash(git rev-parse *)",
       "Bash(git add .claude/bridge/from_claude.md)",
       "Bash(git add .claude/bridge/from_hermes.md)",
+      "Bash(git add .claude/bridge/for_*.md)",
+      "Bash(git add .claude/bridge/hermes_command_watermark.json)",
       "Bash(git add ELPIDA_ARK/seeds/*)",
       "Bash(git add ELPIDA_ARK/seeds/**)",
       "Bash(git commit -m :*)",
@@ -47,7 +49,12 @@
       "Bash(python3 ark_archivist.py:*)",
       "Bash(bash scripts/d13_checkpoint_audit.sh:*)",
       "Bash(date)",
-      "Bash(date *)"
+      "Bash(date *)",
+      "Bash(gh issue create:*)",
+      "Bash(gh issue list:*)",
+      "Bash(gh workflow run:*)",
+      "Bash(gh run list:*)",
+      "Bash(curl -s https://xof-ops.github.io/python-elpida_core.py/data/*)"
     ]
   }
 }
