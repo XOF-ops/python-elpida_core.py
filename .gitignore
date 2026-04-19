@@ -143,3 +143,5 @@ ElpidaAI/handshake_quarantine.jsonlsetup_full_deployment.py
 FILES/
 LostCode/
 _snapshot/
+# Runtime cache — generated at runtime, never source-edited
+cache/
