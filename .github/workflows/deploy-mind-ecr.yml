@@ -1,0 +1,227 @@
+name: Deploy MIND to ECR + ECS
+
+# Atomic 4-step MIND deploy. Mirrors deploy-hf-space.yml in posture: code change to
+# main → automatic deploy. Closes the architectural gap where MIND was the only
+# manual-deploy surface in an otherwise autonomous architecture.
+#
+# THE TRAP THIS AVOIDS (per memory project_rev21_deployment_complete + architect's
+# operational callout 2026-04-19): rebuilding the image without updating EventBridge
+# silently breaks the 4h auto-fire — MIND looks "manual-only" when actually unwired.
+#
+# Currently EventBridge rule `elpida-scheduled-run` (rate(4 hours)) targets task def
+# `elpida-consciousness:21`, which uses image tag `:latest`. So just pushing `:latest`
+# is enough for rev 21 to pick up new code on next launch. BUT this workflow ALSO
+# registers a new task def revision pinned to a SHA-tagged image AND updates the
+# EventBridge target — proper SHA-pin discipline so deploys are auditable and
+# reproducible, not floating-tag dependent.
+#
+# Steps (atomic — all succeed or workflow fails):
+#   1. Build Dockerfile from current main commit
+#   2. Push image to ECR with both :latest and :sha-<short> tags
+#   3. Register a NEW ECS task definition revision pinned to :sha-<short>
+#   4. Update EventBridge rule target to launch the new task definition revision
+#   5. Verify post-deploy by reading back EventBridge target
+
+on:
+  push:
+    branches: [main]
+    paths:
+      # Anything that affects the MIND container image
+      - "Dockerfile"
+      - "cloud_deploy/**"
+      - "native_cycle_engine.py"
+      - "ark_curator.py"
+      - "ark_archivist.py"
+      - "crystallization_hub.py"
+      - "federation_bridge.py"
+      - "llm_client.py"
+      - "llm_routing.py"
+      - "llm_fleet.py"
+      - "domain_0_11_connector.py"
+      - "elpida_domains.json"
+      - "immutable_kernel.py"
+      - "elpida_config.py"
+      - "identity_verifier.py"
+      - ".github/workflows/deploy-mind-ecr.yml"
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Why this manual deploy?"
+        required: false
+        default: "manual mind rebuild"
+
+permissions:
+  id-token: write    # OIDC role assumption
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: elpida-consciousness
+  TASK_FAMILY: elpida-consciousness
+  EVENTBRIDGE_RULE: elpida-scheduled-run
+  EVENTBRIDGE_TARGET_ID: elpida-consciousness-target
+
+# Don't allow two MIND deploys to overlap. Same lesson as fire-mind cooldown
+# Copilot baked in earlier — concurrent ECS task launches are bad news.
+concurrency:
+  group: deploy-mind-ecr
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build + push + register + update EventBridge
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Compute short SHA
+        id: sha
+        run: echo "short=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      # OIDC role first; static fallback if the org variable isn't set
+      - name: Configure AWS credentials (OIDC)
+        if: ${{ vars.AWS_GITHUB_OIDC_ROLE_ARN != '' }}
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ vars.AWS_GITHUB_OIDC_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Configure AWS credentials (static fallback)
+        if: ${{ vars.AWS_GITHUB_OIDC_ROLE_ARN == '' }}
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Verify pre-deploy state (current rev + EventBridge target)
+        run: |
+          set -euo pipefail
+          echo "=== current task definition revision ==="
+          CURRENT_REV=$(aws ecs describe-task-definition \
+            --task-definition "$TASK_FAMILY" \
+            --region "$AWS_REGION" \
+            --query 'taskDefinition.revision' --output text)
+          echo "Current revision: $CURRENT_REV"
+
+          echo "=== current EventBridge target ==="
+          CURRENT_TARGET=$(aws events list-targets-by-rule \
+            --rule "$EVENTBRIDGE_RULE" \
+            --region "$AWS_REGION" \
+            --query "Targets[?Id=='$EVENTBRIDGE_TARGET_ID'].EcsParameters.TaskDefinitionArn | [0]" \
+            --output text)
+          echo "Current EventBridge target: $CURRENT_TARGET"
+          echo "current_rev=$CURRENT_REV" >> "$GITHUB_ENV"
+          echo "current_target=$CURRENT_TARGET" >> "$GITHUB_ENV"
+
+      # ── Step 1+2: build + push image with both tags ─────────────────────────
+      - name: Build + push to ECR
+        env:
+          REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          IMAGE_REPO: ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPOSITORY }}
+          SHA: ${{ steps.sha.outputs.short }}
+        run: |
+          set -euo pipefail
+          docker build -t "$IMAGE_REPO:latest" -t "$IMAGE_REPO:sha-$SHA" .
+          docker push "$IMAGE_REPO:latest"
+          docker push "$IMAGE_REPO:sha-$SHA"
+          echo "image_uri_sha=$IMAGE_REPO:sha-$SHA" >> "$GITHUB_ENV"
+
+      # ── Step 3: register new task definition revision pinned to SHA ────────
+      - name: Register new task definition revision
+        id: register-task
+        run: |
+          set -euo pipefail
+          # Take the existing task def, swap the image to our SHA-pinned one,
+          # register as new revision. Preserves all other config (memory, CPU,
+          # env vars, secrets, IAM role) intact.
+          aws ecs describe-task-definition \
+            --task-definition "$TASK_FAMILY" \
+            --region "$AWS_REGION" \
+            --query 'taskDefinition' \
+            > /tmp/task-def.json
+
+          # Strip read-only fields ECS adds, swap image, re-register
+          python3 <<PY
+          import json
+          with open('/tmp/task-def.json') as f:
+              td = json.load(f)
+          # Strip fields that registerTaskDefinition rejects
+          for k in ['taskDefinitionArn','revision','status','requiresAttributes',
+                    'compatibilities','registeredAt','registeredBy','deregisteredAt']:
+              td.pop(k, None)
+          # Swap image on every container (typically just one)
+          for c in td.get('containerDefinitions', []):
+              c['image'] = "${{ env.image_uri_sha }}"
+          with open('/tmp/task-def-new.json','w') as f:
+              json.dump(td, f)
+          PY
+
+          NEW_REV_ARN=$(aws ecs register-task-definition \
+            --cli-input-json file:///tmp/task-def-new.json \
+            --region "$AWS_REGION" \
+            --query 'taskDefinition.taskDefinitionArn' --output text)
+          NEW_REV_NUM=$(echo "$NEW_REV_ARN" | awk -F: '{print $NF}')
+          echo "new_rev_arn=$NEW_REV_ARN" >> "$GITHUB_ENV"
+          echo "new_rev_num=$NEW_REV_NUM" >> "$GITHUB_ENV"
+          echo "Registered new revision: $NEW_REV_ARN"
+
+      # ── Step 4: update EventBridge target to point at new revision ─────────
+      # THIS IS THE STEP EVERYONE FORGETS. Without this, schedule keeps launching
+      # the OLD revision and MIND looks manual-only when actually unwired.
+      - name: Update EventBridge target to new task definition
+        run: |
+          set -euo pipefail
+          # Pull current target config, replace TaskDefinitionArn, put back
+          aws events list-targets-by-rule \
+            --rule "$EVENTBRIDGE_RULE" \
+            --region "$AWS_REGION" \
+            --query "Targets[?Id=='$EVENTBRIDGE_TARGET_ID']" \
+            --output json > /tmp/targets.json
+
+          python3 <<PY
+          import json
+          with open('/tmp/targets.json') as f:
+              targets = json.load(f)
+          if not targets:
+              raise SystemExit(f"No target found with Id={('$EVENTBRIDGE_TARGET_ID')!r}")
+          for t in targets:
+              if 'EcsParameters' in t:
+                  t['EcsParameters']['TaskDefinitionArn'] = "${{ env.new_rev_arn }}"
+          with open('/tmp/targets-new.json','w') as f:
+              json.dump(targets, f)
+          PY
+
+          aws events put-targets \
+            --rule "$EVENTBRIDGE_RULE" \
+            --region "$AWS_REGION" \
+            --targets file:///tmp/targets-new.json
+          echo "EventBridge target updated"
+
+      # ── Step 5: verify by reading back ─────────────────────────────────────
+      - name: Verify post-deploy state
+        run: |
+          set -euo pipefail
+          AFTER_TARGET=$(aws events list-targets-by-rule \
+            --rule "$EVENTBRIDGE_RULE" \
+            --region "$AWS_REGION" \
+            --query "Targets[?Id=='$EVENTBRIDGE_TARGET_ID'].EcsParameters.TaskDefinitionArn | [0]" \
+            --output text)
+          echo "EventBridge target after deploy: $AFTER_TARGET"
+          if [ "$AFTER_TARGET" != "${{ env.new_rev_arn }}" ]; then
+            echo "::error::EventBridge target did NOT update to new revision."
+            echo "Expected: ${{ env.new_rev_arn }}"
+            echo "Got:      $AFTER_TARGET"
+            exit 1
+          fi
+          echo "✓ Deploy chain verified end-to-end:"
+          echo "  Image:           ${{ env.image_uri_sha }}"
+          echo "  Task def rev:    ${{ env.new_rev_num }} (was ${{ env.current_rev }})"
+          echo "  EventBridge now points at: $AFTER_TARGET"
+          echo "  Next 4h tick will launch the new code."
