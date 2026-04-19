@@ -92,6 +92,36 @@ jobs:
           aws s3 cp s3://elpida-body-evolution/feedback/watermark.json \
             _snapshot/raw/feedback_watermark.json || true
 
+          # Living axioms — cross-run continuity (cumulative axiom ratifications;
+          # the true continuity metric since body_cycle resets on every HF rebuild).
+          aws s3 cp s3://elpida-body-evolution/federation/living_axioms.jsonl \
+            _snapshot/raw/living_axioms.jsonl || true
+
+      - name: Fetch HF Space container logs (graceful when token expired)
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          set -uo pipefail
+          mkdir -p _snapshot/raw
+          if [ -z "${HF_TOKEN:-}" ]; then
+            echo "(HF_TOKEN not set — skipping HF logs fetch; snapshot will mark hf_logs.available=false)"
+            exit 0
+          fi
+          # SSE stream — give it 8s to collect a chunk, then close. Fails-soft on auth.
+          # If the token is expired HF returns the login HTML which the snapshot builder
+          # will detect as non-cycle telemetry and mark unavailable.
+          timeout 8 curl -sSN \
+            -H "Authorization: Bearer $HF_TOKEN" \
+            "https://huggingface.co/api/spaces/z65nik/elpida-governance-layer/logs/run" \
+            > _snapshot/raw/hf_run_logs.txt 2>/dev/null || true
+          # If the response starts with HTML (login page), discard so the builder
+          # marks logs unavailable rather than ingesting marketing copy as telemetry.
+          if head -c 200 _snapshot/raw/hf_run_logs.txt | grep -qi '<!DOCTYPE\|<html'; then
+            echo "(HF_TOKEN appears expired — got login HTML; clearing logs file)"
+            : > _snapshot/raw/hf_run_logs.txt
+          fi
+          wc -l _snapshot/raw/hf_run_logs.txt || true
+
       - name: Build normalized dashboard snapshot
         run: python scripts/build_observation_snapshot.py
 

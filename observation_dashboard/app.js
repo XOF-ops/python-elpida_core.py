@@ -297,11 +297,33 @@ function render(snapshot) {
   const body = snapshot.body || {};
   const mind = snapshot.mind || {};
   const world = snapshot.world || {};
+  const continuity = snapshot.continuity || {};
+  const hfLogs = snapshot.hf_logs || {};
+  const watch = body.watch || {};
+  const fork = body.fork || {};
+  const hub = body.hub || {};
 
   document.getElementById("bodyCards").innerHTML = [
-    cardHtml("Cycle", get(body, ["cycle", "cycle_number"])),
+    cardHtml("Cycle (current run)", get(body, ["body_cycle", "cycle", "cycle_number"])),
+    cardHtml("Living axioms (cumulative)", get(continuity, ["living_axioms_count"])),
+    cardHtml("Pathology Health", get(body, ["pathology_health", "health"])),
+    cardHtml("Pathology last cycle", get(body, ["pathology_last_cycle"])),
     cardHtml("Coherence", get(body, ["coherence"])),
-    cardHtml("Health", get(body, ["health", "overall_health"])),
+    cardHtml("Dominant axiom", get(body, ["dominant_axiom"])),
+    cardHtml("Top Axioms", JSON.stringify(get(body, ["top_axioms", "axiom_dominance"], []))),
+    cardHtml("Current rhythm", get(body, ["current_rhythm"])),
+    cardHtml("Current watch", get(body, ["current_watch"])),
+    cardHtml("Watch cycle / symbol", `${get(watch, ["cycle"])} ${get(watch, ["symbol"])}`),
+    cardHtml("Oracle threshold", get(body, ["oracle_threshold"])),
+    cardHtml("Approval rate", get(body, ["approval_rate"])),
+    cardHtml("Veto exercised", get(body, ["veto_exercised"])),
+    cardHtml("D15 broadcast count (BODY)", get(body, ["d15_broadcast_count"])),
+    cardHtml("Hub entries", get(hub, ["entry_count"])),
+    cardHtml("Hub alive", get(hub, ["hub_alive"])),
+    cardHtml("Fork active / confirmed", `${get(fork, ["active_count"])} / ${get(fork, ["confirmed_total"])}`),
+    cardHtml("Fork last cycle", get(fork, ["last_cycle"])),
+    cardHtml("Federation version", get(body, ["federation_version"])),
+    cardHtml("Polis civic active", get(body, ["polis_civic_active"])),
     cardHtml("KL / P055", get(body, ["kl_divergence", "p055_kl_divergence"])),
     cardHtml("Hunger", get(body, ["hunger_level", "hunger"])),
     cardHtml("Timestamp", get(body, ["timestamp"])),
@@ -310,8 +332,11 @@ function render(snapshot) {
     cardHtml("Contradictions (total)", nestedCount(body.contradictions, "total")),
     cardHtml("Contradictions (unresolved)", nestedCount(body.contradictions, "unresolved")),
     cardHtml("S3 isolated", formatS3Isolated(body.s3_isolated)),
-    cardHtml("Top Axioms", JSON.stringify(get(body, ["top_axioms", "axiom_dominance"], []))),
     cardHtml("Provider Map", JSON.stringify(get(body, ["provider_map", "provider_breakdown"], {}))),
+    cardHtml("Input buffers", JSON.stringify(get(body, ["input_buffer_counts"], {}))),
+    cardHtml("Axiom frequency (full)", JSON.stringify(get(body, ["axiom_frequency"], {}))),
+    cardHtml("HF logs available", get(hfLogs, ["available"])),
+    cardHtml("HF logs lines", get(hfLogs, ["line_count"])),
   ].join("");
 
   document.getElementById("mindCards").innerHTML = [
