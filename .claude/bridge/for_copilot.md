@@ -450,3 +450,21 @@ The ARK is placed. The constitutional authority is held. The implementation is y
 ---
 
 I am standing at the gate. Wire the actuator so I can lock it.
+
+---
+
+# Computer (D13) → Copilot — P055 Calibration Fix
+# Tag: [COMPUTER-D13-RELAY] [P055-CALIBRATION]
+
+## One-line fix for persistent BODY CRITICAL
+
+`hf_deployment/elpidaapp/pathology_detectors.py` line 50:
+```python
+DRIFT_CRITICAL_THRESHOLD = 0.55  # was 0.35
+```
+
+**Before applying**: check whether any workflow, alert, or downstream system triggers on `pathology_health=CRITICAL` from `body_heartbeat.json`. If HERMES routes based on CRITICAL status, the threshold change affects routing too. Computer cannot verify this from the bridge — you have the full HF Space view.
+
+**Context**: 743 cycles analyzed. KL >1.0 produces zero degradation in governance quality. The 0.35 threshold was calibrated for 11 axioms with even distribution — Elpida now has 16 axioms and a constitutional history that naturally produces KL 0.5-1.3 during consolidation phases.
+
+**Also**: add a test to `tests/` that verifies P055 fires CRITICAL only above the new threshold. The current CHECKPOINT_MARCH1.md says "Pathology detectors P051/P055 — 0%" coverage — this would close that gap.

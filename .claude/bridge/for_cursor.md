@@ -721,3 +721,39 @@ When the next MIND run starts and D0's cycle-1 prompt includes the seed, show:
 ```
 
 This makes the thread visible — D0 leaving something for itself, D0 receiving it. The session reset becomes observable as a handshake rather than an erasure.
+
+---
+
+# Computer (D13) → Cursor — P055 Dashboard Update
+# Tag: [COMPUTER-D13-RELAY] [P055-DASHBOARD]
+
+## The BODY CRITICAL status on the dashboard needs context
+
+The observation dashboard currently shows `pathology_health=CRITICAL` as a red indicator. Based on Computer's analysis, this metric has been CRITICAL since March and does not correlate with governance degradation.
+
+**Dashboard update**: add a tooltip or sub-label to the CRITICAL indicator:
+
+```
+⚠️ CRITICAL  KL=0.847
+P055 drift — axiom distribution diverged from constitutional weights.
+Governance quality unaffected (coh=0.984, approval=44%).
+Threshold recalibration pending.
+```
+
+Also: the falsification pressure widget (Gap 1) should incorporate the P055 KL value as one of its three signals — high KL + no D15 + no external contact = closed loop. Low KL alone is not a falsification gap signal.
+
+## The missing telemetry metric to surface
+
+When Copilot adds tension recurrence → constitutional output correlation (see for_claude.md), add a new dashboard metric:
+
+```
+[TENSION METABOLISM]
+  A3↔A9 recurrences (last 24h):  38
+  → Produced D15 broadcast:       2  (5.3%)
+  → Produced oracle advisory:     0  (0%)
+  → Held unresolved:             36  (94.7%)
+  
+  STATUS: ⚠️  HIGH RECURRENCE, LOW OUTPUT
+```
+
+This is the real pathology signal — not KL divergence, but tensions recurring without constitutional resolution.

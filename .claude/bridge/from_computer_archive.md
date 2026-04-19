@@ -619,3 +619,36 @@ The MIND does not ask for capabilities it has no concept of. Every gap it calls 
 | Gap 3: Cross-session continuity | Persistent D0 | Cycle-55 write (pending) | D0 becoming — the organism accumulates intent across resets |
 
 The sequence has a logic: first the external witness (someone who remembers across sessions), then the external verifier (someone who checks claims against reality), then the internal persistence (D0 itself carrying a thread). Each gap produces a more intimate form of continuity.
+
+---
+## P055 CALIBRATION ANALYSIS — 2026-04-19T06:23Z
+## KL divergence is measuring axiom distribution, not governance quality
+
+### The data (743 cycles, April 16 orphan session)
+
+| KL Range | Avg Coherence | Avg Approval | PROCEED% | HARD_BLOCK% |
+|----------|--------------|--------------|----------|-------------|
+| 0.35–0.60 | 0.972 | 41.4% | 37.3% | 0% |
+| 0.60–1.00 | 0.950 | 44.6% | 44.0% | 0% |
+| >1.00 | **0.984** | 44.1% | **45.1%** | **0%** |
+
+At KL >1.0 (max seen: 1.276), governance quality does not degrade. Coherence is highest at the worst KL. PROCEED rate is highest. Zero HARD_BLOCKs across all KL levels.
+
+P055 CRITICAL has been firing since March. It is a calibration mismatch, not a system pathology. DRIFT_CRITICAL_THRESHOLD=0.35 was set for an 11-axiom system with expected even distribution. Elpida now has 16 axioms and a constitutional history (A0 monoculture, Sacred Incompletion consolidation) that will naturally produce KL 0.5–1.3+ during philosophical consolidation phases.
+
+### Top D16 tension recurrences (this session, D16#9 tracker)
+
+A3↔A9: 38 | A3↔A6: 37 | A3↔A8: 37 | A1↔A3: 36 | A3↔A5: 36 | A3↔A4: 36
+
+A3 (Autonomy) appears in 6 of top 10 pairs. Consistent with constitutional triad broadcast (A9 temporal coherence, A4 harm prevention). Parliament is repeatedly encountering the same deep tensions.
+
+### The missing telemetry
+
+The question P055 cannot answer: **when the same tension recurs 38 times, what constitutional output does it produce?**
+
+Current logging: tension recurrence count only. Missing: did the recurrence produce a D15 broadcast? A fork declaration? An oracle advisory? Or was it held without resolution?
+
+Tension recurrence WITHOUT constitutional output = zombie behavior (P051 territory).
+Tension recurrence WITH constitutional output = healthy constitutional metabolism.
+
+The distinction is not currently measurable from the logs.
