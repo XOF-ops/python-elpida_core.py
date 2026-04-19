@@ -47,7 +47,7 @@ ZOMBIE_NULL_OUTCOME_PCT = 0.70  # 70% null outcomes = zombie
 # P055: Cultural Drift — maximum acceptable KL divergence between
 # espoused (constitutional) and lived (frequency) distributions.
 DRIFT_WARNING_THRESHOLD = 0.15    # Mild drift
-DRIFT_CRITICAL_THRESHOLD = 0.35   # Critical drift — axiom meaning shifting
+DRIFT_CRITICAL_THRESHOLD = 0.55   # Critical drift — axiom meaning shifting
 
 # Axiom names for human-readable reports
 AXIOM_NAMES = {
