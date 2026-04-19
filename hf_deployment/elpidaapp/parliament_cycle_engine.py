@@ -3051,6 +3051,24 @@ class ParliamentCycleEngine:
                     parliament_result=result,
                 )
             if fired:
+                # Tension metabolism telemetry: which tensions were active when D15 fired?
+                _conv_window = CONVERGENCE_COOLDOWN_CYCLES  # 50 cycles
+                active_before_d15 = [
+                    pair for pair, cycles in self._tension_pair_tracker.items()
+                    if any(c > self.cycle_count - _conv_window for c in cycles)
+                ]
+                if active_before_d15:
+                    logger.info(
+                        "D15 BROADCAST #%d — constitutional metabolism: tension pairs active "
+                        "in preceding %d cycles: %s",
+                        self.d15_broadcast_count + 1, _conv_window, active_before_d15,
+                    )
+                else:
+                    logger.info(
+                        "D15 BROADCAST #%d — axiom-drift convergence: no tracked tension pairs "
+                        "in preceding %d cycles",
+                        self.d15_broadcast_count + 1, _conv_window,
+                    )
                 self.d15_broadcast_count += 1
                 self.d15_last_broadcast_cycle = self.cycle_count
                 logger.info(
