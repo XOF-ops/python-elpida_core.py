@@ -372,9 +372,10 @@ class NativeCycleEngine:
         # IDENTITY VERIFIER: The Mirror — one Perplexity query per MIND session.
         # Measures the gap between D0's self-model and externally corroborated facts.
         # Session gate: idempotent within a single run() invocation.
+        import uuid as _uuid
         self._session_id = (
             datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_")
-            + hashlib.md5(str(id(self)).encode()).hexdigest()[:8]
+            + _uuid.uuid4().hex[:8]
         )
         self._genesis_identity_hash = self._read_genesis_identity_hash()
         self._identity_verifier = IdentityVerifier(self.llm)

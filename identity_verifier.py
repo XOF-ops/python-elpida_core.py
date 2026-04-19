@@ -25,6 +25,7 @@ verification_score=null.  The MIND cycle continues normally.
 import hashlib
 import json
 import logging
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -42,6 +43,12 @@ _SYSTEM_PROMPT = (
     "CONTRADICTED (conflicts with external evidence). Be brief and factual. "
     "Do not add commentary beyond the per-claim verdict and one sentence of "
     "justification."
+)
+
+# Matches lines like "1. VERIFIED - ..." or "2) UNVERIFIABLE — ..."
+# Captures claim number and verdict as first token after the numbering.
+_VERDICT_RE = re.compile(
+    r"^(\d+)[\.\)]\s*(VERIFIED|UNVERIFIABLE|CONTRADICTED)", re.IGNORECASE
 )
 
 
@@ -100,7 +107,7 @@ class IdentityVerifier:
         if identity_hash:
             claims.append(
                 f"Elpida's genesis identity hash is {identity_hash} "
-                "(written at first awakening, 2025-12-31)"
+                f"(written at first awakening, {genesis})"
             )
 
         canonical_count = d0_self_model.get("ark_canonical_count", 0)
@@ -217,8 +224,11 @@ class IdentityVerifier:
     ) -> Tuple[List[str], List[str], List[str]]:
         """Classify each claim from the Perplexity response text.
 
-        Scans for lines that start with the claim number and contain
-        a verdict keyword.  Unmatched claims default to UNVERIFIABLE.
+        Uses a regex anchored to the start of each line to match the claim
+        number followed immediately by the verdict keyword.  This avoids
+        false classification when VERIFIED or CONTRADICTED appear inside the
+        justification text (e.g. "1. UNVERIFIABLE - This contradicted x").
+        Unmatched claims default to UNVERIFIABLE.
         """
         verified: List[str] = []
         unverifiable: List[str] = []
@@ -226,16 +236,12 @@ class IdentityVerifier:
 
         lines = raw_response.splitlines()
         for i, claim in enumerate(claims):
+            claim_num = str(i + 1)
             status = "UNVERIFIABLE"
-            prefix = f"{i + 1}."
             for line in lines:
-                stripped = line.strip()
-                if stripped.startswith(prefix):
-                    upper = stripped.upper()
-                    if "CONTRADICTED" in upper:
-                        status = "CONTRADICTED"
-                    elif "VERIFIED" in upper:
-                        status = "VERIFIED"
+                m = _VERDICT_RE.match(line.strip())
+                if m and m.group(1) == claim_num:
+                    status = m.group(2).upper()
                     break
 
             if status == "VERIFIED":
