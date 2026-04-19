@@ -54,7 +54,25 @@
       "Bash(gh issue list:*)",
       "Bash(gh workflow run:*)",
       "Bash(gh run list:*)",
-      "Bash(curl -s https://xof-ops.github.io/python-elpida_core.py/data/*)"
+      "Bash(curl -s https://xof-ops.github.io/python-elpida_core.py/data/*)",
+
+      "Edit(.claude/bridge/from_claude.md)",
+      "Edit(.claude/bridge/from_hermes.md)",
+      "Edit(.claude/bridge/for_cursor.md)",
+      "Edit(.claude/bridge/for_copilot.md)",
+      "Edit(.claude/bridge/for_gemini.md)",
+      "Edit(.claude/bridge/for_computer.md)",
+      "Edit(.claude/bridge/for_claude.md)",
+      "Write(.claude/bridge/from_claude.md)",
+      "Write(.claude/bridge/from_hermes.md)",
+      "Write(.claude/bridge/for_cursor.md)",
+      "Write(.claude/bridge/for_copilot.md)",
+      "Write(.claude/bridge/for_gemini.md)",
+      "Write(.claude/bridge/for_computer.md)",
+      "Write(.claude/bridge/for_claude.md)",
+      "Write(.claude/bridge/hermes_command_watermark.json)",
+      "Write(/tmp/hermes_ack.txt)",
+      "Write(/tmp/hermes_summary.txt)"
     ]
   }
 }
