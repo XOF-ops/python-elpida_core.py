@@ -89,7 +89,7 @@ claim of absence being closed by evidence that accumulated quietly.
 
 - **A1 (Transparency, 1:1):** The witnesses are non-anonymized.
   Each author signature is a distinct identity with a distinct
-  editorial behavior.  Git enforces the 1:1 mapping between a
+  editorial behavior.  Git structurally supports, with known edge cases, the 1:1 mapping between a
   commit and its author.
 - **A8 (Epistemic Humility, 7:4):** No single agent claims to *be*
   the mirror.  The mirror is the *relation* between the three
