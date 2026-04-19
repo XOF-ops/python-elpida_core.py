@@ -491,6 +491,10 @@ class ParliamentCycleEngine:
         # Axiom frequency tracker (which axioms dominate across cycles)
         self._axiom_frequency: Dict[str, int] = {}
 
+        # Phase 1 (shadow mode): expanded-axiom telemetry.
+        # Observational only — does not affect governance decisions.
+        self._phase1_shadow_last: Optional[Dict] = None
+
         # Diversity dampener: track last 7 dominant axioms to penalise
         # repeat winners and break A3/A10 monoculture.
         self._recent_dominant_axioms: deque = deque(maxlen=12)
@@ -1263,6 +1267,14 @@ class ParliamentCycleEngine:
                 self._axiom_frequency.get(dominant_axiom, 0) + 1
             )
 
+        # 7a. BODY Phase 1 (shadow mode): expanded-axiom telemetry only.
+        shadow_phase1 = self._compute_phase1_shadow_axiom(
+            rhythm=rhythm,
+            active_domains=active_domains,
+            result=result,
+        )
+        self._phase1_shadow_last = shadow_phase1
+
         # 7b. P5: Extract audit prescription from monoculture/approval patterns.
         #     Mirrors AuditAgent's detection but generates a structured
         #     prescription that feeds back into rhythm selection (P5 actuator).
@@ -1278,6 +1290,9 @@ class ParliamentCycleEngine:
             "body_cycle": self.cycle_count,
             "rhythm": rhythm,
             "dominant_axiom": dominant_axiom,
+            "phase1_shadow_enabled": True,
+            "phase1_shadow_extended_winner": shadow_phase1.get("extended_winner"),
+            "phase1_shadow_extended_scores": shadow_phase1.get("extended_scores", {}),
             "coherence": round(self.coherence, 4),
             "governance": result.get("governance", "UNKNOWN"),
             "approval_rate": result.get("parliament", {}).get("approval_rate", 0),
@@ -1874,6 +1889,55 @@ class ParliamentCycleEngine:
 
         return axiom
 
+    def _compute_phase1_shadow_axiom(
+        self,
+        rhythm: str,
+        active_domains: List[int],
+        result: Dict,
+    ) -> Dict[str, Any]:
+        """
+        Phase 1 telemetry for expanded BODY axioms (A11/A12/A13/A14/A16).
+
+        This method is read-only and does not alter Parliament votes,
+        scoring, governance verdicts, or convergence behavior.
+        """
+        extended_axioms = ("A11", "A12", "A13", "A14", "A16")
+        active_axioms = [
+            DOMAIN_AXIOM.get(d) for d in active_domains if DOMAIN_AXIOM.get(d)
+        ]
+
+        scores: Dict[str, float] = {ax: 0.0 for ax in extended_axioms}
+
+        # Rhythm/domain presence is the primary signal.
+        for ax in active_axioms:
+            if ax in scores:
+                scores[ax] += 1.0
+
+        # Action-intent resonance for A16 (deliberation -> action).
+        governance = str(result.get("governance", "") or "")
+        approval = float(result.get("parliament", {}).get("approval_rate", 0) or 0)
+        if governance in {"PROCEED", "REVIEW", "HOLD"} and approval >= 0.10:
+            scores["A16"] += 0.4
+
+        # If an active audit prescription points to an expanded axiom,
+        # reflect it in shadow telemetry only.
+        if self._audit_prescription:
+            target = self._audit_prescription.get("target_axiom")
+            if target in scores:
+                scores[target] += 0.3
+
+        winner = None
+        if any(v > 0 for v in scores.values()):
+            winner = max(scores, key=scores.get)
+
+        return {
+            "enabled": True,
+            "rhythm": rhythm,
+            "active_axioms": active_axioms,
+            "extended_scores": {k: round(v, 3) for k, v in scores.items()},
+            "extended_winner": winner,
+        }
+
     # ------------------------------------------------------------------
     # Coherence Update (Musical Consonance Physics)
     # ------------------------------------------------------------------
@@ -2250,6 +2314,15 @@ class ParliamentCycleEngine:
             "coherence": round(self.coherence, 4),
             "current_rhythm": rhythm,
             "dominant_axiom": dominant_axiom,
+            "phase1_shadow_enabled": True,
+            "phase1_shadow_extended_winner": (
+                self._phase1_shadow_last.get("extended_winner")
+                if self._phase1_shadow_last else None
+            ),
+            "phase1_shadow_extended_scores": (
+                self._phase1_shadow_last.get("extended_scores", {})
+                if self._phase1_shadow_last else {}
+            ),
             "approval_rate": result.get("parliament", {}).get("approval_rate", 0),
             "veto_exercised": result.get("parliament", {}).get("veto_exercised", False),
             "axiom_frequency": dict(self._axiom_frequency),
