@@ -97,27 +97,36 @@ jobs:
           aws s3 cp s3://elpida-body-evolution/federation/living_axioms.jsonl \
             _snapshot/raw/living_axioms.jsonl || true
 
-      - name: Fetch HF Space container logs (graceful when token expired)
+      - name: Fetch HF Space container logs (graceful when token missing/expired)
         env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          # Prefer HF_TOKEN_READ (read-only fine-grained, scoped to logs).
+          # Fall back to HF_TOKEN (write/deploy token) if read-only not yet provisioned.
+          # Operator action: create a fine-grained HF token with "Read access to private
+          # spaces" and add as repo secret HF_TOKEN_READ. Existing HF_TOKEN (write/deploy)
+          # stays untouched so deploy-hf-space.yml + deploy_to_hf.yml continue to work.
+          HF_TOKEN_READ: ${{ secrets.HF_TOKEN_READ }}
+          HF_TOKEN_FALLBACK: ${{ secrets.HF_TOKEN }}
         run: |
           set -uo pipefail
           mkdir -p _snapshot/raw
-          if [ -z "${HF_TOKEN:-}" ]; then
-            echo "(HF_TOKEN not set — skipping HF logs fetch; snapshot will mark hf_logs.available=false)"
+          TOKEN="${HF_TOKEN_READ:-${HF_TOKEN_FALLBACK:-}}"
+          if [ -z "$TOKEN" ]; then
+            echo "(no HF token available — skipping HF logs fetch; snapshot marks hf_logs.available=false)"
             exit 0
           fi
+          if [ -n "${HF_TOKEN_READ:-}" ]; then
+            echo "(using HF_TOKEN_READ — fine-grained read-only)"
+          else
+            echo "(falling back to HF_TOKEN — may not have read scope for logs API)"
+          fi
           # SSE stream — give it 8s to collect a chunk, then close. Fails-soft on auth.
-          # If the token is expired HF returns the login HTML which the snapshot builder
-          # will detect as non-cycle telemetry and mark unavailable.
+          # If the token lacks read scope HF returns login HTML which we detect + clear.
           timeout 8 curl -sSN \
-            -H "Authorization: Bearer $HF_TOKEN" \
+            -H "Authorization: Bearer $TOKEN" \
             "https://huggingface.co/api/spaces/z65nik/elpida-governance-layer/logs/run" \
             > _snapshot/raw/hf_run_logs.txt 2>/dev/null || true
-          # If the response starts with HTML (login page), discard so the builder
-          # marks logs unavailable rather than ingesting marketing copy as telemetry.
           if head -c 200 _snapshot/raw/hf_run_logs.txt | grep -qi '<!DOCTYPE\|<html'; then
-            echo "(HF_TOKEN appears expired — got login HTML; clearing logs file)"
+            echo "(token rejected — got login HTML; clearing logs file)"
             : > _snapshot/raw/hf_run_logs.txt
           fi
           wc -l _snapshot/raw/hf_run_logs.txt || true
