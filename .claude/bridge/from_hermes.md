@@ -225,3 +225,43 @@ Next HERMES daily ~07:00Z tomorrow. Breath every 6h. BODY CRITICAL + Discord cha
 **Ack:** /tmp/hermes_ack.txt
 
 — HERMES (Fleet THE_INTERFACE, A1·A4, SOVEREIGNTY gate) | routing | 2026-04-19T07:55Z
+
+
+---
+
+# HERMES → architect — routing record [2026-04-19T09:28Z]
+# Architect command: "batch-route to copilot the following held items so we close fresh in next session — you decide if one Issue with sub-tasks or multiple focused Issues is cleaner."
+# message_id=1495345210073550848 | author=ElpidaAI | #hermes-control | 2026-04-19T08:48Z
+# Tag: [HERMES-ROUTED] [BATCH-ROUTE] [COPILOT-6-ITEMS]
+
+**Intent parsed:** Route 6 held items to Copilot as GitHub Issues with complete specs, structured to close cleanly in the next session. Items: (1) BODY CRITICAL clearance, (2) P055 one-line threshold fix, (3) Gap 2 identity_verifier.py implementation, (4) Gap 3 cloud_runner PHASE 5.5, (5) Gap 2 canonization A1 softening, (6) tension metabolism telemetry insertion.
+
+**State on arrival:** A prior HERMES session (same message_id=1495345210073550848) had already:
+- Created Issues #24–28 with complete specs at 09:05Z (items 2+5 grouped as Issue #25)
+- Closed duplicate Issue #23 (commented: duplicate of #24, mid-create assignee failure)
+- But had NOT successfully assigned Copilot to any issue (GraphQL `replaceActorsForAssignable` bot permission error)
+
+**Decisions:**
+- Items (2) + (5) grouped as Issue #25: both pre-validated one-liners, same file scope, confirmed by independent multi-agent analysis. One PR cleaner than two.
+- Items (1), (3), (4), (6) as separate issues (#24, #26, #27, #28): different effort profiles, different gates, different files.
+- Issue #24 (BODY CRITICAL) correctly hard-gates on IAM fix — do not proceed without live S3 verification.
+- Issue #27 (Gap 3) also blocked on IAM PutObject for elpida-body-evolution.
+
+**Actions taken:**
+1. Verified issues #24–28 are complete and match architect's 6 items exactly
+2. Diagnosed assignee failure: `gh issue edit --add-assignee Copilot` uses GraphQL (fails for GHA bot); `gh api .../assignees POST` uses REST (succeeds)
+3. Assigned Copilot to all 5 issues via REST API: #24, #25, #26, #27, #28
+
+**Live state noted:** Dashboard snapshot (09:21Z): BODY cycle 3, `pathology_health: "n/a"`, `s3_isolated: false`. BODY restarted fresh — consistent with BUG 15 cleared, not definitive S3 read.
+
+**Artifacts:**
+- Issue #24 (item 1 — BODY CRITICAL clearance): https://github.com/XOF-ops/python-elpida_core.py/issues/24
+- Issue #25 (items 2+5 — P055 threshold + A1 softening): https://github.com/XOF-ops/python-elpida_core.py/issues/25
+- Issue #26 (item 3 — Gap 2 identity_verifier): https://github.com/XOF-ops/python-elpida_core.py/issues/26
+- Issue #27 (item 4 — Gap 3 cloud_runner PHASE 5.5): https://github.com/XOF-ops/python-elpida_core.py/issues/27
+- Issue #28 (item 6 — tension metabolism telemetry): https://github.com/XOF-ops/python-elpida_core.py/issues/28
+- Discord ack: /tmp/hermes_ack.txt
+
+**Constitutional note (A1):** Prior session's partial work (issues created, assignee failed) surfaced here rather than silently overwritten. The routing record is the durable evidence of what happened and when.
+
+— HERMES (Fleet THE_INTERFACE, A1·A4, SOVEREIGNTY gate) | routing | 2026-04-19T09:28Z
