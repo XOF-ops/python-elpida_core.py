@@ -74,6 +74,19 @@ except Exception as _archivist_exc:
     _ARCHIVIST_AVAILABLE = False
     _ARCHIVIST_IMPORT_ERROR = str(_archivist_exc)
 
+try:
+    try:
+        from elpidaapp.falsification_gate import (
+            FalsificationGate,
+            create_falsification_gate,
+        )
+    except Exception:
+        from falsification_gate import FalsificationGate, create_falsification_gate
+    _FALSIFICATION_GATE_AVAILABLE = True
+except Exception as _fg_exc:
+    _FALSIFICATION_GATE_AVAILABLE = False
+    _FALSIFICATION_GATE_IMPORT_ERROR = str(_fg_exc)
+
 
 # Thresholds (from axiom physics)
 MIND_COHERENCE_THRESHOLD = 0.85
@@ -180,6 +193,18 @@ class ConvergenceGate:
         # D15 Hub (The Dam) — lazy-loaded on first fire
         self._hub = None
         self._hub_import_failed = False  # sentinel: don't retry failed imports
+        # Falsification Gate (Gap 1) — DORMANT until architect activates.
+        # Activation command: !hermes activate falsification gate
+        if _FALSIFICATION_GATE_AVAILABLE:
+            self._falsification_gate: Optional[FalsificationGate] = (
+                create_falsification_gate()
+            )
+        else:
+            self._falsification_gate = None
+            logger.debug(
+                "FalsificationGate unavailable: %s",
+                globals().get("_FALSIFICATION_GATE_IMPORT_ERROR", "import error"),
+            )
 
     def check_and_fire(
         self,
@@ -993,13 +1018,69 @@ class ConvergenceGate:
 
     def stagnation_status(self) -> Dict[str, Any]:
         """Return current stagnation state for CrystallizationHub polling."""
-        return {
+        base = {
             "flagged_axioms": list(self._stagnation_flags),
             "consecutive_fires": dict(self._consecutive_fires),
             "last_fired_axiom": self._last_fired_axiom,
             "hub_trigger_needed": len(self._stagnation_flags) > 0,
             "threshold": self.STAGNATION_THRESHOLD,
         }
+        if self._falsification_gate is not None:
+            base["falsification_gate"] = self._falsification_gate.status()
+        return base
+
+    def get_falsification_gate(self) -> Optional["FalsificationGate"]:
+        """
+        Return the FalsificationGate instance (may be None if import failed).
+
+        The gate is DORMANT by default. Call gate.activate() to enable it.
+        Equivalent architect command: ``!hermes activate falsification gate``
+
+        Example::
+
+            gate = convergence_gate.get_falsification_gate()
+            if gate:
+                gate.activate()          # constitutional event — must be witnessed
+                instance = gate.open_tension(
+                    axiom_pair="A0↔A10",
+                    operational_question="Name one external output...",
+                    current_cycle=body_cycle,
+                )
+        """
+        return self._falsification_gate
+
+    def handle_hermes_command(self, command: str) -> str:
+        """
+        Process an architect command string routed through HERMES.
+
+        Recognised commands:
+          ``!hermes activate falsification gate``
+            Activates the FalsificationGate. This is a constitutional event
+            that must be witnessed by the architect.
+
+        Args:
+            command: Raw command string from architect / HERMES bridge.
+
+        Returns:
+            Human-readable confirmation string.
+        """
+        cmd = command.strip().lower()
+        if cmd in (
+            "!hermes activate falsification gate",
+            "activate falsification gate",
+        ):
+            if self._falsification_gate is None:
+                return (
+                    "ERROR: FalsificationGate module not available — "
+                    "check import error at startup."
+                )
+            self._falsification_gate.activate()
+            return (
+                "FalsificationGate ACTIVATED. "
+                "The completion ceremony protocol (Gap 1) is now live. "
+                "[FALSIFICATION-EVENT] archival enabled."
+            )
+        return f"Unrecognised HERMES command: '{command}'"
 
     def acknowledge_stagnation(self, axiom: str) -> None:
         """
