@@ -186,6 +186,43 @@ function renderD15HubError(pathUsed, err) {
   document.getElementById("d15Timeline").innerHTML = "";
 }
 
+function renderFalsification(widget) {
+  const statusEl = document.getElementById("falsificationStatus");
+  const cards = document.getElementById("falsificationCards");
+  if (!widget || typeof widget !== "object") {
+    statusEl.textContent = "Markers unavailable.";
+    cards.innerHTML = "";
+    return;
+  }
+
+  const state = String(widget.status || "UNKNOWN").toUpperCase();
+  statusEl.className = "falsification-status";
+  if (state === "CLEAR") statusEl.classList.add("state-clear");
+  else if (state === "ACTIVE") statusEl.classList.add("state-active");
+  else statusEl.classList.add("state-elevated");
+  statusEl.textContent = `STATUS: ${state}${widget.gap_active ? " — FALSIFICATION GAP ACTIVE" : ""}`;
+
+  const m1 = widget.marker_axiom_monoculture || {};
+  const m2 = widget.marker_d15_absence || {};
+  const m3 = widget.marker_external_contact_drought || {};
+
+  cards.innerHTML = [
+    cardHtml(
+      "Axiom monoculture",
+      `${m1.dominant_axiom || "n/a"} ${m1.dominance_pct != null ? `${m1.dominance_pct}%` : "n/a"} (>${m1.threshold_pct ?? "60"}%)`,
+    ),
+    cardHtml(
+      "Hours since D15",
+      `${m2.hours_since_d15 != null ? m2.hours_since_d15 : "n/a"}h (>${m2.threshold_hours ?? 8}h)`,
+    ),
+    cardHtml(
+      "External contact",
+      `${m3.hours_since_external_contact != null ? m3.hours_since_external_contact : "n/a"}h (>${m3.threshold_hours ?? 24}h)`,
+    ),
+    cardHtml("Gap active", widget.gap_active ? "yes" : "no"),
+  ].join("");
+}
+
 function renderBridgePanel(panel, pathUsed) {
   const meta = document.getElementById("bridgePanelMeta");
   const box = document.getElementById("bridgeLanes");
@@ -243,12 +280,14 @@ function renderRollup(rollup, pathUsed) {
   ].join("");
 
   document.getElementById("rollupRaw").textContent = JSON.stringify(rollup, null, 2);
+  renderFalsification(rollup.falsification_protocol || {});
 }
 
 function renderRollupError(pathUsed, err) {
   document.getElementById("rollupMeta").textContent = `Could not load ${pathUsed}: ${err.message}`;
   document.getElementById("rollupCards").innerHTML = "";
   document.getElementById("rollupRaw").textContent = "";
+  renderFalsification(null);
 }
 
 function render(snapshot) {
@@ -258,11 +297,33 @@ function render(snapshot) {
   const body = snapshot.body || {};
   const mind = snapshot.mind || {};
   const world = snapshot.world || {};
+  const continuity = snapshot.continuity || {};
+  const hfLogs = snapshot.hf_logs || {};
+  const watch = body.watch || {};
+  const fork = body.fork || {};
+  const hub = body.hub || {};
 
   document.getElementById("bodyCards").innerHTML = [
-    cardHtml("Cycle", get(body, ["cycle", "cycle_number"])),
+    cardHtml("Cycle (current run)", get(body, ["body_cycle", "cycle", "cycle_number"])),
+    cardHtml("Living axioms (cumulative)", get(continuity, ["living_axioms_count"])),
+    cardHtml("Pathology Health", get(body, ["pathology_health", "health"])),
+    cardHtml("Pathology last cycle", get(body, ["pathology_last_cycle"])),
     cardHtml("Coherence", get(body, ["coherence"])),
-    cardHtml("Health", get(body, ["health", "overall_health"])),
+    cardHtml("Dominant axiom", get(body, ["dominant_axiom"])),
+    cardHtml("Top Axioms", JSON.stringify(get(body, ["top_axioms", "axiom_dominance"], []))),
+    cardHtml("Current rhythm", get(body, ["current_rhythm"])),
+    cardHtml("Current watch", get(body, ["current_watch"])),
+    cardHtml("Watch cycle / symbol", `${get(watch, ["cycle"])} ${get(watch, ["symbol"])}`),
+    cardHtml("Oracle threshold", get(body, ["oracle_threshold"])),
+    cardHtml("Approval rate", get(body, ["approval_rate"])),
+    cardHtml("Veto exercised", get(body, ["veto_exercised"])),
+    cardHtml("D15 broadcast count (BODY)", get(body, ["d15_broadcast_count"])),
+    cardHtml("Hub entries", get(hub, ["entry_count"])),
+    cardHtml("Hub alive", get(hub, ["hub_alive"])),
+    cardHtml("Fork active / confirmed", `${get(fork, ["active_count"])} / ${get(fork, ["confirmed_total"])}`),
+    cardHtml("Fork last cycle", get(fork, ["last_cycle"])),
+    cardHtml("Federation version", get(body, ["federation_version"])),
+    cardHtml("Polis civic active", get(body, ["polis_civic_active"])),
     cardHtml("KL / P055", get(body, ["kl_divergence", "p055_kl_divergence"])),
     cardHtml("Hunger", get(body, ["hunger_level", "hunger"])),
     cardHtml("Timestamp", get(body, ["timestamp"])),
@@ -271,8 +332,11 @@ function render(snapshot) {
     cardHtml("Contradictions (total)", nestedCount(body.contradictions, "total")),
     cardHtml("Contradictions (unresolved)", nestedCount(body.contradictions, "unresolved")),
     cardHtml("S3 isolated", formatS3Isolated(body.s3_isolated)),
-    cardHtml("Top Axioms", JSON.stringify(get(body, ["top_axioms", "axiom_dominance"], []))),
     cardHtml("Provider Map", JSON.stringify(get(body, ["provider_map", "provider_breakdown"], {}))),
+    cardHtml("Input buffers", JSON.stringify(get(body, ["input_buffer_counts"], {}))),
+    cardHtml("Axiom frequency (full)", JSON.stringify(get(body, ["axiom_frequency"], {}))),
+    cardHtml("HF logs available", get(hfLogs, ["available"])),
+    cardHtml("HF logs lines", get(hfLogs, ["line_count"])),
   ].join("");
 
   document.getElementById("mindCards").innerHTML = [
@@ -318,6 +382,7 @@ function renderError(err) {
   document.getElementById("bodyRaw").textContent = `Unable to load snapshot: ${err.message}`;
   const meta = document.getElementById("d15HubMeta");
   if (meta) meta.textContent = "D15 timeline not loaded (snapshot failed).";
+  renderFalsification(null);
 }
 
 async function boot() {

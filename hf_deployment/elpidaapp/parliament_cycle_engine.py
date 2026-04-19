@@ -51,6 +51,7 @@ import time
 import random
 import hashlib
 import logging
+import os
 import threading
 import traceback
 from datetime import datetime, timezone
@@ -60,6 +61,26 @@ from collections import deque
 from dataclasses import dataclass, field, asdict
 
 logger = logging.getLogger("elpida.parliament_cycle")
+
+try:
+    _ROOT_DIR = Path(__file__).resolve().parents[2]
+    if str(_ROOT_DIR) not in os.sys.path:
+        os.sys.path.insert(0, str(_ROOT_DIR))
+    from ark_archivist import (
+        create_seed,
+        ConstitutionalEvent,
+        SaveClass,
+        Layer,
+        VoidMarker,
+    )
+    try:
+        from elpidaapp.d13_seed_bridge import push_seed_and_anchor
+    except Exception:
+        from d13_seed_bridge import push_seed_and_anchor
+    _ARCHIVIST_AVAILABLE = True
+except Exception as _archivist_exc:
+    _ARCHIVIST_AVAILABLE = False
+    _ARCHIVIST_IMPORT_ERROR = str(_archivist_exc)
 
 # ---------------------------------------------------------------------------
 # Constants from Axiom DNA
@@ -1340,6 +1361,20 @@ class ParliamentCycleEngine:
             audit_path = local_dec_dir / "d16_audit_trail.jsonl"
             with open(audit_path, "a") as _af:
                 _af.write(json.dumps(audit_entry) + "\n")
+            # Emit to federation so MIND can see D16 activity.
+            # Gate: every 10 cycles to avoid flooding body_decisions.
+            if self.cycle_count % 10 == 0:
+                self._emit_d16_execution(
+                    exec_type="AUDIT_TRAIL",
+                    proposal=(
+                        f"Parliament cycle {self.cycle_count} [{rhythm}]: "
+                        f"governance={audit_entry['governance']}, "
+                        f"approval={audit_entry['approval_rate']:.1%}, "
+                        f"coherence={audit_entry['coherence']}, "
+                        f"tensions={audit_entry['tension_count']}"
+                    ),
+                    meta={"audit_entry": audit_entry},
+                )
         except Exception:
             pass
 
@@ -1371,6 +1406,19 @@ class ParliamentCycleEngine:
                     print(
                         f"\n   🔔 TENSION ALERT — {pair} recurring "
                         f"({count}x in {_window} cycles)\n"
+                    )
+                    # Emit tension alert as D16 execution
+                    self._emit_d16_execution(
+                        exec_type="TENSION_ALERT",
+                        proposal=(
+                            f"Recurring tension: {pair} appeared "
+                            f"{count}x in last {_window} cycles"
+                        ),
+                        meta={
+                            "axiom_pair": pair,
+                            "recurrence_count": count,
+                            "window_cycles": _window,
+                        },
                     )
 
         # 8b. Oracle advisory → ConstitutionalStore
@@ -1885,8 +1933,81 @@ class ParliamentCycleEngine:
                 store = self._get_constitutional_store()
                 count = store.ratified_count() if store else "?"
                 logger.info("D14: living_axioms.jsonl pushed (%s axioms)", count)
+                self._emit_d13_body_seed(store_path=store_path, ratified_count=count)
         except Exception as e:
             logger.warning("D14 push_living_axioms error: %s", e)
+
+    def _emit_d13_body_seed(self, store_path: Path, ratified_count: Any) -> None:
+        """D13 hook: emit BODY checkpoint seed after constitutional ratification."""
+        if not _ARCHIVIST_AVAILABLE:
+            logger.debug(
+                "[D13] BODY_RATIFICATION seed skipped — ark_archivist unavailable: %s",
+                globals().get("_ARCHIVIST_IMPORT_ERROR", "import error"),
+            )
+            return
+
+        try:
+            dominant_axioms = [
+                ax for ax, _ in sorted(
+                    self._axiom_frequency.items(), key=lambda kv: kv[1], reverse=True,
+                )[:3]
+            ]
+            if not dominant_axioms:
+                if self.last_dominant_axiom:
+                    dominant_axioms = [self.last_dominant_axiom]
+                else:
+                    dominant_axioms = ["A6"]
+
+            vm = VoidMarker(
+                presence=(
+                    f"BODY ratification at cycle {self.cycle_count}; "
+                    "Parliament stores tension as constitutional memory"
+                ),
+                dominant_axioms=dominant_axioms,
+                harmonic_signature="",
+            )
+
+            payload = {
+                "body": {
+                    "cycle": self.cycle_count,
+                    "coherence": self.coherence,
+                    "last_rhythm": self.last_rhythm,
+                    "last_dominant_axiom": self.last_dominant_axiom,
+                    "dominant_axioms": dominant_axioms,
+                    "ratified_count": ratified_count,
+                    "living_axioms_path": str(store_path),
+                    "d15_broadcast_count": self.d15_broadcast_count,
+                }
+            }
+
+            out_dir = Path(__file__).resolve().parents[2] / "ELPIDA_ARK" / "seeds" / "body"
+            seed_path = create_seed(
+                save_class=SaveClass.QUICK,
+                layer=Layer.BODY,
+                source_event=ConstitutionalEvent.BODY_RATIFICATION,
+                source_component="parliament_cycle_engine._push_d14_living_axioms",
+                payload=payload,
+                void_marker=vm,
+                out_dir=out_dir,
+                git_commit=os.environ.get("GIT_COMMIT", ""),
+                branch=os.environ.get("GIT_BRANCH", ""),
+                runtime_identity="hf-parliament-cycle",
+                bucket_targets=["elpida-external-interfaces/seeds/body/"],
+            )
+            push_result = push_seed_and_anchor(
+                seed_path=seed_path,
+                layer="body",
+                logger=logger,
+                default_source_event="body_ratification",
+            )
+            logger.info(
+                "[D13] BODY_RATIFICATION checkpoint_id=%s world_key=%s anchor_key=%s",
+                push_result.get("checkpoint_id", "unknown"),
+                push_result.get("world_key", ""),
+                push_result.get("anchor_key", ""),
+            )
+        except Exception as e:
+            logger.warning("[D13] BODY_RATIFICATION seed failed (non-fatal): %s", e)
 
     def _restore_d15_broadcast_state(self) -> None:
         """
@@ -1952,6 +2073,67 @@ class ParliamentCycleEngine:
                   f"from {source}")
         else:
             print("   📚 D14 restore: no prior constitutional axioms in S3 yet")
+
+    def _emit_d16_execution(self, exec_type: str, proposal: str,
+                             meta: Optional[Dict] = None) -> bool:
+        """
+        Emit a D16 execution entry to both body_decisions (for MIND)
+        and d16_executions (durable audit trail).
+
+        Args:
+            exec_type: e.g. "AUDIT_TRAIL", "TENSION_ALERT"
+            proposal: human-readable description of what D16 observed/did
+            meta: optional dict merged into the entry
+
+        Returns:
+            True if at least one push succeeded.
+        """
+        import hashlib
+        ts = datetime.now(timezone.utc).isoformat()
+        content_hash = hashlib.sha256(
+            f"{self.cycle_count}:{exec_type}:{proposal[:100]}".encode()
+        ).hexdigest()[:16]
+
+        entry = {
+            "type": "D16_EXECUTION",
+            "source": "BODY",
+            "verdict": "D16_EXECUTION",
+            "exec_type": exec_type,
+            "proposal": proposal[:500],
+            "pattern_hash": content_hash,
+            "content_hash": content_hash,
+            "body_cycle": self.cycle_count,
+            "cycle": self.cycle_count,
+            "domain": 16,
+            "consent_level": "witnessed",
+            "witness_domain": 3,
+            "witness_axiom": "A3",
+            "parliament_score": round(self.coherence, 3),
+            "parliament_approval": round(self.coherence, 3),
+            "reasoning": proposal[:200],
+            "timestamp": ts,
+        }
+        if meta:
+            entry.update(meta)
+
+        pushed_decisions = False
+        pushed_d16 = False
+        try:
+            s3 = self._get_s3()
+            if s3:
+                pushed_decisions = s3.push_body_decision(entry)
+                pushed_d16 = s3.push_d16_execution(entry)
+                if pushed_decisions or pushed_d16:
+                    logger.info(
+                        "D16 execution emitted: type=%s cycle=%d hash=%s "
+                        "(decisions=%s, d16=%s)",
+                        exec_type, self.cycle_count, content_hash,
+                        pushed_decisions, pushed_d16,
+                    )
+        except Exception as e:
+            logger.warning("D16 execution emit failed: %s", e)
+
+        return pushed_decisions or pushed_d16
 
     def _push_d0_peer_message(self, ratified_axiom: Dict, watch: Dict):
         """

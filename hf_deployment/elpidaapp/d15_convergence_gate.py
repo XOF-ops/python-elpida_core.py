@@ -42,13 +42,37 @@ A0 note:
 """
 
 import json
+import os
+import sys
 import hashlib
 import logging
 import time
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Dict, Any, Optional
 
 logger = logging.getLogger("elpida.d15_convergence")
+
+_ROOT_DIR = Path(__file__).resolve().parents[2]
+if str(_ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(_ROOT_DIR))
+
+try:
+    from ark_archivist import (
+        create_seed,
+        ConstitutionalEvent,
+        SaveClass,
+        Layer,
+        VoidMarker,
+    )
+    try:
+        from elpidaapp.d13_seed_bridge import push_seed_and_anchor
+    except Exception:
+        from d13_seed_bridge import push_seed_and_anchor
+    _ARCHIVIST_AVAILABLE = True
+except Exception as _archivist_exc:
+    _ARCHIVIST_AVAILABLE = False
+    _ARCHIVIST_IMPORT_ERROR = str(_archivist_exc)
 
 
 # Thresholds (from axiom physics)
@@ -340,6 +364,16 @@ class ConvergenceGate:
 
         # Write to WORLD bucket via S3Bridge
         s3_key = self._push_to_world(broadcast)
+        self._emit_d13_full_seed(
+            broadcast=broadcast,
+            mind_heartbeat=mind_heartbeat,
+            body_cycle=body_cycle,
+            body_axiom=body_axiom,
+            body_coherence=body_coherence,
+            body_approval=body_approval,
+            s3_key=s3_key,
+            event_label="d15_convergence",
+        )
 
         # Admit to D15 Hub (The Dam) — permanent constitutional memory
         hub_entry_id = self._admit_to_hub(broadcast, s3_key)
@@ -437,6 +471,16 @@ class ConvergenceGate:
         )
 
         s3_key = self._push_to_world(broadcast)
+        self._emit_d13_full_seed(
+            broadcast=broadcast,
+            mind_heartbeat=mind_heartbeat,
+            body_cycle=body_cycle,
+            body_axiom=body_axiom,
+            body_coherence=body_coherence,
+            body_approval=body_approval,
+            s3_key=s3_key,
+            event_label="d15_kaya_convergence",
+        )
         hub_entry_id = self._admit_to_hub(broadcast, s3_key)
 
         self._fire_log.append({
@@ -456,6 +500,87 @@ class ConvergenceGate:
         )
 
         return True
+
+    def _emit_d13_full_seed(
+        self,
+        broadcast: Dict[str, Any],
+        mind_heartbeat: Dict[str, Any],
+        body_cycle: int,
+        body_axiom: str,
+        body_coherence: float,
+        body_approval: float,
+        s3_key: Optional[str],
+        event_label: str,
+    ) -> None:
+        """D13 hook: emit FULL seed when A16 convergence fires."""
+        if not _ARCHIVIST_AVAILABLE:
+            logger.debug(
+                "[D13] A16_CONVERGENCE seed skipped — ark_archivist unavailable: %s",
+                globals().get("_ARCHIVIST_IMPORT_ERROR", "import error"),
+            )
+            return
+
+        try:
+            dominant_axioms = [
+                str(body_axiom or "A6"),
+                str(mind_heartbeat.get("dominant_axiom") or "A0"),
+                "A16",
+            ]
+
+            vm = VoidMarker(
+                presence=(
+                    f"A16 convergence fired at BODY cycle {body_cycle}; "
+                    "MIND and BODY agreed strongly enough to speak to WORLD"
+                ),
+                dominant_axioms=dominant_axioms,
+                harmonic_signature="",
+            )
+
+            payload = {
+                "mind": {
+                    "heartbeat": mind_heartbeat,
+                },
+                "body": {
+                    "cycle": body_cycle,
+                    "axiom": body_axiom,
+                    "coherence": body_coherence,
+                    "approval": body_approval,
+                },
+                "world": {
+                    "broadcast": broadcast,
+                    "broadcast_s3_key": s3_key,
+                    "event_label": event_label,
+                },
+            }
+
+            out_dir = _ROOT_DIR / "ELPIDA_ARK" / "seeds" / "full"
+            seed_path = create_seed(
+                save_class=SaveClass.FULL,
+                layer=Layer.FULL,
+                source_event=ConstitutionalEvent.A16_CONVERGENCE,
+                source_component="d15_convergence_gate.check_and_fire",
+                payload=payload,
+                void_marker=vm,
+                out_dir=out_dir,
+                git_commit=os.environ.get("GIT_COMMIT", ""),
+                branch=os.environ.get("GIT_BRANCH", ""),
+                runtime_identity="hf-d15-convergence-gate",
+                bucket_targets=["elpida-external-interfaces/seeds/full/"],
+            )
+            push_result = push_seed_and_anchor(
+                seed_path=seed_path,
+                layer="full",
+                logger=logger,
+                default_source_event="a16_convergence",
+            )
+            logger.info(
+                "[D13] A16_CONVERGENCE checkpoint_id=%s world_key=%s anchor_key=%s",
+                push_result.get("checkpoint_id", "unknown"),
+                push_result.get("world_key", ""),
+                push_result.get("anchor_key", ""),
+            )
+        except Exception as e:
+            logger.warning("[D13] A16_CONVERGENCE seed failed (non-fatal): %s", e)
 
     def _build_broadcast(
         self,

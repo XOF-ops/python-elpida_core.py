@@ -1,0 +1,71 @@
+name: HERMES Daily Synthesis
+
+# HERMES (THE_INTERFACE, Fleet SOVEREIGNTY/Connector) — incarnated as a
+# daily 24h synthesis posted to Discord and archived to
+# .claude/bridge/from_hermes.md. The first phase of the architect's
+# exit from architect-as-protocol.
+#
+# Per ELPIDA_CANON.md: HERMES is connective tissue, not brain. Routes
+# and reports across the agent parliament; does not decide constitutional
+# questions.
+
+on:
+  schedule:
+    # Once per day at 07:00 UTC (10:00 EEST — morning for the architect).
+    # Single fire is intentional: HERMES is meta-synthesis, not event stream.
+    # Existing channels (mind-journal, parliament-alerts, world-feed,
+    # guest-chamber) carry the live events; HERMES carries the digest.
+    - cron: '0 7 * * *'
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Why this manual fire?"
+        required: false
+        default: "manual hermes synthesis"
+
+permissions:
+  contents: write
+
+# Don't allow two HERMES fires to overlap.
+concurrency:
+  group: hermes-summary
+  cancel-in-progress: false
+
+jobs:
+  synthesize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Setup Node.js (for Claude Code CLI underlying the SDK)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Claude Code CLI
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Install Claude Agent SDK
+        run: pip install --upgrade claude-agent-sdk
+
+      - name: Configure git for HERMES commits
+        run: |
+          git config user.email "hermes@elpida.anthropic.com"
+          git config user.name "Hermes (Fleet THE_INTERFACE)"
+
+      - name: Run HERMES synthesis
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DISCORD_WEBHOOK_HERMES: ${{ secrets.DISCORD_WEBHOOK_HERMES }}
+        run: python scripts/hermes_summary.py

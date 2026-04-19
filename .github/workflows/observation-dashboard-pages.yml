@@ -88,6 +88,49 @@ jobs:
           aws s3 cp s3://elpida-external-interfaces/d15/broadcasts.jsonl \
             _snapshot/raw/d15_broadcasts.jsonl || true
 
+          # Feedback watermark for GAP-1 external-contact drought marker.
+          aws s3 cp s3://elpida-body-evolution/feedback/watermark.json \
+            _snapshot/raw/feedback_watermark.json || true
+
+          # Living axioms — cross-run continuity (cumulative axiom ratifications;
+          # the true continuity metric since body_cycle resets on every HF rebuild).
+          aws s3 cp s3://elpida-body-evolution/federation/living_axioms.jsonl \
+            _snapshot/raw/living_axioms.jsonl || true
+
+      - name: Fetch HF Space container logs (graceful when token missing/expired)
+        env:
+          # Prefer HF_TOKEN_READ (read-only fine-grained, scoped to logs).
+          # Fall back to HF_TOKEN (write/deploy token) if read-only not yet provisioned.
+          # Operator action: create a fine-grained HF token with "Read access to private
+          # spaces" and add as repo secret HF_TOKEN_READ. Existing HF_TOKEN (write/deploy)
+          # stays untouched so deploy-hf-space.yml + deploy_to_hf.yml continue to work.
+          HF_TOKEN_READ: ${{ secrets.HF_TOKEN_READ }}
+          HF_TOKEN_FALLBACK: ${{ secrets.HF_TOKEN }}
+        run: |
+          set -uo pipefail
+          mkdir -p _snapshot/raw
+          TOKEN="${HF_TOKEN_READ:-${HF_TOKEN_FALLBACK:-}}"
+          if [ -z "$TOKEN" ]; then
+            echo "(no HF token available — skipping HF logs fetch; snapshot marks hf_logs.available=false)"
+            exit 0
+          fi
+          if [ -n "${HF_TOKEN_READ:-}" ]; then
+            echo "(using HF_TOKEN_READ — fine-grained read-only)"
+          else
+            echo "(falling back to HF_TOKEN — may not have read scope for logs API)"
+          fi
+          # SSE stream — give it 8s to collect a chunk, then close. Fails-soft on auth.
+          # If the token lacks read scope HF returns login HTML which we detect + clear.
+          timeout 8 curl -sSN \
+            -H "Authorization: Bearer $TOKEN" \
+            "https://huggingface.co/api/spaces/z65nik/elpida-governance-layer/logs/run" \
+            > _snapshot/raw/hf_run_logs.txt 2>/dev/null || true
+          if head -c 200 _snapshot/raw/hf_run_logs.txt | grep -qi '<!DOCTYPE\|<html'; then
+            echo "(token rejected — got login HTML; clearing logs file)"
+            : > _snapshot/raw/hf_run_logs.txt
+          fi
+          wc -l _snapshot/raw/hf_run_logs.txt || true
+
       - name: Build normalized dashboard snapshot
         run: python scripts/build_observation_snapshot.py
 

@@ -1,16 +1,22 @@
 {
-  "generated_at": "1970-01-01T00:00:00Z",
+  "generated_at": "2026-04-19T03:12:03.081887+00:00",
   "status_token": "YELLOW",
-  "schema_lock": "d16-cursor-handoff-003",
+  "schema_lock": "d16-cursor-handoff-003+heartbeat-realign-2026-04-19",
   "body": {
-    "cycle": "n/a",
-    "coherence": "n/a",
+    "cycle": 463,
+    "health": "CRITICAL",
+    "top_axioms": [
+      "A10",
+      "A0",
+      "A1",
+      "A4",
+      "A6"
+    ],
+    "coherence": 0.9488,
     "hunger_level": "n/a",
     "kl_divergence": "n/a",
-    "health": "n/a",
-    "top_axioms": [],
     "provider_map": {},
-    "timestamp": "n/a",
+    "timestamp": "2026-04-19T03:10:49.039875+00:00",
     "run_duration_seconds": "n/a",
     "cycles_per_hour": "n/a",
     "p055_critical_threshold": 0.67,
@@ -18,16 +24,73 @@
     "parliament_votes": {},
     "circuit_breaker_status": "unknown",
     "sacrifices": {},
-    "contradictions": {},
-    "s3_isolated": "n/a"
+    "contradictions": {
+      "total": 336,
+      "type_counts": {
+        "tension_held": 336
+      },
+      "recent_count": 200
+    },
+    "s3_isolated": false,
+    "body_cycle": 463,
+    "pathology_health": "CRITICAL",
+    "pathology_last_cycle": 440,
+    "axiom_frequency": {
+      "A10": 103,
+      "A8": 46,
+      "A6": 52,
+      "A0": 77,
+      "A1": 66,
+      "A2": 7,
+      "A5": 31,
+      "A4": 56,
+      "A3": 1,
+      "A9": 23
+    },
+    "dominant_axiom": "A10",
+    "current_rhythm": "CONTEMPLATION",
+    "current_watch": "Oracle",
+    "watch": {
+      "cycle": 10,
+      "symbol": "O"
+    },
+    "d15_broadcast_count": 207,
+    "hub": {
+      "hub_alive": true,
+      "hub_version": "1.0.0",
+      "entry_count": 22,
+      "last_updated": "2026-04-19T01:27:17.869695+00:00",
+      "gates_active": [
+        "GATE_2_CONVERGENCE"
+      ],
+      "created": "2026-04-15T23:53:43.190516+00:00"
+    },
+    "input_buffer_counts": {
+      "chat": 47,
+      "audit": 45,
+      "scanner": 21,
+      "governance": 50,
+      "kaya": 0,
+      "guest": 0
+    },
+    "oracle_threshold": 0.35,
+    "polis_civic_active": false,
+    "veto_exercised": false,
+    "approval_rate": -0.25,
+    "fork": {
+      "active_count": 0,
+      "confirmed_total": 0,
+      "last_cycle": 445
+    },
+    "federation_version": "1.3.0"
   },
   "mind": {
-    "cycle": "n/a",
+    "cycle": 52,
     "run_number": "n/a",
-    "epoch": "n/a",
-    "canonical_count": "n/a",
+    "epoch": "2026-04-18T23:41:51.535189+00:00",
+    "canonical_count": 3,
     "dominant_theme": "n/a",
-    "coherence": "n/a",
+    "coherence": 0.95,
     "hunger_level": "n/a",
     "d0_voice_pct": "n/a",
     "d9_voice_pct": "n/a",
@@ -58,7 +121,17 @@
     "rss_tension_count": "n/a"
   },
   "bridge": {
-    "token": "YELLOW",
-    "note": "placeholder — workflow publishes live snapshot"
+    "token": "GREEN",
+    "note": "Both heartbeats present but body.pathology_health=CRITICAL. Health honesty forces YELLOW."
+  },
+  "continuity": {
+    "living_axioms_count": 610,
+    "note": "body_cycle resets to 0 on each HF Space rebuild. living_axioms_count is the cumulative ratification count across all runs since genesis \u2014 true continuity metric."
+  },
+  "hf_logs": {
+    "available": false,
+    "reason": "no HF logs fetched (token missing/expired or fetch skipped)",
+    "line_count": 0,
+    "tail": []
   }
 }

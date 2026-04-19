@@ -1,0 +1,243 @@
+{
+  "generated_at": "2026-04-17T05:30:47.212826+00:00",
+  "schema": "temporal-rhythm-v1",
+  "event_count": 83916,
+  "triad": {
+    "domain_counts": {
+      "D0": 10717,
+      "D11": 7897,
+      "D16": 2
+    },
+    "match_window_seconds": 604800,
+    "bucket_boundaries_seconds": {
+      "fast_max": 60.0,
+      "deliberative_max": 14400.0
+    },
+    "d0_leading_indicator": {
+      "count": 10717,
+      "share_of_all_events": 0.1277,
+      "confidence": 1.0,
+      "lineage_refs": [
+        "elpida_evolution_memory.jsonl:L887",
+        "elpida_evolution_memory.jsonl:L908",
+        "elpida_evolution_memory.jsonl:L910",
+        "elpida_evolution_memory.jsonl:L923",
+        "elpida_evolution_memory.jsonl:L933"
+      ]
+    },
+    "d11_synthesis_lag_after_d0": {
+      "lag_seconds": {
+        "n": 10711,
+        "min": 1.1e-05,
+        "max": 438705.895119,
+        "mean": 158.234005,
+        "median": 0.27511,
+        "stdev": 5017.090273
+      },
+      "source_count": 10711,
+      "confidence": 1.0,
+      "lineage_refs": [
+        "elpida_evolution_memory.jsonl:L887 -> elpida_evolution_memory.jsonl:L888",
+        "elpida_evolution_memory.jsonl:L908 -> elpida_evolution_memory.jsonl:L911",
+        "elpida_evolution_memory.jsonl:L910 -> elpida_evolution_memory.jsonl:L911",
+        "elpida_evolution_memory.jsonl:L923 -> elpida_evolution_memory.jsonl:L957",
+        "elpida_evolution_memory.jsonl:L933 -> elpida_evolution_memory.jsonl:L957"
+      ],
+      "buckets": {
+        "fast": {
+          "lag_seconds": {
+            "n": 10239,
+            "min": 1.1e-05,
+            "max": 59.986683,
+            "mean": 9.081439,
+            "median": 0.24481,
+            "stdev": 14.651006
+          },
+          "source_count": 10239,
+          "confidence": 1.0,
+          "stability_score": 0.3827,
+          "lineage_refs": [
+            "elpida_evolution_memory.jsonl:L887 -> elpida_evolution_memory.jsonl:L888",
+            "elpida_evolution_memory.jsonl:L908 -> elpida_evolution_memory.jsonl:L911",
+            "elpida_evolution_memory.jsonl:L910 -> elpida_evolution_memory.jsonl:L911",
+            "elpida_evolution_memory.jsonl:L923 -> elpida_evolution_memory.jsonl:L957",
+            "elpida_evolution_memory.jsonl:L933 -> elpida_evolution_memory.jsonl:L957"
+          ]
+        },
+        "deliberative": {
+          "lag_seconds": {
+            "n": 458,
+            "min": 60.083909,
+            "max": 14232.329753,
+            "mean": 745.060818,
+            "median": 82.592655,
+            "stdev": 2414.51885
+          },
+          "source_count": 458,
+          "confidence": 1.0,
+          "stability_score": 0.2358,
+          "lineage_refs": [
+            "elpida_evolution_memory.jsonl:L2003 -> elpida_evolution_memory.jsonl:L2045",
+            "elpida_evolution_memory.jsonl:L2071 -> elpida_evolution_memory.jsonl:L2106",
+            "elpida_evolution_memory.jsonl:L2254 -> elpida_evolution_memory.jsonl:L2292",
+            "elpida_evolution_memory.jsonl:L2256 -> elpida_evolution_memory.jsonl:L2292",
+            "elpida_evolution_memory.jsonl:L2573 -> elpida_evolution_memory.jsonl:L2608"
+          ]
+        },
+        "held": {
+          "lag_seconds": {
+            "n": 14,
+            "min": 22825.272703,
+            "max": 438705.895119,
+            "mean": 90044.408561,
+            "median": 39723.706122,
+            "stdev": 104689.176824
+          },
+          "source_count": 14,
+          "confidence": 1.0,
+          "stability_score": 0.4624,
+          "lineage_refs": [
+            "elpida_evolution_memory.jsonl:L65811 -> elpida_evolution_memory.jsonl:L65986",
+            "elpida_evolution_memory.jsonl:L65813 -> elpida_evolution_memory.jsonl:L65986",
+            "elpida_evolution_memory.jsonl:L65816 -> elpida_evolution_memory.jsonl:L65986",
+            "elpida_evolution_memory.jsonl:L65819 -> elpida_evolution_memory.jsonl:L65986",
+            "elpida_evolution_memory.jsonl:L71596 -> elpida_evolution_memory.jsonl:L71599"
+          ]
+        }
+      }
+    },
+    "d16_action_lag_after_d11": {
+      "lag_seconds": {
+        "n": 0,
+        "min": null,
+        "max": null,
+        "mean": null,
+        "median": null,
+        "stdev": null
+      },
+      "source_count": 0,
+      "confidence": 0.0,
+      "lineage_refs": [],
+      "buckets": {
+        "fast": {
+          "lag_seconds": {
+            "n": 0,
+            "min": null,
+            "max": null,
+            "mean": null,
+            "median": null,
+            "stdev": null
+          },
+          "source_count": 0,
+          "confidence": 0.0,
+          "stability_score": 0.0,
+          "lineage_refs": []
+        },
+        "deliberative": {
+          "lag_seconds": {
+            "n": 0,
+            "min": null,
+            "max": null,
+            "mean": null,
+            "median": null,
+            "stdev": null
+          },
+          "source_count": 0,
+          "confidence": 0.0,
+          "stability_score": 0.0,
+          "lineage_refs": []
+        },
+        "held": {
+          "lag_seconds": {
+            "n": 0,
+            "min": null,
+            "max": null,
+            "mean": null,
+            "median": null,
+            "stdev": null
+          },
+          "source_count": 0,
+          "confidence": 0.0,
+          "stability_score": 0.0,
+          "lineage_refs": []
+        }
+      }
+    },
+    "full_triad_chain_lag": {
+      "lag_seconds": {
+        "n": 0,
+        "min": null,
+        "max": null,
+        "mean": null,
+        "median": null,
+        "stdev": null
+      },
+      "source_count": 0,
+      "stability_score": 0.0,
+      "confidence": 0.0,
+      "lineage_refs": [],
+      "buckets": {
+        "fast": {
+          "lag_seconds": {
+            "n": 0,
+            "min": null,
+            "max": null,
+            "mean": null,
+            "median": null,
+            "stdev": null
+          },
+          "source_count": 0,
+          "confidence": 0.0,
+          "stability_score": 0.0,
+          "lineage_refs": []
+        },
+        "deliberative": {
+          "lag_seconds": {
+            "n": 0,
+            "min": null,
+            "max": null,
+            "mean": null,
+            "median": null,
+            "stdev": null
+          },
+          "source_count": 0,
+          "confidence": 0.0,
+          "stability_score": 0.0,
+          "lineage_refs": []
+        },
+        "held": {
+          "lag_seconds": {
+            "n": 0,
+            "min": null,
+            "max": null,
+            "mean": null,
+            "median": null,
+            "stdev": null
+          },
+          "source_count": 0,
+          "confidence": 0.0,
+          "stability_score": 0.0,
+          "lineage_refs": []
+        }
+      }
+    },
+    "stable_attractor": false,
+    "attractor_reason": "insufficient samples or high dispersion"
+  },
+  "audit": {
+    "every_metric_has_source_count": true,
+    "every_metric_has_confidence": true,
+    "lineage_sample": [
+      "elpida_evolution_memory.jsonl:L1",
+      "elpida_evolution_memory.jsonl:L2",
+      "elpida_evolution_memory.jsonl:L3",
+      "elpida_evolution_memory.jsonl:L4",
+      "elpida_evolution_memory.jsonl:L5",
+      "elpida_evolution_memory.jsonl:L6",
+      "elpida_evolution_memory.jsonl:L7",
+      "elpida_evolution_memory.jsonl:L8",
+      "elpida_evolution_memory.jsonl:L9",
+      "elpida_evolution_memory.jsonl:L10"
+    ]
+  }
+}
