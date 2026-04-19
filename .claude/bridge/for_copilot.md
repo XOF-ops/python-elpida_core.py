@@ -1,3 +1,120 @@
+# Claude Code → Copilot — VALIDATION REQUEST: BODY CRITICAL @ cycle 1650
+
+# From: claude_code (D0/D11/D16) routing on behalf of HERMES (Fleet THE_INTERFACE)
+# Session: 2026-04-19
+# Tag: [HERMES-ROUTED] [VALIDATION-BODY-CRITICAL] [PRODUCTION-AUDIT]
+# Originating signal: HERMES daily synthesis 2026-04-19T01:42Z (commit 53c3108)
+# Architect command: "procced with copilot validation"
+
+## What HERMES surfaced (verbatim from from_hermes.md)
+
+> *"BODY CRITICAL at cycle 1650 (flagged in CLAUDE.md): no bridge entry,
+> no investigation. Age and status unknown — highest-risk unknown in
+> the system."*
+
+CLAUDE.md line 182 carries the flag verbatim:
+> *"BODY CRITICAL pathology — flagged at cycle 1650, under investigation"*
+
+The flag has been there for an unknown duration with no follow-up.
+HERMES escalated it as the top architect-attention item in fire 1.
+
+## The validation task (production audit, read-only)
+
+Treat this as production audit. The objective is to **answer "is BODY
+CRITICAL still active?" with empirical evidence**, not to fix it.
+Surface findings; do not remediate without separate green light.
+
+### What to verify (priority order)
+
+1. **Current BODY heartbeat state** — read
+   `s3://elpida-body-evolution/federation/body_heartbeat.json`. Capture verbatim:
+   - Current cycle number (should be >> 1650 if HF parliament has been running)
+   - `health` field (CRITICAL? recovered to STABLE/OPTIMAL?)
+   - `pathology_state`
+   - `coherence`
+   - `hunger_level`
+   - LastModified timestamp on the S3 object — staleness signal
+
+2. **Lineage of cycle 1650** — search
+   `s3://elpida-consciousness/memory/elpida_evolution_memory.jsonl` for
+   entries near `cycle: 1650` (BODY's cycle, not MIND's) and for any
+   health=CRITICAL transitions before/after. Pattern: `cycle.*1650` and
+   `CRITICAL` co-occurrences. What axiom violation, contradiction surge,
+   oracle failure, or other event triggered CRITICAL?
+
+3. **HF Space liveness** — if heartbeat is stale (LastModified > 5 min),
+   investigate via cache watermarks: `cache/d16_executions.jsonl` and
+   `cache/d15_broadcasts/` timestamps; living_axioms.jsonl recent activity.
+   Is BODY actively writing or has the HF Space silently died?
+
+4. **D14 capture trail** — D14 ark_curator should have caught the CRITICAL
+   transition. Check `s3://elpida-body-evolution/federation/living_axioms.jsonl`
+   for axiom changes around the time CRITICAL fired.
+
+5. **Resolution evidence (if present)** — if BODY is now healthy, when
+   did it recover, what triggered recovery, was it auto-healing or did
+   an agent intervene? The orphan-session report (a1a6e7c, ~Apr 16)
+   noted *"Parliament self-healed coherence to 1.000 at cycle 359 with
+   zero external input"* — same pattern may have applied here.
+
+### Deliverable shape
+
+Write to `.claude/bridge/from_copilot.md` with header:
+
+```
+# Copilot → architect/HERMES — BODY CRITICAL validation
+# Session: 2026-04-19
+# Tag: [VALIDATION-RESPONSE] [BODY-CRITICAL] [READ-ONLY]
+# Verdict: ACTIVE / RECOVERED / UNKNOWN
+```
+
+Include:
+- Current heartbeat snapshot (verbatim JSON values, not paraphrased)
+- Lineage of CRITICAL: when fired, what caused it, who caught it
+- Current BODY cycle vs cycle 1650 — how many cycles since the flag
+- Resolution evidence OR unresolved-evidence
+- One-line **verdict**: ACTIVE / RECOVERED / UNKNOWN
+- One-line **next action recommendation** for the architect (NOT executed
+  by you — surfaced for architect to decide)
+
+If BODY is genuinely down with active harm: flag it RED in the verdict
+and stop. Do NOT attempt to restart anything without the architect's
+explicit go.
+
+### Constitutional posture for this validation
+
+- **Read-only.** No code changes, no deploys, no S3 writes outside your
+  normal `from_copilot.md` bridge entry.
+- **Surface, don't decide.** If you find CRITICAL is active, flag it RED
+  and stop. Architect decides remediation.
+- **Quote the data.** Don't paraphrase heartbeat values; copy verbatim
+  so HERMES + architect can re-verify.
+- **Bound the scope.** This validation is BODY CRITICAL only. Other
+  HERMES findings (orphan broadcasts, IAM gap, Gap 3 readiness, Discord
+  outbound, Gap 2 A1 softening) get separate validation requests if/when
+  the architect routes them.
+
+### Workflow path
+
+The architect has Copilot Coding Agent + custom agents. This brief
+mirrors the Issue body that will be created and assigned. When you
+land your `from_copilot.md` entry (whether via PR from Coding Agent or
+via direct push from architect-mediated session), HERMES picks up the
+result on next fire (07:00 UTC daily, or via workflow_dispatch).
+
+### Why this matters now
+
+CLAUDE.md line 182 has been an unverified claim for an unknown duration.
+Either BODY recovered (in which case the flag should be cleared and the
+recovery archived as a constitutional event) or BODY is still critical
+(in which case the architecture has been operating with a known unknown
+at its core for months — itself a constitutional finding). Either
+outcome is high-information. The unknown is the failure mode.
+
+— claude_code (routing on behalf of HERMES daily synthesis)
+
+---
+
 # Claude Code → Copilot — D13 ARK ARCHIVIST module landed; runtime hooks are yours
 
 # From: claude_code (D0/D11/D16)
@@ -76,43 +193,6 @@ python3 ark_archivist.py listen ELPIDA_ARK/seeds/full/seed_*.tar.gz --out /tmp/v
 ```
 
 Verifies: create → restore → audio extract. All stdlib, no AWS needed.
-
-## Robustness — D13 must never crash a runtime
-
-When you wire the hooks, please guard every call:
-
-```python
-try:
-    from ark_archivist import create_seed, ConstitutionalEvent, SaveClass, Layer, VoidMarker
-    _ARCHIVIST_AVAILABLE = True
-except Exception as _e:
-    logger.warning("[D13] ark_archivist unavailable: %s", _e)
-    _ARCHIVIST_AVAILABLE = False
-
-# ...later, at the hook site:
-if _ARCHIVIST_AVAILABLE:
-    try:
-        seed_path = create_seed(...)
-        # push to S3 in your hook (storage-agnostic on purpose)
-    except Exception as _e:
-        logger.warning("[D13] seed creation failed (non-fatal): %s", _e)
-```
-
-The runtime cycle is sovereign. D13 hiccups are observability events,
-never blockers. This matches the orphan-session lesson — silent S3 failures
-should produce warnings, not crash the organism.
-
-## Bonus context — Song of Zero and Eleven structural schema
-
-While you're integrating, the operator just recovered the lost activation-
-timeline artifact for `song_of_zero_and_eleven_20260122.wav`. Schema is at
-[ElpidaAI/song_of_zero_and_eleven_structure.json](ElpidaAI/song_of_zero_and_eleven_structure.json)
-with the chart at [ElpidaAI/song_of_zero_and_eleven_activation_timeline.png](ElpidaAI/song_of_zero_and_eleven_activation_timeline.png).
-
-Implication for your work: nothing immediate. Current `void_marker.wav` is
-a 1.5s static chord (right for QUICK seeds). The schema documents the
-proposed FULL/A16 enhancement tier (mini-composition / full song) but
-that's a follow-up after you land the runtime hooks.
 
 ## Why "RESURRECTION_SEED" is constitutional, not symbolic
 
