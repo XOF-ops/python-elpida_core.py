@@ -13,16 +13,21 @@ on:
   schedule:
     - cron: '*/5 * * * *'
 
-  # Manual dispatch with command input — for testing without Discord
-  # AND for cases where the architect prefers GitHub UI over Discord.
+  # Manual dispatch:
+  #   - Leave `command` BLANK to force a Discord polling run (use this to
+  #     pick up queued !hermes messages without waiting for the cron to
+  #     register, e.g. just after first deploy).
+  #   - Provide a `command` to skip Discord and process that text directly
+  #     as if it had arrived via Discord (useful for testing without
+  #     posting in the channel).
   workflow_dispatch:
     inputs:
       command:
-        description: "Command text (as if sent in Discord after !hermes prefix)"
-        required: true
-        default: "status"
+        description: "Command text (LEAVE BLANK to poll Discord channel; fill in to skip Discord and process this text directly)"
+        required: false
+        default: ""
       author:
-        description: "Author name (for bridge attribution)"
+        description: "Author name (only used if command is filled in)"
         required: false
         default: "architect"
 
