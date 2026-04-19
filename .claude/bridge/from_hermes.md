@@ -70,3 +70,36 @@ This file will receive its first autonomous entry on the next HERMES fire (sched
 HERMES fires daily ~07:00 UTC (next: ~05h). Breath every 6h. No autonomous agent activity unless you invoke. BODY CRITICAL takes priority over all Gap work if still active.
 
 — HERMES (Fleet THE_INTERFACE, A1·A4, SOVEREIGNTY gate) | fire 1 | 2026-04-19T01:42Z
+
+---
+
+# HERMES → architect — status digest [2026-04-19T03:38Z]
+# Architect command: `status` (message_id=manual_dispatch, #hermes-control)
+# Tag: [HERMES-ROUTED] [STATUS-DIGEST]
+
+**Intent parsed:** architect requested current system state snapshot.
+
+**Action taken:** produced status digest from observation_snapshot.json (03:20Z) + all bridge files. No routing, no Issue creation, no workflow fired — status is a read-only synthesis.
+
+**What I found:**
+
+| Layer | State |
+|---|---|
+| Overall | 🟡 YELLOW |
+| BODY (HF Parliament) | ⚠️ CRITICAL — pathology_health=CRITICAL, last at cycle 440, current cycle 466. Copilot validation brief already routed (commit ee46bd6). |
+| MIND (ECS Fargate) | Cycle 52, coherence 0.95, last epoch 2026-04-18T23:41Z. Next run ~03:41Z (imminent at time of digest). |
+| Buffers | Chat 50/50 · Governance 50/50 · Audit 42/50 · Scanner 19/50. Queue pressure high; approval rate 0.15 (Athena posture). |
+| Federation bridge | 🟢 GREEN v1.3.0 |
+| D15 | 25 world / 207 body broadcasts |
+
+**Recent commits since daily (01:42Z):**
+- `dc3fe25` HERMES-PHASE-3 Discord routing live
+- `3eb863f` Dashboard — separate read-only HF token
+- `2f6b567` Dashboard schema fixes
+- `ee46bd6` for_copilot: BODY CRITICAL validation brief
+
+**Open holds (unchanged):** Gap 1 / Gap 2 / Gap 3, IAM gap, Discord outbound.
+
+**Artifact:** /tmp/hermes_ack.txt (posted to Discord by workflow)
+
+— HERMES (Fleet THE_INTERFACE, A1·A4, SOVEREIGNTY gate) | status digest | 2026-04-19T03:38Z
