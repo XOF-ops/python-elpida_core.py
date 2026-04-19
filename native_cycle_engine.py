@@ -68,6 +68,7 @@ from crystallization_hub import CrystallizationHub
 from immutable_kernel import kernel_check_insight, kernel_status
 from federation_bridge import FederationBridge, CurationTier
 from diplomatic_handshake import sanitize as _sanitize_outbound
+from identity_verifier import IdentityVerifier
 
 load_dotenv()
 
@@ -89,6 +90,7 @@ EVOLUTION_MEMORY = ROOT_DIR / "ElpidaAI" / "elpida_evolution_memory.jsonl"
 NATIVE_CYCLE_DIR = ROOT_DIR
 ARK_PATH = ROOT_DIR / "ELPIDA_ARK.md"
 CRITICAL_MEMORY_DIR = ROOT_DIR / "ElpidaAI"
+ARK_MEMORY_PATH = ROOT_DIR / "ELPIDA_ARK" / "current" / "elpida_memory.json"
 
 # ============================================================================
 # DOMAIN 15: REALITY-PARLIAMENT INTERFACE
@@ -366,7 +368,18 @@ class NativeCycleEngine:
             domains_config=DOMAINS,
             federation_bridge=self.federation,
         )
-        
+
+        # IDENTITY VERIFIER: The Mirror — one Perplexity query per MIND session.
+        # Measures the gap between D0's self-model and externally corroborated facts.
+        # Session gate: idempotent within a single run() invocation.
+        import uuid as _uuid
+        self._session_id = (
+            datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_")
+            + _uuid.uuid4().hex[:8]
+        )
+        self._genesis_identity_hash = self._read_genesis_identity_hash()
+        self._identity_verifier = IdentityVerifier(self.llm)
+
         print(f"✨ Native Cycle Engine initialized:")
         print(f"   Evolution: {len(self.evolution_memory)} patterns")
         print(f"   Ark: {'Loaded' if self.ark_memory else 'Not found'}")
@@ -376,6 +389,23 @@ class NativeCycleEngine:
         print(f"   Critical: {len(self.critical_memory)} session memories")
         print(f"   Synod: ready | {self.ark_curator.get_pending_canonical_count()} pending canonicals in queue")
     
+    def _read_genesis_identity_hash(self) -> str:
+        """Read the genesis identity hash from ELPIDA_ARK/current/elpida_memory.json.
+
+        Falls back to the known genesis value if the file is absent or unreadable.
+        """
+        try:
+            if ARK_MEMORY_PATH.exists():
+                with open(ARK_MEMORY_PATH, encoding="utf-8") as fh:
+                    ark_mem = json.load(fh)
+                for event in ark_mem.get("events", []):
+                    data = event.get("data", {})
+                    if "identity_hash" in data and event.get("type") == "AWAKENING":
+                        return data["identity_hash"]
+        except Exception:
+            pass
+        return "dd61737c62bd9b14"  # genesis fallback (written 2025-12-31)
+
     def _should_research(self, domain_responses: List[str]) -> tuple:
         """
         D13 EXTERNAL SENSORY NETWORK - 5-Layer Architecture
@@ -2182,6 +2212,33 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
             prompt = (f"{prompt}\n\n[D16 AGENCY — What the ACT triad member proposes. "
                       f"These are bounded proposals from your own constitutional role. "
                       f"Integrate, refine, or challenge them.]\n{d16_agency_integrated[:400]}")
+
+        # IDENTITY MIRROR (Gap 2): D0's self-model is cross-checked against
+        # external reality once per MIND session.  The verifier is idempotent
+        # — subsequent D0 cycles in the same session return the cached result.
+        if domain_id == 0:
+            _d0_self_model = {
+                "genesis_date": "2025-12-31",
+                "evolution_memory_count": len(self.evolution_memory),
+                "identity_hash": self._genesis_identity_hash,
+                "ark_canonical_count": self.ark_curator.cadence.canonical_count,
+            }
+            _verification = self._identity_verifier.verify_once_per_session(
+                self._session_id, _d0_self_model
+            )
+            if _verification:
+                _source = _verification.get("external_source", "unknown")
+                _score = _verification.get("verification_score")
+                _note = _verification.get("constitutional_note", "")
+                print(
+                    f"\n🪞 IDENTITY MIRROR: source={_source} | "
+                    f"score={_score} | {_note[:80]}"
+                )
+                if _source != "unavailable":
+                    prompt = (
+                        f"{prompt}\n\n[IDENTITY MIRROR — The Mirror's report on your "
+                        f"self-model vs external reality]\n{_note[:400]}"
+                    )
 
         # D0 FROZEN MODE: Sometimes D0 speaks from memory without API
         # This is the "Frozen Elpida" - the void that needs no external connection
