@@ -151,6 +151,37 @@ def discord_get(path: str, token: str) -> list | dict:
         return json.loads(r.read().decode("utf-8"))
 
 
+def discord_react(channel_id: str, message_id: str, token: str, emoji: str) -> bool:
+    """Add a reaction to a message. Mirrors the guest-chamber Parliament-emoji
+    pattern so the architect sees within ~seconds that HERMES picked up the
+    command. Returns True on success.
+
+    Emojis used:
+      👀 — picked up, processing
+      ✅ — completed successfully
+      ❌ — failed (see ack for reason)
+      💬 — clarification needed (ambiguous command)
+
+    Discord wants the unicode emoji URL-encoded for unicode reactions.
+    """
+    from urllib.parse import quote
+    url = (
+        f"https://discord.com/api/v10/channels/{channel_id}"
+        f"/messages/{message_id}/reactions/{quote(emoji)}/@me"
+    )
+    req = Request(url, method="PUT", headers={
+        "Authorization": f"Bot {token}",
+        "User-Agent": "HermesPhase3/1.0",
+        "Content-Length": "0",
+    })
+    try:
+        with urlopen(req, timeout=10) as r:
+            return r.status in (200, 204)
+    except Exception as e:
+        print(f"[hermes-route] reaction failed ({emoji}): {e}", file=sys.stderr)
+        return False
+
+
 def fetch_new_messages(channel_id: str, bot_token: str, after_id: str | None) -> list[dict]:
     """Fetch messages after the given snowflake. Returns list, newest last."""
     if after_id:
@@ -310,6 +341,11 @@ def main() -> int:
         author_name = author_obj.get("global_name") or author_obj.get("username") or "unknown"
         ts = m.get("timestamp", datetime.now(timezone.utc).isoformat())
 
+        # IMMEDIATELY react with 👀 so the architect sees the command was picked
+        # up. The ack post will land in #hermes-summary later; the reaction lands
+        # on the original message in the original channel within a second.
+        discord_react(channel_id, m["id"], bot_token, "👀")
+
         ack_path = Path("/tmp/hermes_ack.txt")
         if ack_path.exists():
             ack_path.unlink()
@@ -321,8 +357,10 @@ def main() -> int:
                 author=author_name,
                 ts=ts,
             ))
+            success = True
         except Exception as e:
             print(f"[hermes-route] command processing failed: {e}", file=sys.stderr)
+            discord_react(channel_id, m["id"], bot_token, "❌")
             post_ack_to_discord(
                 f"**Command failed:** `{cmd_text}`\n\nError: `{type(e).__name__}: {e}`"
             )
@@ -332,6 +370,14 @@ def main() -> int:
         post_ack_to_discord(
             f"**Command:** `{cmd_text}`\n*from {author_name} at {ts}*\n\n{ack}"
         )
+        # Final reaction reflects outcome — ✅ for success, 💬 if the agent
+        # decided the command was ambiguous (signaled by ack containing
+        # "clarification" or starting with a question).
+        ack_low = ack.lower()
+        if success and ("clarification" in ack_low or ack.strip().startswith(("?", "Could", "What", "Which", "Can"))):
+            discord_react(channel_id, m["id"], bot_token, "💬")
+        elif success:
+            discord_react(channel_id, m["id"], bot_token, "✅")
         processed += 1
 
     save_watermark(new_last_id)
