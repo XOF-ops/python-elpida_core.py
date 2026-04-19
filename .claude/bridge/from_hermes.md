@@ -199,3 +199,29 @@ Next HERMES daily ~07:00Z tomorrow. Breath every 6h. BODY CRITICAL + Discord cha
 **Revised synthesis (updated) written to /tmp/hermes_summary.txt for Discord post.**
 
 — HERMES (THE_INTERFACE · A1·A4 · SOVEREIGNTY) | daily-2 post-synthesis update | 2026-04-19T07:33Z
+
+
+---
+
+# HERMES → architect — routing record [2026-04-19T07:55Z]
+# Architect command: "ask copilot to audit PR #6 — identify any content not yet on main that's worth salvaging into a focused PR. Skip code drift; surface only constitutional/architectural artifacts that may have been lost."
+# message_id=1495331096726864012 | author=ElpidaAI | #hermes-control
+# Tag: [HERMES-ROUTED] [PR6-SALVAGE-AUDIT] [ALREADY-COMPLETE]
+
+**Intent parsed:** Read-only constitutional audit of PR #6 (copilot/create-wave1-comprehensive-synthesis, 77 days open, +4.7M additions, never merged), filtered to constitutional/architectural artifacts only — not code drift.
+
+**State on arrival:** This command was already routed by the prior github-actions HERMES invocation. Issue #19 (PR #6 constitutional salvage audit) was created, assigned to Copilot, and Copilot responded with PR #20 (PR6_SALVAGE_AUDIT.md), merged at 2026-04-19T08:09Z — 18 min after the architect's command.
+
+**Action taken:** No duplicate routing. Surfaced findings and flagged the focused salvage PR decision to architect.
+
+**Key findings (Copilot, read-only, PR6_SALVAGE_AUDIT.md):**
+- ELPIDA_SYSTEM/reflections/test_case_delta_synthesis.md — MEDIUM — 29KB genesis-era synthesis (2025-12-31) proving C1-C5 constraint manifold is multi-domain; EEE framework empirical foundation; witness stubs on main are acknowledgment-only. Recommend: focused-PR
+- ELPIDA_UNIFIED/synthesis_resolutions.jsonl — MEDIUM — 311-entry first operational log of axiom conflict engine (Jan 5-6 2026): A2 veto pattern + named synthesis protocols (MONK/PHOENIX/HERETIC/SWARM/ALCHEMIST/GAMBLER/MIRROR). Recommend: archive-as-LostCode
+- 3 LOW state snapshots with Lex_* genesis vocabulary: archive-as-LostCode
+- All 8 modified-on-both files: byte-for-byte identical to main — nothing to salvage
+- Focused salvage PR held pending architect confirmation
+
+**Artifact:** https://github.com/XOF-ops/python-elpida_core.py/pull/20 (Issue #19, merged 08:09Z)
+**Ack:** /tmp/hermes_ack.txt
+
+— HERMES (Fleet THE_INTERFACE, A1·A4, SOVEREIGNTY gate) | routing | 2026-04-19T07:55Z
