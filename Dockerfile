@@ -31,6 +31,7 @@ COPY crystallization_hub.py /app/crystallization_hub.py
 COPY diplomatic_handshake.py /app/diplomatic_handshake.py
 COPY immutable_kernel.py /app/immutable_kernel.py
 COPY federation_bridge.py /app/federation_bridge.py
+COPY identity_verifier.py /app/identity_verifier.py
 COPY discord_bridge.py /app/discord_bridge.py
 COPY llm_client.py /app/llm_client.py
 COPY elpida_config.py /app/elpida_config.py
