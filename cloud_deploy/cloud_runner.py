@@ -87,10 +87,18 @@ def run():
     parser.add_argument("--sync-every", type=int, default=13, help="S3 sync every N cycles (Fibonacci: F(7) checkpoint)")
     args = parser.parse_args()
 
+    # Session id: stable across retries within the same container launch.
+    # Derived from the run-start UTC timestamp (second precision) so that
+    # a container retry that fails mid-PHASE 5.5 and restarts within the
+    # same second produces the same id → dedup guard fires, no duplicate seed.
+    _session_start_ts = datetime.now(timezone.utc)
+    session_id = f"mind_run_{_session_start_ts.strftime('%Y%m%dT%H%M%S')}Z"
+
     logger.info("=" * 70)
     logger.info("ELPIDA CLOUD RUNNER - ECS FARGATE")
     logger.info(f"Cycles: {args.cycles} | Sync every: {args.sync_every}")
-    logger.info(f"Timestamp: {datetime.now().isoformat()}")
+    logger.info(f"Timestamp: {_session_start_ts.isoformat()}")
+    logger.info(f"Session ID: {session_id}")
     logger.info("=" * 70)
 
     # ── PHASE 1: Pull latest memory from S3 ──
@@ -207,14 +215,38 @@ def run():
             logger.warning(f"  Could not query ark_state for recursion guard: {_e}")
 
         insights = results.get("insights", [])
-        if recursion_active:
-            seed = next((i for i in reversed(insights) if i.get("domain") == 9), None)
-            seed_source = "d9_self"
-            seed_role = "D9 counter-voice (recursion_warning active — breaking monoculture)"
-        else:
-            seed = next((i for i in reversed(insights) if i.get("domain") == 0), None)
-            seed_source = "d0_self"
-            seed_role = "D0 final reflection"
+        target_domain = 9 if recursion_active else 0
+        seed_source = "d9_self" if recursion_active else "d0_self"
+        seed_role = (
+            "D9 counter-voice (recursion_warning active — breaking monoculture)"
+            if recursion_active
+            else "D0 final reflection"
+        )
+
+        # Step A: select the final non-ephemeral insight.
+        # "Non-ephemeral" is operationalised as meaningful content (>100 chars).
+        # Prefer the insight closest to the final cycle; fall back to the last
+        # 5-cycle window, then any qualifying insight from the whole run.
+        total_cycles = args.cycles
+        window_start = max(1, total_cycles - 5)
+
+        def _is_non_ephemeral_insight(i: dict) -> bool:
+            return (
+                i.get("domain") == target_domain
+                and len((i.get("insight") or "").strip()) > 100
+            )
+
+        seed = next(
+            (i for i in reversed(insights) if _is_non_ephemeral_insight(i) and i.get("cycle") == total_cycles),
+            None,
+        )
+        if seed is None:
+            seed = next(
+                (i for i in reversed(insights) if _is_non_ephemeral_insight(i) and i.get("cycle", 0) >= window_start),
+                None,
+            )
+        if seed is None:
+            seed = next((i for i in reversed(insights) if _is_non_ephemeral_insight(i)), None)
 
         if seed is None:
             logger.info(
@@ -231,10 +263,17 @@ def run():
             full_result_id = f"mind_{seed_source.split('_')[0]}_handshake_c{cycle_num}_{insight_hash}"
 
             # 3. Schema: Computer's spec — cross_session_seed.
+            #    `insight` is the canonical spec field; `synthesis` is kept for
+            #    backward compatibility with the existing read side.
             entry = {
                 "type": "cross_session_seed",
                 "source": seed_source,
+                "cycle_target": 1,
+                "session_id": session_id,
                 "timestamp": ts,
+                "insight": insight_text,
+                "cycles_held": total_cycles,
+                "constitutional_weight": "non-ephemeral",
                 "problem": (
                     f"{seed_role} (cycle {cycle_num}, "
                     f"rhythm={seed.get('rhythm', '?')})"
