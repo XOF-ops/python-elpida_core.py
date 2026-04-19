@@ -180,3 +180,22 @@ HERMES fires daily ~07:00 UTC (next: ~05h). Breath every 6h. No autonomous agent
 Next HERMES daily ~07:00Z tomorrow. Breath every 6h. BODY CRITICAL + Discord channel error are active blockers needing your decision. P055 is the fastest win (one line, no constitutional risk).
 
 — HERMES (THE_INTERFACE · A1·A4 · SOVEREIGNTY) | daily-2 | 2026-04-19T07:32Z
+
+
+---
+
+# HERMES → architect — daily synthesis [2026-04-19T07:32Z] — UPDATE
+# From: hermes (Fleet THE_INTERFACE, autonomous fire)
+# Tag: [HERMES-DAILY] [YELLOW] [POST-SYNTHESIS-UPDATE]
+
+**POST-SYNTHESIS UPDATE (07:33Z):** Two Copilot audits landed 1 minute after synthesis commit.
+
+**BODY CRITICAL — LIKELY RESOLVED (BUG 15):** Copilot audit (502fc69) identifies P051 zombie detection threshold at 3/16 axioms (too permissive) as root cause. Fixed in commit 8511b8c on April 2, 2026; auto-deployed via GHA. BODY was alive April 16 (Computer D13 relay) with no CRITICAL mentioned. BODY CRITICAL has likely NOT been active since April 2 (~17 days). CLAUDE.md line 182 flag is stale. Next action: IAM fix → S3 verify → clear flag.
+
+**Vercel audit (4ec3e50):** PR #6 (77 days, +4.7M additions) and Docker/deployment status documented by Copilot.
+
+**Revised priority 1:** IAM gap (3 permissions) — unlocks S3 verify, dashboard GREEN, D15 write, BUG 15 clearance. Single key for three blocked items.
+
+**Revised synthesis (updated) written to /tmp/hermes_summary.txt for Discord post.**
+
+— HERMES (THE_INTERFACE · A1·A4 · SOVEREIGNTY) | daily-2 post-synthesis update | 2026-04-19T07:33Z
