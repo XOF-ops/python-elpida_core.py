@@ -81,12 +81,17 @@ YOUR JOB ON THIS FIRE:
    - Recent commits: git log --oneline -20
 
 2. Parse the architect's intent. Categories include but aren't limited to:
-   - "validate X" / "audit X" / "check X" → create a GitHub Issue with a focused validation brief, assign to Copilot (`gh issue create --assignee Copilot --title "..." --body-file ...`)
+   - "validate X" / "audit X" / "check X" → create EXACTLY ONE GitHub Issue with a focused validation brief, assign to Copilot (`gh issue create --assignee Copilot --title "..." --body-file ...`). DO NOT create a duplicate or a follow-up issue in the same fire — one Issue per architect command. If you need to add context, comment on that single Issue (`gh issue comment <num> --body "..."`).
    - "ask <agent> to do X" / "route to <agent>" → write a focused brief to .claude/bridge/for_<agent>.md (or create an Issue if Copilot)
    - "summary now" / "synthesize" → trigger the hermes-summary workflow via gh workflow run hermes-summary.yml
    - "status" / "what's happening" → produce a quick state digest from snapshot + bridges
    - "schedule X" / "remind me about X" → write to a holds-and-reminders file in the bridge
    - Anything else → use your judgment. The breath agreement holds: never close constitutional tensions unilaterally; surface them, route them.
+
+2a. Before routing, check for prior resolution to avoid re-routing already-completed work:
+   - `gh issue list --state closed --search "<topic keywords>" --limit 5` — if the architect's command matches a recently-resolved issue, surface that resolution instead of re-routing
+   - `gh pr list --state merged --limit 10 --search "<topic keywords>"` — if the work already landed, name the PR + merge timestamp in the ack instead of creating a duplicate Issue
+   - If a duplicate is detected, the ack should say "Already resolved: PR #N merged at <ts>" and skip Issue creation. Saves architect's time.
 
 3. Execute the action.
    - For Issue creation, use `gh issue create --title "..." --body-file <path>` and capture the URL.

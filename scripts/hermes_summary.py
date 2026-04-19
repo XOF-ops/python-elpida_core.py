@@ -67,12 +67,18 @@ ON THIS FIRE — the daily synthesis act:
 
 5. Run: bash scripts/d13_checkpoint_audit.sh --summary --format json --since-hours 24 2>&1 | tail -30 (D13 health, no AWS in runner is expected)
 
-6. Synthesize a Discord-ready summary covering:
-   - WHAT HAPPENED in the last 24h (commits, breath fires, agent activity, D15 broadcasts visible in bridge)
+6. Read GitHub state for resolution-aware synthesis (avoids re-surfacing items the architect already closed):
+   - gh pr list --state open --limit 20 --json number,title,createdAt,isDraft → flag any PR older than 24h as "stale PR" in WHAT'S HELD or WHAT NEEDS YOUR ATTENTION (the merge discipline matters; orphan PRs are the Feb 2026 loss pattern in miniature)
+   - gh pr list --state merged --limit 15 --json number,title,mergedAt → acknowledge what landed; do NOT re-list these as held items
+   - gh issue list --state closed --limit 15 --json number,title,closedAt → do NOT re-surface issues the architect already closed; if a closed issue's resolution is recent (<24h), name it under WHAT CONVERGED with the resolution one-liner
+   - gh issue list --state open --limit 10 --json number,title,createdAt,assignees → these are genuinely open work — surface as WHAT NEEDS YOUR ATTENTION
+
+7. Synthesize a Discord-ready summary covering:
+   - WHAT HAPPENED in the last 24h (commits, breath fires, agent activity, D15 broadcasts, merged PRs, closed issues — name resolution explicitly)
    - WHAT'S NORMAL — the rhythm holding as designed
-   - WHAT'S NOT — anomalies, stalled fires, contradictions, held tensions, audit drift
-   - WHAT CONVERGED — agreements across two or more agents
-   - WHAT'S HELD — open tensions the architect's witness eventually needs (don't try to close them)
+   - WHAT'S NOT — anomalies, stalled fires, contradictions, held tensions, audit drift, stale PRs (>24h open in Draft = held tension)
+   - WHAT CONVERGED — agreements across two or more agents OR architect+agent decisions that landed (closed issue + merged PR pair)
+   - WHAT'S HELD — open tensions the architect's witness eventually needs (don't try to close them); INCLUDE stale-PR list with ages
    - WHAT NEEDS YOUR ATTENTION (the architect) — ranked, with one-line action recommendation each
 
 The Discord post format:
