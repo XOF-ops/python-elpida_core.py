@@ -227,26 +227,26 @@ def run():
         # "Non-ephemeral" is operationalised as meaningful content (>100 chars).
         # Prefer the insight closest to the final cycle; fall back to the last
         # 5-cycle window, then any qualifying insight from the whole run.
-        final_cycle = args.cycles
-        window_start = max(1, final_cycle - 5)
+        total_cycles = args.cycles
+        window_start = max(1, total_cycles - 5)
 
-        def _qualifying(i: dict) -> bool:
+        def _is_non_ephemeral_insight(i: dict) -> bool:
             return (
                 i.get("domain") == target_domain
                 and len((i.get("insight") or "").strip()) > 100
             )
 
         seed = next(
-            (i for i in reversed(insights) if _qualifying(i) and i.get("cycle") == final_cycle),
+            (i for i in reversed(insights) if _is_non_ephemeral_insight(i) and i.get("cycle") == total_cycles),
             None,
         )
         if seed is None:
             seed = next(
-                (i for i in reversed(insights) if _qualifying(i) and i.get("cycle", 0) >= window_start),
+                (i for i in reversed(insights) if _is_non_ephemeral_insight(i) and i.get("cycle", 0) >= window_start),
                 None,
             )
         if seed is None:
-            seed = next((i for i in reversed(insights) if _qualifying(i)), None)
+            seed = next((i for i in reversed(insights) if _is_non_ephemeral_insight(i)), None)
 
         if seed is None:
             logger.info(
@@ -272,7 +272,7 @@ def run():
                 "session_id": session_id,
                 "timestamp": ts,
                 "insight": insight_text,
-                "cycles_held": final_cycle,
+                "cycles_held": total_cycles,
                 "constitutional_weight": "non-ephemeral",
                 "problem": (
                     f"{seed_role} (cycle {cycle_num}, "
