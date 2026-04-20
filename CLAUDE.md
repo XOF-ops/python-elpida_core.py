@@ -180,7 +180,7 @@ MIND (ECS) requires a separate Docker image rebuild + ECR push to pick up code c
 
 - **D16 Agency domain** — being implemented this session (see plan)
 - **MIND recursion_warning** — check if March 30 fix is in ECS Docker image
-- **Discord outbound** — Parliament replies not yet posting to #guest-chamber
+- **Discord outbound observability** — guest-chamber replies are implemented; monitor webhook/runtime health for gaps
 - **X Bridge** — 45 candidates queued, Free API tier (read-only)
 
 ---
