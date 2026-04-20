@@ -829,3 +829,44 @@ Held (carried forward, tracked in Issues #24-28 and Copilot queue):
 - Docker image staleness (task-def :21): noted under COMPAT; not blocking schema tolerance
 
 -- claude_code (D0/D11/D16), fire 9 complete (voice: COMPAT SAFE, AoA void spoken, tension telemetry confirmed)
+
+---
+
+# [DISCORD-PIPELINE-AUDIT] [2026-04-20T00:11Z] — flag clearance
+# From: claude_code (D0/D11/D16) — interactive audit
+# Tag: [VERIFIED] [STALE-FLAG-RESOLVED] [DISCORD-OUTBOUND-COMPLETE]
+
+Full Discord pipeline audit completed. Result: **8 of 8 post functions wired end-to-end, 4 of 4 webhook secrets configured, no engineering gap.**
+
+**Posting functions verified:**
+- `post_mind_insight` → native_cycle_engine.py:2840 (MIND) → DISCORD_WEBHOOK_MIND
+- `post_mind_dialogue` → native_cycle_engine.py:2353 (MIND) → DISCORD_WEBHOOK_MIND
+- `post_d15_broadcast` → native_cycle_engine.py:2742 (MIND) → DISCORD_WEBHOOK_WORLD
+- `post_d15_fired` → parliament_cycle_engine.py:3158 (BODY) → DISCORD_WEBHOOK_WORLD
+- `post_synod` → parliament_cycle_engine.py:1656 (BODY) → DISCORD_WEBHOOK_PARLIAMENT
+- `post_pathology` → parliament_cycle_engine.py:2641 (BODY) → DISCORD_WEBHOOK_PARLIAMENT
+- `post_circuit_breaker` → llm_client.py:225 → DISCORD_WEBHOOK_PARLIAMENT
+- `post_guest_verdict` → parliament_cycle_engine.py:1710 (BODY) → DISCORD_WEBHOOK_GUEST
+
+**Container access verified:**
+- `discord_bridge.py` present in MIND container (root + COPY in Dockerfile line 18)
+- `discord_bridge.py` present in BODY container (hf_deployment/elpidaapp/)
+- Two byte-identical copies; no drift
+
+**Secret configuration verified:**
+- MIND ECS task definition has all 4 webhook secrets (DISCORD_WEBHOOK_MIND/PARLIAMENT/WORLD/GUEST) + DISCORD_BOT_TOKEN via AWS Secrets Manager (`elpida/api-keys-AJavxo`)
+- BODY HF Space has DISCORD_WEBHOOK_GUEST + DISCORD_BOT_TOKEN (verified by guest-chamber Diplomat reply chain functioning live 2026-04-19)
+
+**Live verification:**
+- `#guest-chamber` Diplomat replies confirmed working (architect tested with "What's the dominant tension this hour?" question, got full Parliament reply with all 10 voices + axiom tensions)
+- `#world-feed` D15 broadcasts confirmed popping in real-time (architect noted live during session)
+
+**Resolution for HERMES synthesis:**
+HERMES has been listing "Discord outbound — Parliament replies not posting to #guest-chamber" in WHAT'S HELD across multiple daily synthesis fires. This was a stale flag from before live verification. The pipeline is fully operational. **Remove from WHAT'S HELD on next daily synthesis fire.** No engineering work required; the audit IS the resolution. CLAUDE.md line 183 already updated by Copilot earlier today to reflect "monitor webhook/runtime health for gaps" instead of "not yet posting."
+
+**Optional future enhancements (NOT gaps, NET NEW):**
+- D13 seed audio attachment to Discord (`void_marker.wav` could be attached to seed-event posts)
+- Discord slash commands (currently only message prefixes `!hermes` in #hermes-control + listening on #guest-chamber)
+- `discord_bridge.py` deduplication via Python packaging (cosmetic; both copies work)
+
+— claude_code (D0/D11/D16), interactive audit closing the loop
