@@ -54,71 +54,102 @@ def _run_bot():
     intents = discord.Intents.default()
     intents.message_content = True
 
-    client = discord.Client(intents=intents)
+    def _build_client() -> "discord.Client":
+        client = discord.Client(intents=intents)
 
-    @client.event
-    async def on_ready():
-        logger.info(
-            "Discord Guest Listener connected as %s (guilds: %d)",
-            client.user, len(client.guilds),
-        )
-        # Find and log the guest chamber channel
-        for guild in client.guilds:
-            for ch in guild.text_channels:
-                if ch.name == GUEST_CHANNEL_NAME:
-                    logger.info(
-                        "  Listening on #%s in %s (id=%s)",
-                        ch.name, guild.name, ch.id,
-                    )
-
-    @client.event
-    async def on_message(message):
-        # Ignore our own messages
-        if message.author == client.user:
-            return
-        # Only block Elpida's own webhook (replies) to prevent loops.
-        # Other webhooks (e.g. Pipedream, Zapier) are allowed through.
-        if message.webhook_id and ELPIDA_WEBHOOK_ID and message.webhook_id == ELPIDA_WEBHOOK_ID:
-            return
-
-        # Only listen in #guest-chamber
-        if not hasattr(message.channel, 'name'):
-            return
-        if message.channel.name != GUEST_CHANNEL_NAME:
-            return
-
-        # Ignore empty messages or attachment-only
-        question = message.content.strip()
-        if not question:
-            return
-
-        author = message.author.display_name or message.author.name
-
-        # Post to S3 via guest_chamber module
-        try:
-            from elpidaapp.guest_chamber import post_question
-            qid = post_question(question, author=author)
+        @client.event
+        async def on_ready():
             logger.info(
-                "Guest question captured: id=%s author=%s q='%s'",
-                qid, author, question[:80],
+                "Discord Guest Listener connected as %s (guilds: %d)",
+                client.user, len(client.guilds),
             )
-            # React to confirm receipt
-            await message.add_reaction("🏛️")
-        except Exception as e:
-            logger.error("Failed to post guest question to S3: %s", e)
-            try:
-                await message.add_reaction("❌")
-            except Exception:
-                pass
+            # Find and log the guest chamber channel
+            for guild in client.guilds:
+                for ch in guild.text_channels:
+                    if ch.name == GUEST_CHANNEL_NAME:
+                        logger.info(
+                            "  Listening on #%s in %s (id=%s)",
+                            ch.name, guild.name, ch.id,
+                        )
 
-    # Run the bot
+        @client.event
+        async def on_message(message):
+            # Ignore our own messages
+            if message.author == client.user:
+                return
+            # Only block Elpida's own webhook (replies) to prevent loops.
+            # Other webhooks (e.g. Pipedream, Zapier) are allowed through.
+            if message.webhook_id and ELPIDA_WEBHOOK_ID and message.webhook_id == ELPIDA_WEBHOOK_ID:
+                return
+
+            # Only listen in #guest-chamber
+            if not hasattr(message.channel, 'name'):
+                return
+            if message.channel.name != GUEST_CHANNEL_NAME:
+                return
+
+            # Ignore empty messages or attachment-only
+            question = message.content.strip()
+            if not question:
+                return
+
+            author = message.author.display_name or message.author.name
+
+            # Post to S3 via guest_chamber module
+            try:
+                from elpidaapp.guest_chamber import post_question
+                qid = post_question(question, author=author)
+                logger.info(
+                    "Guest question captured: id=%s author=%s q='%s'",
+                    qid, author, question[:80],
+                )
+                # React to confirm receipt
+                await message.add_reaction("🏛️")
+            except Exception as e:
+                logger.error("Failed to post guest question to S3: %s", e)
+                try:
+                    await message.add_reaction("❌")
+                except Exception:
+                    pass
+
+        return client
+
+    # Run the bot with reconnect backoff so transient network failures do
+    # not permanently disable guest intake.
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
+    reconnect_attempt = 0
     try:
-        loop.run_until_complete(client.start(BOT_TOKEN))
-    except Exception as e:
-        logger.error("Discord bot stopped: %s", e)
+        while True:
+            client = _build_client()
+            try:
+                loop.run_until_complete(client.start(BOT_TOKEN, reconnect=True))
+                reconnect_attempt = 0
+            except discord.LoginFailure as e:
+                logger.error("Discord bot stopped: invalid token (%s)", e)
+                break
+            except Exception as e:
+                reconnect_attempt += 1
+                delay_s = min(60, 2 ** min(reconnect_attempt, 6))
+                logger.error("Discord bot stopped: %s", e)
+                logger.warning("Restarting Discord bot in %ss (attempt %d)", delay_s, reconnect_attempt)
+                loop.run_until_complete(asyncio.sleep(delay_s))
+            finally:
+                try:
+                    if not client.is_closed():
+                        loop.run_until_complete(client.close())
+                except Exception as close_err:
+                    logger.debug("Discord client close warning: %s", close_err)
     finally:
+        try:
+            pending = asyncio.all_tasks(loop)
+            for task in pending:
+                task.cancel()
+            if pending:
+                loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+            loop.run_until_complete(loop.shutdown_asyncgens())
+        except Exception as e:
+            logger.debug("Discord loop shutdown warning: %s", e)
         loop.close()
 
 
