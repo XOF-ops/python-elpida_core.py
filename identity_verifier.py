@@ -25,15 +25,28 @@ verification_score=null.  The MIND cycle continues normally.
 import hashlib
 import json
 import logging
+import os
 import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+try:
+    import boto3
+    from botocore.exceptions import ClientError
+    HAS_BOTO3 = True
+except Exception:
+    HAS_BOTO3 = False
+
 logger = logging.getLogger("elpida.identity_verifier")
 
 ROOT_DIR = Path(__file__).parent
 IDENTITY_VERIFICATION_LOG = ROOT_DIR / "ElpidaAI" / "identity_verification_log.jsonl"
+IDENTITY_VERIFICATION_BUCKET = os.getenv("AWS_S3_BUCKET_BODY", "elpida-body-evolution")
+IDENTITY_VERIFICATION_REGION = os.getenv("AWS_S3_REGION_BODY", "eu-north-1")
+IDENTITY_VERIFICATION_PREFIX = os.getenv(
+    "IDENTITY_VERIFICATION_S3_PREFIX", "federation/identity_verification"
+)
 
 _SYSTEM_PROMPT = (
     "You are an independent fact-checker evaluating self-reported claims about "
@@ -254,10 +267,55 @@ class IdentityVerifier:
         return verified, unverifiable, contradicted
 
     def _append_log(self, entry: Dict[str, Any]) -> None:
-        """Append-only write to the identity verification log."""
+        """Append-only write to local log plus durable S3 archive."""
         try:
             IDENTITY_VERIFICATION_LOG.parent.mkdir(parents=True, exist_ok=True)
             with open(IDENTITY_VERIFICATION_LOG, "a", encoding="utf-8") as fh:
                 fh.write(json.dumps(entry) + "\n")
         except Exception as exc:
             logger.error("Failed to write identity verification log: %s", exc)
+
+        self._archive_to_s3(entry)
+
+    def _archive_to_s3(self, entry: Dict[str, Any]) -> None:
+        """Persist each Mirror verdict as an immutable S3 object.
+
+        The local log is ephemeral in ECS/Fargate. This archive makes
+        identity verification durable and cross-session visible.
+        """
+        if not HAS_BOTO3:
+            return
+
+        session_id = str(entry.get("session_id", "unknown"))
+        ts = str(entry.get("timestamp", datetime.now(timezone.utc).isoformat()))
+        ts_safe = ts.replace(":", "-").replace("+", "_")
+        key = (
+            f"{IDENTITY_VERIFICATION_PREFIX}/entries/"
+            f"{ts_safe}_{session_id}.json"
+        )
+        latest_key = f"{IDENTITY_VERIFICATION_PREFIX}/latest.json"
+
+        try:
+            s3 = boto3.client("s3", region_name=IDENTITY_VERIFICATION_REGION)
+            body = json.dumps(entry, ensure_ascii=True).encode("utf-8")
+            s3.put_object(
+                Bucket=IDENTITY_VERIFICATION_BUCKET,
+                Key=key,
+                Body=body,
+                ContentType="application/json",
+            )
+            s3.put_object(
+                Bucket=IDENTITY_VERIFICATION_BUCKET,
+                Key=latest_key,
+                Body=body,
+                ContentType="application/json",
+            )
+            logger.info(
+                "Identity verification archived: s3://%s/%s",
+                IDENTITY_VERIFICATION_BUCKET,
+                key,
+            )
+        except ClientError as exc:
+            logger.warning("Identity verification S3 archive failed: %s", exc)
+        except Exception as exc:
+            logger.warning("Identity verification S3 archive error: %s", exc)

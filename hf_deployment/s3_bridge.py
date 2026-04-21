@@ -1267,6 +1267,40 @@ class S3Bridge:
         broadcasts.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
         return broadcasts[:limit]
 
+    def count_d15_broadcasts(self) -> int:
+        """Count all D15 broadcast objects in WORLD bucket.
+
+        Uses paginated listing over `d15/broadcast_` so callers can restore
+        an accurate total rather than a capped recent-window estimate.
+        """
+        s3 = self._get_s3(REGION_WORLD)
+        if not s3:
+            return 0
+
+        total = 0
+        token = None
+        try:
+            while True:
+                kwargs = {
+                    "Bucket": BUCKET_WORLD,
+                    "Prefix": "d15/broadcast_",
+                    "MaxKeys": 1000,
+                }
+                if token:
+                    kwargs["ContinuationToken"] = token
+
+                resp = s3.list_objects_v2(**kwargs)
+                total += len(resp.get("Contents", []))
+
+                if not resp.get("IsTruncated"):
+                    break
+                token = resp.get("NextContinuationToken")
+        except Exception as e:
+            logger.warning("count_d15_broadcasts failed: %s", e)
+            return 0
+
+        return total
+
     def write_d15_broadcast(
         self,
         broadcast_content: Dict[str, Any],

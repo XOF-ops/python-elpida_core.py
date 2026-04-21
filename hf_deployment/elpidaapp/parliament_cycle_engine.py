@@ -475,6 +475,7 @@ class ParliamentCycleEngine:
         self.last_dominant_axiom: Optional[str] = None
         self.decisions: List[Dict] = []
         self.d15_broadcast_count = 0
+        self.d15_broadcast_count_recent = 0
         self.d15_last_broadcast_cycle = 0
 
         # MIND heartbeat cache
@@ -2091,10 +2092,16 @@ class ParliamentCycleEngine:
             logger.warning("D15 restore skipped — S3 unavailable")
             return
         try:
-            prior = s3.pull_d15_broadcasts(limit=200)
-            if prior:
-                self.d15_broadcast_count = len(prior)
-                print(f"   🌍 D15 restore: {self.d15_broadcast_count} prior broadcast(s) found")
+            prior_total = s3.count_d15_broadcasts()
+            prior_recent = len(s3.pull_d15_broadcasts(limit=200))
+            if prior_total:
+                self.d15_broadcast_count = prior_total
+                self.d15_broadcast_count_recent = prior_recent
+                print(
+                    "   🌍 D15 restore: "
+                    f"total={self.d15_broadcast_count} "
+                    f"recent_window={self.d15_broadcast_count_recent}"
+                )
             else:
                 print("   🌍 D15 restore: no prior broadcasts in S3 yet")
         except Exception as e:
@@ -2327,6 +2334,8 @@ class ParliamentCycleEngine:
             "veto_exercised": result.get("parliament", {}).get("veto_exercised", False),
             "axiom_frequency": dict(self._axiom_frequency),
             "d15_broadcast_count": self.d15_broadcast_count,
+            "d15_broadcast_count_total": self.d15_broadcast_count,
+            "d15_broadcast_count_recent": self.d15_broadcast_count_recent,
             "input_buffer_counts": self.input_buffer.counts(),
             "current_watch": watch["name"],
             "watch_symbol": watch.get("symbol", ""),
@@ -2639,8 +2648,8 @@ class ParliamentCycleEngine:
                 try:
                     from .discord_bridge import post_pathology
                     post_pathology(self.cycle_count, health, drift_kl, drift_severity, len(zombies))
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning("Pathology Discord alert failed: %s", e)
                 # Log zombie axioms for operational awareness
                 for z in zombies[:3]:
                     print(
@@ -2799,10 +2808,22 @@ class ParliamentCycleEngine:
             )
 
             if broadcast:
+                self.d15_broadcast_count += 1
+                self.d15_broadcast_count_recent += 1
                 print(
                     f"   🌍 D15 BROADCAST #{result.get('broadcast_key', '?')} "
                     f"in {duration}s"
                 )
+                try:
+                    from .discord_bridge import post_d15_pipeline_broadcast
+                    post_d15_pipeline_broadcast(
+                        cycle=self.cycle_count,
+                        broadcast_key=result.get("broadcast_key", "?"),
+                        broadcast_count=self.d15_broadcast_count,
+                        duration_s=duration,
+                    )
+                except Exception as e:
+                    logger.warning("D15 pipeline Discord alert failed: %s", e)
                 # Surface the broadcast as a cycle event so it appears in
                 # the federation body_decisions feed and the heartbeat.
                 self.decisions.append({
@@ -3143,6 +3164,7 @@ class ParliamentCycleEngine:
                         self.d15_broadcast_count + 1, _conv_window,
                     )
                 self.d15_broadcast_count += 1
+                self.d15_broadcast_count_recent += 1
                 self.d15_last_broadcast_cycle = self.cycle_count
                 logger.info(
                     " D15 FIRED! cycle=%d axiom=%s broadcast_count=%d",
@@ -3156,8 +3178,8 @@ class ParliamentCycleEngine:
                 try:
                     from .discord_bridge import post_d15_fired
                     post_d15_fired(self.cycle_count, body_axiom, self.d15_broadcast_count)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning("D15 fire Discord alert failed: %s", e)
 
     # ------------------------------------------------------------------
     # Main Loop
@@ -3297,6 +3319,8 @@ class ParliamentCycleEngine:
             ),
             "fork_last_cycle": self._fork_last_cycle or None,
             "d15_broadcast_count": self.d15_broadcast_count,
+            "d15_broadcast_count_total": self.d15_broadcast_count,
+            "d15_broadcast_count_recent": self.d15_broadcast_count_recent,
             "axiom_frequency": dict(self._axiom_frequency),
             "oscillation_doctrine": {
                 "stress": round(self._compute_system_stress(

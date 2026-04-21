@@ -44,11 +44,15 @@ COLOR_GUEST = 0x2196F3       # blue — guest chamber response
 # Discord message limit
 MAX_DESC = 4096
 MAX_FIELD = 1024
+_MISSING_WEBHOOK_WARNED = set()
 
 
-def _post_webhook(url: str, payload: dict) -> None:
+def _post_webhook(url: str, payload: dict, channel: str) -> None:
     """Fire-and-forget POST to a Discord webhook URL."""
     if not url:
+        if channel not in _MISSING_WEBHOOK_WARNED:
+            logger.warning("Discord webhook missing for channel=%s", channel)
+            _MISSING_WEBHOOK_WARNED.add(channel)
         return
 
     def _send():
@@ -60,7 +64,7 @@ def _post_webhook(url: str, payload: dict) -> None:
             })
             urlopen(req, timeout=10)
         except Exception as e:
-            logger.debug("Discord webhook post failed: %s", e)
+            logger.warning("Discord webhook post failed for channel=%s: %s", channel, e)
 
     threading.Thread(target=_send, daemon=True).start()
 
@@ -102,7 +106,7 @@ def post_mind_insight(
         "fields": fields,
         "footer": {"text": f"MIND • {rhythm}"},
     }
-    _post_webhook(WEBHOOK_MIND, {"embeds": [embed]})
+    _post_webhook(WEBHOOK_MIND, {"embeds": [embed]}, "mind-journal")
 
 
 def post_mind_dialogue(
@@ -124,7 +128,7 @@ def post_mind_dialogue(
         "color": COLOR_MIND,
         "footer": {"text": f"MIND • {dialogue_type}"},
     }
-    _post_webhook(WEBHOOK_MIND, {"embeds": [embed]})
+    _post_webhook(WEBHOOK_MIND, {"embeds": [embed]}, "mind-journal")
 
 
 # ════════════════════════════════════════════════════════════════════
@@ -143,7 +147,29 @@ def post_d15_fired(cycle: int, axiom: str, broadcast_count: int):
         ],
         "footer": {"text": "BODY • D15 Convergence Gate"},
     }
-    _post_webhook(WEBHOOK_PARLIAMENT, {"embeds": [embed]})
+    _post_webhook(WEBHOOK_PARLIAMENT, {"embeds": [embed]}, "parliament-alerts")
+
+
+def post_d15_pipeline_broadcast(
+    cycle: int,
+    broadcast_key: str,
+    broadcast_count: int,
+    duration_s: float,
+):
+    """Post D15 pipeline broadcast to #parliament-alerts."""
+    embed = {
+        "title": "D15 PIPELINE BROADCAST",
+        "description": "Deep D15 pipeline broadcast reached WORLD bucket.",
+        "color": COLOR_WORLD,
+        "fields": [
+            {"name": "Cycle", "value": str(cycle), "inline": True},
+            {"name": "Broadcast #", "value": str(broadcast_count), "inline": True},
+            {"name": "Key", "value": str(broadcast_key)[:120], "inline": False},
+            {"name": "Duration", "value": f"{duration_s:.1f}s", "inline": True},
+        ],
+        "footer": {"text": "BODY • D15 Autonomous Pipeline"},
+    }
+    _post_webhook(WEBHOOK_PARLIAMENT, {"embeds": [embed]}, "parliament-alerts")
 
 
 def post_synod(cycle: int, axiom_id: str, statement: str):
@@ -157,7 +183,7 @@ def post_synod(cycle: int, axiom_id: str, statement: str):
         ],
         "footer": {"text": "BODY • CrystallizationHub"},
     }
-    _post_webhook(WEBHOOK_PARLIAMENT, {"embeds": [embed]})
+    _post_webhook(WEBHOOK_PARLIAMENT, {"embeds": [embed]}, "parliament-alerts")
 
 
 def post_pathology(cycle: int, health: str, kl_score: float, drift_severity: str, zombies: int = 0):
@@ -172,7 +198,7 @@ def post_pathology(cycle: int, health: str, kl_score: float, drift_severity: str
         "color": COLOR_DRIFT,
         "footer": {"text": "BODY • P055 Cultural Drift"},
     }
-    _post_webhook(WEBHOOK_PARLIAMENT, {"embeds": [embed]})
+    _post_webhook(WEBHOOK_PARLIAMENT, {"embeds": [embed]}, "parliament-alerts")
 
 
 def post_circuit_breaker(provider: str, action: str, failures: int = 0, cooldown: int = 0):
@@ -191,7 +217,7 @@ def post_circuit_breaker(provider: str, action: str, failures: int = 0, cooldown
             "color": 0x4CAF50,  # green
             "footer": {"text": "BODY • Circuit Breaker"},
         }
-    _post_webhook(WEBHOOK_PARLIAMENT, {"embeds": [embed]})
+    _post_webhook(WEBHOOK_PARLIAMENT, {"embeds": [embed]}, "parliament-alerts")
 
 
 # ════════════════════════════════════════════════════════════════════
@@ -216,7 +242,7 @@ def post_d15_broadcast(
         ],
         "footer": {"text": "MIND • D15 Reality Interface"},
     }
-    _post_webhook(WEBHOOK_WORLD, {"embeds": [embed]})
+    _post_webhook(WEBHOOK_WORLD, {"embeds": [embed]}, "world-feed")
 
 
 # ════════════════════════════════════════════════════════════════════
@@ -340,4 +366,4 @@ def post_guest_verdict(
 
     # Post to guest channel, fall back to parliament if no guest webhook
     webhook = WEBHOOK_GUEST or WEBHOOK_PARLIAMENT
-    _post_webhook(webhook, {"embeds": embeds[:10]})
+    _post_webhook(webhook, {"embeds": embeds[:10]}, "guest-chamber")

@@ -28,6 +28,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 # Don't allow two breath fires to run simultaneously — same lesson
 # Copilot just baked into fire-mind.yml.
@@ -72,3 +73,49 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python scripts/claude_breath.py
+
+      - name: Notify breath failure to Discord
+        if: ${{ failure() }}
+        continue-on-error: true
+        env:
+          DISCORD_WEBHOOK_PARLIAMENT: ${{ secrets.DISCORD_WEBHOOK_PARLIAMENT }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from urllib.request import Request, urlopen
+
+          webhook = os.getenv("DISCORD_WEBHOOK_PARLIAMENT", "").strip()
+          if not webhook:
+              raise SystemExit(0)
+
+          run_url = os.getenv("RUN_URL", "")
+          payload = {
+              "embeds": [{
+                  "title": "CLAUDE BREATH FAILURE",
+                  "description": "Scheduled breath run failed. Check Actions logs.",
+                  "color": 0xFF5252,
+                  "fields": [{"name": "Run", "value": run_url or "(unknown)", "inline": False}],
+                  "footer": {"text": "GHA • Claude Breath D16"},
+              }]
+          }
+          req = Request(
+              webhook,
+              data=json.dumps(payload).encode("utf-8"),
+              headers={"Content-Type": "application/json", "User-Agent": "Elpida-Breath/1.0"},
+          )
+          urlopen(req, timeout=10)
+          PY
+
+      - name: Open issue on breath failure
+        if: ${{ failure() }}
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh issue create \
+            --title "[BREATH-FAILURE] Claude Breath run ${{ github.run_id }}" \
+            --body "Claude Breath workflow failed.\n\nRun: ${RUN_URL}\n\nPlease inspect the failing step and restore breath cadence." \
+            --label bug || true
