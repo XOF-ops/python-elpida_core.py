@@ -976,6 +976,24 @@ class ParliamentCycleEngine:
             self._pull_mind_heartbeat()
             self._probe_s3_connectivity()
 
+        # 2a. Discord webhook health check every 7 cycles.
+        #     Proactively detects when webhooks become invalid
+        #     (Discord can rotate/delete them without notice).
+        #     Zero cost, fire-and-forget logging.
+        if self.cycle_count % 7 == 0 and self.cycle_count > 0:
+            try:
+                from .discord_bridge import check_webhook_health
+                health = check_webhook_health(cycle=self.cycle_count)
+                # Log health status for observation dashboard
+                if health.get("PARLIAMENT") != "ok":
+                    logger.warning(
+                        "Discord webhook health: PARLIAMENT=%s (cycle %d)",
+                        health.get("PARLIAMENT", "unknown"),
+                        self.cycle_count
+                    )
+            except Exception as e:
+                logger.debug("Webhook health check failed: %s", e)
+
         # 2b. Run PSO advisory every 21 cycles (Fibonacci)
         if self.cycle_count % PSO_ADVISORY_INTERVAL == 0 and self.cycle_count > 0:
             self._run_pso_advisory(rhythm)

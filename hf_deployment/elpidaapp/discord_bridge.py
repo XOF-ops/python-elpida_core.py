@@ -50,6 +50,89 @@ def _validate_webhooks():
             logger.warning("Discord webhook MISSING for channel=%s — notifications to that channel will be silently ignored", name)
 
 _validate_webhooks()
+
+# ── Webhook health tracking ────────────────────────────────────────
+_webhook_health = {
+    "MIND": {"last_check": 0, "status": "unknown"},
+    "PARLIAMENT": {"last_check": 0, "status": "unknown"},
+    "WORLD": {"last_check": 0, "status": "unknown"},
+    "GUEST": {"last_check": 0, "status": "unknown"},
+}
+
+def check_webhook_health(cycle: int = 0):
+    """
+    Proactively test if Discord webhooks are alive.
+    
+    Call this periodically (e.g., every 5-10 cycles) to detect when
+    webhooks become invalid (Discord can delete/rotate them without notice).
+    Logs results; does not raise exceptions.
+    
+    Returns dict of {channel: "ok"|"failed"|"missing"}
+    """
+    import time
+    now = time.time()
+    results = {}
+    
+    webhooks_to_check = [
+        ("MIND", WEBHOOK_MIND),
+        ("PARLIAMENT", WEBHOOK_PARLIAMENT),
+        ("WORLD", WEBHOOK_WORLD),
+        ("GUEST", WEBHOOK_GUEST),
+    ]
+    
+    for channel_name, webhook_url in webhooks_to_check:
+        health = _webhook_health[channel_name]
+        
+        if not webhook_url:
+            results[channel_name] = "missing"
+            if health["status"] != "missing":
+                logger.warning("Discord webhook health: %s = MISSING (env var not set)", channel_name)
+                health["status"] = "missing"
+            continue
+        
+        # Test with a minimal test embed (never visible; Discord will reject)
+        test_payload = {
+            "embeds": [{
+                "title": "Health Check",
+                "description": f"BODY cycle {cycle}",
+                "color": 0x666666,
+            }]
+        }
+        
+        try:
+            data = json.dumps(test_payload).encode("utf-8")
+            req = Request(webhook_url, data=data, headers={
+                "Content-Type": "application/json",
+                "User-Agent": "Elpida/HealthCheck",
+            })
+            with urlopen(req, timeout=5) as resp:
+                if resp.status in (200, 204):
+                    results[channel_name] = "ok"
+                    if health["status"] != "ok":
+                        logger.info("Discord webhook health: %s = OK (recovered)", channel_name)
+                        health["status"] = "ok"
+                else:
+                    results[channel_name] = "failed"
+                    logger.error(
+                        "Discord webhook health: %s = FAILED (HTTP %d). "
+                        "Discord may have invalidated the webhook. Check your webhook URL.",
+                        channel_name, resp.status
+                    )
+                    health["status"] = f"http{resp.status}"
+        except Exception as e:
+            results[channel_name] = "failed"
+            if health["status"] != "failed":
+                logger.error(
+                    "Discord webhook health: %s = FAILED (%s). "
+                    "Network unreachable or webhook URL invalid.",
+                    channel_name, type(e).__name__
+                )
+                health["status"] = "failed"
+        
+        health["last_check"] = now
+    
+    return results
+
 # ── Embed colors ───────────────────────────────────────────────────
 COLOR_MIND = 0x7B2FBE       # deep purple — contemplation
 COLOR_PARLIAMENT = 0xFF9900  # amber — governance alerts
@@ -63,6 +146,7 @@ COLOR_GUEST = 0x2196F3       # blue — guest chamber response
 MAX_DESC = 4096
 MAX_FIELD = 1024
 _MISSING_WEBHOOK_WARNED = set()
+_FAILED_POST_WARNED = {}  # Track which channels we've warned about post failures
 
 
 def _post_webhook(url: str, payload: dict, channel: str) -> None:
@@ -70,6 +154,8 @@ def _post_webhook(url: str, payload: dict, channel: str) -> None:
     
     If URL is missing, log once and return silently (to avoid spam).
     If post fails, log the error in a daemon thread.
+    
+    On first failure for a channel, suggests running check_webhook_health().
     """
     if not url:
         if channel not in _MISSING_WEBHOOK_WARNED:
@@ -92,17 +178,32 @@ def _post_webhook(url: str, payload: dict, channel: str) -> None:
             with urlopen(req, timeout=10) as resp:
                 if resp.status not in (200, 204):
                     logger.warning(
-                        "Discord webhook returned status %d for channel=%s",
+                        "Discord webhook returned status %d for channel=%s. "
+                        "Run check_webhook_health() to diagnose.",
                         resp.status, channel
                     )
+                    _FAILED_POST_WARNED[channel] = True
         except Exception as e:
-            logger.error(
-                "Discord webhook post FAILED for channel=%s: %s. "
-                "Webhook URL may be invalid or Discord API is down.",
-                channel, e
-            )
+            if channel not in _FAILED_POST_WARNED:
+                logger.error(
+                    "Discord webhook post FAILED for channel=%s: %s. "
+                    "Webhook URL may be invalid, Discord API down, or webhook was deleted. "
+                    "Run check_webhook_health() to diagnose.",
+                    channel, e
+                )
+                _FAILED_POST_WARNED[channel] = True
+            else:
+                logger.debug(
+                    "Discord webhook post still failing for channel=%s",
+                    channel
+                )
 
     threading.Thread(target=_send, daemon=True).start()
+
+
+def get_webhook_status() -> dict:
+    """Return current webhook health status (for dashboards/monitoring)."""
+    return {channel: health["status"] for channel, health in _webhook_health.items()}
 
 
 # ════════════════════════════════════════════════════════════════════
