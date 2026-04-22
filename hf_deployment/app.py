@@ -40,6 +40,21 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 os.environ["TRANSFORMERS_VERBOSITY"] = "error"
 os.environ["STREAMLIT_SERVER_FILE_WATCHER_TYPE"] = "none"
 os.environ["STREAMLIT_BROWSER_GATHER_USAGE_STATS"] = "false"
+
+# Authenticate HF Hub requests (silences "unauthenticated requests" warning
+# and enables higher rate limits / faster downloads).
+# huggingface_hub checks HF_TOKEN and HUGGING_FACE_HUB_TOKEN in that order.
+# We also accept HUGGINGFACE_API_KEY (our existing secret name) as fallback.
+_hf_token = (
+    os.environ.get("HF_TOKEN")
+    or os.environ.get("HUGGING_FACE_HUB_TOKEN")
+    or os.environ.get("HUGGINGFACE_API_KEY")
+    or ""
+)
+if _hf_token:
+    os.environ.setdefault("HF_TOKEN", _hf_token)
+    os.environ.setdefault("HUGGING_FACE_HUB_TOKEN", _hf_token)
+
 logging.getLogger("transformers").setLevel(logging.ERROR)
 logging.getLogger("sentence_transformers").setLevel(logging.WARNING)
 logging.getLogger("huggingface_hub").setLevel(logging.WARNING)
