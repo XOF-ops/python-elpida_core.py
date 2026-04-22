@@ -22,6 +22,7 @@ import json
 import logging
 import os
 import threading
+import time
 from urllib.request import Request, urlopen
 
 logger = logging.getLogger("elpida.discord")
@@ -61,77 +62,87 @@ _webhook_health = {
 
 def check_webhook_health(cycle: int = 0):
     """
-    Proactively test if Discord webhooks are alive.
+    Diagnose Discord connectivity WITHOUT posting spam.
     
-    Call this periodically (e.g., every 5-10 cycles) to detect when
-    webhooks become invalid (Discord can delete/rotate them without notice).
-    Logs results; does not raise exceptions.
+    Performs two non-invasive tests:
+    1. Network reachability: can we open a TCP+TLS socket to discord.com?
+    2. Webhook URL presence: are env vars set?
     
-    Returns dict of {channel: "ok"|"failed"|"missing"}
+    This does NOT POST to webhooks (which would spam channels and
+    could trigger rate limiting). It only verifies the network path
+    and the presence of configuration.
+    
+    Returns dict with diagnostics:
+        {
+            "network_reachable": bool,
+            "network_error": str|None,
+            "webhooks": {channel: "configured"|"missing"},
+        }
     """
-    import time
-    now = time.time()
-    results = {}
+    import socket
+    import ssl as ssl_module
     
-    webhooks_to_check = [
+    result = {
+        "network_reachable": False,
+        "network_error": None,
+        "webhooks": {},
+    }
+    
+    # Test 1: Can we reach discord.com at the socket+TLS level?
+    try:
+        ctx = ssl_module.create_default_context()
+        sock = socket.create_connection(("discord.com", 443), timeout=5)
+        try:
+            tls_sock = ctx.wrap_socket(sock, server_hostname="discord.com")
+            tls_sock.close()
+            result["network_reachable"] = True
+        finally:
+            try:
+                sock.close()
+            except Exception:
+                pass
+    except (socket.gaierror, socket.timeout) as e:
+        result["network_error"] = f"DNS/timeout: {e}"
+    except ssl_module.SSLError as e:
+        result["network_error"] = f"TLS: {e}"
+    except OSError as e:
+        result["network_error"] = f"Network: {e}"
+    except Exception as e:
+        result["network_error"] = f"{type(e).__name__}: {e}"
+    
+    # Test 2: webhook env var presence (no HTTP calls)
+    webhooks = [
         ("MIND", WEBHOOK_MIND),
         ("PARLIAMENT", WEBHOOK_PARLIAMENT),
         ("WORLD", WEBHOOK_WORLD),
         ("GUEST", WEBHOOK_GUEST),
     ]
+    for name, url in webhooks:
+        status = "configured" if url else "missing"
+        result["webhooks"][name] = status
+        health = _webhook_health[name]
+        if status != health["status"]:
+            if status == "missing":
+                logger.warning("Discord webhook %s: env var not set", name)
+            health["status"] = status
     
-    for channel_name, webhook_url in webhooks_to_check:
-        health = _webhook_health[channel_name]
-        
-        if not webhook_url:
-            results[channel_name] = "missing"
-            if health["status"] != "missing":
-                logger.warning("Discord webhook health: %s = MISSING (env var not set)", channel_name)
-                health["status"] = "missing"
-            continue
-        
-        # Test with a minimal test embed (never visible; Discord will reject)
-        test_payload = {
-            "embeds": [{
-                "title": "Health Check",
-                "description": f"BODY cycle {cycle}",
-                "color": 0x666666,
-            }]
-        }
-        
-        try:
-            data = json.dumps(test_payload).encode("utf-8")
-            req = Request(webhook_url, data=data, headers={
-                "Content-Type": "application/json",
-                "User-Agent": "Elpida/HealthCheck",
-            })
-            with urlopen(req, timeout=5) as resp:
-                if resp.status in (200, 204):
-                    results[channel_name] = "ok"
-                    if health["status"] != "ok":
-                        logger.info("Discord webhook health: %s = OK (recovered)", channel_name)
-                        health["status"] = "ok"
-                else:
-                    results[channel_name] = "failed"
-                    logger.error(
-                        "Discord webhook health: %s = FAILED (HTTP %d). "
-                        "Discord may have invalidated the webhook. Check your webhook URL.",
-                        channel_name, resp.status
-                    )
-                    health["status"] = f"http{resp.status}"
-        except Exception as e:
-            results[channel_name] = "failed"
-            if health["status"] != "failed":
-                logger.error(
-                    "Discord webhook health: %s = FAILED (%s). "
-                    "Network unreachable or webhook URL invalid.",
-                    channel_name, type(e).__name__
-                )
-                health["status"] = "failed"
-        
-        health["last_check"] = now
+    # Log network diagnostic ONCE per state change
+    last_network_state = _webhook_health.get("_network", {}).get("status")
+    current_state = "reachable" if result["network_reachable"] else "unreachable"
+    if last_network_state != current_state:
+        if result["network_reachable"]:
+            logger.info("Discord connectivity: discord.com:443 reachable (cycle %d)", cycle)
+        else:
+            logger.error(
+                "Discord connectivity: discord.com:443 UNREACHABLE from HF Space (cycle %d) — %s. "
+                "This blocks BOTH the bot (listener) AND webhook posts. "
+                "HERMES on GitHub Actions is on a different network and is unaffected. "
+                "This is a platform-level issue (HF Space outbound, or Discord-side block).",
+                cycle, result["network_error"] or "unknown"
+            )
+        _webhook_health["_network"] = {"status": current_state, "last_check": time.time()}
     
-    return results
+    return result
 
 # ── Embed colors ───────────────────────────────────────────────────
 COLOR_MIND = 0x7B2FBE       # deep purple — contemplation

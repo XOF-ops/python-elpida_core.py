@@ -976,23 +976,23 @@ class ParliamentCycleEngine:
             self._pull_mind_heartbeat()
             self._probe_s3_connectivity()
 
-        # 2a. Discord webhook health check every 7 cycles.
-        #     Proactively detects when webhooks become invalid
-        #     (Discord can rotate/delete them without notice).
-        #     Zero cost, fire-and-forget logging.
-        if self.cycle_count % 7 == 0 and self.cycle_count > 0:
+        # 2a. Discord connectivity check every 55 cycles (Fibonacci).
+        #     Tests TCP+TLS to discord.com:443 directly (no webhook POSTs).
+        #     Distinguishes network outage from webhook misconfiguration.
+        #     HERMES (GitHub Actions) is on different network, unaffected.
+        if self.cycle_count % 55 == 0 and self.cycle_count > 0:
             try:
                 from .discord_bridge import check_webhook_health
-                health = check_webhook_health(cycle=self.cycle_count)
-                # Log health status for observation dashboard
-                if health.get("PARLIAMENT") != "ok":
+                diag = check_webhook_health(cycle=self.cycle_count)
+                if not diag.get("network_reachable"):
                     logger.warning(
-                        "Discord webhook health: PARLIAMENT=%s (cycle %d)",
-                        health.get("PARLIAMENT", "unknown"),
+                        "Discord network unreachable: %s (cycle %d) — "
+                        "bot and webhooks both affected; HERMES on GHA unaffected",
+                        diag.get("network_error", "unknown"),
                         self.cycle_count
                     )
             except Exception as e:
-                logger.debug("Webhook health check failed: %s", e)
+                logger.debug("Discord connectivity check failed: %s", e)
 
         # 2b. Run PSO advisory every 21 cycles (Fibonacci)
         if self.cycle_count % PSO_ADVISORY_INTERVAL == 0 and self.cycle_count > 0:
