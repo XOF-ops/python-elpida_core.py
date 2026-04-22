@@ -114,43 +114,38 @@ def _run_bot():
 
         return client
 
-    # Run the bot with reconnect backoff so transient network failures do
-    # not permanently disable guest intake.
+    # Run the bot with discord.py's built-in reconnect handler.
+    # CRITICAL: Do NOT create new Client instances on retry — discord.py's
+    # reconnect=True handles this internally with proper state management.
+    # Creating multiple clients corrupts the event loop's aiohttp connector.
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    reconnect_attempt = 0
+    
+    client = _build_client()
+    
     try:
-        while True:
-            client = _build_client()
-            try:
-                loop.run_until_complete(client.start(BOT_TOKEN, reconnect=True))
-                reconnect_attempt = 0
-            except discord.LoginFailure as e:
-                logger.error("Discord bot stopped: invalid token (%s)", e)
-                break
-            except Exception as e:
-                reconnect_attempt += 1
-                delay_s = min(60, 2 ** min(reconnect_attempt, 6))
-                logger.error("Discord bot stopped: %s", e)
-                logger.warning("Restarting Discord bot in %ss (attempt %d)", delay_s, reconnect_attempt)
-                loop.run_until_complete(asyncio.sleep(delay_s))
-            finally:
-                try:
-                    if not client.is_closed():
-                        loop.run_until_complete(client.close())
-                except Exception as close_err:
-                    logger.debug("Discord client close warning: %s", close_err)
+        loop.run_until_complete(client.start(BOT_TOKEN, reconnect=True))
+    except discord.LoginFailure as e:
+        logger.error("Discord bot stopped: invalid token (%s)", e)
+    except Exception as e:
+        logger.error("Discord bot stopped: %s", e)
     finally:
         try:
-            pending = asyncio.all_tasks(loop)
-            for task in pending:
-                task.cancel()
-            if pending:
-                loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
-            loop.run_until_complete(loop.shutdown_asyncgens())
-        except Exception as e:
-            logger.debug("Discord loop shutdown warning: %s", e)
-        loop.close()
+            if not client.is_closed():
+                loop.run_until_complete(client.close())
+        except Exception as close_err:
+            logger.debug("Discord client close warning: %s", close_err)
+        finally:
+            try:
+                pending = asyncio.all_tasks(loop)
+                for task in pending:
+                    task.cancel()
+                if pending:
+                    loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+                loop.run_until_complete(loop.shutdown_asyncgens())
+            except Exception as e:
+                logger.debug("Discord loop shutdown warning: %s", e)
+            loop.close()
 
 
 _listener_thread: Optional[threading.Thread] = None
