@@ -31,7 +31,25 @@ WEBHOOK_MIND = os.getenv("DISCORD_WEBHOOK_MIND", "")
 WEBHOOK_PARLIAMENT = os.getenv("DISCORD_WEBHOOK_PARLIAMENT", "")
 WEBHOOK_WORLD = os.getenv("DISCORD_WEBHOOK_WORLD", "")
 WEBHOOK_GUEST = os.getenv("DISCORD_WEBHOOK_GUEST", "")
+# ── Log webhook configuration at module load time ──────────────────
+# This ensures we catch missing/invalid webhooks immediately in logs
+def _validate_webhooks():
+    """Log webhook configuration status at startup."""
+    webhooks = [
+        ("MIND", WEBHOOK_MIND),
+        ("PARLIAMENT", WEBHOOK_PARLIAMENT),
+        ("WORLD", WEBHOOK_WORLD),
+        ("GUEST", WEBHOOK_GUEST),
+    ]
+    for name, url in webhooks:
+        if url:
+            # Mask token for safety in logs
+            masked = url.split("/webhooks/")[0] + "/webhooks/***" if "/webhooks/" in url else "(invalid format)"
+            logger.info("Discord webhook configured: %s → %s", name, masked)
+        else:
+            logger.warning("Discord webhook MISSING for channel=%s — notifications to that channel will be silently ignored", name)
 
+_validate_webhooks()
 # ── Embed colors ───────────────────────────────────────────────────
 COLOR_MIND = 0x7B2FBE       # deep purple — contemplation
 COLOR_PARLIAMENT = 0xFF9900  # amber — governance alerts
@@ -48,10 +66,19 @@ _MISSING_WEBHOOK_WARNED = set()
 
 
 def _post_webhook(url: str, payload: dict, channel: str) -> None:
-    """Fire-and-forget POST to a Discord webhook URL."""
+    """Fire-and-forget POST to a Discord webhook URL.
+    
+    If URL is missing, log once and return silently (to avoid spam).
+    If post fails, log the error in a daemon thread.
+    """
     if not url:
         if channel not in _MISSING_WEBHOOK_WARNED:
-            logger.warning("Discord webhook missing for channel=%s", channel)
+            logger.critical(
+                "Discord webhook URL is EMPTY for channel=%s. "
+                "No notifications will be delivered to %s. "
+                "Check DISCORD_WEBHOOK_%s environment variable.",
+                channel, channel, channel.upper()
+            )
             _MISSING_WEBHOOK_WARNED.add(channel)
         return
 
@@ -62,9 +89,18 @@ def _post_webhook(url: str, payload: dict, channel: str) -> None:
                 "Content-Type": "application/json",
                 "User-Agent": "Elpida/1.0",
             })
-            urlopen(req, timeout=10)
+            with urlopen(req, timeout=10) as resp:
+                if resp.status not in (200, 204):
+                    logger.warning(
+                        "Discord webhook returned status %d for channel=%s",
+                        resp.status, channel
+                    )
         except Exception as e:
-            logger.warning("Discord webhook post failed for channel=%s: %s", channel, e)
+            logger.error(
+                "Discord webhook post FAILED for channel=%s: %s. "
+                "Webhook URL may be invalid or Discord API is down.",
+                channel, e
+            )
 
     threading.Thread(target=_send, daemon=True).start()
 
