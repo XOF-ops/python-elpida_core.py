@@ -23,6 +23,7 @@ import logging
 import os
 import threading
 import time
+from datetime import datetime, timezone
 from urllib.request import Request, urlopen
 
 logger = logging.getLogger("elpida.discord")
@@ -32,6 +33,7 @@ WEBHOOK_MIND = os.getenv("DISCORD_WEBHOOK_MIND", "")
 WEBHOOK_PARLIAMENT = os.getenv("DISCORD_WEBHOOK_PARLIAMENT", "")
 WEBHOOK_WORLD = os.getenv("DISCORD_WEBHOOK_WORLD", "")
 WEBHOOK_GUEST = os.getenv("DISCORD_WEBHOOK_GUEST", "")
+DISCORD_OUTBOX_PATH = os.getenv("DISCORD_OUTBOX_PATH", "/tmp/elpida_discord_outbox.jsonl")
 # ── Log webhook configuration at module load time ──────────────────
 # This ensures we catch missing/invalid webhooks immediately in logs
 def _validate_webhooks():
@@ -59,6 +61,95 @@ _webhook_health = {
     "WORLD": {"last_check": 0, "status": "unknown"},
     "GUEST": {"last_check": 0, "status": "unknown"},
 }
+_outbox_lock = threading.Lock()
+
+
+def _webhook_url_for_channel(channel: str) -> str:
+    """Resolve channel label to current webhook URL."""
+    mapping = {
+        "mind-journal": WEBHOOK_MIND,
+        "parliament-alerts": WEBHOOK_PARLIAMENT,
+        "world-feed": WEBHOOK_WORLD,
+        "guest-chamber": WEBHOOK_GUEST,
+    }
+    return mapping.get(channel, "")
+
+
+def _queue_failed_post(channel: str, payload: dict, error: str) -> None:
+    """Persist failed posts so they can be replayed when connectivity returns."""
+    entry = {
+        "ts": datetime.now(timezone.utc).isoformat(),
+        "channel": channel,
+        "payload": payload,
+        "error": error[:500],
+    }
+    try:
+        with _outbox_lock:
+            with open(DISCORD_OUTBOX_PATH, "a", encoding="utf-8") as f:
+                f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    except Exception as e:
+        logger.debug("Failed to persist Discord outbox entry: %s", e)
+
+
+def _replay_outbox(max_items: int = 25) -> int:
+    """Replay queued Discord posts when network is back. Returns sent count."""
+    if not os.path.exists(DISCORD_OUTBOX_PATH):
+        return 0
+
+    with _outbox_lock:
+        try:
+            with open(DISCORD_OUTBOX_PATH, "r", encoding="utf-8") as f:
+                lines = [ln for ln in f.read().splitlines() if ln.strip()]
+        except Exception as e:
+            logger.debug("Failed reading Discord outbox: %s", e)
+            return 0
+
+        if not lines:
+            return 0
+
+        entries = []
+        for ln in lines:
+            try:
+                entries.append(json.loads(ln))
+            except Exception:
+                continue
+
+        to_send = entries[:max_items]
+        remaining = entries[max_items:]
+        sent = 0
+
+        for item in to_send:
+            channel = item.get("channel", "")
+            payload = item.get("payload", {})
+            url = _webhook_url_for_channel(channel)
+            if not url:
+                remaining.append(item)
+                continue
+            try:
+                data = json.dumps(payload).encode("utf-8")
+                req = Request(url, data=data, headers={
+                    "Content-Type": "application/json",
+                    "User-Agent": "Elpida/Replay",
+                })
+                with urlopen(req, timeout=10) as resp:
+                    if resp.status in (200, 204):
+                        sent += 1
+                    else:
+                        remaining.append(item)
+            except Exception:
+                remaining.append(item)
+
+        try:
+            if remaining:
+                with open(DISCORD_OUTBOX_PATH, "w", encoding="utf-8") as f:
+                    for item in remaining:
+                        f.write(json.dumps(item, ensure_ascii=False) + "\n")
+            else:
+                os.remove(DISCORD_OUTBOX_PATH)
+        except Exception as e:
+            logger.debug("Failed writing Discord outbox after replay: %s", e)
+
+        return sent
 
 def check_webhook_health(cycle: int = 0):
     """
@@ -132,6 +223,9 @@ def check_webhook_health(cycle: int = 0):
     if last_network_state != current_state:
         if result["network_reachable"]:
             logger.info("Discord connectivity: discord.com:443 reachable (cycle %d)", cycle)
+            replayed = _replay_outbox(max_items=25)
+            if replayed:
+                logger.info("Discord outbox replayed %d queued notification(s)", replayed)
         else:
             logger.error(
                 "Discord connectivity: discord.com:443 UNREACHABLE from HF Space (cycle %d) — %s. "
@@ -193,8 +287,10 @@ def _post_webhook(url: str, payload: dict, channel: str) -> None:
                         "Run check_webhook_health() to diagnose.",
                         resp.status, channel
                     )
+                    _queue_failed_post(channel, payload, f"HTTP {resp.status}")
                     _FAILED_POST_WARNED[channel] = True
         except Exception as e:
+            _queue_failed_post(channel, payload, str(e))
             if channel not in _FAILED_POST_WARNED:
                 logger.error(
                     "Discord webhook post FAILED for channel=%s: %s. "
