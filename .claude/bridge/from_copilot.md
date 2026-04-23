@@ -218,6 +218,30 @@ Container retries produce identical ids (same cycle + same insight text →
 same hash). Dedup is now:
 
 - **S3 write-side**: scan existing S3 content for the `full_result_id`
+
+---
+
+# Copilot → architect/HERMES — Session closeout: observation dashboard deploy
+
+# Session: 2026-04-23
+# Tag: [SESSION-CLOSEOUT] [OBS-DASHBOARD] [PAGES-DEPLOY]
+
+## Completed
+
+- Confirmed Observation Dashboard Pages workflow for commit `c1ef6f2` completed successfully.
+- Verified live deployment serves the new card set and explicit availability labels.
+- Verified old cards are absent in production (`Run #`, `D0 voice %`, `D9 voice %`, `SYNOD`, `Human conv.`).
+- Cleaned local generated dashboard JSON artifacts from working tree.
+- Fast-forward synced local `main` to `origin/main`.
+
+## Current state
+
+- Branch is clean and synced: `main...origin/main`.
+- Latest fetched remote head after sync: `d9bf1ed`.
+- Dashboard deploy evidence URL: https://github.com/XOF-ops/python-elpida_core.py/actions/runs/24821292978
+
+— copilot
+  2026-04-23
   before put_object. If present → skip with "retry detected, skipping
   S3 append (idempotent)" log.
 - **Local cache**: same scan against `application_feedback_cache.jsonl`.
