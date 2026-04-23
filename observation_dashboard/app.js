@@ -1,4 +1,4 @@
-function get(obj, keys, fallback = "n/a") {
+function get(obj, keys, fallback = "unavailable_in_snapshot") {
   for (const key of keys) {
     if (obj && Object.prototype.hasOwnProperty.call(obj, key) && obj[key] !== null && obj[key] !== undefined) {
       return obj[key];
@@ -12,15 +12,15 @@ function cardHtml(label, value) {
 }
 
 function nestedCount(obj, key) {
-  if (!obj || typeof obj !== "object") return "n/a";
+  if (!obj || typeof obj !== "object") return "unavailable_in_snapshot";
   const v = obj[key];
-  return v !== null && v !== undefined ? v : "n/a";
+  return v !== null && v !== undefined ? v : "unavailable_in_snapshot";
 }
 
 function formatS3Isolated(v) {
   if (v === true) return "yes";
   if (v === false) return "no";
-  return "n/a";
+  return "unknown_in_snapshot";
 }
 
 function setToken(token) {
@@ -110,7 +110,7 @@ function renderD15Meta(index, pathUsed) {
   const tc = index.total_count != null ? index.total_count : "?";
   const iz = index.index_size != null ? index.index_size : (index.broadcasts || []).length;
   const ga = index.generated_at || "unknown";
-  meta.textContent = `Hub: ${pathUsed} · schema=${index.schema || "n/a"} · total_count=${tc} · index_size=${iz} · generated_at=${ga}`;
+  meta.textContent = `Hub: ${pathUsed} · schema=${index.schema || "unknown_in_d15_index"} · total_count=${tc} · index_size=${iz} · generated_at=${ga}`;
 }
 
 function renderD15Latest(latest) {
@@ -126,15 +126,14 @@ function renderD15Latest(latest) {
       ? "ok"
       : latest.llm_synthesis_success === false
         ? "fail"
-        : "n/a";
+        : "unknown_in_d15_index";
   el.innerHTML = `
     <div class="d15-id">${escapeHtml(latest.broadcast_id)}</div>
     <div class="d15-time">${escapeHtml(latest.timestamp || "")}</div>
     <div class="d15-axioms">${escapeHtml(ax || "—")}</div>
     <div class="d15-synth">${escapeHtml(latest.diplomat_synthesis || "")}</div>
-    <div class="d15-gov">Verdict: ${escapeHtml(String(gov.verdict ?? "n/a"))} · approval_rate: ${
-  gov.approval_rate != null ? escapeHtml(String(gov.approval_rate)) : "n/a"
-} · llm_synthesis: ${llm}</div>
+    <div class="d15-gov">Verdict: ${escapeHtml(String(gov.verdict ?? "unknown_in_d15_index"))} · approval_rate: ${gov.approval_rate != null ? escapeHtml(String(gov.approval_rate)) : "unknown_in_d15_index"
+    } · llm_synthesis: ${llm}</div>
   `;
 }
 
@@ -209,15 +208,15 @@ function renderFalsification(widget) {
   cards.innerHTML = [
     cardHtml(
       "Axiom monoculture",
-      `${m1.dominant_axiom || "n/a"} ${m1.dominance_pct != null ? `${m1.dominance_pct}%` : "n/a"} (>${m1.threshold_pct ?? "60"}%)`,
+      `${m1.dominant_axiom || "none_detected_in_window"} ${m1.dominance_pct != null ? `${m1.dominance_pct}%` : "unknown_in_rollup"} (>${m1.threshold_pct ?? "60"}%)`,
     ),
     cardHtml(
       "Hours since D15",
-      `${m2.hours_since_d15 != null ? m2.hours_since_d15 : "n/a"}h (>${m2.threshold_hours ?? 8}h)`,
+      `${m2.hours_since_d15 != null ? m2.hours_since_d15 : "unknown_in_rollup"}h (>${m2.threshold_hours ?? 8}h)`,
     ),
     cardHtml(
       "External contact",
-      `${m3.hours_since_external_contact != null ? m3.hours_since_external_contact : "n/a"}h (>${m3.threshold_hours ?? 24}h)`,
+      `${m3.hours_since_external_contact != null ? m3.hours_since_external_contact : "unknown_in_rollup"}h (>${m3.threshold_hours ?? 24}h)`,
     ),
     cardHtml("Gap active", widget.gap_active ? "yes" : "no"),
   ].join("");
@@ -227,7 +226,7 @@ function renderBridgePanel(panel, pathUsed) {
   const meta = document.getElementById("bridgePanelMeta");
   const box = document.getElementById("bridgeLanes");
   const lanes = (panel && panel.lanes) || [];
-  meta.textContent = `Hub: ${pathUsed} · schema=${panel.schema || "n/a"} · lanes=${lanes.length} · generated_at=${panel.generated_at || "n/a"}`;
+  meta.textContent = `Hub: ${pathUsed} · schema=${panel.schema || "unknown_in_bridge_panel"} · lanes=${lanes.length} · generated_at=${panel.generated_at || "unknown_in_bridge_panel"}`;
   if (!lanes.length) {
     box.innerHTML =
       '<p class="timeline-empty">No bridge lanes found — run CI or add .claude/bridge/for_* / from_*.md</p>';
@@ -242,10 +241,10 @@ function bridgeLaneHtml(L) {
   return `<article class="bridge-lane">
     <div class="bl-name">${escapeHtml(L.name || L.path || "?")}</div>
     ${err}
-    <div class="bl-row"><strong>From:</strong> ${escapeHtml(L.from || "n/a")}</div>
-    <div class="bl-row"><strong>Session:</strong> ${escapeHtml(L.session || "n/a")}</div>
-    <div class="bl-row"><strong>Tags:</strong> ${escapeHtml(L.tags || "n/a")}</div>
-    <div class="bl-row"><strong>git_last_commit:</strong> ${escapeHtml(L.git_last_commit || "n/a")}</div>
+    <div class="bl-row"><strong>From:</strong> ${escapeHtml(L.from || "unknown_in_bridge_lane")}</div>
+    <div class="bl-row"><strong>Session:</strong> ${escapeHtml(L.session || "unknown_in_bridge_lane")}</div>
+    <div class="bl-row"><strong>Tags:</strong> ${escapeHtml(L.tags || "unknown_in_bridge_lane")}</div>
+    <div class="bl-row"><strong>git_last_commit:</strong> ${escapeHtml(L.git_last_commit || "unknown_in_bridge_lane")}</div>
     <div class="bl-preview">${prev}</div>
   </article>`;
 }
@@ -258,25 +257,26 @@ function renderBridgePanelError(pathUsed, err) {
 function renderRollup(rollup, pathUsed) {
   const meta = document.getElementById("rollupMeta");
   const wh = rollup.window_hours != null ? rollup.window_hours : "?";
-  meta.textContent = `Hub: ${pathUsed} · schema=${rollup.schema || "n/a"} · window=${wh}h · ${rollup.window_start || ""} → ${rollup.window_end || ""}`;
+  meta.textContent = `Hub: ${pathUsed} · schema=${rollup.schema || "unknown_in_rollup"} · window=${wh}h · ${rollup.window_start || ""} → ${rollup.window_end || ""}`;
 
   const d15 = rollup.d15_in_window || {};
   const bsig = rollup.body_signal || {};
   const msig = rollup.mind_signal || {};
   const p = bsig.p055_stats || {};
+  const pStatus = bsig.p055_status || "unavailable_in_rollup";
   const totals = rollup.d15_index_totals || {};
 
   document.getElementById("rollupCards").innerHTML = [
-    cardHtml("D15 events (window)", d15.count != null ? d15.count : "n/a"),
-    cardHtml("D15 index total_count", totals.total_count != null ? totals.total_count : "n/a"),
-    cardHtml("BODY coherence (point)", bsig.coherence != null ? bsig.coherence : "n/a"),
-    cardHtml("BODY cycle (point)", bsig.cycle != null ? bsig.cycle : "n/a"),
+    cardHtml("D15 events (window)", d15.count != null ? d15.count : "unknown_in_rollup"),
+    cardHtml("D15 index total_count", totals.total_count != null ? totals.total_count : "unknown_in_rollup"),
+    cardHtml("BODY coherence (point)", bsig.coherence != null ? bsig.coherence : "unknown_in_rollup"),
+    cardHtml("BODY cycle (point)", bsig.cycle != null ? bsig.cycle : "unknown_in_rollup"),
     cardHtml("S3 isolated (point)", formatS3Isolated(bsig.s3_isolated)),
-    cardHtml("P055 samples (n)", p.n != null ? p.n : "n/a"),
-    cardHtml("P055 min / max", p.n ? `${p.min} / ${p.max}` : "n/a"),
-    cardHtml("P055 avg", p.avg != null ? p.avg : "n/a"),
-    cardHtml("MIND cycle (point)", msig.cycle != null ? msig.cycle : "n/a"),
-    cardHtml("Dominant theme", msig.dominant_theme != null ? msig.dominant_theme : "n/a"),
+    cardHtml("P055 samples (n)", p.n != null ? p.n : pStatus),
+    cardHtml("P055 min / max", p.n ? `${p.min} / ${p.max}` : pStatus),
+    cardHtml("P055 avg", p.avg != null ? p.avg : pStatus),
+    cardHtml("MIND cycle (point)", msig.cycle != null ? msig.cycle : "unknown_in_rollup"),
+    cardHtml("Dominant theme", msig.dominant_theme != null ? msig.dominant_theme : "unknown_in_rollup"),
   ].join("");
 
   document.getElementById("rollupRaw").textContent = JSON.stringify(rollup, null, 2);
@@ -342,16 +342,25 @@ function render(snapshot) {
   document.getElementById("mindCards").innerHTML = [
     cardHtml("Run Progress", get(mind, ["run_progress", "cycle_progress"])),
     cardHtml("MIND cycle", get(mind, ["cycle", "mind_cycle"])),
-    cardHtml("Run #", get(mind, ["run_number"])),
+    cardHtml("Current rhythm", get(mind, ["current_rhythm"])),
+    cardHtml("Current domain", get(mind, ["current_domain"])),
+    cardHtml("Ark mood", get(mind, ["ark_mood"])),
     cardHtml("Epoch", get(mind, ["epoch", "mind_epoch"])),
     cardHtml("Dominant theme", get(mind, ["dominant_theme", "canonical_theme"])),
+    cardHtml("Theme hits (window)", `${get(mind, ["recent_theme_top_count"], 0)} / ${get(mind, ["recent_theme_window_size"], 0)}`),
+    cardHtml("Theme domains", get(mind, ["recent_theme_top_domains"])),
     cardHtml("Canonical count", get(mind, ["canonical_count"])),
+    cardHtml("Pending canonicals", get(mind, ["pending_canonical_count"])),
     cardHtml("Coherence", get(mind, ["coherence"])),
-    cardHtml("D0 voice %", get(mind, ["d0_voice_pct", "d0_voice_frequency", "d0_frequency"])),
-    cardHtml("D9 voice %", get(mind, ["d9_voice_pct", "d9_voice_frequency", "d9_frequency"])),
-    cardHtml("SYNOD", get(mind, ["synod_count", "synod_events"])),
-    cardHtml("KAYA", get(mind, ["kaya_count", "kaya_events"])),
-    cardHtml("Human conv.", get(mind, ["human_conversation_count", "human_conversations"])),
+    cardHtml("Dominant axiom", get(mind, ["dominant_axiom"])),
+    cardHtml("Recursion warning", get(mind, ["recursion_warning"])),
+    cardHtml("Recursion type", get(mind, ["recursion_pattern_type"])),
+    cardHtml("Kernel version", get(mind, ["kernel_version"])),
+    cardHtml("Kernel blocks", get(mind, ["kernel_blocks_total"])),
+    cardHtml("Kaya moments", get(mind, ["kaya_count", "kaya_moments"])),
+    cardHtml("Hub entries", get(mind, ["hub_entry_count"])),
+    cardHtml("Hub canonical", get(mind, ["hub_canonical_count"])),
+    cardHtml("Hub last admission", get(mind, ["hub_last_admission"])),
   ].join("");
 
   document.getElementById("worldCards").innerHTML = [
@@ -361,6 +370,9 @@ function render(snapshot) {
     cardHtml("Bridge panel (path)", get(world, ["bridge_panel_path"], "data/bridge_panel.json")),
     cardHtml("Rollup (path)", get(world, ["rollup_path"], "data/observation_rollup.json")),
     cardHtml("Discord Inbound", get(world, ["discord_inbound_count", "discord_count"])),
+    cardHtml("Discord inbound watermark", get(world, ["discord_inbound_watermark"])),
+    cardHtml("HF Discord outbound", get(world, ["discord_hf_outbound_status"])),
+    cardHtml("HF Discord note", get(world, ["discord_hf_outbound_note"])),
     cardHtml("RSS Tensions", get(world, ["rss_tension_count", "rss_count"])),
   ].join("");
 

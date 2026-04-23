@@ -176,6 +176,11 @@ def build() -> dict[str, Any]:
             axiom_hits[k] = axiom_hits.get(k, 0) + 1
 
     p055 = body.get("p055_history")
+    p055_status = None
+    if isinstance(body.get("kl_divergence"), str) and body["kl_divergence"].startswith("unavailable_"):
+        p055_status = body["kl_divergence"]
+    elif isinstance(p055, list) and not p055:
+        p055_status = "unavailable_in_body_heartbeat"
     if p055 is None:
         p055 = body.get("kl_history")
 
@@ -216,6 +221,7 @@ def build() -> dict[str, Any]:
             "cycle": body.get("cycle"),
             "health": body.get("health"),
             "s3_isolated": body.get("s3_isolated"),
+            "p055_status": p055_status,
             "p055_stats": _p055_stats(p055),
         },
         "mind_signal": {

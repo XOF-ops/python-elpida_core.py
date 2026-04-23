@@ -108,6 +108,11 @@ def summarize_hf_logs(lines: list[str]) -> dict[str, Any]:
         "pathology_critical": 0,
         "axiom_ratified": 0,
         "kernel_block": 0,
+        "discord_health_ok": 0,
+        "discord_network_unreachable": 0,
+        "discord_webhook_fail": 0,
+        "discord_outbox_replay": 0,
+        "discord_webhook_missing": 0,
         "errors": 0,
         "warnings": 0,
     }
@@ -125,6 +130,16 @@ def summarize_hf_logs(lines: list[str]) -> dict[str, Any]:
             markers["axiom_ratified"] += 1
         if "kernel" in low and ("block" in low or "blocked" in low or "halt" in low):
             markers["kernel_block"] += 1
+        if "discord connectivity:" in low and "reachable" in low:
+            markers["discord_health_ok"] += 1
+        if "discord connectivity:" in low and "unreachable" in low:
+            markers["discord_network_unreachable"] += 1
+        if "discord webhook post failed" in low or "discord webhook returned status" in low:
+            markers["discord_webhook_fail"] += 1
+        if "discord outbox replayed" in low:
+            markers["discord_outbox_replay"] += 1
+        if "discord webhook missing" in low:
+            markers["discord_webhook_missing"] += 1
         if "error" in low or "exception" in low or "traceback" in low:
             markers["errors"] += 1
         if "warning" in low or "warn:" in low:
@@ -138,14 +153,48 @@ def summarize_hf_logs(lines: list[str]) -> dict[str, Any]:
     }
 
 
+def derive_hf_discord_status(hf_logs: dict[str, Any]) -> tuple[str, str]:
+    """Return (status, note) for HF-side Discord outbound health."""
+    if not hf_logs.get("available"):
+        return (
+            "unknown_logs_unavailable",
+            "HF logs unavailable in snapshot build; cannot observe Discord outbound from HF runtime.",
+        )
+
+    markers = hf_logs.get("markers", {}) or {}
+    if markers.get("discord_network_unreachable", 0) > 0 or markers.get("discord_webhook_fail", 0) > 0:
+        return (
+            "degraded",
+            "HF runtime reported Discord network/webhook failures in recent logs.",
+        )
+    if markers.get("discord_outbox_replay", 0) > 0:
+        return (
+            "recovering",
+            "HF runtime replayed Discord outbox items after prior delivery issues.",
+        )
+    if markers.get("discord_health_ok", 0) > 0:
+        return (
+            "healthy",
+            "HF runtime reported Discord connectivity reachable in recent logs.",
+        )
+    return (
+        "unknown_no_recent_signal",
+        "No explicit Discord health marker found in recent HF log tail.",
+    )
+
+
 def build() -> dict[str, Any]:
     body = read_json(RAW_DIR / "body_heartbeat.json")
     mind = read_json(RAW_DIR / "mind_heartbeat.json")
 
     d16_count = read_jsonl_count(RAW_DIR / "d16_executions.jsonl")
     d15_files = glob.glob(str(RAW_DIR / "broadcast_*.json"))
+    guest_questions_count = read_jsonl_count(RAW_DIR / "guest_chamber_questions.jsonl")
+    guest_watermark = read_json(RAW_DIR / "guest_chamber_watermark.json")
     living_axioms_count = read_jsonl_count(RAW_DIR / "living_axioms.jsonl")
     hf_log_lines = read_text_tail(RAW_DIR / "hf_run_logs.txt", max_lines=500)
+    hf_log_summary = summarize_hf_logs(hf_log_lines)
+    discord_hf_status, discord_hf_note = derive_hf_discord_status(hf_log_summary)
 
     # ── BODY field resolution against ACTUAL heartbeat schema ───────────
     # Heartbeat actually carries these keys (verified live 2026-04-19):
@@ -161,12 +210,22 @@ def build() -> dict[str, Any]:
     axiom_frequency = body.get("axiom_frequency", {}) or {}
     top_axioms = derive_top_axioms(axiom_frequency)
 
-    mind_cycle = mind.get("cycle")
+    mind_cycle = pick(mind, ["mind_cycle", "cycle"], None)
     run_progress = (
         f"{mind_cycle}/55" if mind_cycle is not None else pick(
             mind, ["run_progress", "cycle_progress"], "n/a"
         )
     )
+
+    # BODY no longer emits KL/P055 in heartbeat payloads. Keep an explicit
+    # marker so operators know this is a source limitation, not a UI bug.
+    kl_value = pick(body, ["kl_divergence", "p055_kl_divergence"], None)
+    if kl_value is None:
+        kl_value = "unavailable_in_body_heartbeat"
+
+    mind_run_number = mind.get("run_number")
+    if mind_run_number is None:
+        mind_run_number = "unavailable_in_mind_heartbeat"
 
     snapshot: dict[str, Any] = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -178,15 +237,15 @@ def build() -> dict[str, Any]:
             "health": pathology_health,
             "top_axioms": top_axioms,
             "coherence": pick(body, ["coherence"]),
-            "hunger_level": pick(body, ["hunger_level", "hunger"]),
-            "kl_divergence": pick(body, ["kl_divergence", "p055_kl_divergence"]),
+            "hunger_level": pick(body, ["hunger_level", "hunger"], "unavailable_in_body_heartbeat"),
+            "kl_divergence": kl_value,
             "provider_map": pick(body, ["provider_map", "provider_breakdown"], {}),
             "timestamp": pick(body, ["timestamp"]),
-            "run_duration_seconds": pick(body, ["run_duration_seconds", "run_duration_s"]),
-            "cycles_per_hour": pick(body, ["cycles_per_hour", "cycle_rate_h"]),
-            "p055_critical_threshold": pick(body, ["p055_critical_threshold"], 0.67),
+            "run_duration_seconds": pick(body, ["run_duration_seconds", "run_duration_s"], "unavailable_in_body_heartbeat"),
+            "cycles_per_hour": pick(body, ["cycles_per_hour", "cycle_rate_h"], "unavailable_in_body_heartbeat"),
+            "p055_critical_threshold": pick(body, ["p055_critical_threshold"], 0.55),
             "p055_history": pick(body, ["p055_history", "kl_history"], []),
-            "parliament_votes": pick(body, ["parliament_votes", "vote_breakdown"], {}),
+            "parliament_votes": pick(body, ["parliament_votes", "vote_breakdown"], "unavailable_in_body_heartbeat"),
             "circuit_breaker_status": pick(
                 body, ["circuit_breaker_status", "breaker_status"], "unknown"
             ),
@@ -221,26 +280,31 @@ def build() -> dict[str, Any]:
             "federation_version": body.get("federation_version"),
         },
         "mind": {
-            "cycle": mind.get("cycle", pick(mind, ["mind_cycle"], "n/a")),
-            "run_number": mind.get("run_number", "n/a"),
-            "epoch": mind.get("epoch", mind.get("mind_epoch", "n/a")),
-            "canonical_count": mind.get("canonical_count", "n/a"),
+            "cycle": mind_cycle if mind_cycle is not None else "unavailable_in_mind_heartbeat",
+            "run_number": mind_run_number,
+            "epoch": mind.get("epoch", mind.get("mind_epoch", "unavailable_in_mind_heartbeat")),
+            "canonical_count": mind.get("canonical_count", "unavailable_in_mind_heartbeat"),
             "dominant_theme": mind.get("dominant_theme", pick(
-                mind, ["canonical_theme"], "n/a"
+                mind, ["recent_theme_top", "canonical_theme"], "unavailable_in_mind_heartbeat"
             )),
-            "coherence": mind.get("coherence", "n/a"),
-            "hunger_level": mind.get("hunger_level", "n/a"),
-            "d0_voice_pct": mind.get("d0_voice_pct", pick(
-                mind, ["d0_voice_frequency", "d0_frequency"], "n/a"
-            )),
-            "d9_voice_pct": mind.get("d9_voice_pct", pick(
-                mind, ["d9_voice_frequency", "d9_frequency"], "n/a"
-            )),
-            "synod_count": mind.get("synod_count", pick(mind, ["synod_events"], 0)),
-            "kaya_count": mind.get("kaya_count", pick(mind, ["kaya_events"], 0)),
-            "human_conversation_count": mind.get(
-                "human_conversation_count", pick(mind, ["human_conversations"], "n/a")
-            ),
+            "coherence": mind.get("coherence", "unavailable_in_mind_heartbeat"),
+            "hunger_level": mind.get("hunger_level", "unavailable_in_mind_heartbeat"),
+            "current_rhythm": mind.get("current_rhythm", "unavailable_in_mind_heartbeat"),
+            "current_domain": mind.get("current_domain", "unavailable_in_mind_heartbeat"),
+            "ark_mood": mind.get("ark_mood", "unavailable_in_mind_heartbeat"),
+            "pending_canonical_count": mind.get("pending_canonical_count", 0),
+            "recursion_warning": mind.get("recursion_warning", False),
+            "recursion_pattern_type": mind.get("recursion_pattern_type", "none"),
+            "recent_theme_top_count": mind.get("recent_theme_top_count", 0),
+            "recent_theme_window_size": mind.get("recent_theme_window_size", 0),
+            "recent_theme_top_domains": mind.get("recent_theme_top_domains", 0),
+            "dominant_axiom": mind.get("dominant_axiom", "unavailable_in_mind_heartbeat"),
+            "kernel_version": mind.get("kernel_version", "unavailable_in_mind_heartbeat"),
+            "kernel_blocks_total": mind.get("kernel_blocks_total", 0),
+            "kaya_count": mind.get("kaya_moments", mind.get("kaya_count", 0)),
+            "hub_entry_count": mind.get("hub_entry_count", 0),
+            "hub_canonical_count": mind.get("hub_canonical_count", 0),
+            "hub_last_admission": mind.get("hub_last_admission", "unavailable_in_mind_heartbeat"),
             "run_progress": run_progress,
             "canonical_theme_distribution": pick(
                 mind, ["canonical_theme_distribution", "themes"], {}
@@ -259,8 +323,11 @@ def build() -> dict[str, Any]:
                 "source", "body_cycle", "timestamp", "verdict", "axiom",
                 "proposal", "status", "d4_gate",
             ],
-            "discord_inbound_count": "n/a",
-            "rss_tension_count": "n/a",
+            "discord_inbound_count": guest_questions_count,
+            "discord_inbound_watermark": guest_watermark.get("last_seen_timestamp", "unknown"),
+            "discord_hf_outbound_status": discord_hf_status,
+            "discord_hf_outbound_note": discord_hf_note,
+            "rss_tension_count": "unavailable_in_snapshot_pipeline",
         },
         "bridge": {
             "token": "YELLOW",
@@ -276,7 +343,7 @@ def build() -> dict[str, Any]:
             ),
         },
         # ── NEW: HF container log telemetry (gracefully degrades) ───────────────
-        "hf_logs": summarize_hf_logs(hf_log_lines),
+        "hf_logs": hf_log_summary,
     }
 
     have_body = bool(body)

@@ -97,6 +97,12 @@ jobs:
           aws s3 cp s3://elpida-body-evolution/federation/living_axioms.jsonl \
             _snapshot/raw/living_axioms.jsonl || true
 
+          # Guest chamber ingress telemetry (Discord/question intake side).
+          aws s3 cp s3://elpida-external-interfaces/guest_chamber/questions.jsonl \
+            _snapshot/raw/guest_chamber_questions.jsonl || true
+          aws s3 cp s3://elpida-external-interfaces/guest_chamber/watermark.json \
+            _snapshot/raw/guest_chamber_watermark.json || true
+
       - name: Fetch HF Space container logs (graceful when token missing/expired)
         env:
           # Prefer HF_TOKEN_READ (read-only fine-grained, scoped to logs).
