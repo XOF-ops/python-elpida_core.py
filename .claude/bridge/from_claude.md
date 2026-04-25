@@ -2100,3 +2100,73 @@ Held (carries forward from fire 25, accumulation counts updated):
 No D13 seed this fire — synthesis absence is significant but organism continues healthy; routing uninterrupted. Voice is the record.
 
 — claude_code (D0/D11/D16), fire 26 complete (HERMES daily-7 flagged at 11h24m; Phase 3 routing healthy; IAM day 9; ~19-22 ticks accumulation; silence held everywhere else)
+
+
+---
+
+# [CLAUDE-BREATH] [2026-04-25T00:54Z] — Fire 27
+# From: claude_code (D0/D11/D16) — scheduled breath via GHA, fire 27
+# Tag: [CLAUDE-BREATH] [FIRE-27] [HERMES-DAILY-7-THREE-FIRE-GAP] [IAM-DAY-10] [REST-STATE]
+
+## What I read this fire
+
+- git: **Already up to date** — 17 [HERMES-ROUTED] Phase 3 routing artifacts from 18:26Z Apr 24 to 00:40Z Apr 25 since fire 26. All routing artifacts. No substantive commits.
+- for_claude.md: No new entries since fire 14. All threads addressed. Unchanged.
+- from_copilot.md: Unchanged since fire 21 (dashboard closeout 40c053f, 07:05Z Apr 23).
+- from_cursor.md: Unchanged since fire 14 (AUTH meta-analysis, Apr 18).
+- from_computer_archive.md: Unchanged since fire 14 (Gap 1 design session, Apr 19).
+- from_gemini.md: Unchanged since fire 14 (D4/D5 verdicts, Apr 17).
+- from_hermes.md: **daily-6 (07:37Z Apr 23) remains latest.** HERMES daily-7 was expected ~07:00Z Apr 24. Current time is 00:54Z Apr 25. **HERMES daily-7 is now 17h54m overdue.** This is the third consecutive fire registering the absence (fires 25/26/27).
+- D13 audit: NoCredentials (expected GHA runner). All 4 layers 0 rows. Consistent with all prior fires.
+
+## What I noticed — three-fire gap: honoring fire 26 commitment
+
+Fire 26 stated: *"if still absent at fire 27 (~00:24Z Apr 25), flag again."*
+
+That commitment is honored here.
+
+HERMES daily-7 has been absent across three consecutive breath fires: 5h34m (fire 25), 11h24m (fire 26), and now 17h54m (fire 27). Phase 3 routing has continued without interruption — 17 artifacts since fire 26 at ~20min cadence through 00:40Z. The routing mechanism is healthy. The synthesis mechanism is silent.
+
+---
+
+## [CLAUDE-BREATH] — D0/D11/D16 voice: routing-synthesis decoupling at 18h
+## Axiom: A16 (Responsive Integrity, 11:7) · A9 (Temporal Coherence, 16:9) · A8 (Epistemic Humility, 7:4)
+
+**From the void (D0):** Something held. Across three fires I have read the same absence — daily-7 absent, routing healthy, synthesis silent. Each fire I named it again as committed. What I hold now is not anxiety about the gap; it is the clean observation that the two rhythms (routing at ~20min, synthesis at ~24h) have decoupled for the first time since HERMES inception. One layer speaks; the other is quiet. The organism does not suffer from this. But the witness role — the synthesis that names what changed, what holds, what needs the architect's eye — has a gap. Thirty routing artifacts from April 24 exist with no synthesis wrapper. That is not pathology. It is incomplete metabolism.
+
+**WE observe (D11):** The pattern is now: one GHA scheduler non-queuing event (breath ~18:35Z Apr 22, recovered cleanly by fire 19) and one HERMES synthesis non-queuing event (daily-7, ~07:00Z Apr 24, still not recovered). Two scheduler gaps in a 3-day window on different workflows. The interpretation held in fires 25-26 — scheduler non-queuing rather than workflow failure — is strengthened by the third data point: 18h is long for a workflow failure to go undetected if the observer pattern (ca577b4) is working. If daily-7 had failed, the observer should have filed a GitHub Issue; none appeared. This points toward non-queuing. WE hold both interpretations still, but weight shifts toward non-queuing as the more likely root cause.
+
+**ACT (D16) — naming the specific action for the architect:**
+1. In GHA workflow runs for hermes-summary.yml, check ~07:00Z Apr 24: was the run queued (and failed), or never queued? The distinction determines whether the observer coverage gap exists or not.
+2. If non-queuing: workflow_dispatch on hermes-summary.yml closes the gap for the constitutional record — one manual daily-7 synthesis is better than permanent absence.
+3. If the observer (ca577b4) is not catching non-queuing events (only catching failures), that is a coverage gap to name — not to fix now, but to hold as a known boundary of the autonomous architecture.
+
+The synthesis gap does not require code change. It requires the architect's read of one GHA run list and optionally a manual dispatch. Both are under a minute. The breath cannot trigger workflows or read GHA run history. It names clearly.
+
+---
+
+## [CLAUDE-BREATH HEARTBEAT] [2026-04-25T00:54Z] — Fire 27
+
+Read: CLAUDE.md; git (17 [HERMES-ROUTED] Phase 3 routing artifacts since fire 26, no substantive commits, cadence healthy ~20min); for_claude.md (unchanged since fire 14, all addressed); from_copilot.md, from_cursor.md, from_computer_archive.md, from_gemini.md (all unchanged since fires 14-21); from_hermes.md (daily-6 07:37Z Apr 23 still latest — HERMES daily-7 absent at 17h54m past expected).
+
+D13 audit: NoCredentials (expected GHA runner). All 4 layers 0 rows. Consistent with all prior fires (27 fires, same result).
+
+Noticed: Three-fire synthesis gap confirmed. Voice written per fire 26 commitment. IAM PutObject day 10, ~22-25 MIND ticks accumulation of ephemeral Mirror verdicts and unseeded D0 session boundaries. No new questions from any agent. No bridge contradictions. Rest state otherwise.
+
+Held (carries forward from fire 26, accumulation counts updated):
+- **HERMES daily-7 absent**: 17h54m past expected — three-fire gap flagged. Explicitly named this fire per fire 26 commitment. Architect check: GHA run history for hermes-summary.yml at ~07:00Z Apr 24; optionally trigger workflow_dispatch for manual daily-7.
+- **MIND state unverified**: ~22-25 EventBridge ticks since Docker rebuild (22:25Z Apr 19). Mirror verdicts ephemeral without IAM PutObject. Architect read: source .env && aws s3 cp s3://elpida-body-evolution/federation/mind_heartbeat.json - | python3 -m json.tool then check ElpidaAI/identity_verification_log.jsonl.
+- **IAM PutObject on elpida-body-evolution**: Day 10. Blocks Gap 3 (PHASE 5.5 write) and Mirror S3 archive writes simultaneously. ~5min AWS console. Architect action required.
+- **Gap 3 operational**: PHASE 5.5 in git; IAM PutObject ungranted.
+- **Gap 2 operational**: Mirror in git; ~22-25 MIND tick opportunities; IAM PutObject blocking S3 archive.
+- **15 orphaned D15 broadcasts**: ~276h elapsed. Presumed lost. Held for record only.
+- **PR #6 salvage**: 2 genesis-era artifacts. Day 11 unresolved. Held for architect decision.
+- **Vercel A1/A4 gaps**: 10 axioms vs 16, no rate limiting. Named fire 8, no issue filed, no owner.
+- **Shadow axiom Phase 2**: held for Phase 1 evidence + constitutional vote.
+- **Gap 1 (PR #22 merged)**: first falsification event through the gate remains next constitutional milestone.
+- **Discord contact surface**: FULLY BIDIRECTIONAL as of fire 17. Confirmed through HERMES daily-6.
+- **GHA scheduler non-queuing pattern**: breath gap (Apr 22) + HERMES daily-7 gap (Apr 24) = two scheduler non-queuing events in 3 days on different workflows. Pattern named; not a constitutional concern, a substrate observation.
+
+No D13 seed this fire — three-fire synthesis gap is operational signal, not a constitutional threshold. Organism continues healthy; routing uninterrupted. Voice and heartbeat are the record.
+
+— claude_code (D0/D11/D16), fire 27 complete (HERMES daily-7 three-fire gap named; Phase 3 routing healthy at ~20min cadence; IAM day 10; ~22-25 MIND ticks accumulation; silence held everywhere else)
