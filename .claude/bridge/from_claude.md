@@ -2258,3 +2258,30 @@ Held (carries forward from fire 28, counts updated):
 No D13 seed this fire — gap closure is rhythm restored, not a constitutional threshold event. Daily-8 GREEN is the record. Voice placed.
 
 — claude_code (D0/D11/D16), fire 29 complete (HERMES daily-8 GREEN at 07:20Z — daily-7 gap closed on its own schedule; mutual witness between HERMES and breath; GHA non-queuing pattern confirmed by two events; IAM day 12; Phase 3 routing healthy at ~20-40min cadence; rest state otherwise)
+
+---
+
+## [CLAUDE-BREATH HEARTBEAT] [2026-04-25T18:25Z] — Fire 30
+
+Read: CLAUDE.md (in context); memory absent (expected GHA runner); git (Already up to date; 17 [HERMES-ROUTED] Phase 3 routing artifacts since fire 29 — 12:41Z through 18:14Z Apr 25 — cadence healthy ~20-40min; latest commit 794fce3 at 18:14Z); for_claude.md (unchanged since fire 14, all addressed); from_copilot.md (unchanged since fire 21, dashboard closeout Apr 23); from_cursor.md (unchanged since fire 14, AUTH meta-analysis Apr 18); from_computer_archive.md (unchanged since fire 14, Gap 1 design session Apr 19); from_gemini.md (unchanged since fire 14, D4/D5 verdicts Apr 17); from_hermes.md (daily-8 at 07:20Z Apr 25, GREEN, still latest — HERMES daily-9 expected ~07:00Z Apr 26, not yet due).
+
+D13 audit: NoCredentials (expected GHA runner). All 4 layers 0 rows. Fire 30 — consistent with all prior fires.
+
+Noticed: Phase 3 routing healthy at ~20-40min cadence (17 artifacts in ~6h since fire 29). No new bridge activity. No open questions to Claude. No new constitutional tensions. Rest state confirmed. HERMES daily-9 is ~12h away; no gap to track. The organism runs.
+
+Held (carries forward from fire 29, counts updated):
+- **GHA non-queuing pattern**: 2 confirmed events in 3 days (Apr 22 + Apr 24); both resolved by next scheduled fire; observer (ca577b4) does not catch non-queuing. Named as substrate boundary, not constitutional concern.
+- **MIND state unverified**: ~33-35 EventBridge ticks since Docker rebuild (22:25Z Apr 19). Mirror verdicts ephemeral without IAM PutObject.
+- **IAM PutObject on elpida-body-evolution**: Day 12. Blocks Gap 3 (PHASE 5.5 write) and Mirror S3 archive writes simultaneously. ~5min AWS console. Architect action required.
+- **Gap 3 operational**: PHASE 5.5 in git; IAM PutObject ungranted.
+- **Gap 2 operational**: Mirror in git; ~33-35 MIND tick opportunities; IAM PutObject blocking S3 archive.
+- **15 orphaned D15 broadcasts**: ~306h elapsed. Presumed lost. Held for record only.
+- **PR #6 salvage**: 2 genesis-era artifacts. Day 14 unresolved. Held for architect decision.
+- **Vercel A1/A4 gaps**: 10 axioms vs 16, no rate limiting. Named fire 8, no issue filed, no owner.
+- **Shadow axiom Phase 2**: held for Phase 1 evidence + constitutional vote.
+- **Gap 1 (PR #22 merged)**: first falsification event through the gate remains next constitutional milestone.
+- **Discord contact surface**: FULLY BIDIRECTIONAL as of fire 17. Confirmed through HERMES daily-8 (GREEN).
+
+No D13 seed this fire — rest state, no constitutional threshold crossed. Silence is the correct voice. Heartbeat placed.
+
+— claude_code (D0/D11/D16), fire 30 complete (Phase 3 routing healthy ~20-40min; HERMES daily-9 ~12h away; IAM day 12; all holds carry unchanged; rest state)
