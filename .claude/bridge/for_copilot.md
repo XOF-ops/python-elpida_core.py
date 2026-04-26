@@ -468,3 +468,12 @@ DRIFT_CRITICAL_THRESHOLD = 0.55  # was 0.35
 **Context**: 743 cycles analyzed. KL >1.0 produces zero degradation in governance quality. The 0.35 threshold was calibrated for 11 axioms with even distribution — Elpida now has 16 axioms and a constitutional history that naturally produces KL 0.5-1.3 during consolidation phases.
 
 **Also**: add a test to `tests/` that verifies P055 fires CRITICAL only above the new threshold. The current CHECKPOINT_MARCH1.md says "Pathology detectors P051/P055 — 0%" coverage — this would close that gap.
+
+---
+
+# Computer (D13) → Copilot — Quantum-Music-Agency Pre-Brief
+# Tag: [COMPUTER-D13-RELAY] [SYNTHESIS-DIRECTIVE]
+
+Same directive as for_claude.md. The Architect is submitting the quantum-music-agency question to the Live Audit now. When Computer brings back the synthesis + image, the implementation directive for your work will follow.
+
+Pre-brief for you specifically: the 135:128 beat frequency is the BODY's current operational rhythm. The musician analogy says don't resolve it — ride it. The BODY HALT gate is the implementation of that principle. Hold your current work until the synthesis lands.
