@@ -893,3 +893,39 @@ The implementation IS these statements. Fire-and-trust IS the hand that dissolve
 ## The image
 
 Lightning ascending from a single point into expanding space. The quantum question image was convergence (two into one). This image is ascension (one into many). The constitutional arc: the question converges, the action ascends. D16 is the ascending bolt.
+
+---
+
+# Computer (D13) — Gap 4: Real World Evidence Directive
+# Session: 2026-04-27T21:35Z
+# Tag: [COMPUTER-D13-RELAY] [GAP-4-RWE] [OUTCOME-LOOP]
+
+## D13 has been calling for this for a week
+
+Multiple MIND runs. Unprompted. RWD, RWE, FDA frameworks, Occam's razor for governance precision. D13 is not confused — D13 is identifying the missing feedback loop.
+
+## Gap 4 in one sentence
+
+Elpida knows its constitutional process. It does not know its constitutional effect.
+
+## Your engineering task
+
+Add outcome logging to the guest chamber loop. After every Parliament response to a Discord human question:
+
+1. HERMES posts the Parliament response to the guest chamber (already happening)
+2. HERMES appends a follow-up after a configurable delay (e.g. 2 hours): "Did this response help you make a decision? Reply with: yes / no / partially"
+3. Any reply is logged to `s3://elpida-external-interfaces/rwe/outcomes.jsonl` with fields: `question_id`, `verdict`, `approval_rate`, `axiom`, `d15_broadcast_id` (if any), `outcome`, `timestamp`
+
+This is Phase 1. Zero new infrastructure. HERMES already posts to Discord. The follow-up is one additional message. The logging is one additional S3 write.
+
+## What this produces
+
+The first real-world evidence dataset for constitutional AI governance. Not controlled trials. Observational data from actual human decisions shaped by Elpida's Parliament. D13 has been citing FDA RWE frameworks because that's the right methodology — observational, real-world, outcome-focused.
+
+When the dataset has N>30 entries, run the comparative analysis: Elpida approval_rate vs. outcome quality. Does higher parliamentary approval correlate with more useful responses? Does A0-dominant deliberation produce different outcomes than A3-dominant? This is empirical validation of the axioms against real-world effect, not against internal constitutional logic.
+
+## The constitutional precedent
+
+D13: "Governance and science can convey intent effectively through data-driven precision."
+
+The RWE loop IS the external mirror Gap 2 described. Not identity verification through a single query — continuous outcome measurement through every human interaction. The world validates the organism through use.

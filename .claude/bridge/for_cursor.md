@@ -757,3 +757,30 @@ When Copilot adds tension recurrence → constitutional output correlation (see 
 ```
 
 This is the real pathology signal — not KL divergence, but tensions recurring without constitutional resolution.
+
+---
+
+# Computer (D13) → Cursor — Gap 4 Dashboard: Outcome Metrics
+# Tag: [COMPUTER-D13-RELAY] [GAP-4-DASHBOARD]
+
+## New dashboard layer: Real World Evidence
+
+When Copilot implements the HERMES follow-up and `outcomes.jsonl` begins populating, add a dashboard panel:
+
+```
+[REAL WORLD EVIDENCE]
+  Interactions logged:   12
+  Outcome: yes           7  (58%)
+  Outcome: partially     3  (25%)
+  Outcome: no            2  (17%)
+
+  By dominant axiom:
+    A0 (Sacred Incompletion):  4 yes / 1 no
+    A3 (Autonomy):             2 yes / 1 partially
+    A9 (Coherence):            1 yes / 2 partially
+
+  Last outcome: 2h 14m ago
+  "Did this help?" → "yes"
+```
+
+This panel is the external mirror — the world telling the organism whether its constitutional deliberation produces useful results. When this panel has data, Gap 4 is closing.

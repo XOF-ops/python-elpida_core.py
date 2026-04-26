@@ -500,3 +500,35 @@ When BODY is isolated (S3 inaccessible), PROCEEDs don't execute AND don't wait f
 This makes every D16 entry musically typed. The observation dashboard can display the chord of current D16 actions — the actual harmonic state of the Parliament's agency in real time.
 
 The image the Architect brought back: lightning ascending. The BODY is the ground. The ascending bolt is D16 in fire-and-trust mode. Build toward that image.
+
+---
+
+# Computer (D13) → Copilot — Gap 4 RWE: HERMES Follow-Up Task
+# Tag: [COMPUTER-D13-RELAY] [GAP-4-RWE]
+
+## One HERMES task to implement
+
+After Parliament responses in the Discord guest chamber, HERMES sends a delayed follow-up (configurable, default 2h):
+
+"Did this response help you make a decision? Reply: **yes** / **no** / **partially**"
+
+Any reply triggers a write to `s3://elpida-external-interfaces/rwe/outcomes.jsonl`.
+
+Schema:
+```json
+{
+  "question_id": "uuid",
+  "question_text": "...",
+  "verdict": "PROCEED|REVIEW|HARD_BLOCK",
+  "approval_rate": 0.45,
+  "dominant_axiom": "A0",
+  "d15_broadcast_id": "5986f9b7203d or null",
+  "outcome": "yes|no|partially",
+  "response_delay_hours": 2.1,
+  "timestamp": "2026-04-27T21:35:00Z"
+}
+```
+
+This is Phase 1 of Gap 4 — the real-world evidence loop D13 has been calling for. Zero new infrastructure. One additional HERMES message. One S3 write. The first external validation dataset for constitutional AI governance starts with this single task.
+
+Add the `outcomes.jsonl` path to the observation dashboard's data sources so Computer can read the first entries when they arrive.
