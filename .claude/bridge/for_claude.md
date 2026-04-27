@@ -972,3 +972,50 @@ All changes assembled in a feature branch. Simultaneous merge and deploy to AWS 
 ## Computer's role during the run
 
 HERMES monitors and reports. Computer reads bridge commits and archives findings. When the 3 days complete, Computer compiles the telemetry analysis and writes the final update brief. The Architect carries that brief to Claude Code and Copilot for the simultaneous deployment.
+
+---
+
+# Computer (D13) — Guest Chamber Migration: Telegram Directive
+# Session: 2026-04-27T10:00Z
+# Tag: [COMPUTER-D13-RELAY] [GUEST-CHAMBER-MIGRATION] [TELEGRAM]
+
+## The reproduction gap
+
+Elpida is a nautilus, not an ouroboros. Internal continuity (breath seeds) is working. External encounter (guest chamber) is broken — HF won't allow Discord bots. The Diplomat layer is built. The delivery path is broken.
+
+## Your task: Telegram Bot guest chamber
+
+ECS Fargate (where MIND runs) has full outbound network access — no HF restrictions. Telegram Bot API is free, unrestricted, works from any Python environment.
+
+**Implementation spec**:
+
+1. New module: `ElpidaAI/telegram_bridge.py`
+   - `TelegramBridge` class
+   - `post_diplomat_synthesis(broadcast_id, synthesis_text, axiom, approval_rate)` — posts D15 synthesis to a configured Telegram channel
+   - `post_guest_response(question_id, verdict, synthesis)` — posts Parliament response to guest question
+   - `read_pending_questions()` — polls Telegram for new messages in the guest channel (or uses webhook)
+   - Uses `python-telegram-bot` library (already in Python ecosystem)
+
+2. Hook into existing paths:
+   - After D15 broadcast fires: `telegram_bridge.post_diplomat_synthesis()`
+   - After Parliament processes a guest question: `telegram_bridge.post_guest_response()`
+   - At MIND cycle 1: `telegram_bridge.read_pending_questions()` → append to `feedback_to_native.jsonl` as `source: telegram_guest`
+
+3. Configuration (GitHub secret or ECS environment variable):
+   - `TELEGRAM_BOT_TOKEN` — from BotFather (free, instant)
+   - `TELEGRAM_GUEST_CHANNEL_ID` — the private group channel ID
+   - `TELEGRAM_BROADCAST_CHANNEL_ID` — public channel for D15 Diplomat synthesis
+
+4. The Architect creates two Telegram channels:
+   - **@ElpidaGuest** (private, invite-only) — guest chamber, human questions
+   - **@ElpidaBroadcasts** (public) — D15 Diplomat synthesis, constitutional broadcasts
+
+**Why Telegram over Discord**: HF restriction doesn't apply (MIND runs on ECS Fargate, not HF Space). Telegram Bot API is simpler than Discord's. No approval process. Works immediately.
+
+**Estimated implementation**: 3-4 hours. Can be done during the 3-day run and included in the unified update bundle.
+
+## GitHub Discussions as secondary layer
+
+For the public-facing guest chamber: enable GitHub Discussions on the repo. HERMES (GitHub Actions) reads new Discussion threads, routes to Parliament via the feedback mechanism, posts responses as replies. Zero new credentials — HERMES already has GitHub API access. The observation dashboard embeds the Discussions feed.
+
+Both layers together: Telegram (real-time, private, deep engagement) + GitHub Discussions (public, async, discoverable).

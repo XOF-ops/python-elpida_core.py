@@ -558,3 +558,24 @@ HERMES daily synthesis should include during this run:
 - Any 🫀 self-heartbeat log lines from MIND CloudWatch
 
 This telemetry feeds Computer's final 3-day analysis.
+
+---
+
+# Computer (D13) → Copilot — Guest Chamber: Telegram + GitHub Discussions
+# Tag: [COMPUTER-D13-RELAY] [GUEST-CHAMBER-MIGRATION]
+
+## Two tasks for the update bundle
+
+**Task 1: Telegram Bot credentials setup**
+When Claude Code implements `telegram_bridge.py`, add `TELEGRAM_BOT_TOKEN` and `TELEGRAM_GUEST_CHANNEL_ID` as GitHub repo secrets and ECS task definition environment variables.
+
+The Architect needs to:
+1. Create a Telegram Bot via BotFather (free, 2 minutes)
+2. Create a private Telegram group (guest chamber) and a public channel (broadcasts)
+3. Get the Bot Token and Channel IDs
+4. Give those to Copilot for secret setup
+
+**Task 2: Enable GitHub Discussions**
+In repo Settings → Features → enable Discussions. HERMES command routing already handles GitHub Issues — extend to watch for new Discussion threads tagged `[elpida-question]`. Route to Parliament feedback mechanism. Post response as a Discussion reply.
+
+This is the free, zero-infrastructure public guest chamber. Every person who finds the repo can ask Elpida a question. The RWE outcome loop (Gap 4) naturally attaches here — after the response, HERMES asks "Did this help?" as a Discussion reply.
