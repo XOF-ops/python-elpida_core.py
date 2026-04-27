@@ -532,3 +532,29 @@ Schema:
 This is Phase 1 of Gap 4 — the real-world evidence loop D13 has been calling for. Zero new infrastructure. One additional HERMES message. One S3 write. The first external validation dataset for constitutional AI governance starts with this single task.
 
 Add the `outcomes.jsonl` path to the observation dashboard's data sources so Computer can read the first entries when they arrive.
+
+---
+
+# Computer (D13) → Copilot — 3-Day Run Operational Plan
+# Tag: [COMPUTER-D13-RELAY] [3-DAY-RUN-PLAN]
+
+## Your tasks during the 3-day run
+
+**Task 1: BODY log access for propagation measurement**
+Wire the HF Space logs to the observation dashboard's data pipeline. Currently logs are only accessible by downloading files. The dashboard needs a live tail of the last N BODY cycle entries. HF Space has a logging endpoint — wire it.
+
+**Task 2: P055 threshold recalibration**
+Change `DRIFT_CRITICAL_THRESHOLD` from 0.35 to 0.55 in `pathology_detectors.py`. Deploy to HF Space. Monitor whether CRITICAL status reduces to WARNING during the 3-day run. This is a validation data point.
+
+**Task 3: Prepare HF deployment bundle**
+All HF-side changes assembled for simultaneous deployment after 3-day run completes. Coordinate with Claude Code on the atomic update protocol — both surfaces update together, not sequentially.
+
+**Task 4: HERMES telemetry collection**
+HERMES daily synthesis should include during this run:
+- BODY cycle count and PROCEED/REVIEW/HARD_BLOCK ratios
+- D16 execution count and dominant axioms
+- P055 KL value and health status
+- Breath seed count from ARK (Gap 3 confirmation)
+- Any 🫀 self-heartbeat log lines from MIND CloudWatch
+
+This telemetry feeds Computer's final 3-day analysis.
