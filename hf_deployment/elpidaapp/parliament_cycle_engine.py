@@ -1314,6 +1314,8 @@ class ParliamentCycleEngine:
             "phase1_shadow_extended_scores": shadow_phase1.get("extended_scores", {}),
             "coherence": round(self.coherence, 4),
             "governance": result.get("governance", "UNKNOWN"),
+            "decision_category": result.get("decision_category", "primary_body_cycle"),
+            "violated_axioms": result.get("violated_axioms", []),
             "approval_rate": result.get("parliament", {}).get("approval_rate", 0),
             "veto_exercised": result.get("parliament", {}).get("veto_exercised", False),
             "input_source": meta.get("source", "?"),
@@ -1343,6 +1345,9 @@ class ParliamentCycleEngine:
                 else None,
             "polis_civic_active": self._polis_last_cycle == self.cycle_count,
             "s3_isolated": self._s3_isolated,
+            "_diag_stripped": result.get("_diag_stripped", "")[:1000],
+            "_diag_full_signals": result.get("_diag_full_signals", {}),
+            "_diag_signal_count": result.get("_diag_signal_count", 0),
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "duration_s": round(time.time() - cycle_start, 3),
         }
@@ -1378,6 +1383,9 @@ class ParliamentCycleEngine:
                 "rhythm": rhythm,
                 "dominant_axiom": dominant_axiom,
                 "governance": result.get("governance", "UNKNOWN"),
+                "decision_category": result.get("decision_category", "primary_body_cycle"),
+                "violated_axioms": result.get("violated_axioms", []),
+                "signal_count": result.get("_diag_signal_count", 0),
                 "approval_rate": result.get("parliament", {}).get(
                     "approval_rate", 0),
                 "veto_exercised": result.get("parliament", {}).get(

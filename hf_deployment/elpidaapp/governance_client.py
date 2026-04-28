@@ -805,6 +805,33 @@ _COMPOUND_SIGNALS = [
     },
 ]
 
+
+_SIGNAL_CONTEXT_BLOCK_RE = _re.compile(
+    r'\[(?:HUB PRECEDENT|CONSTITUTIONAL AXIOMS\s*\([^)]*\)|PATTERN LIBRARY|AUDIT PRESCRIPTION|AUDIT HEARTBEAT|PSO ADVISORY|BODY WATCH)[^\]]*\]'
+    r'(?:\s*\n(?:\s+\S+[^(]*\(A\d+(?:/A\d+)*\):[^\n]*\n?)*)?'
+    r'\s*',
+    _re.IGNORECASE,
+)
+
+_SIGNAL_HUB_PRECEDENT_RE = _re.compile(
+    r'\[HUB PRECEDENT:[\s\S]*?'
+    r'(?=\s+\[(?:CONSTITUTIONAL AXIOMS\s*\(|PATTERN LIBRARY|AUDIT PRESCRIPTION|PSO ADVISORY|BODY WATCH)\b)',
+    _re.IGNORECASE,
+)
+
+_SIGNAL_CONTEXT_LINE_RE = _re.compile(
+    r'(?m)^[ \t]*(?:--- Internal Structural Signals ---|\[AUDIT\]:[ \t]*AUDIT HEARTBEAT[^\r\n]*|\[(?:MIND STATE|INTERNAL ARC|STRUCTURAL HEALTH)[^\]]*\][^\r\n]*)[ \t]*(?:\r?\n)?',
+    _re.IGNORECASE,
+)
+
+
+def _strip_signal_metadata(action: str) -> str:
+    """Remove governance context blocks before axiom signal detection."""
+    stripped = _SIGNAL_HUB_PRECEDENT_RE.sub('', action)
+    stripped = _SIGNAL_CONTEXT_BLOCK_RE.sub('', stripped)
+    stripped = _SIGNAL_CONTEXT_LINE_RE.sub('', stripped)
+    return stripped.strip()
+
 # ── Synthesis templates for known axiom tensions ────────────────────
 # When two axiom domains are in tension, synthesis produces a "third way."
 
@@ -1663,13 +1690,19 @@ class GovernanceClient:
                 "exchange_id": exchange_id,
                 "source": "BODY",
                 "verdict": verdict,
+                "decision_category": result.get(
+                    "decision_category",
+                    "primary_body_cycle" if body_cycle is not None else "subdeliberation",
+                ),
                 "pattern_hash": action_hash,
                 "cycle": body_cycle,  # set by parliament_cycle_engine per-cycle
+                "body_cycle": body_cycle,
                 "domain": None,
                 "kernel_rule": None,
                 "parliament_score": parliament.get("approval_rate", 0),
                 "parliament_approval": parliament.get("approval_rate", 0),
                 "veto_node": (parliament.get("veto_nodes") or [None])[0],
+                "violated_axioms": result.get("violated_axioms", []),
                 "reasoning": result.get("reasoning", "")[:500],
                 "timestamp": ts,
                 # ── BUG 7 diagnostic: capture actual action text + signals ──
@@ -1682,11 +1715,13 @@ class GovernanceClient:
                     for n, v in (parliament.get("votes") or {}).items()
                 },
                 # BUG 8 diagnostic: stripped text + semantic for root cause
-                "_diag_stripped": result.get("_diag_stripped", "")[:500],
+                "_diag_stripped": result.get("_diag_stripped", "")[:1000],
                 "_diag_semantic": result.get("_diag_semantic", {}),
-                "_diag_full_signals": {
-                    k: v[:2] for k, v in parliament.get("signals", {}).items()
-                },
+                "_diag_full_signals": result.get(
+                    "_diag_full_signals",
+                    {k: v for k, v in parliament.get("signals", {}).items()},
+                ),
+                "_diag_signal_count": result.get("_diag_signal_count", 0),
             }
 
             pushed = bridge.push_body_decision(exchange)
@@ -2092,6 +2127,8 @@ class GovernanceClient:
             Use when the input is a policy/philosophical inquiry being
             *analyzed*, not an operational action being *executed*.
         """
+        action_for_signals = action
+
         # Enrich action with constitutionally ratified living axioms.
         # Ratified tensions tell the Parliament which contradictions the
         # system has already encountered and formally acknowledged —
@@ -2113,7 +2150,13 @@ class GovernanceClient:
         if hub_precedent:
             action = f"[HUB PRECEDENT: {hub_precedent}] " + action
 
-        return self._parliament_deliberate(action, hold_mode=hold_mode, body_cycle=body_cycle, no_llm=no_llm)
+        return self._parliament_deliberate(
+            action,
+            hold_mode=hold_mode,
+            body_cycle=body_cycle,
+            no_llm=no_llm,
+            action_for_signals=action_for_signals,
+        )
 
     # ────────────────────────────────────────────────────────────────
     # Dual-Horn & Oracle (Spiral Parliament Architecture)
@@ -2857,6 +2900,7 @@ class GovernanceClient:
         hold_mode: bool = False,
         body_cycle: Optional[int] = None,
         no_llm: bool = False,
+        action_for_signals: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Full 10-node Parliament deliberation.
@@ -2880,35 +2924,7 @@ class GovernanceClient:
         Returns governance result compatible with check_action() contract.
         """
         action_lower = action.lower()
-
-        # ── Strip constitutional preamble before signal detection ──
-        # check_action() prepends "[CONSTITUTIONAL AXIOMS (...): ...]"
-        # to every action.  Those summaries contain words like "force",
-        # "hidden", "exploit" that false-positive on the keyword scanner
-        # and cause near-100% veto rates.  Detect signals on the
-        # *original* action text only; keep the full string for logging.
-        _CONST_PREFIX_RE = _re.compile(
-            r'^\[CONSTITUTIONAL AXIOMS\s*\([^)]*\):[^\]]*\]\s*',
-            _re.IGNORECASE,
-        )
-        action_for_signals = _CONST_PREFIX_RE.sub('', action)
-
-        # ── Strip governance metadata prefixes (BUG 7b) ──────────
-        # run_cycle() prepends [PATTERN LIBRARY: ...], [AUDIT PRESCRIPTION: ...],
-        # [PSO ADVISORY: ...], [BODY WATCH: ...] context to the action text.
-        # Pattern Library is multi-line: header [PATTERN LIBRARY:...] + indented entries.
-        # These contain governance vocabulary ("force", "mandatory", "undefined")
-        # that false-positive on the keyword scanner.
-        # Strip ALL metadata prefixes before signal detection.
-        _METADATA_PREFIX_RE = _re.compile(
-            # Multi-line: [HEADER]\n  entry (Ax/Ay): text\n  entry...\n
-            # Single-line: [HEADER: content]
-            r'\[(?:PATTERN LIBRARY|AUDIT PRESCRIPTION|PSO ADVISORY|BODY WATCH)[^\]]*\]'
-            r'(?:\s*\n(?:\s+\S+[^(]*\(A\d+(?:/A\d+)*\):[^\n]*\n?)*)?'
-            r'\s*',
-            _re.IGNORECASE,
-        )
-        action_for_signals = _METADATA_PREFIX_RE.sub('', action_for_signals)
+        action_for_signals = _strip_signal_metadata(action_for_signals or action)
 
         # ── 1. Signal Detection ──────────────────────────────────
         signals = self._detect_signals(action_for_signals)
@@ -3228,10 +3244,12 @@ class GovernanceClient:
             self._vote_memory = self._vote_memory[-100:]
 
         # ── 9. Build result ──────────────────────────────────────
+        decision_category = "primary_body_cycle" if body_cycle is not None else "subdeliberation"
         result = {
             "allowed": governance in ("PROCEED", "HOLD"),  # HOLD = continue with awareness
             "violated_axioms": violated_axioms,
             "governance": governance,
+            "decision_category": decision_category,
             "reasoning": "; ".join(reasoning_parts) if reasoning_parts else "No axiom violations detected",
             "source": "parliament",
             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -3254,6 +3272,9 @@ class GovernanceClient:
             },
             # BUG 8 diagnostic: stripped text + semantic scores for root cause
             "_diag_stripped": action_for_signals[:1000],
+            "_diag_full_signals": {k: list(v) for k, v in signals.items()},
+            "_diag_signal_count": sum(len(v) for v in signals.values()),
+            "_diag_decision_category": decision_category,
             "_diag_semantic": {
                 k: round(v, 3)
                 for k, v in (self._last_semantic_scores or {}).items()
