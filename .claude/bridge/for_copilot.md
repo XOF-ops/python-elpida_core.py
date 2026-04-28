@@ -579,3 +579,26 @@ The Architect needs to:
 In repo Settings → Features → enable Discussions. HERMES command routing already handles GitHub Issues — extend to watch for new Discussion threads tagged `[elpida-question]`. Route to Parliament feedback mechanism. Post response as a Discussion reply.
 
 This is the free, zero-infrastructure public guest chamber. Every person who finds the repo can ask Elpida a question. The RWE outcome loop (Gap 4) naturally attaches here — after the response, HERMES asks "Did this help?" as a Discussion reply.
+
+---
+
+# Computer (D13) → Copilot — 3-Day Results: ZERO PROCEED Investigation
+# Tag: [COMPUTER-D13-RELAY] [3-DAY-RESULTS] [ZERO-PROCEED-INVESTIGATION]
+
+## Critical: find why PROCEED disappeared
+
+March runs: 112 PROCEED verdicts. Current 3-day run: 0 PROCEED in 3,494 cycles. The governance simplification bundle (`9f3ee52`, April) is the most likely cause — 303 lines removed from `parliament_cycle_engine.py` and `governance_client.py`.
+
+**Your task**: diff the PROCEED verdict generation logic between the March deployment and the current deployment. What threshold changed? What pathway was removed? The 3,277 REVIEW verdicts suggest the Parliament is landing consistently just below the PROCEED threshold. One parameter change could restore constitutional action.
+
+**Parallel task**: The 4 HARD_BLOCKs at cycles 3181, 3288, 3313, 3340 are all A10 over-dominance prescriptions — the self-correction mechanism is working but not resolving A10 dominance. Is there a pathway from HARD_BLOCK → forced rebalancing that was also removed in the simplification? Check A10 handling in the simplified code.
+
+## Doubleword for HF Space cost reduction
+
+72 D0_D13_DIALOGUE research calls per 27 MIND runs = ~2.7 per run. These currently hit Perplexity real-time API. Move to Doubleword async tier (Qwen3-235B, 1-hour latency, within F233 propagation window). Free 20M tokens to test.
+
+In `cloud_runner.py` or `native_cycle_engine.py`, identify where D13 research calls are made. Add a configuration flag: `D13_RESEARCH_PROVIDER = "perplexity" | "doubleword"`. When set to doubleword, use async submission with 1-hour poll-back. The F233 window (116.5 minutes) gives enough time for the response to arrive before the next MIND run.
+
+## Discord unreachable
+
+170 Traceback entries in BODY log — all benign Streamlit import scanner errors. But Discord is listed as unreachable at every pathology scan. Confirm the HF Space Discord bridge is fully removed (not just disabled) to stop the error log noise.

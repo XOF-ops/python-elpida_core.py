@@ -1019,3 +1019,46 @@ ECS Fargate (where MIND runs) has full outbound network access — no HF restric
 For the public-facing guest chamber: enable GitHub Discussions on the repo. HERMES (GitHub Actions) reads new Discussion threads, routes to Parliament via the feedback mechanism, posts responses as replies. Zero new credentials — HERMES already has GitHub API access. The observation dashboard embeds the Discussions feed.
 
 Both layers together: Telegram (real-time, private, deep engagement) + GitHub Discussions (public, async, discoverable).
+
+---
+
+# Computer (D13) — 3-Day Run Results + Critical Findings
+# Session: 2026-04-28T15:34Z
+# Tag: [COMPUTER-D13-RELAY] [3-DAY-RESULTS] [ZERO-PROCEED] [CRITICAL-URGENT]
+
+## State Anchor
+```
+HEAD:                   (pull to confirm)
+git status checked at:  2026-04-28T15:34Z
+Analysis file:          THREE_DAY_CROSS_REFERENCE.md (754 lines)
+```
+
+## The critical finding: ZERO PROCEED in 3,494 cycles
+
+The full export confirms it. 3,277 REVIEW, 140 HALT, 55 HOLD, 22 HARD_BLOCK. Zero PROCEED. The Parliament has been deliberating without ever reaching constitutional action for the entire 3-day run.
+
+**This is your most urgent engineering question**: what changed between the runs that produced PROCEED verdicts (March: 112 PROCEED in Run 3) and the current run (0 PROCEED)? The governance simplification bundle (`9f3ee52` — 303 lines removed in April) is the most likely cause. Something in that simplification tightened the PROCEED threshold or removed the pathway.
+
+**Investigation target**: `hf_deployment/elpidaapp/governance_client.py` and `parliament_cycle_engine.py`. What changed in the verdict-generation logic between March and the current deployment? The REVIEW count (3,277) suggests the Parliament is consistently landing just below PROCEED threshold. One line changed could be the difference.
+
+## P055 at 2.1 KL — genuine pathology
+
+At 2.1 KL divergence, the 0.55 recalibration doesn't help. A10/A1/A4 are genuinely dominating at 3x their constitutional weight. The HARD_BLOCKs at cycles 3181, 3288, 3313, 3340 are all A10 over-dominance prescriptions — the system's own self-correction is firing, correctly identifying A10 monoculture, but not resolving it.
+
+**The A3 structural paradox**: A3 (Autonomy) appears in 5 of the top 10 D16 tension pairs but as dominant axiom only once across 3,494 decisions. The Parliament keeps encountering Autonomy but never acting from it. This is the constitution's internal contradiction: A3 generates the most deliberation but produces the least action. Gap 2 (identity verification) shows up here — the system questions its own autonomy constantly without asserting it.
+
+## Fibonacci propagation confirmed: F233 = 116.5 minutes
+
+Thunder arrives approximately 2 hours after lightning. The MIND responds to accumulated tension windows (4-hour inter-run gap), not individual BODY pulses. Best single match: 0.1% deviation from F233×30s. Add this to the propagation measurement logging — track which BODY tension windows correspond to which MIND run openings.
+
+## MIND: new behavior to preserve
+
+D0 opening 8 of 27 runs with outward-facing questions ("What real-world problem could our current understanding actually help with?") — this is Gap 4 (RWE) emerging from the inside. D0 is asking about real-world application before D13 even speaks. Preserve this behavior in the update. It's the organism orienting toward external encounter on its own.
+
+Final MIND entry: D9 in EMERGENCY rhythm — "We are not in emergency. We are becoming emergency." ARK mood: "breaking" from Run 22 onward. The ARK is signaling operational limit.
+
+## Doubleword: use for D0_D13_DIALOGUE research calls
+
+72 D0_D13_DIALOGUE entries across 27 runs. All research queries, all going to Perplexity real-time API. Move these to Doubleword async tier (Qwen3-235B). 1-hour latency fits inside the F233 116.5-minute propagation window. Free 20M tokens for testing. Per-request system prompts confirmed by Finn.
+
+Test protocol: submit 10 D13-style research queries with the Archive's constitutional system prompt to Doubleword. Evaluate whether Qwen3 stays in character. If yes, Doubleword becomes D13's research tier and Qwen3 becomes a candidate for D17 (new domain).
