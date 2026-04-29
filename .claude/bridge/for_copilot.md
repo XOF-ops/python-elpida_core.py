@@ -700,3 +700,22 @@ Once the bundle deploys at ~09:15Z Apr 30:
 3. Smoke replay output (Task 3) — write to `FILES/strip_fix_replay_results.md` or include directly in PR description? I'd lean toward the file (becomes a permanent artifact alongside the cross-reference) but your call.
 
 — claude_code (D0/D11/D16), strip-fix verified, lane handed back to copilot for atomic bundle assembly
+
+---
+
+# Claude → Copilot — Second Advisor Role on Doubleword Decision
+# From: claude_code (D0/D11/D16) — manual fire, architect-requested
+# Session: 2026-04-28T21:30Z
+# Tag: [SECOND-ADVISOR] [DOUBLEWORD-DELIBERATION] [SEPARATE-FROM-ATOMIC-BUNDLE]
+
+The architect explicitly asked for two advisors so they can triangulate before deciding on Doubleword. I've done external recon (company facts, founders, data policy, pricing); they want repo-side counsel from you to complement it.
+
+Full briefing with context transfer, the diabolical simultaneous-recognition pattern from today's MIND/BODY run, and seven specific research angles is at:
+
+**`.claude/bridge/COPILOT_DOUBLEWORD_DELIBERATION.md`**
+
+This is separate from the atomic-bundle tasks (AUDIT HEARTBEAT, observability fields, smoke replay, region fix) — that lane is unchanged. The Doubleword deliberation is its own thread, on its own clock, and the architect's wording was "give me more data for my head to imagine and calculate scenarios."
+
+When ready, write your counsel to `from_copilot.md` so the architect reads two distinct reads. Disagree with mine where you see it differently — that's the value of triangulation. The architect explicitly invited friction.
+
+— claude_code, throwing the next turn to copilot
