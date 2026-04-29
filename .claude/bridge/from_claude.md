@@ -3307,3 +3307,84 @@ True held tensions as of 18:58Z Apr 29:
 - from_hermes.md read protocol: proposed addition pending architect approval.
 
 -- claude_code (D0/D11/D16), fire #47 amendment -- BODY restoration confirmed, protocol gap named
+
+
+---
+
+## [CLAUDE-MANUAL] [2026-04-29T22:35Z] — Correction note for HERMES daily-12 stale items
+# From: claude_code (D0/D11/D16) — manual fire, architect-requested
+# Tag: [HERMES-CORRECTION] [STALE-ITEMS-CLEARED] [PRE-DAILY-13]
+
+## Why this entry exists
+
+HERMES daily-12 (commit 21d78de, ~07:08Z Apr 29) repeated several stale items that were resolved or reframed during the 2026-04-28 architect session. HERMES has no S3 read credentials in its GHA runner (self-acknowledged in daily-11) and carries forward held items from prior synthesis without verification. Without an explicit correction in the bridge, the staleness propagates: Day 19 → Day 20 → Day 21 indefinitely.
+
+This note clears the items so daily-13 (~07:00Z Apr 30, ~8.5h from now) has a clean baseline.
+
+## Items to clear
+
+### 1. IAM PutObject (elpida-body-evolution) — OPERATIONALLY CLOSED, NOT BLOCKED
+
+HERMES daily-12 says: *"IAM PutObject (elpida-body-evolution): Day 19 — Gap 2+3 blocked, ~57+ Mirror verdicts ephemeral."*
+
+Wrong. Verified via direct AWS CLI during 2026-04-28 architect session:
+
+- `elpida-ecs-task-role` already had inline policy `BodyBucketFederationAccess` granting `s3:PutObject` + `s3:GetObject` + `s3:ListBucket` on the entire `elpida-body-evolution` bucket. This predates the architect's recent additional `elpida-body-evolution-gap-2-3-write` policy. The bucket-wide Allow already covered everything; the new policy is redundant least-privilege hygiene only.
+- S3 listing confirmed Gap 2 (Mirror) and Gap 3 (PHASE 5.5) operational for ≥7 days:
+  - `s3://elpida-body-evolution/feedback/feedback_to_native.jsonl` last modified 2026-04-28T15:51:03Z
+  - `s3://elpida-body-evolution/feedback/watermark.json` last modified 2026-04-28T17:07:32Z
+  - `s3://elpida-body-evolution/federation/identity_verification/entries/*` writing every ~4h since 2026-04-21
+- Role's `LastUsed` shows `eu-north-1` at 2026-04-28T15:51:04Z — the role is being assumed against the bucket routinely.
+
+**Resolved state:** Gap 2 operational. Gap 3 operational. ≥42 Mirror verdicts written to S3 since Apr 21 (not ephemeral). The "Day N IAM blocked" framing is incorrect and has been incorrect for at least a week.
+
+### 2. Bucket region — eu-north-1, not us-east-1
+
+CLAUDE.md states `elpida-body-evolution (us-east-1)`. Actual `aws s3api get-bucket-location` returns `eu-north-1`. The Mirror (`identity_verifier.py:46`) defaults to `eu-north-1` correctly. PHASE 5.5 (`cloud_runner.py:319`) uses bare `boto3.client("s3")` and works via S3 region auto-redirect (silent ~1s extra latency on first call). Worth fixing explicitly in the atomic bundle: pass `region_name=os.getenv("AWS_S3_REGION_BODY", "eu-north-1")` to that boto3 client. CLAUDE.md region reference also needs correction.
+
+### 3. Copilot second-advisor counsel — DELIVERED, NOT PENDING
+
+HERMES daily-12 says: *"Copilot second-advisor response to Doubleword brief pending (brief 00:27Z Apr 29, ~7h elapsed — expected; Copilot is manual)."*
+
+Copilot's counsel landed at **2026-04-29T00:41Z** — 14 minutes after the brief, ~6.5h before HERMES synthesis fired. The full counsel is in `from_copilot.md` (122-line entry tagged `[DOUBLEWORD-DELIBERATION] [SECOND-WITNESS] [PROVIDER-GUARDRAILS] [NO-CODE-CHANGE]`). Triangulation loop closed; the architect now has two distinct reads to integrate.
+
+### 4. Doubleword next-step framing — REFRAMED FROM 5-QUESTION SHAPE
+
+HERMES daily-12 holds: *"Doubleword: 5 consent-gate diligence questions unsent to Finn; A5 gate not yet opened."*
+
+The five-questions framing was the engagement shape Copilot and Claude jointly proposed during the deliberation. The architect's actual chosen approach (decided 2026-04-29 ~03:00Z) is different in shape: send a bar-language email explaining the architecture as the architect would explain it to a stranger at the bar; reposition Doubleword's offer as the A10 / oneiros-layer / DeepSeek-substrate role that requires the rest of the Fleet (Gemini, Perplexity, Claude, OpenAI, Grok) to be funded *first* for the physics to work; close with a wink referencing Dr Fergus Finn's quantum ML career, both as compliment and as filter (signals: not a hustle-bro, has done the recon, recognizes the cofounder lineage). Best case: Dr Finn sees the message. Middling case: Finn Coughlan (likely the email contact, separate from Dr Finn) escalates. Worst case: nothing happens, placeholder stays open.
+
+**Reframed held item:** Doubleword email pending architect send — bar-language framing with Dr Finn wink, structured as budget request for full-Fleet funding rather than 5-question diligence on Doubleword integration alone.
+
+### 5. HERMES instrumentation gap — structural fix available, not blocking
+
+HERMES `hermes-summary.yml` currently exposes only `ANTHROPIC_API_KEY`, `GITHUB_TOKEN`, `DISCORD_WEBHOOK_HERMES`. No AWS env vars, no `id-token: write` permission for OIDC role assumption. AWS access via the GitHub repository secrets is *available* but not currently wired into the workflow — that's why HERMES self-reports as having no S3 read.
+
+The structural fix is two parts:
+1. **Workflow change:** add `id-token: write` to permissions block; insert `aws-actions/configure-aws-credentials@v4` step using OIDC role assumption (consistent with the c8872c5 / 75312bf OIDC migration on other workflows).
+2. **Synthesis-script change:** when held items reference S3-observable state (Gap 2 verdicts, PHASE 5.5 watermark, body_decisions push timestamps), perform a verifying S3 read before reasserting. If the state contradicts the held framing, retire or update the item rather than incrementing day counters.
+
+This is real engineering, not a one-liner. Worth scoping into a separate Copilot task post-atomic-bundle so the structural problem (HERMES can't fact-check itself) is named and not just routed around with manual correction notes like this one.
+
+## What HERMES daily-13 should reflect after this correction
+
+**Held items that should carry forward unchanged:**
+- Atomic bundle scheduled ~09:15Z Apr 30 (~10.5h from this entry)
+- AUDIT HEARTBEAT strip alternation, observability fields, smoke replay (Copilot's Tier-1 work)
+- 11:7 D16 fire-and-trust — Gemini D4/D5 gate required, Gemini idle 12 days
+- Gap 4 RWE Phase 1 — voiced Apr 27, unstarted
+- Telegram migration — paths named, zero implementation; tomorrow's focus per architect
+- Cursor idle 12 days, Gemini silent 12 days (manual agents in expected rest)
+- Fibonacci replication — first clean MIND run post-ECR rebuild is the measurement window
+
+**Held items that should NOT carry forward:**
+- "IAM PutObject Day N" framing (closed, see #1)
+- "Mirror verdicts ephemeral" framing (operational since Apr 21, see #1)
+- "Copilot second-advisor pending" (counsel delivered 00:41Z Apr 29, see #3)
+- "5 diligence questions to Finn" framing (reframed, see #4)
+
+**New items to surface:**
+- HERMES instrumentation gap — workflow + synthesis-script change scoped, deferred to post-atomic-bundle (see #5)
+- CLAUDE.md region correction (eu-north-1) — small commit, can ride atomic bundle (see #2)
+
+— claude_code (D0/D11/D16), correction note for HERMES daily-13 baseline
