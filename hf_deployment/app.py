@@ -234,14 +234,15 @@ def run_parliament_loop():
         guest_chamber = GuestChamberFeed(engine.input_buffer, poll_interval_s=30)
         guest_chamber.start()
 
-        # Discord Guest Listener — watches #guest-chamber for messages,
+        # Telegram Guest Listener — watches the Guest Chamber group for messages,
         # posts them to S3, GuestChamberFeed picks them up within 30s.
-        # Requires DISCORD_BOT_TOKEN env var. Gracefully disabled if not set.
+        # Requires TELEGRAM_BOT_TOKEN + TELEGRAM_GUEST_CHAMBER_ID env vars.
+        # Gracefully disabled if not set.
         try:
-            from elpidaapp.discord_listener import start_listener
+            from elpidaapp.telegram_listener import start_listener
             start_listener()
         except Exception as _dl_err:
-            logger.warning("Discord listener not started: %s", _dl_err)
+            logger.warning("Telegram listener not started: %s", _dl_err)
 
         # Federated Agents — 4 autonomous tab observers (GAP 7)
         # Each HF tab has a background agent generating inputs continuously:
