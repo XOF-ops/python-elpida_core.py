@@ -71,6 +71,18 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# One-shot outbound TLS reachability diagnostic — runs once at HF Space
+# startup, prints results to logs. Lets us see immediately whether HF
+# Space's outbound is selectively filtering specific destinations
+# (Telegram, Discord) or under blanket egress restriction. Stdlib only,
+# ~10 seconds total runtime, no behavior change.
+try:
+    from elpidaapp.diagnose_outbound import diagnose_outbound
+    diagnose_outbound()
+except Exception as _diag_err:
+    logger.warning("Outbound diagnostic failed to run: %s", _diag_err)
+
+
 def run_background_worker():
     """
     I PATH: Process consciousness dilemmas from S3 every 6 hours.
