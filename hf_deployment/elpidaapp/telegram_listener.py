@@ -72,7 +72,16 @@ def _save_offset(offset: int) -> None:
 # ════════════════════════════════════════════════════════════════════
 
 def _api(method: str, params: Optional[dict] = None, timeout: int = 30) -> dict:
-    """Call Telegram Bot API; return parsed JSON or {} on failure."""
+    """Call Telegram Bot API; return parsed JSON or {} on failure.
+
+    On failure, logs the specific cause at WARNING (was DEBUG previously,
+    which made bot-token vs network-reachability vs auth bugs hard to tell
+    apart). The error string identifies the failure mode:
+      HTTP 401 → token invalid
+      HTTP 409 → competing getUpdates consumer (other instance / leftover)
+      HTTP 4xx/5xx → other API error
+      timeout/DNS/TLS → network reachability from HF Space
+    """
     if not TELEGRAM_BOT_TOKEN:
         return {}
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/{method}"
@@ -85,7 +94,19 @@ def _api(method: str, params: Optional[dict] = None, timeout: int = 30) -> dict:
         with urlopen(req, timeout=timeout) as resp:
             return json.loads(resp.read())
     except Exception as e:
-        logger.debug("Telegram API %s failed: %s", method, e)
+        # Try to extract HTTP status if present
+        from urllib.error import HTTPError, URLError
+        if isinstance(e, HTTPError):
+            try:
+                body = e.read().decode("utf-8", errors="replace")[:300]
+            except Exception:
+                body = "<unreadable>"
+            cause = f"HTTP {e.code} body={body!r}"
+        elif isinstance(e, URLError):
+            cause = f"URLError reason={e.reason!r}"
+        else:
+            cause = f"{type(e).__name__}: {e}"
+        logger.warning("Telegram API %s failed: %s", method, cause)
         return {}
 
 
@@ -224,8 +245,13 @@ def _run_listener() -> None:
             GUEST_CHAMBER_ID,
         )
     else:
+        # Don't pre-judge the cause — the WARNING from _api() above
+        # already names the specific failure mode (HTTP 401 = bad token,
+        # URLError = network unreachable, etc.). Just record that startup
+        # could not verify identity.
         logger.warning(
-            "Telegram getMe failed at startup — token may be invalid. Will keep retrying."
+            "Telegram getMe failed at startup — see preceding 'Telegram API getMe failed' "
+            "warning for specific cause. Listener will keep retrying via getUpdates."
         )
 
     offset = _load_offset()
