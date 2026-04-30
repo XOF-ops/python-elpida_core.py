@@ -1,29 +1,33 @@
-name: HERMES Phase 3 — Discord Routing
+name: HERMES Phase 3 — Telegram Routing
 
-# HERMES (Fleet THE_INTERFACE) inbound: architect → Discord command →
+# HERMES (Fleet THE_INTERFACE) inbound: architect → Telegram command →
 # HERMES parses intent → executes (create Issue, write to bridge, fire
-# workflow) → posts ack to Discord → archives to .claude/bridge/from_hermes.md.
+# workflow) → posts ack to Telegram → archives to .claude/bridge/from_hermes.md.
 #
 # The architect's exit from architect-as-protocol, completed.
 # Phase 2 (daily synthesis outbound) handles routine awareness.
 # Phase 3 (this file) handles directed action via two-way conversation.
+#
+# Migrated from Discord 2026-04-30. Architect now posts in
+# Control Room → 🎯 Commands topic; any non-empty message is treated
+# as a command. Optional /hermes or !hermes prefixes are tolerated.
 
 on:
-  # Default: poll every 5 minutes for new Discord commands
+  # Default: poll every 5 minutes for new Telegram commands
   schedule:
     - cron: '*/5 * * * *'
 
   # Manual dispatch:
-  #   - Leave `command` BLANK to force a Discord polling run (use this to
-  #     pick up queued !hermes messages without waiting for the cron to
-  #     register, e.g. just after first deploy).
-  #   - Provide a `command` to skip Discord and process that text directly
-  #     as if it had arrived via Discord (useful for testing without
-  #     posting in the channel).
+  #   - Leave `command` BLANK to force a Telegram polling run (use this to
+  #     pick up queued messages without waiting for the cron to register,
+  #     e.g. just after first deploy).
+  #   - Provide a `command` to skip Telegram and process that text directly
+  #     as if it had arrived via Telegram (useful for testing without
+  #     posting in the topic).
   workflow_dispatch:
     inputs:
       command:
-        description: "Command text (LEAVE BLANK to poll Discord channel; fill in to skip Discord and process this text directly)"
+        description: "Command text (LEAVE BLANK to poll Telegram topic; fill in to skip Telegram and process this text directly)"
         required: false
         default: ""
       author:
@@ -79,11 +83,11 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # gh CLI reads GH_TOKEN
-          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
-          DISCORD_HERMES_CONTROL_CHANNEL_ID: ${{ secrets.DISCORD_HERMES_CONTROL_CHANNEL_ID }}
-          DISCORD_WEBHOOK_HERMES: ${{ secrets.DISCORD_WEBHOOK_HERMES }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CONTROL_ROOM_ID: ${{ secrets.TELEGRAM_CONTROL_ROOM_ID }}
+          TELEGRAM_TOPIC_COMMANDS: ${{ secrets.TELEGRAM_TOPIC_COMMANDS }}
           # workflow_dispatch path: pass the input as env so the script
-          # can detect manual mode and skip Discord polling
+          # can detect manual mode and skip Telegram polling
           HERMES_MANUAL_COMMAND: ${{ github.event.inputs.command }}
           HERMES_MANUAL_AUTHOR: ${{ github.event.inputs.author }}
         run: python scripts/hermes_route.py

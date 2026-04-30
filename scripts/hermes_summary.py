@@ -23,7 +23,8 @@ What HERMES does NOT do:
     guest-chamber are sovereign event streams; HERMES is meta-synthesis above them)
 
 Output:
-  - Discord post to DISCORD_WEBHOOK_HERMES (if set; warns if missing)
+  - Telegram post to Control Room → 🚀 HERMES topic (if TELEGRAM_BOT_TOKEN +
+    TELEGRAM_CONTROL_ROOM_ID + TELEGRAM_TOPIC_HERMES set; warns if missing)
   - Append to .claude/bridge/from_hermes.md (durable record on git)
   - git commit + push (so other agents see what HERMES synthesized)
 
@@ -149,41 +150,59 @@ async def run_hermes_via_sdk() -> str | None:
     return None
 
 
-def post_to_discord(summary: str) -> bool:
-    """Post the summary to the HERMES Discord webhook. Returns True if posted."""
-    webhook = os.environ.get("DISCORD_WEBHOOK_HERMES", "").strip()
-    if not webhook:
-        print("[hermes] DISCORD_WEBHOOK_HERMES not set — skipping Discord post", file=sys.stderr)
+def post_to_telegram(summary: str) -> bool:
+    """Post the summary to the HERMES topic in the Control Room. Returns True if posted."""
+    token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
+    chat_id = os.environ.get("TELEGRAM_CONTROL_ROOM_ID", "").strip()
+    topic_id = os.environ.get("TELEGRAM_TOPIC_HERMES", "").strip()
+    if not token or not chat_id:
+        print(
+            "[hermes] TELEGRAM_BOT_TOKEN or TELEGRAM_CONTROL_ROOM_ID not set — skipping Telegram post",
+            file=sys.stderr,
+        )
         return False
 
-    # Discord embed description hard cap is 4096; play safe at 3900
-    text = summary.strip()
-    if len(text) > 3900:
-        text = text[:3897] + "..."
+    # Telegram sendMessage caps at 4096 chars; reserve room for header + footer.
+    body = summary.strip()
+    if len(body) > 3700:
+        body = body[:3697] + "..."
 
-    embed = {
-        "title": "HERMES — Daily Synthesis",
-        "description": text,
-        "color": 0x00BFA5,  # teal — same as world-feed; HERMES is the cross-cutting voice
-        "footer": {"text": "Fleet THE_INTERFACE · A1+A4 · SOVEREIGNTY gate · autonomous fire"},
+    # Telegram HTML mode requires escaping <, >, &
+    import html as _html
+    safe = _html.escape(body, quote=False)
+    text = (
+        "<b>🚀 HERMES — Daily Synthesis</b>\n\n"
+        f"{safe}\n\n"
+        "<i>Fleet THE_INTERFACE · A1+A4 · SOVEREIGNTY gate · autonomous fire</i>"
+    )
+
+    payload = {
+        "chat_id": chat_id,
+        "text": text[:4096],
+        "parse_mode": "HTML",
+        "disable_web_page_preview": True,
     }
-    payload = {"embeds": [embed]}
+    if topic_id:
+        try:
+            payload["message_thread_id"] = int(topic_id)
+        except ValueError:
+            pass
 
     try:
         req = Request(
-            webhook,
+            f"https://api.telegram.org/bot{token}/sendMessage",
             data=json.dumps(payload).encode("utf-8"),
             headers={"Content-Type": "application/json", "User-Agent": "Hermes/1.0"},
         )
         with urlopen(req, timeout=15) as r:
             status = r.status
-        print(f"[hermes] Discord post status: {status}", flush=True)
+        print(f"[hermes] Telegram post status: {status}", flush=True)
         return status in (200, 204)
     except URLError as e:
-        print(f"[hermes] Discord post failed: {e}", file=sys.stderr)
+        print(f"[hermes] Telegram post failed: {e}", file=sys.stderr)
         return False
     except Exception as e:
-        print(f"[hermes] Discord post unexpected error: {e}", file=sys.stderr)
+        print(f"[hermes] Telegram post unexpected error: {e}", file=sys.stderr)
         return False
 
 
@@ -204,9 +223,9 @@ def main() -> int:
         # the Discord post is a secondary artifact. Exit 0 lets the workflow record success.
         return 0
 
-    posted = post_to_discord(summary)
+    posted = post_to_telegram(summary)
     if not posted:
-        print("[hermes] note: Discord post was skipped or failed; bridge entry should still be on origin/main", file=sys.stderr)
+        print("[hermes] note: Telegram post was skipped or failed; bridge entry should still be on origin/main", file=sys.stderr)
 
     return 0
 

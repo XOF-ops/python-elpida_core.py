@@ -67,5 +67,7 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DISCORD_WEBHOOK_HERMES: ${{ secrets.DISCORD_WEBHOOK_HERMES }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CONTROL_ROOM_ID: ${{ secrets.TELEGRAM_CONTROL_ROOM_ID }}
+          TELEGRAM_TOPIC_HERMES: ${{ secrets.TELEGRAM_TOPIC_HERMES }}
         run: python scripts/hermes_summary.py
