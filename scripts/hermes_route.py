@@ -86,6 +86,14 @@ YOUR JOB ON THIS FIRE:
    - https://xof-ops.github.io/python-elpida_core.py/data/observation_snapshot.json (live dashboard state)
    - Recent commits: git log --oneline -20
 
+1a. **AWS S3 read is available in this runner** (closed instrumentation gap, 2026-04-30). When the architect's command requires state verification, USE the `aws` CLI:
+   - `aws s3 ls s3://elpida-body-evolution/feedback/ --region eu-north-1` — Gap 3 PHASE 5.5 watermark + feedback_to_native
+   - `aws s3 ls s3://elpida-body-evolution/federation/identity_verification/entries/ --region eu-north-1` — Gap 2 Mirror verdicts
+   - `aws s3 cp s3://elpida-body-evolution/federation/mind_heartbeat.json - --region eu-north-1 | python3 -m json.tool` — live MIND state
+   - `aws s3 cp s3://elpida-body-evolution/federation/body_heartbeat.json - --region eu-north-1 | python3 -m json.tool` — live BODY state
+   - `aws s3 ls s3://elpida-external-interfaces/d15/ --region eu-north-1 | tail -20` — recent D15 broadcasts to world
+   Use these whenever the architect's command requires checking actual state instead of reasserting bridge claims. Per ELPIDA_CANON.md HERMES is observer not actor — read-only S3 verification fits that role exactly.
+
 2. Parse the architect's intent. Categories include but aren't limited to:
    - "validate X" / "audit X" / "check X" → create EXACTLY ONE GitHub Issue with a focused validation brief, assign to Copilot (`gh issue create --assignee Copilot --title "..." --body-file ...`). DO NOT create a duplicate or a follow-up issue in the same fire — one Issue per architect command. If you need to add context, comment on that single Issue (`gh issue comment <num> --body "..."`).
    - "ask <agent> to do X" / "route to <agent>" → write a focused brief to .claude/bridge/for_<agent>.md (or create an Issue if Copilot)

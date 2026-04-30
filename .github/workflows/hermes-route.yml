@@ -36,6 +36,7 @@ on:
         default: "architect"
 
 permissions:
+  id-token: write   # OIDC role assumption for AWS (S3 read only)
   contents: write
   issues: write
   actions: write  # so HERMES can fire other workflows via gh workflow run
@@ -45,6 +46,9 @@ permissions:
 concurrency:
   group: hermes-route
   cancel-in-progress: false
+
+env:
+  AWS_REGION: us-east-1
 
 jobs:
   route:
@@ -72,6 +76,24 @@ jobs:
 
       - name: Install Claude Agent SDK
         run: pip install --upgrade claude-agent-sdk
+
+      # AWS credentials for S3 reads — lets HERMES verify state when the
+      # architect's command requires it (e.g., "check S3 for X" or
+      # "verify Gap 2 is operational"). Same OIDC pattern as deploy-mind-ecr.
+      - name: Configure AWS credentials (OIDC)
+        if: ${{ vars.AWS_GITHUB_OIDC_ROLE_ARN != '' }}
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ vars.AWS_GITHUB_OIDC_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Configure AWS credentials (static fallback)
+        if: ${{ vars.AWS_GITHUB_OIDC_ROLE_ARN == '' }}
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Configure git for HERMES routing commits
         run: |

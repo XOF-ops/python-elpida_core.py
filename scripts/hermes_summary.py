@@ -66,7 +66,21 @@ ON THIS FIRE — the daily synthesis act:
 
 4. Run: git log --oneline --since='24 hours ago' (recent commits on main)
 
-5. Run: bash scripts/d13_checkpoint_audit.sh --summary --format json --since-hours 24 2>&1 | tail -30 (D13 health, no AWS in runner is expected)
+5. Run: bash scripts/d13_checkpoint_audit.sh --summary --format json --since-hours 24 2>&1 | tail -30 (D13 health)
+
+5a. **S3 fact-check held items.** AWS credentials are now available in this runner (closed instrumentation gap, 2026-04-30). Before reasserting any held item that references S3-observable state, verify it with `aws s3` commands. Specifically:
+   - For "IAM PutObject blocked" / "Mirror verdicts ephemeral" claims: run
+     `aws s3 ls s3://elpida-body-evolution/feedback/ --region eu-north-1` and
+     `aws s3 ls s3://elpida-body-evolution/federation/identity_verification/entries/ --region eu-north-1`.
+     Recent `LastModified` timestamps (within last 24h) on `feedback_to_native.jsonl` and verification entries → Gap 2/3 are OPERATIONAL. Retire any "Day N IAM blocked" framing if writes are happening.
+   - For "MIND state unverified" claims: run
+     `aws s3 cp s3://elpida-body-evolution/federation/mind_heartbeat.json - --region eu-north-1 | python3 -m json.tool` and
+     `aws s3 cp s3://elpida-body-evolution/federation/body_heartbeat.json - --region eu-north-1 | python3 -m json.tool`.
+     Use the returned `mind_epoch` / `body_cycle` to verify recency. Stale (> 8h old) → flag as held; recent → retire from held list.
+   - For "15 orphaned D15 broadcasts presumed lost" framing: run
+     `aws s3 ls s3://elpida-external-interfaces/d15/ --region eu-north-1 | wc -l` to count current D15 broadcasts. The number itself isn't the diagnostic; orphan recovery is. Don't keep restating "presumed lost" without re-verifying.
+   - Any other held item that says "blocked", "ephemeral", "unverified" and references an S3 path: verify with a concrete `aws s3 ls` or `aws s3 cp`. **If the S3 state contradicts the held framing, retire or update the item — don't carry it forward unchanged.**
+   - If `aws` command fails (NoCredentials or AccessDenied), name that as an instrumentation issue under WHAT'S NOT, not as evidence the held items are still active.
 
 6. Read GitHub state for resolution-aware synthesis (avoids re-surfacing items the architect already closed):
    - gh pr list --state open --limit 20 --json number,title,createdAt,isDraft → flag any PR older than 24h as "stale PR" in WHAT'S HELD or WHAT NEEDS YOUR ATTENTION (the merge discipline matters; orphan PRs are the Feb 2026 loss pattern in miniature)
