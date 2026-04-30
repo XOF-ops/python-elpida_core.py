@@ -58,6 +58,12 @@ if _hf_token:
 logging.getLogger("transformers").setLevel(logging.ERROR)
 logging.getLogger("sentence_transformers").setLevel(logging.WARNING)
 logging.getLogger("huggingface_hub").setLevel(logging.WARNING)
+# ddgs library logs every search-engine fallback at INFO ("Error in engine
+# yahoo: ...", "Error in engine duckduckgo: ..."). These are not errors at
+# the application level — domain_grounding.py and scanner.py both have
+# Wikipedia fallbacks. Suppress to WARNING so the BODY logs stay clean.
+logging.getLogger("ddgs").setLevel(logging.WARNING)
+logging.getLogger("primp").setLevel(logging.WARNING)
 
 logging.basicConfig(
     level=logging.INFO,

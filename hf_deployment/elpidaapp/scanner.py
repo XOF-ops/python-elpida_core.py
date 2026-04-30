@@ -158,24 +158,40 @@ class ProblemScanner:
     def _research_dilemmas(self, topic: str) -> Dict[str, Any]:
         """
         Use DuckDuckGo web search + Groq to find real-world active
-        dilemmas with genuine competing interests.
+        dilemmas with genuine competing interests. Falls back to Wikipedia
+        when DDG returns empty (HF Space frequently throttles DDG).
 
         Returns {"text": str, "citations": list[str]}.
         """
-        from elpidaapp.domain_grounding import _search_ddg, _rate_limit
+        from elpidaapp.domain_grounding import _rate_limit, _search_wikipedia
 
         # ── Step 1: free web search via DDG ──
         _rate_limit()
+        query = f"{topic} policy dilemma controversy 2026"
         raw_results = []
         try:
             from ddgs import DDGS
             ddgs = DDGS()
-            raw_results = list(ddgs.text(
-                f"{topic} policy dilemma controversy 2026",
-                max_results=6,
-            ))
+            raw_results = list(ddgs.text(query, max_results=6))
         except Exception:
             pass
+
+        # ── Step 1b: Wikipedia fallback when DDG returns empty ──
+        # Mirrors domain_grounding.ground_query's two-tier strategy.
+        if not raw_results:
+            wiki_results = _search_wikipedia(topic, max_results=5)
+            # Wikipedia API returns {title, body}; normalize to ddgs shape so
+            # the citation/snippet code below works unchanged.
+            for r in wiki_results:
+                title = r.get("title", "")
+                raw_results.append({
+                    "title": title,
+                    "body": r.get("body", ""),
+                    "href": (
+                        f"https://en.wikipedia.org/wiki/{title.replace(' ', '_')}"
+                        if title else ""
+                    ),
+                })
 
         # Extract URLs as citations and build context
         citations = [r.get("href", "") for r in raw_results if r.get("href")]
