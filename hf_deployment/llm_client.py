@@ -221,7 +221,7 @@ class LLMClient:
             )
             # Discord: notify #parliament-alerts
             try:
-                from elpidaapp.discord_bridge import post_circuit_breaker
+                from elpidaapp.telegram_bridge import post_circuit_breaker
                 post_circuit_breaker(provider, "trip", count, self._CB_COOLDOWN_S)
             except Exception:
                 pass

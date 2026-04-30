@@ -982,7 +982,7 @@ class ParliamentCycleEngine:
         #     HERMES (GitHub Actions) is on different network, unaffected.
         if self.cycle_count % 55 == 0 and self.cycle_count > 0:
             try:
-                from .discord_bridge import check_webhook_health
+                from .telegram_bridge import check_webhook_health
                 diag = check_webhook_health(cycle=self.cycle_count)
                 if not diag.get("network_reachable"):
                     logger.warning(
@@ -1679,7 +1679,7 @@ class ParliamentCycleEngine:
                     )
                     # Discord: notify #parliament-alerts
                     try:
-                        from .discord_bridge import post_synod
+                        from .telegram_bridge import post_synod
                         post_synod(self.cycle_count, hub_result.get("axiom_id", "?"), hub_result.get("statement", ""))
                     except Exception:
                         pass
@@ -1712,7 +1712,7 @@ class ParliamentCycleEngine:
         if meta.get("source") == "guest_chamber" or "guest" in meta.get("systems", []):
             guest_meta = meta.get("guest_metadata", {})
             try:
-                from .discord_bridge import post_guest_verdict
+                from .telegram_bridge import post_guest_verdict
 
                 # Build node perspectives from individual votes
                 votes = result.get("parliament", {}).get("votes", {})
@@ -2672,7 +2672,7 @@ class ParliamentCycleEngine:
                 )
                 # Discord: notify #parliament-alerts
                 try:
-                    from .discord_bridge import post_pathology
+                    from .telegram_bridge import post_pathology
                     post_pathology(self.cycle_count, health, drift_kl, drift_severity, len(zombies))
                 except Exception as e:
                     logger.warning("Pathology Discord alert failed: %s", e)
@@ -2841,7 +2841,7 @@ class ParliamentCycleEngine:
                     f"in {duration}s"
                 )
                 try:
-                    from .discord_bridge import post_d15_pipeline_broadcast
+                    from .telegram_bridge import post_d15_pipeline_broadcast
                     post_d15_pipeline_broadcast(
                         cycle=self.cycle_count,
                         broadcast_key=result.get("broadcast_key", "?"),
@@ -3202,7 +3202,7 @@ class ParliamentCycleEngine:
                 )
                 # Discord: notify #parliament-alerts
                 try:
-                    from .discord_bridge import post_d15_fired
+                    from .telegram_bridge import post_d15_fired
                     post_d15_fired(self.cycle_count, body_axiom, self.d15_broadcast_count)
                 except Exception as e:
                     logger.warning("D15 fire Discord alert failed: %s", e)

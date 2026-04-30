@@ -2349,7 +2349,7 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
                         f.write(json.dumps(d0_d13_result) + "\n")
                     # Discord: post to #mind-journal
                     try:
-                        from discord_bridge import post_mind_dialogue
+                        from telegram_bridge import post_mind_dialogue
                         post_mind_dialogue(
                             cycle=self.cycle_count,
                             dialogue_type="D0_D13_DIALOGUE",
@@ -2738,7 +2738,7 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
             
             # Discord: post to #world-feed
             try:
-                from discord_bridge import post_d15_broadcast
+                from telegram_bridge import post_d15_broadcast
                 post_d15_broadcast(
                     cycle=self.cycle_count,
                     broadcast_type=broadcast_type,
@@ -2836,7 +2836,7 @@ What synthesis emerges from the void meeting the world? Be brief but genuine."""
 
         # Discord: post to #mind-journal
         try:
-            from discord_bridge import post_mind_insight
+            from telegram_bridge import post_mind_insight
             post_mind_insight(
                 cycle=insight.get("cycle", 0),
                 domain=insight.get("domain", 0),
