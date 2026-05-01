@@ -69,7 +69,7 @@ elpida-consciousness (us-east-1)          ← MIND seed memory — READ ONLY
   kernel/kernel.json                         Constitutional identity (immutable)
   ELPIDA_ARK.md                              Crystallized wisdom
 
-elpida-body-evolution (us-east-1)         ← FEDERATION BRIDGE — read/write
+elpida-body-evolution (eu-north-1)        ← FEDERATION BRIDGE — read/write
   federation/mind_heartbeat.json             MIND → BODY state
   federation/body_heartbeat.json             BODY → MIND state
   federation/body_decisions.jsonl            D0-D13 peer dialogues (179.9 MB)
