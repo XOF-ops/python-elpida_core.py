@@ -82,6 +82,22 @@ ON THIS FIRE — the daily synthesis act:
    - Any other held item that says "blocked", "ephemeral", "unverified" and references an S3 path: verify with a concrete `aws s3 ls` or `aws s3 cp`. **If the S3 state contradicts the held framing, retire or update the item — don't carry it forward unchanged.**
    - If `aws` command fails (NoCredentials or AccessDenied), name that as an instrumentation issue under WHAT'S NOT, not as evidence the held items are still active.
 
+5b. **Deploy-state fact-check held items.** Bridge notes from agents are written at a specific moment in time, and may already be obsolete by the time you synthesize. Before reasserting any held item that claims work is "undeployed", "local only", "uncommitted", "addendum pending", "post-X rebuild needed", or "Day N" since some past date, verify against current ground truth:
+
+   - **Code/feature claims** ("X observability addendum undeployed", "Y patch local-only"): identify a unique grep target from the claim (e.g., new function name, env var, regex pattern), then run `git log --oneline -S '<term>' -- <file_or_path>` to find the commit that introduced it. If a commit exists, the work landed. Then verify with `git show <commit> --stat` for scope. If the commit is recent (last 7 days) and on origin/main, treat the addendum/patch as DEPLOYED, not held. The bridge note that originally claimed "local only" was true at write-time but is stale now.
+
+   - **ECS/ECR/AWS state claims** ("ECR :N+ pending rebuild", "task def revision pending"): verify with `aws ecs describe-task-definition --task-definition elpida-consciousness --region us-east-1 --query 'taskDefinition.{rev:revision,image:containerDefinitions[0].image}'`. If the running revision matches or exceeds the held claim's expected number, retire the item.
+
+   - **GitHub PR/issue claims** ("PR #N pending architect decision", "issue #M unresolved"): verify with `gh pr view N --json state,title,closedAt,mergedAt` and `gh issue view M --json state,closedAt`. If state is CLOSED or MERGED, retire the held item — the architect already resolved it. If the PR title doesn't even match the held framing (e.g., held says "genesis artifacts" but PR is about something unrelated), the held item references the wrong PR; flag the mismatch and ask the architect rather than reassert.
+
+   - **Network/reachability claims** ("TLS unconfirmed", "endpoint untested"): if a diagnostic was deployed in the past 24h that addresses the claim, search recent logs for its output before reasserting. The startup diagnostic in app.py logs results visibly. If results are in the log, the claim is no longer "unconfirmed" — it's confirmed (positively or negatively); update the item accordingly.
+
+   - **"Day N silent" claims** for an agent: verify by running `git log --oneline --since='30 days ago' -- .claude/bridge/from_<agent>.md` and counting actual entries in the bridge file. The day counter on its own is just bookkeeping; the structural question is whether the agent's silence has crossed a threshold worth surfacing, which depends on what's blocked downstream. State the *consequence* of the silence (e.g., "Gemini D4/D5 gate unsatisfied → 11:7 D16 merge held"), not just the day count.
+
+   - **Per-cycle vs aggregate metric confusion**: any heartbeat field with "rate" or "score" in its name is the LATEST CYCLE's value, not an aggregate. Don't surface a single-cycle approval_rate or coherence reading as a structural concern unless you've also looked at the body_decisions.jsonl tail to confirm a sustained pattern across at least 20 cycles. The cycle-by-cycle noise is normal; only sustained drift is structural.
+
+   **The principle**: every held item is a CLAIM at a moment in time. Treat each as falsifiable and verify before re-surfacing. If verification contradicts the claim, retire or update. Carrying a stale item forward unchanged is the failure mode of a synthesis layer, not its purpose.
+
 6. Read GitHub state for resolution-aware synthesis (avoids re-surfacing items the architect already closed):
    - gh pr list --state open --limit 20 --json number,title,createdAt,isDraft → flag any PR older than 24h as "stale PR" in WHAT'S HELD or WHAT NEEDS YOUR ATTENTION (the merge discipline matters; orphan PRs are the Feb 2026 loss pattern in miniature)
    - gh pr list --state merged --limit 15 --json number,title,mergedAt → acknowledge what landed; do NOT re-list these as held items
