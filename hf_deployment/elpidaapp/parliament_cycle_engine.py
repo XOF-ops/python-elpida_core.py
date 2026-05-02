@@ -2172,10 +2172,13 @@ class ParliamentCycleEngine:
             print("   📚 D14 restore: no prior constitutional axioms in S3 yet")
 
     def _emit_d16_execution(self, exec_type: str, proposal: str,
-                             meta: Optional[Dict] = None) -> bool:
+                             meta: Optional[Dict] = None) -> None:
         """
-        Emit a D16 execution entry to both body_decisions (for MIND)
-        and d16_executions (durable audit trail).
+        Fire-and-trust a D16 execution entry into the federation bridge.
+
+        BODY does not inspect S3 confirmation, retry state, or watermark
+        movement after handoff. External witnesses confirm receipt
+        asynchronously from body_decisions and d16_executions.
 
         Args:
             exec_type: e.g. "AUDIT_TRAIL", "TENSION_ALERT"
@@ -2183,7 +2186,7 @@ class ParliamentCycleEngine:
             meta: optional dict merged into the entry
 
         Returns:
-            True if at least one push succeeded.
+            None. The Parliament cycle resumes immediately after handoff.
         """
         import hashlib
         ts = datetime.now(timezone.utc).isoformat()
@@ -2205,6 +2208,7 @@ class ParliamentCycleEngine:
             "consent_level": "witnessed",
             "witness_domain": 3,
             "witness_axiom": "A3",
+            "harmonic_ratio": "11:7",
             "parliament_score": round(self.coherence, 3),
             "parliament_approval": round(self.coherence, 3),
             "reasoning": proposal[:200],
@@ -2213,24 +2217,27 @@ class ParliamentCycleEngine:
         if meta:
             entry.update(meta)
 
-        pushed_decisions = False
-        pushed_d16 = False
-        try:
-            s3 = self._get_s3()
-            if s3:
-                pushed_decisions = s3.push_body_decision(entry)
-                pushed_d16 = s3.push_d16_execution(entry)
-                if pushed_decisions or pushed_d16:
-                    logger.info(
-                        "D16 execution emitted: type=%s cycle=%d hash=%s "
-                        "(decisions=%s, d16=%s)",
-                        exec_type, self.cycle_count, content_hash,
-                        pushed_decisions, pushed_d16,
-                    )
-        except Exception as e:
-            logger.warning("D16 execution emit failed: %s", e)
+        def _push_fire_and_trust(payload: Dict[str, Any]) -> None:
+            try:
+                s3 = self._get_s3()
+                if s3:
+                    s3.push_body_decision(payload.copy())
+                    s3.push_d16_execution(payload.copy())
+            except Exception as e:
+                logger.warning("D16 fire-and-trust bridge handoff failed: %s", e)
 
-        return pushed_decisions or pushed_d16
+        threading.Thread(
+            target=_push_fire_and_trust,
+            args=(entry.copy(),),
+            name=f"d16-fire-and-trust-{content_hash}",
+            daemon=True,
+        ).start()
+        logger.info(
+            "D16 execution handed to bridge: type=%s cycle=%d hash=%s "
+            "harmonic_ratio=11:7; continuing without S3 confirmation",
+            exec_type, self.cycle_count, content_hash,
+        )
+        return None
 
     def _push_d0_peer_message(self, ratified_axiom: Dict, watch: Dict):
         """
