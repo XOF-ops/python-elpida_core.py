@@ -1468,6 +1468,7 @@ class GovernanceClient:
         analysis_mode: bool = False,
         body_cycle: Optional[int] = None,
         depth: str = "full",
+        defer_federation_push: bool = False,
     ) -> Dict[str, Any]:
         """
         Submit an action to the governance layer for axiom compliance.
@@ -1544,7 +1545,8 @@ class GovernanceClient:
         return self._local_axiom_check(action_description, context,
                                        hold_mode=analysis_mode,
                                        body_cycle=body_cycle,
-                                       no_llm=_no_llm)
+                                       no_llm=_no_llm,
+                                       defer_federation_push=defer_federation_push)
 
     def get_governance_log(self) -> List[Dict[str, Any]]:
         """Return all governance interactions (A1: Transparency)."""
@@ -1679,7 +1681,9 @@ class GovernanceClient:
 
             # Determine verdict
             governance = result.get("governance", "PROCEED")
-            if governance == "HALT":
+            if governance == "HARD_BLOCK":
+                verdict = "HARD_BLOCK"
+            elif governance == "HALT":
                 verdict = "VETOED" if parliament.get("veto_exercised") else "HARD_BLOCK"
             elif governance == "REVIEW":
                 verdict = "PENDING"
@@ -1723,6 +1727,24 @@ class GovernanceClient:
                 ),
                 "_diag_signal_count": result.get("_diag_signal_count", 0),
             }
+
+            for key in (
+                "phase1_shadow_enabled",
+                "phase1_shadow_rhythm",
+                "phase1_shadow_active_axioms",
+                "phase1_shadow_extended_winner",
+                "phase1_shadow_extended_scores",
+                "phase1_shadow_extended_raw_scores",
+                "phase1_shadow_score_components",
+                "phase1_shadow_rhythm_coverage",
+                "phase1_shadow_content_corroboration",
+                "phase1_shadow_prescription_target",
+                "phase1_shadow_prescription_age_cycles",
+                "phase1_shadow_prescription_bonus_active",
+                "phase1_shadow_score_basis",
+            ):
+                if key in result:
+                    exchange[key] = result.get(key)
 
             pushed = bridge.push_body_decision(exchange)
             if pushed:
@@ -2109,6 +2131,7 @@ class GovernanceClient:
         hold_mode: bool = False,
         body_cycle: Optional[int] = None,
         no_llm: bool = False,
+        defer_federation_push: bool = False,
     ) -> Dict[str, Any]:
         """
         Local axiom compliance check via 9-node Parliament deliberation.
@@ -2156,6 +2179,7 @@ class GovernanceClient:
             body_cycle=body_cycle,
             no_llm=no_llm,
             action_for_signals=action_for_signals,
+            defer_federation_push=defer_federation_push,
         )
 
     # ────────────────────────────────────────────────────────────────
@@ -2901,6 +2925,7 @@ class GovernanceClient:
         body_cycle: Optional[int] = None,
         no_llm: bool = False,
         action_for_signals: Optional[str] = None,
+        defer_federation_push: bool = False,
     ) -> Dict[str, Any]:
         """
         Full 10-node Parliament deliberation.
@@ -3275,6 +3300,7 @@ class GovernanceClient:
             "_diag_full_signals": {k: list(v) for k, v in signals.items()},
             "_diag_signal_count": sum(len(v) for v in signals.values()),
             "_diag_decision_category": decision_category,
+            "_diag_federation_decision_deferred": defer_federation_push,
             "_diag_semantic": {
                 k: round(v, 3)
                 for k, v in (self._last_semantic_scores or {}).items()
@@ -3288,10 +3314,11 @@ class GovernanceClient:
 
         # ── 10. Federation: Push decision to MIND ────────────────
         # Non-blocking — failures here don't affect the Parliament result.
-        try:
-            self.push_parliament_decision(action, result, body_cycle=body_cycle)
-        except Exception as e:
-            logger.debug("Federation decision push (non-critical): %s", e)
+        if not defer_federation_push:
+            try:
+                self.push_parliament_decision(action, result, body_cycle=body_cycle)
+            except Exception as e:
+                logger.debug("Federation decision push (non-critical): %s", e)
 
         return result
 

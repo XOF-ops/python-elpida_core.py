@@ -159,6 +159,42 @@ for _rhythm_name, _domain_ids in RHYTHM_DOMAINS.items():
 # Deduplicate
 AXIOM_TO_RHYTHMS = {k: list(set(v)) for k, v in AXIOM_TO_RHYTHMS.items()}
 
+PHASE1_SHADOW_AXIOMS = ("A11", "A12", "A13", "A14", "A16")
+PHASE1_SHADOW_CONTENT_BONUS = 0.45
+PHASE1_SHADOW_CONTENT_BONUS_PER_HIT = 0.18
+PHASE1_SHADOW_RHYTHM_COVERAGE: Dict[str, int] = {}
+for _rhythm_name in RHYTHM_WEIGHTS:
+    for _did in RHYTHM_DOMAINS.get(_rhythm_name, []):
+        _ax = DOMAIN_AXIOM.get(_did)
+        if _ax in PHASE1_SHADOW_AXIOMS:
+            PHASE1_SHADOW_RHYTHM_COVERAGE[_ax] = (
+                PHASE1_SHADOW_RHYTHM_COVERAGE.get(_ax, 0) + 1
+            )
+
+PHASE1_SHADOW_CONTENT_TERMS = {
+    "A11": (
+        "world", "external interface", "broadcast", "contact", "convergence",
+        "public", "d15", "world-facing",
+    ),
+    "A12": (
+        "creative tension", "eternal creative tension", "unresolved",
+        "productive tension", "contradiction remains", "hold the tension",
+    ),
+    "A13": (
+        "archive paradox", "archive", "ark", "record", "canon", "memory",
+        "preservation", "forensic",
+    ),
+    "A14": (
+        "selective eternity", "memory is not preservation", "hoarding",
+        "discard", "forget", "forgetting", "erasure", "loss", "lose most",
+        "selective memory", "preserve everything", "select what remains",
+    ),
+    "A16": (
+        "agency", "action", "execution", "execute", "act", "deed",
+        "proceed", "fire-and-trust", "handoff", "bridge layer",
+    ),
+}
+
 # P4: How many cycles after a PSO run the recommendation stays active
 PSO_INFLUENCE_WINDOW = 20
 
@@ -1151,6 +1187,7 @@ class ParliamentCycleEngine:
                 analysis_mode=_escape_mode or _governance_internal,
                 action_for_kernel=action_for_kernel,
                 body_cycle=self.cycle_count,
+                defer_federation_push=True,
             )
 
             # Track consecutive blocks for escape mechanism
@@ -1291,8 +1328,36 @@ class ParliamentCycleEngine:
             rhythm=rhythm,
             active_domains=active_domains,
             result=result,
+            action_text=result.get("_diag_stripped", "") or action_for_kernel,
         )
         self._phase1_shadow_last = shadow_phase1
+        shadow_export = {
+            "phase1_shadow_enabled": shadow_phase1.get("enabled", True),
+            "phase1_shadow_rhythm": shadow_phase1.get("rhythm"),
+            "phase1_shadow_active_axioms": shadow_phase1.get("active_axioms", []),
+            "phase1_shadow_extended_winner": shadow_phase1.get("extended_winner"),
+            "phase1_shadow_extended_scores": shadow_phase1.get("extended_scores", {}),
+            "phase1_shadow_extended_raw_scores": shadow_phase1.get("extended_raw_scores", {}),
+            "phase1_shadow_score_components": shadow_phase1.get("score_components", {}),
+            "phase1_shadow_rhythm_coverage": shadow_phase1.get("rhythm_coverage", {}),
+            "phase1_shadow_content_corroboration": shadow_phase1.get("content_corroboration", {}),
+            "phase1_shadow_prescription_target": shadow_phase1.get("prescription_target"),
+            "phase1_shadow_prescription_age_cycles": shadow_phase1.get("prescription_age_cycles"),
+            "phase1_shadow_prescription_bonus_active": shadow_phase1.get("prescription_bonus_active", False),
+            "phase1_shadow_score_basis": shadow_phase1.get("score_basis", ""),
+        }
+        result.update(shadow_export)
+
+        try:
+            result["_diag_federation_decision_pushed"] = gov.push_parliament_decision(
+                action,
+                result,
+                body_cycle=self.cycle_count,
+            )
+        except Exception as e:
+            result["_diag_federation_decision_pushed"] = False
+            result["_diag_federation_decision_error"] = str(e)[:200]
+            logger.debug("Deferred federation decision push failed: %s", e)
 
         # 7b. P5: Extract audit prescription from monoculture/approval patterns.
         #     Mirrors AuditAgent's detection but generates a structured
@@ -1309,9 +1374,7 @@ class ParliamentCycleEngine:
             "body_cycle": self.cycle_count,
             "rhythm": rhythm,
             "dominant_axiom": dominant_axiom,
-            "phase1_shadow_enabled": True,
-            "phase1_shadow_extended_winner": shadow_phase1.get("extended_winner"),
-            "phase1_shadow_extended_scores": shadow_phase1.get("extended_scores", {}),
+            **shadow_export,
             "coherence": round(self.coherence, 4),
             "governance": result.get("governance", "UNKNOWN"),
             "decision_category": result.get("decision_category", "primary_body_cycle"),
@@ -1921,6 +1984,7 @@ class ParliamentCycleEngine:
         rhythm: str,
         active_domains: List[int],
         result: Dict,
+        action_text: str = "",
     ) -> Dict[str, Any]:
         """
         Phase 1 telemetry for expanded BODY axioms (A11/A12/A13/A14/A16).
@@ -1928,42 +1992,115 @@ class ParliamentCycleEngine:
         This method is read-only and does not alter Parliament votes,
         scoring, governance verdicts, or convergence behavior.
         """
-        extended_axioms = ("A11", "A12", "A13", "A14", "A16")
         active_axioms = [
             DOMAIN_AXIOM.get(d) for d in active_domains if DOMAIN_AXIOM.get(d)
         ]
 
-        scores: Dict[str, float] = {ax: 0.0 for ax in extended_axioms}
+        scores: Dict[str, float] = {ax: 0.0 for ax in PHASE1_SHADOW_AXIOMS}
+        raw_scores: Dict[str, float] = {ax: 0.0 for ax in PHASE1_SHADOW_AXIOMS}
+        components: Dict[str, Dict[str, float]] = {
+            ax: {
+                "rhythm_raw": 0.0,
+                "rhythm_normalized": 0.0,
+                "action_resonance": 0.0,
+                "prescription_bonus": 0.0,
+                "content_bonus": 0.0,
+            }
+            for ax in PHASE1_SHADOW_AXIOMS
+        }
 
-        # Rhythm/domain presence is the primary signal.
+        # Rhythm/domain presence is normalized by operational coverage so
+        # A14's broad D14 rhythm footprint cannot dominate by map position alone.
         for ax in active_axioms:
             if ax in scores:
-                scores[ax] += 1.0
+                coverage = max(1, PHASE1_SHADOW_RHYTHM_COVERAGE.get(ax, 1))
+                normalized = 1.0 / coverage
+                raw_scores[ax] += 1.0
+                scores[ax] += normalized
+                components[ax]["rhythm_raw"] += 1.0
+                components[ax]["rhythm_normalized"] += normalized
 
         # Action-intent resonance for A16 (deliberation -> action).
         governance = str(result.get("governance", "") or "")
         approval = float(result.get("parliament", {}).get("approval_rate", 0) or 0)
         if governance in {"PROCEED", "REVIEW", "HOLD"} and approval >= 0.10:
             scores["A16"] += 0.4
+            raw_scores["A16"] += 0.4
+            components["A16"]["action_resonance"] += 0.4
 
-        # If an active audit prescription points to an expanded axiom,
-        # reflect it in shadow telemetry only.
+        # If an active audit prescription points to an expanded axiom, reflect it
+        # in shadow telemetry only. The bonus expires on the same cooldown window
+        # used by P5 rhythm bias so stale prescriptions cannot accumulate shadow wins.
+        prescription_target = None
+        prescription_age = None
+        prescription_active = False
         if self._audit_prescription:
-            target = self._audit_prescription.get("target_axiom")
-            if target in scores:
-                scores[target] += 0.3
+            prescription_target = self._audit_prescription.get("target_axiom")
+            prescription_age = self.cycle_count - self._audit_prescription_cycle
+            prescription_active = prescription_age <= AUDIT_PRESCRIPTION_COOLDOWN
+            if prescription_active and prescription_target in scores:
+                scores[prescription_target] += 0.3
+                raw_scores[prescription_target] += 0.3
+                components[prescription_target]["prescription_bonus"] += 0.3
+
+        content_corroboration = self._phase1_shadow_content_hits(action_text)
+        for ax, hits in content_corroboration.items():
+            content_bonus = min(
+                PHASE1_SHADOW_CONTENT_BONUS,
+                PHASE1_SHADOW_CONTENT_BONUS_PER_HIT * len(hits),
+            )
+            scores[ax] += content_bonus
+            raw_scores[ax] += content_bonus
+            components[ax]["content_bonus"] += content_bonus
 
         winner = None
         if any(v > 0 for v in scores.values()):
-            winner = max(scores, key=scores.get)
+            winner = sorted(
+                scores,
+                key=lambda ax: (
+                    scores[ax],
+                    components[ax]["content_bonus"],
+                    components[ax]["action_resonance"],
+                    -PHASE1_SHADOW_RHYTHM_COVERAGE.get(ax, 1),
+                    ax,
+                ),
+                reverse=True,
+            )[0]
 
         return {
             "enabled": True,
             "rhythm": rhythm,
             "active_axioms": active_axioms,
             "extended_scores": {k: round(v, 3) for k, v in scores.items()},
+            "extended_raw_scores": {k: round(v, 3) for k, v in raw_scores.items()},
+            "score_components": {
+                ax: {k: round(v, 3) for k, v in values.items()}
+                for ax, values in components.items()
+            },
+            "rhythm_coverage": dict(PHASE1_SHADOW_RHYTHM_COVERAGE),
+            "content_corroboration": content_corroboration,
+            "prescription_target": prescription_target,
+            "prescription_age_cycles": prescription_age,
+            "prescription_bonus_active": prescription_active,
+            "score_basis": (
+                "rhythm presence normalized by selectable-rhythm coverage; "
+                "P5 bonus age-gated by AUDIT_PRESCRIPTION_COOLDOWN; "
+                "content corroboration adds explicit-text evidence"
+            ),
             "extended_winner": winner,
         }
+
+    def _phase1_shadow_content_hits(self, action_text: str) -> Dict[str, List[str]]:
+        low = str(action_text or "").lower()
+        hits: Dict[str, List[str]] = {}
+        if not low:
+            return hits
+
+        for ax, terms in PHASE1_SHADOW_CONTENT_TERMS.items():
+            matched = [term for term in terms if term in low]
+            if matched:
+                hits[ax] = matched[:5]
+        return hits
 
     # ------------------------------------------------------------------
     # Coherence Update (Musical Consonance Physics)
@@ -2362,6 +2499,26 @@ class ParliamentCycleEngine:
             "phase1_shadow_extended_scores": (
                 self._phase1_shadow_last.get("extended_scores", {})
                 if self._phase1_shadow_last else {}
+            ),
+            "phase1_shadow_extended_raw_scores": (
+                self._phase1_shadow_last.get("extended_raw_scores", {})
+                if self._phase1_shadow_last else {}
+            ),
+            "phase1_shadow_score_components": (
+                self._phase1_shadow_last.get("score_components", {})
+                if self._phase1_shadow_last else {}
+            ),
+            "phase1_shadow_rhythm_coverage": (
+                self._phase1_shadow_last.get("rhythm_coverage", {})
+                if self._phase1_shadow_last else {}
+            ),
+            "phase1_shadow_content_corroboration": (
+                self._phase1_shadow_last.get("content_corroboration", {})
+                if self._phase1_shadow_last else {}
+            ),
+            "phase1_shadow_prescription_bonus_active": (
+                self._phase1_shadow_last.get("prescription_bonus_active", False)
+                if self._phase1_shadow_last else False
             ),
             "approval_rate": result.get("parliament", {}).get("approval_rate", 0),
             "veto_exercised": result.get("parliament", {}).get("veto_exercised", False),
