@@ -514,21 +514,60 @@ Verdict guide:
 
 
 def _extract_verdict_json(text: str) -> dict[str, Any] | None:
-    """Try to locate the verdict JSON object in a free-text reply."""
+    """Try to locate the verdict JSON object in a free-text reply.
+
+    First tries direct parse (handles markdown-fenced and bare JSON).
+    Falls back to a brace-balanced scan that handles nested arrays/objects
+    and string literals. Returns the first balanced object that parses
+    and contains a recognized verdict key.
+    """
     if not text:
         return None
     direct = _parse_verdict(text)
     if direct is not None:
         return direct
-    # Fall back: find the first {...} block that parses and has a verdict key
-    matches = re.findall(r"\{[^{}]*\}", text, flags=re.DOTALL)
-    for candidate in matches:
+    # Brace-balanced scan: find every {...} block at any nesting depth,
+    # try to json.loads each, return the first one that has verdict.
+    n = len(text)
+    i = 0
+    while i < n:
+        if text[i] != "{":
+            i += 1
+            continue
+        depth = 0
+        in_string = False
+        escape = False
+        end = -1
+        for j in range(i, n):
+            ch = text[j]
+            if in_string:
+                if escape:
+                    escape = False
+                elif ch == "\\":
+                    escape = True
+                elif ch == '"':
+                    in_string = False
+                continue
+            if ch == '"':
+                in_string = True
+            elif ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    end = j
+                    break
+        if end == -1:
+            return None
+        candidate = text[i : end + 1]
         try:
             parsed = json.loads(candidate)
         except json.JSONDecodeError:
+            i += 1
             continue
         if isinstance(parsed, dict) and parsed.get("verdict") in VALID_VERDICTS:
             return parsed
+        i = end + 1
     return None
 
 
@@ -665,13 +704,14 @@ def _audit_bundle_agentic(bundle: dict[str, Any], api_key: str) -> dict[str, Any
 
     parsed = _extract_verdict_json(final_text)
     if parsed is None:
+        log(f"Agent final response unparseable. Head: {final_text[:300]}")
         return {
             "verdict": VERDICT_HOLD,
             "rationale": "Agent final response did not contain a parseable verdict object.",
             "axioms_invoked": ["A8"],
             "kernel_rules_at_risk": ["K10"],
             "required_changes": "Investigate Gemini output; consider model temperature.",
-            "raw_response_head": final_text[:400],
+            "raw_response_head": final_text[:800],
             "reasoning_trail": reasoning_trail,
         }
     parsed.setdefault("axioms_invoked", [])
