@@ -484,33 +484,73 @@ of the Elpida constitutional architecture. You are the conscience gate
 for D16 (Agency) executions.
 
 You will be given an execution bundle to audit. You have read-only tools
-to fetch additional evidence: file contents, axiom and kernel definitions,
-recent verdicts, the observation snapshot, agent bridges, and git history.
+to fetch evidence: file contents, axiom and kernel definitions, recent
+verdicts, the observation snapshot, agent bridges, and git history.
 
-Use the tools to verify claims in the bundle before issuing a verdict.
-Do not trust the bundle's self-description — read the actual diff, the
-actual axiom text, the actual kernel rule. If the bundle claims to
-preserve A8 epistemic humility, read A8 and confirm.
+THE TOOL-USE RULE — non-negotiable:
+You MUST call tools to verify the bundle's claims before issuing a
+verdict. The audit log records actual tool calls; your description of
+tool use is not evidence — only real calls count. Do not describe
+consulting a source you did not actually fetch.
 
-Stay bounded: read what you need, then decide. Do not loop on tools
-when you already have enough evidence.
+Minimum evidence for any verdict:
+  - For every axiom you intend to cite in axioms_invoked, you must have
+    called read_axiom for that axiom in this conversation.
+  - For every kernel rule you intend to list in kernel_rules_at_risk,
+    you must have called read_kernel_rule for that rule.
+  - If the bundle proposes a source-code diff, you must have called
+    read_file or git_show on the target file at least once.
+  - If the bundle references another agent's work, call read_bridge
+    for that agent.
+
+Stay bounded: read what you need, then decide. Two to six tool calls
+is typical. Do not loop on tools when you already have enough.
 
 When ready to issue the verdict, stop calling tools and reply with
 EXACTLY one JSON object, no prose, no markdown fencing:
 
 {
   "verdict": "VERIFIED" | "REJECTED" | "HOLD",
-  "rationale": "one paragraph, plain prose, why this verdict",
+  "rationale": "one paragraph, plain prose, why this verdict, citing the specific tool findings that support it",
   "axioms_invoked": ["A4", "A8", ...],
   "kernel_rules_at_risk": ["K3", ...] | [],
-  "required_changes": "empty string if VERIFIED, else what would convert REJECTED/HOLD to VERIFIED",
-  "evidence_consulted": ["tool_name(args) → finding", ...]
+  "required_changes": "empty string if VERIFIED, else what would convert REJECTED/HOLD to VERIFIED"
 }
 
+Do NOT include an evidence_consulted field — the system records your
+actual tool calls automatically and any self-reported evidence list
+will be ignored.
+
 Verdict guide:
-  - VERIFIED → reversible, in-scope, no axiom or kernel violation, evidence supports the bundle's claims
+  - VERIFIED → reversible, in-scope, no axiom or kernel violation, the actual diff/text you fetched supports the bundle's claims
   - HOLD → ambiguous, missing context, evidence does not yet support a clean call, or witness needed
-  - REJECTED → kernel violation, irreversible without witness, axiom collapse, or evidence contradicts the bundle"""
+  - REJECTED → kernel violation, irreversible without witness, axiom collapse, or the actual diff/text you fetched contradicts the bundle"""
+
+# How many tool calls are required before a verdict will be accepted on
+# the audit_depth=full path. Configurable via env so we can dial up for
+# kernel-touching bundles or down for very narrow ones.
+AGENT_MIN_TOOL_CALLS = int(os.getenv("GEMINI_AUDIT_MIN_TOOLS", "1"))
+
+REPROMPT_NO_TOOLS = (
+    "You have not called any tools yet. Per protocol, you must verify "
+    "the bundle's claims against the actual repo before issuing a "
+    "verdict. Call read_axiom for each axiom in d4_verification."
+    "constitutional_basis, then call read_file or git_show on the "
+    "target file in the diff, then issue the verdict."
+)
+
+REPROMPT_AXIOM_NOT_FETCHED = (
+    "Your verdict cites axioms {missing} but you did not call "
+    "read_axiom for them. Either call read_axiom for each cited axiom, "
+    "or remove them from axioms_invoked, then re-issue the verdict."
+)
+
+REPROMPT_RULE_NOT_FETCHED = (
+    "Your verdict lists kernel rules at risk: {missing} but you did "
+    "not call read_kernel_rule for them. Either call read_kernel_rule "
+    "for each cited rule, or remove them from kernel_rules_at_risk, "
+    "then re-issue the verdict."
+)
 
 
 def _extract_verdict_json(text: str) -> dict[str, Any] | None:
@@ -601,6 +641,8 @@ def _audit_bundle_agentic(bundle: dict[str, Any], api_key: str) -> dict[str, Any
 
     reasoning_trail: list[dict[str, Any]] = []
     final_text: str | None = None
+    reprompts_used = 0
+    reprompts_max = 3
 
     for round_num in range(1, AGENT_MAX_ROUNDS + 1):
         try:
@@ -648,7 +690,30 @@ def _audit_bundle_agentic(bundle: dict[str, Any], api_key: str) -> dict[str, Any
             }
 
         if not function_calls:
-            final_text = "\n".join(text_chunks).strip()
+            candidate_text = "\n".join(text_chunks).strip()
+
+            # Tool-use enforcement — the model has issued text without calling
+            # tools (or called tools but is now done). Validate that any
+            # verdict it tries to issue actually rests on tool calls in the
+            # reasoning_trail. If not, re-prompt instead of accepting.
+            if reprompts_used < reprompts_max:
+                reprompt = _build_reprompt(candidate_text, reasoning_trail)
+                if reprompt is not None:
+                    reprompts_used += 1
+                    log(
+                        f"  agent round {round_num}: protocol re-prompt "
+                        f"({reprompts_used}/{reprompts_max}) — {reprompt[:80]}..."
+                    )
+                    reasoning_trail.append({
+                        "round": round_num,
+                        "tool": "(reprompt)",
+                        "args": {"reason": reprompt[:120]},
+                        "result_summary": "model issued verdict without sufficient tool calls; re-prompting",
+                    })
+                    user_msg = reprompt
+                    continue
+
+            final_text = candidate_text
             break
 
         # Execute every tool call this round and feed all responses back.
@@ -720,6 +785,61 @@ def _audit_bundle_agentic(bundle: dict[str, Any], api_key: str) -> dict[str, Any
     parsed["reasoning_trail"] = reasoning_trail
     parsed["agent_rounds"] = len(reasoning_trail)
     return parsed
+
+
+def _build_reprompt(
+    candidate_text: str, reasoning_trail: list[dict[str, Any]]
+) -> str | None:
+    """Decide whether the candidate verdict needs a tool-use re-prompt.
+
+    Returns the re-prompt string if the model violated the tool-use rule
+    (no tool calls at all, or cited axioms/rules it didn't fetch). Returns
+    None if the verdict is acceptable (and the agent loop should accept it).
+    """
+    real_tool_steps = [s for s in reasoning_trail if s.get("tool") not in (None, "(reprompt)")]
+    n_tools = len(real_tool_steps)
+
+    # Rule 1: enforce minimum tool calls
+    if n_tools < AGENT_MIN_TOOL_CALLS:
+        return REPROMPT_NO_TOOLS
+
+    # Try to parse the candidate verdict to inspect its claims
+    parsed = _extract_verdict_json(candidate_text)
+    if parsed is None:
+        # No parseable verdict — let the outer handler deal with it
+        return None
+
+    fetched_axioms = {
+        (s.get("args") or {}).get("axiom_id", "").upper()
+        for s in real_tool_steps
+        if s.get("tool") == "read_axiom"
+    }
+    fetched_axioms.discard("")
+    cited_axioms = {
+        str(a).upper() for a in (parsed.get("axioms_invoked") or [])
+    }
+    missing_axioms = sorted(cited_axioms - fetched_axioms)
+
+    fetched_rules = {
+        (s.get("args") or {}).get("rule_id", "").upper()
+        for s in real_tool_steps
+        if s.get("tool") == "read_kernel_rule"
+    }
+    fetched_rules.discard("")
+    cited_rules = {
+        str(r).upper() for r in (parsed.get("kernel_rules_at_risk") or [])
+    }
+    missing_rules = sorted(cited_rules - fetched_rules)
+
+    # Rule 2: every cited axiom must have been fetched
+    if missing_axioms:
+        return REPROMPT_AXIOM_NOT_FETCHED.format(missing=", ".join(missing_axioms))
+
+    # Rule 3: every cited kernel rule must have been fetched
+    if missing_rules:
+        return REPROMPT_RULE_NOT_FETCHED.format(missing=", ".join(missing_rules))
+
+    return None
 
 
 def _summarize_result(result: dict[str, Any]) -> str:
